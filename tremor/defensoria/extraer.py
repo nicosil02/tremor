@@ -21,7 +21,8 @@ _DEP = re.compile(r"^(%s)(?:\s*(?::|/).*)?$" % "|".join(sorted({d.replace("_", "
 SECCIONES = [
     (r"conflictos activos que no registraron hechos", "activos_sin_hechos"),
     (r"pasado de estado activo a latente|trasladados del", "cambio_estado"),
-    (r"detalle de los conflictos (sociales )?activos|conflictos (sociales )?(activos )?desarrollados en (un solo|m[aá]s de un) departamento|conflictos reactivados",
+    (r"detalle de los conflictos (sociales )?activos|conflictos (sociales )?(activos )?desarrollados en (un solo|m[aá]s de un) departamento|conflictos reactivados|"
+     r"^conflictos (sociales )?activos\.",  # 2008-2011: "1.1 Conflictos activos. La Defensoría da cuenta..."
      "fichas_activos"),
     (r"detalle de los conflictos latentes|^conflictos latentes", "latentes"),
     (r"conflictos resueltos", "resueltos"),
@@ -49,7 +50,7 @@ _MES_RE = "enero|febrero|marzo|abril|mayo|junio|julio|agosto|setiembre|septiembr
 _TITULO = re.compile(r"^\s*(?:[IVX]+\.|\d{1,2}\.\d{1,2}(?:\.\d)?)\s+([A-ZÁÉÍÓÚÑ].{6,})$")
 # 2012-2013: títulos sin numeración. Solo estos abren sección (las fichas tienen otras líneas en mayúsculas).
 _TITULO_SUELTO = re.compile(r"^\s*(DETALLE DE LOS CONFLICTOS SOCIALES ACTIVOS|DETALLE DE LOS CONFLICTOS LATENTES|"
-                            r"Conflictos (?:latentes|resueltos|reactivados)\..*|ACCIONES COLECTIVAS DE PROTESTA|"
+                            r"Conflictos (?:activos|latentes|resueltos|reactivados)\..*|ACCIONES COLECTIVAS DE PROTESTA|"
                             r"CONFLICTOS RESUELTOS|CASOS EN OBSERVACI[OÓ]N)\s*$")
 _RUIDO = re.compile(r"^\s*(Reporte Mensual de Conflictos Sociales N.*|ADJUNT[ÍI]A PARA LA PREVENCI.*|\d{1,3}|"
                     r"Descripci[oó]n|Hechos del mes|Estado actual|NUEVO)\s*$", re.I)
@@ -158,6 +159,12 @@ def totales(texto: str) -> dict:
         if m:
             out = {"activos": int(m.group(1)), "latentes": int(m.group(2))}
             out["total"] = out["activos"] + out["latentes"]
+    if not out:  # 2005-2011: "da cuenta de (la existencia de) 77 conflictos, de los cuales 32 se encuentran activos
+        # (42%), 45 en estado latente"; las cifras pueden ir en palabras ("siete permanecen activos").
+        m = re.search(r"(\w+) conflictos(?: sociales)?(?:, de los cuales|:) (\w+) (?:se encuentran|permanecen) activos"
+                      r" \(\d+%\),? (?:y |mientras que )?(\w+) (?:se encuentran |permanecen )?(?:en )?estado latente", t)
+        if m and None not in (vals := [_num(g) for g in m.groups()]):
+            out = {"total": vals[0], "activos": vals[1], "latentes": vals[2]}
     m = re.search(r"Acciones colectivas de protesta registradas:? (\d+)", t)
     if m:
         out["acciones"] = int(m.group(1))
@@ -170,8 +177,8 @@ ETIQUETAS = [
     ("ingreso", r"Ingres[oó] (?:como (?:caso )?(?:nuevo|reactivado)|al registro):"), ("competencia", r"Competencia:"),
     ("fase_dialogo", r"Fase\s*/\s*Di[aá]logo:"), ("actuaciones", r"Actuaciones DP:"),
     ("descripcion", r"Caso:"), ("ubicacion", r"Ubicaci[oó]n:"),
-    ("actores_primarios", r"Actores\s+primarios:"), ("actores_secundarios", r"Actores\s+secundarios:"),
-    ("actores_terciarios", r"Actores\s+terciarios:"),
+    ("actores_primarios", r"Actores(?:\s+[Pp]rimarios)?:"), ("actores_secundarios", r"Actores\s+[Ss]ecundarios:"),
+    ("actores_terciarios", r"Actores\s+[Tt]erciarios:"),
 ]
 # En 2012 algunas fichas usan punto ("Caso.", "Ubicación."): se acepta solo al inicio de línea.
 _ETIQ = re.compile("|".join(f"(?P<{k}>{p}|(?m:^)[ \\t]*{p[:-1]}\\.)" for k, p in ETIQUETAS))

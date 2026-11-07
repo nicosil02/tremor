@@ -224,3 +224,15 @@ def test_victima_por_codigo():
     from tremor.defensoria.validar import _con_tokens, caso_de_victima
     del_mes = [(9, _con_tokens({"departamento": "Piura", "descripcion": "Comuneros de Sechura.", "codigo": "1193-1020"}))]
     assert caso_de_victima("Piura · Comunidad San Martín de Sechura (1193-1020)", del_mes, {}) == 9
+
+
+@pytest.mark.parametrize("texto, esperado", [
+    ("El reporte da cuenta de la existencia de 77 conflictos, de los cuales 32 se encuentran activos (42%), 45 en estado latente (58%)",
+     {"total": 77, "activos": 32, "latentes": 45}),
+    ("da cuenta de 75 conflictos, de los cuales siete permanecen activos (9%), 66 se encuentran en estado latente (88%)",
+     {"total": 75, "activos": 7, "latentes": 66}),
+    ("da cuenta de 61 conflictos: 32 permanecen activos (52%), mientras que 29 se encuentran en estado latente",
+     {"total": 61, "activos": 32, "latentes": 29}),
+])
+def test_totales_antiguos(texto, esperado):
+    assert totales(texto) == esperado
