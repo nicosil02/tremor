@@ -248,3 +248,38 @@ def test_casos_antiguos():
     cs = casos_antiguos([(1, texto)])
     assert [(c["estado"], c["departamento"]) for c in cs] == [("activo", "Puno"), ("activo", "Puno"), ("latente", "Cusco")]
     assert cs[0]["ubicacion"].startswith("Distrito de Ilave") and "Población" in cs[0]["actores_primarios"]
+
+
+def test_fichas_2009():
+    """2009: "Tipo." con punto, "Caso :" con espacio y reclasificados sin "Tipo:" (n.° 55, 69, 71)."""
+    from tremor.defensoria.extraer import fichas
+    texto = ("Lima\nTipo: Laboral.\nCaso : Trabajadores de la municipalidad reclaman pagos.\n"
+             "Tipo. Asuntos de gobierno local.\nCaso. Vecinos de Barranco se oponen a la obra.\n"
+             "Ubicación. Distrito de Barranco.\n"
+             "CASO RECLASIFICADO\nDe: Comunal.\nA: Demarcacion Territorial.\nCaso. Disputa por Pulpera Condes.\n")
+    fs = fichas(texto)
+    assert [f["tipo"] for f in fs] == ["Laboral", "Asuntos de gobierno local", "Demarcación territorial"]
+    assert fs[0]["descripcion"].startswith("Trabajadores") and all(f["departamento"] == "Lima" for f in fs)
+
+
+def test_resolver_bandas():
+    """La celda del departamento sin rótulo sigue a la anterior o toma el rótulo del inicio de la página siguiente."""
+    from tremor.defensoria.extraer import _resolver_bandas
+    pags = [[(60, None), (112, "Amazonas"), (427, "Ancash")], [(60, None)], [(60, None), (342, None)],
+            [(60, "Apurímac"), (300, "Arequipa")], None]
+    out = _resolver_bandas(pags)
+    assert [d for _, d in out[1]] == ["Ancash"] and [d for _, d in out[2]] == ["Ancash", "Apurímac"]
+    assert _resolver_bandas([[(60, None)], None]) == [None, None]
+
+
+def test_filas_tabla():
+    from tremor.defensoria.extraer import DERECHA, filas_tabla
+    texto = ("Nº\nLugares\nCaso\nMotivo\nDistrito de Lajas,\nProvincia de Chota.\nCAJAMARCA\n"
+             "Conflicto por asuntos de gobierno local\nRegidores denuncian irregularidades.\n"
+             f"{DERECHA}No se registra información.\nComunidad de Oyón.\nLIMA\nConflicto Socioambiental\n"
+             f"Incumplimiento de acuerdos.\n{DERECHA}Se reunieron.\n")
+    fs = filas_tabla(texto)
+    assert [(f["departamento"], f["ubicacion"], f["tipo"]) for f in fs] == [
+        ("Cajamarca", "Distrito de Lajas, Provincia de Chota", "Asuntos de gobierno local"),
+        ("Lima", "Comunidad de Oyón", "Socioambiental")]
+    assert fs[1]["hechos_mes"] == "Se reunieron."

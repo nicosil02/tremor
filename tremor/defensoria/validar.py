@@ -32,7 +32,7 @@ def procesar(doc) -> dict:
     sin = sum(x.contar_lista(s["texto"]) for s in secs if s["canonica"] == "activos_sin_hechos")
     lat = sum(x.contar_lista(s["texto"]) for s in secs if s["canonica"] == "latentes")
     lista = [dict(f, estado="latente" if s["canonica"] == "latentes" else "activo", pagina=s["pagina"])
-             for s in secs if s["canonica"] in ("activos_sin_hechos", "latentes") for f in x.filas_lista(s["texto"])]
+             for s in secs if s["canonica"] in ("activos_sin_hechos", "latentes") for f in x.filas_lista(s["texto"]) or x.filas_tabla(s["texto"])]
     # Acciones colectivas de protesta (Historia 5): solo en los PDF con la tabla de detalle.
     ks = [i for i, s in enumerate(secs) if s["canonica"] == "acciones_protesta"]
     pags_acc = sorted({p for k in ks for p in range(secs[k]["pagina"],
