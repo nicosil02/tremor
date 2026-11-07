@@ -53,3 +53,13 @@ def test_ubicar_texto_defensoria():
     assert ubicar_texto("Espinar, Cusco") == ("080801", "distrito")
     assert ubicar_texto("Lima Metropolitana") == ("1501", "provincia")
     assert ubicar_texto("Cusco") == ("08", "departamento")
+
+
+def test_medio_extranjero_y_departamento_copiado():
+    from tremor.prensa.codificar import ubicar
+    from tremor.prensa.recolectar import filtro
+    assert filtro("Paro nacional", "https://www.clarin.com.ar") == "medio_extranjero"
+    assert filtro("Paro nacional en Puno", "https://rpp.pe") is None
+    c = {"region": "Madre de Dios", "provincia": None, "distrito": None, "localidad": None}
+    assert ubicar(c, "Jerez convoca la manifestación de la huelga general", "Madre de Dios") == (None, None)
+    assert ubicar(c, "Paro en Madre de Dios", None)[1] == "departamento"

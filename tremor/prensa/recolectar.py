@@ -104,8 +104,13 @@ def id_nota(medio, titular):
     return hashlib.sha1(f"{norm(medio)}|{norm(titular)}".encode()).hexdigest()[:16]
 
 
-def filtro(texto: str) -> str | None:
+EXTRANJERO = re.compile(r"\.(ar|mx|uy|cl|co|ec|bo|ve|es|py|cr|gt|hn|sv|ni|pa|do|cu|pr|us)/?$", re.I)
+
+
+def filtro(texto: str, fuente_url: str = "") -> str | None:
     """None si pasa al LLM; si no, el motivo del descarte (FR-011)."""
+    if EXTRANJERO.search(fuente_url or ""):
+        return "medio_extranjero"
     if NO_ES.search(texto):
         return "no_es_protesta"
     if not ACCION.search(texto):
@@ -131,7 +136,9 @@ def parsear(xml: str, medio_fijo=None):
             pub = parsedate_to_datetime(g("pubDate")).astimezone(LIMA).isoformat(timespec="minutes")
         except (TypeError, ValueError):
             pub = None
-        yield {"medio": medio, "titular": titulo.strip(), "resumen": resumen[:600], "publicado": pub, "enlace": g("link")}
+        fuente = re.search(r'<source[^>]*url="([^"]+)"', item)
+        yield {"medio": medio, "titular": titulo.strip(), "resumen": resumen[:600], "publicado": pub, "enlace": g("link"),
+               "fuente_url": fuente[1] if fuente else ""}
 
 
 def _guardar(con, notas, consulta, dep):
@@ -141,7 +148,7 @@ def _guardar(con, notas, consulta, dep):
             continue
         cur = con.execute("INSERT OR IGNORE INTO nota VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                           (id_nota(n["medio"], n["titular"]), n["medio"], n["titular"], n["resumen"], n["publicado"],
-                           n["enlace"], consulta, dep, ahora(), filtro(n["titular"] + " " + n["resumen"])))
+                           n["enlace"], consulta, dep, ahora(), filtro(n["titular"] + " " + n["resumen"], n.get("fuente_url"))))
         nuevas += cur.rowcount
     con.commit()
     return nuevas

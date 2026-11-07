@@ -9,7 +9,7 @@ from pathlib import Path
 
 from tremor.egpp import tipo_conflicto
 from tremor.llm import RespuestaInvalida, SinCuota, chat_json
-from tremor.lugares import resolver
+from tremor.lugares import norm, resolver
 
 VERSION = "v2"
 LOTE = 15
@@ -82,6 +82,15 @@ COLUMNAS = ["es_protesta", "estado", "fecha_evento", "region", "provincia", "dis
             "heridos", "muertos", "detenidos", "tipo_conflicto"]
 
 
+def ubicar(c, texto, pista):
+    """ubigeo con lugares.resolver; si solo hay departamento y la nota no lo nombra, el LLM lo copió de la
+    búsqueda (o la protesta es de otro país): queda sin lugar."""
+    ubigeo, precision = resolver(c["region"], c["provincia"], c["distrito"], c["localidad"], pista=pista)
+    if precision == "departamento" and norm(c["region"] or "") not in norm(texto):
+        return None, None
+    return ubigeo, precision
+
+
 def _pedir(con, entrada) -> dict:
     """Un lote → {id: respuesta}. Si el modelo devuelve JSON inválido, parte el lote en dos (hasta una nota)."""
     try:
@@ -118,9 +127,8 @@ def codificar(con, max_solicitudes=200) -> tuple[int, int, bool]:
             if r[0] not in por_id:
                 continue  # el LLM la omitió: se reintenta en la próxima corrida
             c = limpiar(por_id[r[0]])
-            c["ubigeo"], c["precision"] = resolver(c["region"], c["provincia"], c["distrito"], c["localidad"], pista=r[4]) \
-                if c["es_protesta"] else (None, None)
             texto = " ".join(x for x in (r[1], r[2], c["empresa"], c["operacion"]) if x)
+            c["ubigeo"], c["precision"] = ubicar(c, texto, r[4]) if c["es_protesta"] else (None, None)
             c["tipo_conflicto"] = tipo_conflicto(c["actor"], c["reclamo"], c["sector"], c["adversario"], texto) \
                 if c["es_protesta"] else None
             con.execute(f"INSERT OR REPLACE INTO codificacion VALUES (?, ?, {','.join('?' * len(COLUMNAS))})",
