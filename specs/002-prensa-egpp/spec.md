@@ -165,9 +165,14 @@ las cifras tal como salen.
 
 - **FR-001**: El sistema DEBE cargar la base de protestas de la EGPP desde el archivo entregado por la EGPP, con todas sus variables, a la misma base de datos del proyecto.
 - **FR-002**: Cada evento de la EGPP DEBE quedar con su código de distrito oficial (ubigeo), de modo que se pueda cruzar con los casos de la Defensoría y con las operaciones.
+- **FR-002a**: Los códigos de distrito de la EGPP ya siguen el ubigeo del INEI 2023; el catálogo de 1 892 distritos que trae la propia EGPP es la tabla de lugares de todo el proyecto (también para la prensa y la Defensoría).
 - **FR-003**: La carga DEBE ser idempotente: cargar dos veces el mismo archivo no duplica eventos; cargar una versión más nueva agrega solo lo nuevo.
 - **FR-004**: El sistema DEBE construir para cada distrito un perfil de conflictividad con las particularidades de la EGPP: número de protestas por año, reclamos y sub-reclamos (vulnerabilidades), sectores y tipos de actor (capacidad de acción colectiva), acciones, adversarios (incluidas empresas privadas y estatales), heridos, muertos, detenidos e intervención de la fuerza estatal.
 - **FR-004a**: Los distritos DEBEN poder ordenarse por conflictividad, en total y por tipo de reclamo, para identificar los lugares más conflictivos alrededor de actividades extractivas.
+- **FR-004c**: El perfil DEBE separar el conflicto laboral minero (huelgas de trabajadores mineros, 74% laborales) del conflicto comunitario y socioambiental (comunidades, rondas, frentes de defensa, reclamos ambientales y territoriales), porque anticipan riesgos distintos.
+- **FR-004d**: Cuando el reclamo, el comentario o la institución adversaria nombran una operación o empresa (Tía María, Conga, Las Bambas, Lote 192…), el evento DEBE quedar enlazado a esa operación; es el puente con el mapa de operaciones del módulo 004.
+- **FR-004e**: Los eventos repetidos (misma fecha, distrito, actor, acción y reclamo, unos 220 pares) DEBEN consolidarse en uno.
+- **FR-004f**: Los textos libres de la EGPP (comentarios y nombres de actores) NO DEBEN publicarse, porque pueden contener nombres de dirigentes; se usan solo para clasificar y enlazar.
 - **FR-004b**: Los eventos individuales de la EGPP NO DEBEN publicarse ni subirse al repositorio; lo publicado son los perfiles agregados por distrito (y distrito y año).
 
 **Recolección de prensa**
@@ -180,6 +185,7 @@ las cifras tal como salen.
 **Codificación**
 
 - **FR-009**: Cada nota DEBE codificarse con las variables del manual de la EGPP: es protesta o no, estado (anunciada, ocurrida, suspendida), fecha del evento, región, provincia, distrito, localidad, actor, acción, adversario, empresa nombrada, reclamo, heridos, muertos y detenidos.
+- **FR-009a**: La codificación de prensa DEBE usar las mismas categorías y códigos del libro de códigos de la EGPP (sectores, actores, acciones, adversarios, reclamos y sub-reclamos), para que el histórico y la señal en vivo sean comparables. La EGPP no registra protestas anunciadas (solo ocurridas): el estado "anunciada" es aporte propio.
 - **FR-010**: El lugar DEBE llevarse a código de distrito cuando la nota lo permita, y registrar la precisión alcanzada (departamento, provincia, distrito, localidad).
 - **FR-011**: Primero reglas y después el servicio de lenguaje: un filtro por palabras descarta lo que claramente no es protesta antes de gastar cuota, y varias notas viajan en una misma solicitud.
 - **FR-012**: Cada codificación DEBE guardarse junto al texto que la produjo, de modo que volver a correr no gaste cuota.
@@ -218,6 +224,12 @@ las cifras tal como salen.
 - **SC-006**: Volver a correr la recolección y la codificación de un día ya procesado no agrega registros ni consume cuota.
 
 ## Assumptions
+
+- Hallazgos de la revisión completa de la EGPP (7 nov 2026) que condicionan el diseño:
+  - Cuando la nota no dice el distrito, la EGPP codifica la capital de la provincia (y la de la región si tampoco hay provincia): el 64% de los eventos está en un distrito capital. El conteo por distrito capital se lee con cautela y el lugar real del conflicto se busca en el texto del reclamo.
+  - La EGPP lee solo tres diarios de Lima: entre 2022 y 2025 registra unos 2 900 eventos frente a unas 14 300 acciones de protesta de la Defensoría, y la Región Lima concentra entre 38% y 65% de los eventos según la década. Sirve para el perfil (por qué, quién, cómo, contra quién) y las proporciones, no para los conteos absolutos ni las tendencias; los conteos vienen de la Defensoría y de la prensa amplia.
+  - Los conflictos territoriales y ambientales son los más violentos (4,4% y 2,1% con muertos, frente a 0,4% en los laborales) y los ambientales usan más el bloqueo de vías (35%).
+  - El 36% de los distritos con protesta socioambiental en 2015–2019 vuelve a tenerla en 2021–2025: el historial del lugar sí informa el riesgo.
 
 - La base de la EGPP (`protestas_1980-2025.xlsx`, versión de diciembre de 2025) la entrega el autor, que colabora con la EGPP; se usa solo con fines académicos y vive solo en la máquina del autor y en la base local, no en el repositorio.
 - La fuente de prensa principal es un agregador público de noticias (Google News en su versión RSS), que cubre medios nacionales y regionales y permite buscar por departamento; solo cubre semanas recientes, así que el histórico largo viene de la EGPP y de la Defensoría.
