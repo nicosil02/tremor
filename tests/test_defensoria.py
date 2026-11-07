@@ -154,3 +154,27 @@ def test_fecha_de_protesta():
     assert _FECHA.match("01/06/2017").group(1) == "01/06/2017"
     assert _FECHA.match("5 de octubre").group(1) == "5 de octubre"
     assert _FECHA.match("Plantón") is None
+
+
+@pytest.mark.parametrize("texto, esperado", [
+    ("Asunto de Gobierno nacional", "Asuntos de gobierno nacional"),
+    ("Socioambiental. HAY DIÁLOGO", "Socioambiental"),
+    ("Por asuntos de gobierno local", "Asuntos de gobierno local"),
+    ("Demarcación Territorial", "Demarcación territorial"),
+    ("Conflictos en Universidades", "Conflictos en universidades"),
+])
+def test_tipo_canonico(texto, esperado):
+    from tremor.defensoria.extraer import tipo_canonico
+    assert tipo_canonico(texto) == esperado
+
+
+def test_ficha_a_dos_columnas():
+    # PDF 2012-2024: la columna derecha (marcada) trae el diálogo y los hechos, aunque quede antes de los actores.
+    from tremor.defensoria.extraer import DERECHA
+    texto = ("Tipo: Socioambiental.\nCaso: Comunidades Wampis exigen el retiro de mineros ilegales.\n"
+             + DERECHA + "HAY DIÁLOGO\n" + DERECHA + "No se registraron nuevos hechos durante el mes.\n"
+             "Ubicación: Distrito de Río Santiago.\nActores primarios: Comunidades Wampis.\n"
+             "Actores terciarios: Defensoría del Pueblo.\n")
+    [f] = fichas(texto)
+    assert f["dialogo"] == "HAY DIÁLOGO" and f["hechos_mes"].startswith("No se registraron")
+    assert f["actores_terciarios"] == "Defensoría del Pueblo"

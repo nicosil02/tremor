@@ -71,7 +71,25 @@ def paginas(doc) -> list[tuple[int, str]]:
     import pymupdf
     pymupdf.TOOLS.mupdf_display_errors(False)
     with pymupdf.open(ruta) as d:
-        return [(i + 1, p.get_text()) for i, p in enumerate(d)]
+        return [(i + 1, _texto_con_columnas(p)) for i, p in enumerate(d)]
+
+
+DERECHA = "  "  # prefijo de las líneas de la columna derecha (espacio: \s lo absorbe en las demás reglas)
+
+
+def _texto_con_columnas(pagina) -> str:
+    """Texto de la página en el orden de PyMuPDF, marcando las líneas de la columna derecha.
+
+    En las fichas la columna derecha trae el diálogo y los hechos del mes; cuando una ficha cruza de página,
+    ese texto queda antes de los actores y sin la marca se pierde."""
+    mitad = pagina.rect.width * 0.5
+    lineas = []
+    for b in pagina.get_text("blocks"):
+        if b[6] != 0:
+            continue
+        pref = DERECHA if b[0] > mitad else ""
+        lineas += [pref + l for l in b[4].splitlines()]
+    return "\n".join(lineas)
 
 
 def _texto_html(ruta) -> str:
@@ -171,10 +189,11 @@ def fichas(texto: str) -> list[dict]:
             depto = m.group(1)
         if re.match(r"\s*(C[oó]digo:|Tipo:)", l):
             # 'Tipo:' y 'Código:' seguidos, en cualquier orden, son la misma ficha.
-            if inicios and i - inicios[-1][0] <= 3 and lineas[inicios[-1][0]].strip()[:4] != l.strip()[:4]:
+            entre = [z for z in lineas[inicios[-1][0] + 1:i] if z.strip()] if inicios else []
+            if inicios and len(entre) <= 2 and lineas[inicios[-1][0]].strip()[:4] != l.strip()[:4]:
                 continue
             nombre = None
-            for j in range(i - 1, max(i - 4, -1), -1):  # en el HTML el nombre va encima: "Wampis - X (Amazonas)"
+            for j in range(i - 1, max(i - 8, -1), -1):  # en el HTML el nombre va encima: "Wampis - X (Amazonas)"
                 if re.search(r"\(([^)]+)\)\s*$", lineas[j]) and len(lineas[j]) < 160:
                     nombre = re.sub(r"\s*\([^)]+\)\s*$", "", lineas[j]).strip()
                     break
@@ -191,7 +210,24 @@ def fichas(texto: str) -> list[dict]:
     return out
 
 
+# Tipología de la Defensoría. El texto viene escrito de ~95 formas ("Asunto de Gobierno nacional",
+# "Socioambiental. HAY DIÁLOGO"...); se lleva a la categoría por palabras clave.
+TIPOS = [("socioambiental", "Socioambiental"), ("comunal", "Comunal"), ("nacional", "Asuntos de gobierno nacional"),
+         ("regional", "Asuntos de gobierno regional"), ("local", "Asuntos de gobierno local"), ("laboral", "Laboral"),
+         ("demarcaci", "Demarcación territorial"), ("electoral", "Electoral"), ("coca", "Cultivo ilegal de hoja de coca"),
+         ("justicia", "Asuntos de administración de justicia"), ("universidad", "Conflictos en universidades"),
+         ("otro", "Otros asuntos")]
+
+
+def tipo_canonico(t: str) -> str | None:
+    t = _sin_tildes((t or "").lower())
+    return next((canon for clave, canon in TIPOS if clave in t), None)
+
+
 def _campos(bloque: str) -> dict:
+    derecha = "\n".join(l.strip() for l in bloque.splitlines() if l.startswith(DERECHA))
+    if derecha:  # PDF a dos columnas: diálogo y hechos salen de la columna derecha
+        bloque = "\n".join(l for l in bloque.splitlines() if not l.startswith(DERECHA))
     marcas = [(m.start(), m.end(), m.lastgroup) for m in _ETIQ.finditer(bloque)]
     f = {}
     for k, (ini, fin, clave) in enumerate(marcas):
@@ -200,14 +236,21 @@ def _campos(bloque: str) -> dict:
             f[clave] = bloque[fin:hasta]
     resto = f.pop("actores_terciarios", "")
     m = _DIALOGO.search(resto)
-    if m:
+    if derecha:
+        f["actores_terciarios"] = resto[:m.start()] if m else resto
+        md = _DIALOGO.search(derecha)
+        f["dialogo"] = md.group(1).upper() if md else None
+        f["hechos_mes"] = (derecha[:md.start()] + derecha[md.end():]) if md else derecha
+        f["hechos_mes"] = re.sub(r"^\s*(Hechos del mes|Estado actual|NUEVO)\s*$", "", f["hechos_mes"], flags=re.M | re.I)
+    elif m:
         f["actores_terciarios"], f["hechos_mes"] = resto[:m.start()], resto[m.end():]
         f["dialogo"] = m.group(1).upper()
     else:
         partes = re.split(r"\n\s*(?=(?:El|La|Los|Las|Del|Desde|Entre|Durante|En)\s[^\n]*\d)", resto, maxsplit=1)
         f["actores_terciarios"] = partes[0]
         f["hechos_mes"] = partes[1] if len(partes) > 1 else ""
-    f = {k: re.sub(r"\s+", " ", v).strip(" .") for k, v in f.items()}
+    f = {k: re.sub(r"\s+", " ", v or "").strip(" .") for k, v in f.items()}
+    f["tipo"] = tipo_canonico(f.get("tipo", ""))
     fd = f.pop("fase_dialogo", "")
     if fd:
         fase, _, dia = fd.partition("·")
