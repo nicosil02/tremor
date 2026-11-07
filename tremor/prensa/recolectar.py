@@ -38,6 +38,34 @@ FEEDS = {
     "Diario Ahora": ("https://www.diarioahora.pe/feed/", "Huánuco"),
     "Radio Marañón": ("https://www.radiomaranon.org.pe/feed/", "Cajamarca"),
     "Observatorio de Conflictos Mineros": ("https://conflictosmineros.org.pe/feed/", None),
+    # Radios locales (directorio radio-browser, feeds probados el 7 nov 2026)
+    "Exitosa": ("https://www.exitosanoticias.pe/feed/", None),
+    "Radio Panamericana": ("https://www.radiopanamericana.com/feed/", None),
+    "Radio Sin Patrones": ("https://radiosinpatrones.com/feed/", "Arequipa"),        # Valle de Tambo
+    "Radio Yaraví": ("https://www.radioyaravi.org.pe/feed/", "Arequipa"),
+    "Radio JR": ("http://www.radiojrfm.com/feed/", "Arequipa"),
+    "Radio Onda Popular Cajamarca": ("https://radioondapopular.com/feed/", "Cajamarca"),
+    "Radio Onda Popular Puno": ("https://radioondapopular.pe/feed/", "Puno"),
+    "Radio Sol de los Andes": ("https://www.radiosoldelosandes.com.pe/feed/", "Puno"),  # Juliaca
+    "Radio Andina Tarata": ("http://www.radioandinatarata.pe/rss.xml", "Tacna"),
+    "RPT Radio": ("http://rptradio.com/feed/", "Moquegua"),
+    "Radio Antena Sur": ("https://www.radioantenasur.com/feed/", None),
+    "Radio Nova": ("https://radionova.pe/feed/", "Áncash"),                          # Chimbote
+    "Radio Urbana": ("https://radiourbana.com.pe/feed/", "Áncash"),                   # Caraz
+    "Radio La Chevérisima": ("http://www.radiolacheverisima.com/feed/", "Amazonas"),
+    "Radio Bendición Divina": ("https://radiotvbendiciondivina.com/feed/", "Ayacucho"),  # Huanta
+    "Carolina FM": ("https://carolinafm.pe/feed/", "Ica"),
+    "Radio 1550": ("https://radio1550.com/feed/", "Junín"),
+    "Radio Comas": ("https://radiocomas.com.pe/feed/", "Lima"),
+    # Organizaciones y observatorios (sus comunicados anuncian paros y movilizaciones)
+    "CGTP": ("https://www.cgtp.org.pe/feed/", None),
+    "FENAMAD": ("https://fenamad.com.pe/feed/", "Madre de Dios"),
+    "ORPIO": ("https://www.orpio.org.pe/feed/", "Loreto"),
+    "CooperAcción": ("https://www.cooperaccion.org.pe/feed/", None),
+    "CNDDHH": ("https://derechoshumanos.pe/feed/", None),
+    "Grufides": ("https://www.grufides.org/feed/", "Cajamarca"),
+    "Red Muqui": ("https://muqui.org/feed/", None),
+    "DAR": ("https://www.dar.org.pe/feed/", None),
 }
 DEPARTAMENTOS = ["Amazonas", "Áncash", "Apurímac", "Arequipa", "Ayacucho", "Cajamarca", "Callao", "Cusco",
                  "Huancavelica", "Huánuco", "Ica", "Junín", "La Libertad", "Lambayeque", "Lima", "Loreto",
@@ -119,7 +147,8 @@ def recolectar(con, desde: date | None = None, hasta: date | None = None, pausa=
             except requests.RequestException as e:
                 print(f"  {medio}: {e.__class__.__name__}")
                 continue
-            notas = list(parsear(r.text, medio)); vistas += len(notas)
+            limite = (date.today() - timedelta(30)).isoformat()  # feeds abandonados o con años de archivo
+            notas = [n for n in parsear(r.text, medio) if (n["publicado"] or "") >= limite]; vistas += len(notas)
             nuevas += _guardar(con, notas, f"feed:{medio}", dep)
     dias = [(None, None)] if not desde else [(desde + timedelta(d), desde + timedelta(d + 1))
                                              for d in range(((hasta or desde) - desde).days + 1)]
