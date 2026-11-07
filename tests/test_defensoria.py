@@ -303,3 +303,18 @@ def test_lista_sin_numero():
     fs = filas_lista(texto)
     assert [(f["departamento"], f["tipo"]) for f in fs] == [("La Libertad", "Socioambiental"),
                                                           ("La Libertad", "Otros asuntos")]
+
+
+def test_enlace_reactivado_y_otro_departamento():
+    """La fecha de reactivación no separa casos, y un departamento mal leído ('Nacional') no impide el enlace."""
+    from tremor.defensoria.extraer import _campos
+    from tremor.defensoria.validar import _con_tokens, enlazar_reporte
+    assert _campos("Ingresó como caso reactivado: Enero de 2024\nCaso: Gremios de Machupicchu.")["reactivado"]
+    previo = {"descripcion": "Gremios, autoridades y sociedad civil del distrito de Machupicchu rechazan tarifas del tren",
+              "ubicacion": "Distrito de Machupicchu, provincia de Urubamba", "departamento": "Cusco",
+              "ingreso": "Noviembre de 2020"}
+    coar = {"descripcion": "Ciudadanos reclaman contra la paralización de la ejecución del Colegio de Alto Rendimiento",
+            "ubicacion": "Distrito de Cátac, provincia de Recuay", "departamento": "Áncash"}
+    casos = {1: _con_tokens(previo), 2: _con_tokens(coar)}
+    fichas = [dict(previo, ingreso=None, reactivado="Enero de 2024"), dict(coar, departamento="Nacional")]
+    assert [cid for cid, _ in enlazar_reporte(fichas, casos, {})] == [1, 2]

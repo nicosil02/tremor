@@ -239,7 +239,9 @@ def totales(texto: str) -> dict:
 # Etiquetas de la ficha de un caso, en el orden en que suelen aparecer.
 ETIQUETAS = [
     ("codigo", r"C[oó]digo:"), ("tipo", r"Tipo:"),
-    ("ingreso", r"Ingres[oó] (?:como (?:caso )?(?:nuevo|reactivado)|al registro):"), ("competencia", r"Competencia:"),
+    # La fecha de reactivación no identifica al caso (Machupicchu: nuevo en nov. 2020, reactivado en ene. 2024).
+    ("ingreso", r"Ingres[oó] (?:como (?:caso )?nuevo|al registro):"), ("reactivado", r"Ingres[oó] como (?:caso )?reactivado:"),
+    ("competencia", r"Competencia:"),
     ("fase_dialogo", r"Fase\s*/\s*Di[aá]logo:"), ("actuaciones", r"Actuaciones DP:"),
     ("descripcion", r"Caso:"), ("ubicacion", r"Ubicaci[oó]n:"),
     ("actores_primarios", r"Actores(?:\s+[Pp]rimarios)?:"), ("actores_secundarios", r"Actores\s+[Ss]ecundarios:"),

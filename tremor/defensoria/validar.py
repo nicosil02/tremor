@@ -154,6 +154,8 @@ def puntaje(f, c, idf):
 
 
 BONO_INGRESO = 0.3
+UMBRAL_OTRO_DEP = 0.6
+COMODIN = {"nacional", "multirregional"}
 
 
 def _con_tokens(f):
@@ -185,15 +187,33 @@ def enlazar_reporte(fichas, casos, idf):
         if cid is not None and cid not in usados:
             asignado[i] = (cid, 1.0)
             usados.add(cid)
+    por_dep, por_palabra = {}, {}
+    for cid, c in casos.items():
+        por_dep.setdefault(c["_dep"], []).append(cid)
+        for t in c["_d"]:
+            por_palabra.setdefault(t, set()).add(cid)
     pares = []
     for i, f in enumerate(fs):
         if i in asignado:
             continue
-        for cid, c in casos.items():
-            if c["_dep"] == f["_dep"] and cid not in usados:
-                p = puntaje(f, c, idf)
-                if p >= UMBRAL:
-                    pares.append((p, i, cid))
+        # Candidatos: los del mismo departamento (o sin él / nacional) y, de otros, los que comparten palabras
+        # raras de la descripción (para llegar a 0.6 hace falta casi el mismo texto).
+        cand = set(por_dep.get(f["_dep"], [])) | {cid for d in COMODIN | {""} for cid in por_dep.get(d, [])}
+        if not f["_dep"] or f["_dep"] in COMODIN:
+            cand = set(casos)
+        else:
+            raras = sorted(f["_d"], key=lambda t: -idf.get(t, 8.0))[:5]
+            cand |= {cid for t in raras for cid in por_palabra.get(t, ())}
+        for cid in cand:
+            c = casos[cid]
+            if cid in usados:
+                continue
+            p = puntaje(f, c, idf)
+            # El departamento de la ficha a veces sale mal ("Nacional" para un caso de Áncash): fuera del mismo
+            # departamento se enlaza solo con texto casi igual.
+            mismo = c["_dep"] == f["_dep"] or not (c["_dep"] and f["_dep"]) or {c["_dep"], f["_dep"]} & COMODIN
+            if p >= (UMBRAL if mismo else UMBRAL_OTRO_DEP):
+                pares.append((p, i, cid))
     for p, i, cid in sorted(pares, reverse=True):
         if i not in asignado and cid not in usados:
             asignado[i] = (cid, round(p, 3))
