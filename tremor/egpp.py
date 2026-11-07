@@ -96,6 +96,8 @@ def _top(s, n=3):
 
 def perfil(con) -> pd.DataFrame:
     e = pd.read_sql("SELECT * FROM egpp_evento WHERE duplicado_de IS NULL", con)
+    if e.empty:
+        raise SystemExit("La base no tiene eventos de la EGPP: corre primero `python -m tremor.egpp cargar`.")
     e["anio"] = e.fecha.str[:4].astype(int)
     e["bloqueo"] = e[["accion_1", "accion_2", "accion_3", "accion_4"]].fillna("").agg(" ".join, axis=1).str.contains("Bloqueo")
     e["con_violencia"] = (e.heridos.fillna(0) > 0) | (e.muertos.fillna(0) > 0) | (e.fuerza_estatal == 1)

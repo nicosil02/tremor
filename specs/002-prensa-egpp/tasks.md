@@ -58,7 +58,7 @@ Requiere `.env` con `LLM_API_KEY`.
 
 ## Phase 8: Polish
 
-- [ ] T026 Workflow `.github/workflows/defensoria.yml`: `python -m tremor.prensa todo` después de la Defensoría con `LLM_API_KEY` desde secretos; publicar siempre que cambien los CSV
+- [x] T026 Workflow `.github/workflows/defensoria.yml`: `python -m tremor.prensa todo` después de la Defensoría con `LLM_API_KEY` desde secretos; publicar siempre que cambien los CSV (cada 4 h, `concurrency: datos`, perfil EGPP al final)
 - [ ] T027 [P] README: módulo 002 con cifras reales de validación y cita de la EGPP (Arce 2024; EGPP PUCP 2025)
 - [ ] T028 Revisión de secretos (`git log -p` sin `api_key`/`token`) y PR que cierra #46
 
