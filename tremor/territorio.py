@@ -28,34 +28,54 @@ def _texto(celda):
     return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", "", celda))).strip()
 
 
-def parsear_mef(pagina: str) -> dict:
-    """Tabla por municipalidad → {ubigeo: (nombre, pim, devengado)}. La fila dice '010101-300001: MUNICIPALIDAD…'."""
-    salida = {}
+# Dimensiones de la Consulta Amigable: número que va en la URL (tomado del MCP de Noelia León).
+DIMENSIONES = {"nivel": "1", "sector": "2", "pliego": "3", "ejecutora": "4", "municipalidad": "7", "funcion": "8",
+               "fuente": "14", "rubro": "15", "departamento": "21", "mes": "23", "generica": "24",
+               "categoria_presupuestal": "30", "producto_proyecto": "31", "division_funcional": "33"}
+
+
+def filas_mef(pagina: str) -> list[dict]:
+    """Cualquier tabla de la Consulta Amigable → filas con código (para filtrar), nombre, PIA, PIM, devengado y avance %."""
+    n = lambda x: int(x.replace(",", "")) if x else 0
+    filas = []
     for tr in re.findall(r'<tr[^>]*id="tr\d+".*?</tr>', pagina, re.S):
         c = [_texto(td) for td in re.findall(r"<td[^>]*>(.*?)</td>", tr, re.S)]
-        m = re.match(r"(\d{6})-\d+: (.*)", c[1])
-        if m:
-            n = lambda x: int(x.replace(",", "")) if x else 0
-            salida[m[1]] = (m[2], n(c[3]), n(c[7]))  # columnas: PIA, PIM, certificación, compromiso, atención, devengado
+        if len(c) > 7:  # columnas: -, nombre, PIA, PIM, certificación, compromiso, atención, devengado, girado, avance
+            codigo = re.search(r'name="grp1" value="([^"/]*)', tr)
+            filas.append({"codigo": codigo[1].strip() if codigo else None, "nombre": c[1], "pia": n(c[2]), "pim": n(c[3]), "devengado": n(c[7]),
+                          "avance_pct": float(c[9]) if len(c) > 9 and c[9] else None})
+    return filas
+
+
+def por_municipalidad(filas: list[dict]) -> dict:
+    """Filas por municipalidad → {ubigeo: (nombre, pim, devengado)}. La fila dice '010101-300001: MUNICIPALIDAD…'."""
+    salida = {}
+    for f in filas:
+        if m := re.match(r"(\d{6})-\d+: (.*)", f["nombre"]):
+            salida[m[1]] = (m[2], f["pim"], f["devengado"])
     return salida
 
 
-def _mef(ruta, anio):
+def consulta(desglose: str, filtros: dict | None, anio: int) -> tuple[str, list[dict]]:
+    """Consulta Amigable libre: desglose y filtros por nombre de dimensión. Devuelve (url, filas)."""
+    ruta = "".join(f"{DIMENSIONES[k]}={v}&" for k, v in (filtros or {}).items()) + f"{DIMENSIONES[desglose]}="
+    url = f"{MEF}?_uhc=yes&0=&{ruta}&y={anio}&ap=ActProy"
     for espera in (0, 5, 20):
         time.sleep(espera)
         try:
-            p = requests.get(f"{MEF}?_uhc=yes&0=&{ruta}&y={anio}&ap=ActProy&cpage=1&psize=5000", headers=UA, timeout=180).text
+            p = requests.get(url + "&cpage=1&psize=5000", headers=UA, timeout=180).text
         except requests.RequestException:
             continue
         if f'selected="selected" value="{anio}"' in p:
-            return parsear_mef(p)
-    raise RuntimeError(f"Consulta Amigable sin respuesta para {anio}")
+            return url, filas_mef(p)
+    raise RuntimeError(f"Consulta Amigable sin respuesta: {url}")
 
 
 def mef(con, desde=2012):
     con.execute(ESQUEMA)
     for anio in range(desde, date.today().year + 1):
-        total, canon = _mef("1=M&7=", anio), _mef("1=M&15=18&7=", anio)
+        total = por_municipalidad(consulta("municipalidad", {"nivel": "M"}, anio)[1])
+        canon = por_municipalidad(consulta("municipalidad", {"nivel": "M", "rubro": "18"}, anio)[1])
         con.executemany("INSERT OR REPLACE INTO mef_municipal VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                         [(u, anio, nom, pim, dev, *canon.get(u, ("", 0, 0))[1:], ahora()) for u, (nom, pim, dev) in total.items()])
         con.commit()

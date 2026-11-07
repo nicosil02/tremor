@@ -73,7 +73,12 @@ def test_sutran_fila():
 
 
 def test_parsear_mef():
-    from tremor.territorio import parsear_mef
+    from tremor.territorio import filas_mef, por_municipalidad
     fila = ('<tr id="tr1"><td><input name="grp1" value="010101"></td><td>010101-300001: MUNICIPALIDAD PROVINCIAL DE '
             'CHACHAPOYAS</td><td>1,000</td><td>4,242,072</td><td></td><td></td><td></td><td>2,110,431</td></tr>')
-    assert parsear_mef(fila) == {"010101": ("MUNICIPALIDAD PROVINCIAL DE CHACHAPOYAS", 4242072, 2110431)}
+    assert por_municipalidad(filas_mef(fila)) == {"010101": ("MUNICIPALIDAD PROVINCIAL DE CHACHAPOYAS", 4242072, 2110431)}
+
+
+def test_mcp_buscar_lugar():
+    from tremor.mcp_server import buscar_lugar
+    assert buscar_lugar("challhuahuacho")[0]["ubigeo"] == "030506"

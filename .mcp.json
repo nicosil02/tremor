@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "tremor": {
+      "command": "python",
+      "args": ["-m", "tremor.mcp_server"]
+    }
+  }
+}
