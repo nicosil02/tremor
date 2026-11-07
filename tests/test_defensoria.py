@@ -202,3 +202,12 @@ def test_filas_lista():
     f = filas_lista(t2019)
     assert len(f) == 2 and f[0]["departamento"] == "Áncash" and f[0]["tipo"] == "Socioambiental"
     assert f[0]["descripcion"].startswith("Pobladores") and "Yuracmarca" in f[0]["ubicacion"]
+
+
+def test_caso_de_victima():
+    from tremor.defensoria.validar import _con_tokens, caso_de_victima
+    del_mes = [(7, _con_tokens({"departamento": "Áncash", "descripcion": "Comuneros de Huaripampa reclaman a Nyrstar."})),
+               (8, _con_tokens({"departamento": "Puno", "descripcion": "Comuneros de Huaripampa en Puno."}))]
+    assert caso_de_victima("ÁNCASH – Caso Huaripampa - Nyrstar", del_mes, {}) == 7
+    assert caso_de_victima("LORETO – Requena – ERM 2018", del_mes, {}) is None
+    assert caso_de_victima("Caso: Huaripampa – Nyrstar (ÁNCASH).", del_mes, {}) == 7
