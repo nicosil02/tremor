@@ -387,3 +387,50 @@ def periodo(s: str | None) -> tuple[int, int] | None:
     if m and m.group(1) in _MESES_CORTOS:
         return 2000 + int(m.group(2)), _MESES_CORTOS[m.group(1)]
     return None
+
+
+_INICIO = re.compile(r"^(?:\d{2}/\d{4}|[A-Z][a-z]{2}-\d{2})$")
+_NUM = re.compile(r"^\d{1,3}\.$")
+_SIN_NOVEDAD = re.compile(r"^(?:No se registran|nuevos|acontecimientos\.?)$", re.I)
+
+
+def filas_lista(texto: str) -> list[dict]:
+    """Casos de una lista (activos sin hechos o latentes), con lo que la lista trae de cada uno.
+
+    2025-2026: "Inicio, Departamento, Denominación, Tipología" (la fila empieza en la fecha de inicio).
+    2012-2024: filas numeradas "N." con departamento, ubicación, tipo y descripción."""
+    ls = [l.strip() for l in texto.splitlines() if l.strip()]
+    inicios = [i for i, l in enumerate(ls) if _INICIO.match(l)]
+    filas = []
+    if inicios:
+        for a, b in zip(inicios, inicios[1:] + [len(ls)]):
+            seg = [l for l in ls[a + 1:b] if not _NUM.match(l)]
+            k = next((j for j in range(2, len(seg)) if tipo_canonico(seg[j])), None)
+            if len(seg) < 2:
+                continue
+            nombre = " ".join(seg[1:k] if k else seg[1:2])
+            filas.append({"ingreso": ls[a], "departamento": seg[0], "nombre": nombre, "descripcion": nombre,
+                          "tipo": tipo_canonico(seg[k]) if k else None})
+        return filas
+    nums = []  # solo la primera numeración corrida: lo que viene tras un reinicio en "1." es otra lista
+    for i, l in enumerate(ls):
+        if _NUM.match(l):
+            if nums and int(l[:-1]) <= int(ls[nums[-1]][:-1]):
+                break
+            nums.append(i)
+    for a, b in zip(nums, nums[1:] + [len(ls)]):
+        seg = ls[a + 1:b]
+        if not seg:
+            continue
+        k = next((j for j, l in enumerate(seg) if re.match(r"(Tipo|Conflicto)\b", l)), None)
+        tipo = tipo_canonico(" ".join(seg[k:k + 2])) if k is not None else None
+        if k is not None and k <= 6:  # 2015-2024: ubicación hasta "Tipo x", luego la descripción
+            ubic, desc = seg[1:k], seg[k + 1:]
+        else:  # 2012-2014: "(Distrito ..., provincia ...)" tras el departamento; el tipo va en otra columna
+            fin = next((j for j, l in enumerate(seg) if ")" in l), 0) if seg[1:2] and seg[1].startswith("(") else 0
+            ubic = seg[1:fin + 1]
+            desc = [l for j, l in enumerate(seg[fin + 1:], fin + 1)
+                    if not (k is not None and j in (k, k + 1)) and not _SIN_NOVEDAD.match(l)]
+        filas.append({"departamento": seg[0].title(), "ubicacion": " ".join(ubic).strip("() "),
+                      "descripcion": re.sub(r"\s+", " ", " ".join(desc)).strip(), "tipo": tipo})
+    return filas

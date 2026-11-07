@@ -189,3 +189,16 @@ def test_enlace_por_ingreso():
     idf = calcular_idf([base["descripcion"]] * 3)
     reescrito = dict(base, descripcion="Pobladores exigen cumplimiento de compromisos.", ingreso="Jun-19")
     assert enlazar_reporte([reescrito], casos, idf)[0][0] == 2
+
+
+def test_filas_lista():
+    from tremor.defensoria.extraer import filas_lista
+    t2026 = "N.°\nInicio\nDepartamento\n1.\n12/2025\nAmazonas\nCarretera Achamaqui\nGob. Nacional\n2.\n10/2021\nÁncash\nComunidad de Aquia - Antamina\nSocioambiental\n"
+    a, b = filas_lista(t2026)
+    assert (b["ingreso"], b["departamento"], b["nombre"], b["tipo"]) == ("10/2021", "Áncash", "Comunidad de Aquia - Antamina", "Socioambiental")
+    assert a["tipo"] == "Asuntos de gobierno nacional"
+    t2019 = ("1.\nÁNCASH\nDistrito de Yuracmarca,\nprovincia de Huaylas.\nTipo socioambiental\nPobladores de Kiman Ayllu reclaman un canal.\n"
+             "2.\nPUNO\nDistrito de Ocuviri.\nTipo comunal\nComuneros en disputa por linderos.\n1.\nNota al pie\n")
+    f = filas_lista(t2019)
+    assert len(f) == 2 and f[0]["departamento"] == "Áncash" and f[0]["tipo"] == "Socioambiental"
+    assert f[0]["descripcion"].startswith("Pobladores") and "Yuracmarca" in f[0]["ubicacion"]
