@@ -63,3 +63,10 @@ def test_medio_extranjero_y_departamento_copiado():
     c = {"region": "Madre de Dios", "provincia": None, "distrito": None, "localidad": None}
     assert ubicar(c, "Jerez convoca la manifestación de la huelga general", "Madre de Dios") == (None, None)
     assert ubicar(c, "Paro en Madre de Dios", None)[1] == "departamento"
+
+
+def test_sutran_fila():
+    from tremor.sutran import fila
+    f = fila({"region": "Huanuco", "provincia": "Huanuco", "distrito": "Pillco Marca", "fechaEvento": "04/11/2026",
+              "estadoVia": "interrumpido", "motivo": "humano", "submotivo": "humano.protestas"})
+    assert f["fecha_evento"] == "2026-11-04" and f["precision"] == "distrito" and f["ubigeo"].startswith("1001")

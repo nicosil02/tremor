@@ -108,6 +108,12 @@ CREATE TABLE IF NOT EXISTS evento_prensa (
     n_notas INTEGER, n_medios INTEGER
 );
 CREATE TABLE IF NOT EXISTS evento_nota (evento_id INTEGER NOT NULL, nota_id TEXT NOT NULL, PRIMARY KEY (evento_id, nota_id));
+CREATE TABLE IF NOT EXISTS sutran_alerta (     -- alertas viales de la SUTRAN; la API solo da las vigentes: se acumulan
+    id TEXT PRIMARY KEY, codigo TEXT, motivo TEXT, submotivo TEXT, estado_via TEXT, titulo TEXT, descripcion TEXT,
+    situacion TEXT, lat REAL, lng REAL, region TEXT, provincia TEXT, distrito TEXT, ubigeo TEXT, precision TEXT,
+    via TEXT, km TEXT, fecha_evento TEXT, vigente_desde TEXT, vigente_hasta TEXT, fuente TEXT,
+    visto_primero TEXT NOT NULL, visto_ultimo TEXT NOT NULL, interrumpido_alguna_vez INTEGER NOT NULL DEFAULT 0
+);
 CREATE TABLE IF NOT EXISTS llm_cache (clave TEXT PRIMARY KEY, respuesta TEXT NOT NULL, modelo TEXT, creado TEXT);
 CREATE TABLE IF NOT EXISTS corrida (
     id INTEGER PRIMARY KEY,

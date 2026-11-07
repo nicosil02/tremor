@@ -39,6 +39,9 @@ jobs:
       - name: Defensoría
         run: python -m tremor.defensoria todo
 
+      - name: SUTRAN (alertas viales vigentes; la historia se acumula)
+        run: python -m tremor.sutran
+
       - name: Prensa
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
