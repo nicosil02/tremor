@@ -202,7 +202,11 @@ def _cargar_casos(con):
             for c in con.execute("SELECT * FROM caso")}
 
 
-def validar(con, desde: int = 90) -> dict:
+# Antes del n.° 50 (abril de 2008) las fichas no siguen un formato estable: solo se guardan los totales.
+PRIMERO_CON_FICHAS = 50
+
+
+def validar(con, desde: int = 1) -> dict:
     """Procesa los reportes pendientes en orden, para que el enlace vaya del pasado al presente."""
     cuenta = {}
     docs = con.execute("SELECT d.* FROM documento d LEFT JOIN reporte r ON r.num = d.reporte_num"
@@ -218,7 +222,11 @@ def validar(con, desde: int = 90) -> dict:
     casos = _cargar_casos(con)
     for doc, r in leidos:
         n = doc["reporte_num"]
-        estado, det = veredicto(r)
+        if n < PRIMERO_CON_FICHAS:
+            r.update(fichas=[], lista=[], acciones=[], victimas=[], victimas_declaradas=None)
+            estado, det = ("solo_totales" if "activos" in r["totales"] else "sin_totales"), {}
+        else:
+            estado, det = veredicto(r)
         tot = r["totales"]
         con.execute("INSERT INTO reporte (num, anio, mes, huella, total, activos, latentes, en_dialogo,"
                     " acciones_declaradas, estado, detalle_validacion) VALUES (?,?,?,?,?,?,?,?,?,?,?)",

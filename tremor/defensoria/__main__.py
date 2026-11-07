@@ -47,7 +47,7 @@ def extraer(con, num=None):
         for tabla, col in [("caso_mes", "reporte_num"), ("seccion", "reporte_num"), ("accion_protesta", "reporte_num"),
                            ("victimas", "reporte_num"), ("reporte", "num")]:
             con.execute(f"DELETE FROM {tabla} WHERE {col} = ?", (num,))
-    cuenta = val.validar(con, desde=num or 90)
+    cuenta = val.validar(con, desde=num or 1)
     print("Reportes extraídos: " + (", ".join(f"{k}: {v}" for k, v in cuenta.items()) or "0 nuevos"))
     _registrar(con, "extraer", inicio, sum(cuenta.values()), cuenta.get("fallido", 0), repr(cuenta))
     return 0
