@@ -128,13 +128,29 @@ def test_contar_lista():
     assert contar_lista("1.\n\nAbr-22\nAmazonas\nKuélap\n2.\n\nOct-22\nAmazonas\nX\n") == 2
 
 
-def test_enlace_por_descripcion():
-    from tremor.db import conectar
-    from tremor.defensoria.validar import enlazar
-    con = conectar(":memory:")
-    f = {"departamento": "Amazonas", "descripcion": "Comunidades awajún se oponen a la minería en El Cenepa."}
-    a, _ = enlazar(con, f, set(), 100)
-    con.execute("INSERT INTO caso_mes (caso_id, reporte_num) VALUES (?, 100)", (a,))
-    b, conf = enlazar(con, dict(f, descripcion=f["descripcion"] + " Exigen consulta previa."), set(), 101)
-    c, _ = enlazar(con, dict(f, departamento="Puno"), set(), 101)
-    assert a == b and conf >= 0.8 and c != a
+def test_enlace():
+    from tremor.defensoria.validar import _con_tokens, calcular_idf, enlazar_reporte
+    viejo = {"departamento": "Puno", "descripcion": "La comunidad campesina de Ocuviri acusa a la minera Arasi de contaminar el río.",
+             "ubicacion": "Distrito de Ocuviri, provincia de Lampa", "actores_primarios": "CC Ocuviri, Minera Arasi"}
+    otro = {"departamento": "Puno", "descripcion": "La comunidad campesina de Tumpa se opone a la minera California.",
+            "ubicacion": "Distrito de Tumpa", "actores_primarios": "CC Tumpa, Minera California"}
+    casos = {1: _con_tokens(viejo), 2: _con_tokens(otro), 3: _con_tokens(dict(viejo, departamento="Cusco")),
+             4: _con_tokens(dict(otro, codigo="1053-0717"))}
+    idf = calcular_idf([viejo["descripcion"], otro["descripcion"], "La comunidad campesina reclama a la minera."] * 3)
+    reescrito = dict(viejo, descripcion="Pobladores de Ocuviri demandan a la empresa Arasi cumplir compromisos.")
+    nuevo = {"departamento": "Puno", "descripcion": "Comerciantes del mercado de Juliaca reclaman al municipio."}
+    con_codigo = {"departamento": "Lima", "codigo": "1053-0717", "descripcion": "otro texto"}
+    assert enlazar_reporte([reescrito, nuevo, con_codigo], casos, idf) == [(1, enlazar_reporte([reescrito], casos, idf)[0][1]), (None, 0.0), (4, 1.0)]
+
+
+def test_victimas_declaradas():
+    from tremor.defensoria.extraer import victimas_declaradas
+    assert victimas_declaradas("De acuerdo con el SIMCO en el mes se registró cuatro heridos.") == {"fallecidos": 0, "heridos": 4}
+    assert victimas_declaradas("se registró 11 personas heridas y un fallecido") == {"fallecidos": 1, "heridos": 11}
+
+
+def test_fecha_de_protesta():
+    from tremor.defensoria.extraer import _FECHA
+    assert _FECHA.match("01/06/2017").group(1) == "01/06/2017"
+    assert _FECHA.match("5 de octubre").group(1) == "5 de octubre"
+    assert _FECHA.match("Plantón") is None

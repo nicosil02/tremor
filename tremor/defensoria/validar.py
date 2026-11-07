@@ -1,7 +1,7 @@
 """Extrae cada reporte, lo compara con sus propios totales y guarda el panel caso-mes (Historia 4)."""
 import csv
-import difflib
 import json
+import math
 import re
 
 from tremor.db import DATOS
@@ -25,9 +25,29 @@ def procesar(doc) -> dict:
             for f in x.fichas(s["texto"]):
                 f["pagina"] = s["pagina"]
                 fichas.append(f)
+    # Fichas que el propio texto trae (etiqueta "Caso" al inicio de línea), para distinguir un error
+    # del lector de un reporte que publica menos fichas de las que declara.
+    en_texto = sum(len(re.findall(r"^\s*Caso[:.]", s["texto"], re.M))
+                   for s in secs if s["canonica"] == "fichas_activos")
     sin = sum(x.contar_lista(s["texto"]) for s in secs if s["canonica"] == "activos_sin_hechos")
     lat = sum(x.contar_lista(s["texto"]) for s in secs if s["canonica"] == "latentes")
-    return {"totales": tot, "fichas": fichas, "sin_hechos": sin, "latentes": lat,
+    # Acciones colectivas de protesta (Historia 5): solo en los PDF con la tabla de detalle.
+    ks = [i for i, s in enumerate(secs) if s["canonica"] == "acciones_protesta"]
+    pags_acc = sorted({p for k in ks for p in range(secs[k]["pagina"],
+                       (secs[k + 1]["pagina"] if k + 1 < len(secs) else len(pags)) + 1)})
+    acc = x.acciones(doc, pags_acc) if doc["formato"] == "pdf" and pags_acc else []
+    if "acciones" not in tot:
+        decl = next((v for k in ks if (v := x.acciones_declaradas(secs[k]["texto"]))), None)
+        if decl is not None:
+            tot["acciones"] = decl
+    acc_texto = x.acciones_en_texto(doc, pags_acc) if acc else 0
+    # Víctimas: el total que declara el texto manda; el detalle por caso se guarda solo si la fila TOTAL de
+    # la tabla coincide con él (en algunos meses find_tables corre las celdas de columna, p. ej. n.° 200).
+    sv = next((s for s in secs if s["canonica"] == "victimas"), None)
+    vict_decl = x.victimas_declaradas(sv["texto"]) if sv else None
+    vict = x.victimas(doc, sv["pagina"]) if sv and doc["formato"] == "pdf" else []
+    return {"totales": tot, "fichas": fichas, "fichas_en_texto": en_texto, "acciones": acc, "acciones_en_texto": acc_texto,
+            "victimas": vict, "victimas_declaradas": vict_decl, "sin_hechos": sin, "latentes": lat,
             "secciones": [(s["titulo"], s["canonica"], s["pagina"]) for s in secs]}
 
 
@@ -45,73 +65,161 @@ def veredicto(r: dict) -> tuple[str, dict]:
     if d["activos_leidos"] == 0:
         d["nota"] = "texto del PDF desarmado (p. ej. '18 4 conflictos'); no se puede leer con reglas"
     dif = max(difs)
+    if r.get("acciones"):
+        d["acciones_declaradas"], d["acciones_leidas"] = tot.get("acciones"), len(r["acciones"])
+        d["acciones_en_texto"] = r["acciones_en_texto"]
+    if dif > TOLERANCIA and r.get("fichas_en_texto") == len(r["fichas"]) and d["activos_leidos"]:
+        d["nota"] = (f"el reporte publica {len(r['fichas'])} fichas y todas se leyeron; "
+                     "faltan en la fuente, no en la lectura")
+        return "fuente_incompleta", d
     return ("valido" if dif == 0 else "aproximado" if dif <= TOLERANCIA else "fallido"), d
 
 
-def _clave(s: str | None) -> str:
-    return re.sub(r"[^a-z0-9 ]", "", x._sin_tildes((s or "").lower()))[:200]
+STOP = set("para como entre sobre desde contra hasta porque donde cuando este esta estos estas dicho dicha "
+           "tambien ante bajo cual cuales pero segun sector parte sus las los del que por con una uno".split())
+# Umbral elegido midiendo en los 182 reportes: con 0.3 quedan ~1 600 casos frente a ~1 530 códigos oficiales,
+# y los 96 enlaces verificables con código de 2026 salen todos bien. Por debajo de 0.3 empieza a unir
+# comunidades distintas que solo comparten palabras como "minera" o "comunidad".
+UMBRAL = 0.3
+PESOS = (0.6, 0.2, 0.2)  # descripción, ubicación, actores primarios
 
 
-def enlazar(con, f: dict, usados: set, num: int) -> tuple[int, float]:
-    """caso.id para una ficha: por código si lo tiene; si no, por la descripción en el mismo departamento."""
-    if f.get("codigo"):
-        fila = con.execute("SELECT id FROM caso WHERE codigo = ?", (f["codigo"],)).fetchone()
-        if fila and fila[0] not in usados:
-            return fila[0], 1.0
-    desc = _clave(f.get("descripcion"))
-    mejor, puntaje = None, 0.0
-    # Candidatos: casos del departamento vistos en los últimos 12 reportes (un caso dormido más de un año
-    # vuelve como caso nuevo; ponytail: ventana fija, ampliarla si aparecen duplicados por reactivación).
-    candidatos = con.execute(
-        "SELECT DISTINCT c.id, c.descripcion FROM caso c JOIN caso_mes cm ON cm.caso_id = c.id"
-        " WHERE c.departamento IS ? AND cm.reporte_num >= ?", (f.get("departamento"), num - 12))
-    sm = difflib.SequenceMatcher(None, b=desc)
-    for cid, cdesc in candidatos:
-        if cid in usados:  # un caso aparece una sola vez por reporte
+def tokens(s):
+    return frozenset(w for w in re.findall(r"[a-z0-9]{4,}", x._sin_tildes((s or "").lower())) if w not in STOP)
+
+
+def depto(d):
+    d = x._sin_tildes((d or "").lower()).strip()
+    return "lima" if d.startswith("lima") else d
+
+
+def _parecido(a, b, idf):
+    """Jaccard ponderado por IDF: pesan más los nombres propios que 'comunidad' o 'minera'."""
+    if not (a and b):
+        return 0.0
+    peso = lambda conj: sum(idf.get(t, 8.0) for t in conj)
+    return peso(a & b) / peso(a | b)
+
+
+def puntaje(f, c, idf):
+    return (PESOS[0] * _parecido(f["_d"], c["_d"], idf) + PESOS[1] * _parecido(f["_u"], c["_u"], idf)
+            + PESOS[2] * _parecido(f["_a"], c["_a"], idf))
+
+
+def _con_tokens(f):
+    return dict(f, _d=tokens(f.get("descripcion")), _u=tokens(f.get("ubicacion")),
+                _a=tokens(f.get("actores_primarios")), _dep=depto(f.get("departamento")))
+
+
+def calcular_idf(textos):
+    df, n = {}, 0
+    for t in textos:
+        n += 1
+        for w in tokens(t):
+            df[w] = df.get(w, 0) + 1
+    return {w: math.log(n / k) for w, k in df.items()}
+
+
+def enlazar_reporte(fichas, casos, idf):
+    """Asigna cada ficha a un caso conocido o a ninguno (None = caso nuevo).
+
+    Primero por código; luego, dentro del mismo departamento, se ordenan todos los pares ficha-caso por
+    puntaje y se asignan de mayor a menor, cada caso una sola vez por reporte. Cada caso se compara con su
+    versión más reciente, porque la Defensoría reescribe la descripción con los años."""
+    fs = [_con_tokens(f) for f in fichas]
+    asignado, usados = {}, set()
+    por_codigo = {c["codigo"]: cid for cid, c in casos.items() if c.get("codigo")}
+    for i, f in enumerate(fs):
+        cid = por_codigo.get(f.get("codigo"))
+        if cid is not None and cid not in usados:
+            asignado[i] = (cid, 1.0)
+            usados.add(cid)
+    pares = []
+    for i, f in enumerate(fs):
+        if i in asignado:
             continue
-        sm.set_seq1(cdesc or "")
-        if sm.real_quick_ratio() <= puntaje or sm.quick_ratio() <= max(puntaje, 0.8):
-            continue
-        p = sm.ratio()
-        if p > puntaje:
-            mejor, puntaje = cid, p
-    if mejor is not None and puntaje >= 0.8:
-        if f.get("codigo"):
-            con.execute("UPDATE OR IGNORE caso SET codigo = ? WHERE id = ? AND codigo IS NULL", (f["codigo"], mejor))
-        return mejor, round(puntaje, 3)
-    # Un código ya tomado (la misma ficha repetida en el reporte) no se vuelve a asignar.
-    libre = f.get("codigo") and not con.execute("SELECT 1 FROM caso WHERE codigo = ?", (f["codigo"],)).fetchone()
-    cur = con.execute("INSERT INTO caso (codigo, nombre, tipo, departamento, descripcion) VALUES (?, ?, ?, ?, ?)",
-                      (f["codigo"] if libre else None, f.get("nombre"), f.get("tipo"), f.get("departamento"), desc))
-    return cur.lastrowid, 0.0
+        for cid, c in casos.items():
+            if c["_dep"] == f["_dep"] and cid not in usados:
+                p = puntaje(f, c, idf)
+                if p >= UMBRAL:
+                    pares.append((p, i, cid))
+    for p, i, cid in sorted(pares, reverse=True):
+        if i not in asignado and cid not in usados:
+            asignado[i] = (cid, round(p, 3))
+            usados.add(cid)
+    return [asignado.get(i, (None, 0.0)) for i in range(len(fs))]
+
+
+def _cargar_casos(con):
+    return {c["id"]: _con_tokens({"descripcion": c["descripcion"], "ubicacion": c["ubicacion"],
+                                  "actores_primarios": c["actores"], "departamento": c["departamento"],
+                                  "codigo": c["codigo"]})
+            for c in con.execute("SELECT * FROM caso")}
 
 
 def validar(con, desde: int = 90) -> dict:
-    """Procesa los reportes pendientes (en orden, para que el enlace vaya del pasado al presente)."""
+    """Procesa los reportes pendientes en orden, para que el enlace vaya del pasado al presente."""
     cuenta = {}
     docs = con.execute("SELECT d.* FROM documento d LEFT JOIN reporte r ON r.num = d.reporte_num"
                        " WHERE d.rol = 'principal' AND d.reporte_num >= ? AND r.num IS NULL"
                        " ORDER BY d.reporte_num", (desde,)).fetchall()
-    for doc in docs:
+    leidos = [(doc, procesar(doc)) for doc in docs]
+    # IDF sobre todas las fichas conocidas: las ya guardadas y las de esta corrida.
+    textos = [" ".join(filter(None, (f.get("descripcion"), f.get("ubicacion"), f.get("actores_primarios"))))
+              for _, r in leidos for f in r["fichas"]]
+    textos += [" ".join(filter(None, fila)) for fila in
+               con.execute("SELECT descripcion, ubicacion, actores_primarios FROM caso_mes")]
+    idf = calcular_idf(textos)
+    casos = _cargar_casos(con)
+    for doc, r in leidos:
         n = doc["reporte_num"]
-        r = procesar(doc)
         estado, det = veredicto(r)
         tot = r["totales"]
         con.execute("INSERT INTO reporte (num, anio, mes, huella, total, activos, latentes, en_dialogo,"
                     " acciones_declaradas, estado, detalle_validacion) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                     (n, doc["anio"], doc["mes"], doc["huella"], tot.get("total"), tot.get("activos"),
-                     tot.get("latentes"), tot.get("en_dialogo"), tot.get("acciones"), estado, json.dumps(det)))
+                     tot.get("latentes"), tot.get("en_dialogo"), tot.get("acciones"), estado,
+                     json.dumps(det, ensure_ascii=False)))
         for titulo, canon, pag in r["secciones"]:
             con.execute("INSERT OR IGNORE INTO seccion (reporte_num, titulo_original, canonica, pagina_inicio)"
                         " VALUES (?,?,?,?)", (n, titulo, canon, pag))
-        usados = set()
-        for f in r["fichas"]:
-            caso_id, conf = enlazar(con, f, usados, n)
-            usados.add(caso_id)
+        if r.get("victimas_declaradas"):
+            vd, filas_v = r["victimas_declaradas"], r.get("victimas", [])
+            total = next((v for v in filas_v if v["lugar_caso"] == "TOTAL"), None)
+            if total and (total["fallecidos"], total["heridos"]) == (vd["fallecidos"], vd["heridos"]):
+                filas_v = [v for v in filas_v if v["lugar_caso"] != "TOTAL"]
+            else:
+                filas_v = [{"lugar_caso": "TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto)",
+                            "pagina": None, **vd}] if vd["fallecidos"] or vd["heridos"] else []
+            for v in filas_v:
+                con.execute("INSERT INTO victimas (reporte_num, lugar_caso, fallecidos, heridos, pagina)"
+                            " VALUES (?,?,?,?,?)", (n, v["lugar_caso"], v["fallecidos"], v["heridos"], v["pagina"]))
+        for k, ac in enumerate(r.get("acciones", []), 1):
+            con.execute("INSERT INTO accion_protesta (reporte_num, n, fecha, medida, actores, lugar, demanda, pagina)"
+                        " VALUES (?,?,?,?,?,?,?,?)", (n, k, ac["fecha"], ac["medida"], ac["actores"], ac["lugar"],
+                                                      ac["demanda"], ac["pagina"]))
+        tomados = {c.get("codigo") for c in casos.values()}
+        for f, (cid, conf) in zip(r["fichas"], enlazar_reporte(r["fichas"], casos, idf)):
+            # Un código ya tomado (la misma ficha repetida en el reporte) no se vuelve a asignar.
+            codigo = f.get("codigo") if f.get("codigo") not in tomados else None
+            if codigo:
+                tomados.add(codigo)
+            if cid is None:
+                cid = con.execute("INSERT INTO caso (codigo, nombre, tipo, departamento, descripcion, ubicacion,"
+                                  " actores) VALUES (?,?,?,?,?,?,?)",
+                                  (codigo, f.get("nombre"), f.get("tipo"), f.get("departamento"),
+                                   f.get("descripcion"), f.get("ubicacion"), f.get("actores_primarios"))).lastrowid
+            else:  # se guarda la versión más reciente del caso
+                con.execute("UPDATE caso SET descripcion = ?, ubicacion = ?, actores = ?,"
+                            " codigo = COALESCE(codigo, ?), nombre = COALESCE(?, nombre) WHERE id = ?",
+                            (f.get("descripcion"), f.get("ubicacion"), f.get("actores_primarios"), codigo,
+                             f.get("nombre"), cid))
+            casos[cid] = _con_tokens(dict(f, codigo=casos.get(cid, {}).get("codigo") or codigo))
             con.execute("INSERT INTO caso_mes (caso_id, reporte_num, estado, con_hechos, fase, dialogo,"
-                        " competencia, actores_primarios, actores_secundarios, actores_terciarios, descripcion,"
-                        " hechos_mes, pagina, enlace_confianza) VALUES (?,?,'activo',1,?,?,?,?,?,?,?,?,?,?)",
-                        (caso_id, n, f.get("fase"), f.get("dialogo"), f.get("competencia"),
+                        " competencia, ubicacion, actores_primarios, actores_secundarios, actores_terciarios,"
+                        " descripcion, hechos_mes, pagina, enlace_confianza)"
+                        " VALUES (?,?,'activo',1,?,?,?,?,?,?,?,?,?,?,?)",
+                        (cid, n, f.get("fase"), f.get("dialogo"), f.get("competencia"), f.get("ubicacion"),
                          f.get("actores_primarios"), f.get("actores_secundarios"), f.get("actores_terciarios"),
                          f.get("descripcion"), f.get("hechos_mes"), f["pagina"], conf))
         con.commit()
@@ -131,6 +239,11 @@ def exportar(con):
                         " cm.actores_terciarios, cm.hechos_mes, cm.pagina, cm.enlace_confianza"
                         " FROM caso_mes cm JOIN caso c ON c.id = cm.caso_id JOIN reporte r ON r.num = cm.reporte_num"
                         " ORDER BY cm.reporte_num, cm.caso_id",
+        "acciones_protesta.csv": "SELECT a.reporte_num, r.anio, r.mes, a.n, a.fecha, a.medida, a.actores, a.lugar,"
+                                 " a.demanda, a.pagina FROM accion_protesta a JOIN reporte r ON r.num = a.reporte_num"
+                                 " ORDER BY a.reporte_num, a.n",
+        "victimas.csv": "SELECT v.reporte_num, r.anio, r.mes, v.lugar_caso, v.fallecidos, v.heridos, v.pagina"
+                        " FROM victimas v JOIN reporte r ON r.num = v.reporte_num ORDER BY v.reporte_num",
     }
     for nombre, sql in consultas.items():
         cur = con.execute(sql)

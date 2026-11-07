@@ -1,0 +1,52 @@
+# T027: corre el recolector una vez al día y guarda la base y los CSV en la rama `datos`.
+# Si no hubo reporte nuevo, no hace commit.
+name: defensoria
+
+on:
+  schedule:
+    - cron: "0 13 * * *"   # 8:00 a. m. en Lima
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  recolectar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      # La base de la corrida anterior vive en la rama `datos`; sin ella, se arma desde cero.
+      - name: Traer la base anterior
+        run: |
+          mkdir -p datos
+          if git fetch --depth 1 origin datos; then
+            git show origin/datos:tremor.db > datos/tremor.db || rm -f datos/tremor.db
+          fi
+
+      - name: Recolectar
+        run: python -m tremor.defensoria todo
+
+      - name: Publicar en la rama datos
+        run: |
+          mkdir -p /tmp/datos && cp datos/tremor.db /tmp/datos/ && cp datos/exportes/*.csv /tmp/datos/
+          git config user.name "tremor-bot"
+          git config user.email "tremor-bot@users.noreply.github.com"
+          git checkout --orphan datos-nueva
+          git rm -rq --cached . && git clean -fdq -e datos
+          cp /tmp/datos/* .
+          git add tremor.db *.csv
+          if git fetch --depth 1 origin datos && git diff --quiet origin/datos -- *.csv; then
+            echo "Sin reporte nuevo: no se publica."
+            exit 0
+          fi
+          git commit -qm "Datos de la Defensoría al $(date -u +%F)"
+          git push -f origin datos-nueva:datos
