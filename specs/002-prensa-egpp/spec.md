@@ -24,26 +24,35 @@ Ambas piezas deben llegar al nivel de **distrito**, porque es ahí donde se cruz
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - Histórico de protestas por distrito (Priority: P1)
+### User Story 1 - Perfil de conflictividad por distrito (Priority: P1)
 
-El analista de relaciones comunitarias de una minera quiere saber cuántas protestas hubo en los
-distritos donde opera, de qué tipo y contra quién, desde 1980 hasta 2025, junto con los casos de la
-Defensoría de esos mismos distritos.
+El analista de relaciones comunitarias de una minera quiere entender los distritos donde opera:
+cuán conflictivos han sido desde 1980, **por qué** protesta la gente (reclamos ambientales,
+territoriales, laborales, de servicios: las vulnerabilidades del lugar), **quién** se moviliza
+(comunidades campesinas, rondas, frentes de defensa, gremios: la capacidad de acción colectiva),
+**cómo** (paro, bloqueo de vías, toma de local, enfrentamiento) y **contra quién** (empresa privada,
+Estado), además de cuántas veces hubo heridos, muertos o intervención de la fuerza pública. Todo junto
+a los casos de la Defensoría de los mismos distritos.
 
-**Why this priority**: sin histórico no hay línea de base para el modelo de alerta (módulo 005) ni
-contexto en la página. Es la pieza con datos ya existentes y verificados a mano.
+**Why this priority**: es la línea de base del modelo de alerta (módulo 005) y lo primero que la
+página muestra de un lugar. La EGPP es una base académica codificada a mano con ese detalle, y en ella
+ya aparecen los focos extractivos conocidos (Islay, Cajamarca, Cotabambas, Espinar, Datem del Marañón).
 
-**Independent Test**: cargar la base de la EGPP y pedir las protestas de un distrito conocido; el
-conteo por año coincide con el del archivo original y cada evento conserva su distrito, actor,
-acción, adversario, reclamo y víctimas.
+**Independent Test**: cargar la base de la EGPP y pedir el perfil de un distrito conocido (p. ej.
+Cocachacra, Islay); el conteo por año coincide con el archivo original y el perfil muestra sus reclamos,
+actores, acciones, adversarios y violencia.
 
 **Acceptance Scenarios**:
 
 1. **Given** el archivo de la EGPP 1980–2025, **When** se carga, **Then** quedan los 25 429 eventos con su
    fecha y su código de distrito, y el conteo por año y por región es igual al del archivo.
 2. **Given** la base cargada, **When** se vuelve a cargar el mismo archivo, **Then** no se duplica ningún evento.
-3. **Given** la base cargada, **When** se piden los datos para publicar, **Then** solo salen agregados por
-   distrito y mes (nunca los eventos uno por uno), por el uso académico de la base.
+3. **Given** la base cargada, **When** se arma el perfil de un distrito, **Then** muestra la cantidad de protestas
+   por periodo, la distribución de reclamos, sectores de actores, acciones y adversarios, y la proporción con
+   violencia o fuerza estatal, y se puede ordenar los distritos por conflictividad dentro de un tipo de reclamo
+   (p. ej. ambientales y territoriales).
+4. **Given** el perfil, **When** se publica, **Then** sale como perfil agregado por distrito (y por distrito y año),
+   no como la lista de eventos, por el uso académico de la base.
 
 ---
 
@@ -156,7 +165,9 @@ las cifras tal como salen.
 - **FR-001**: El sistema DEBE cargar la base de protestas de la EGPP desde el archivo entregado por la EGPP, con todas sus variables, a la misma base de datos del proyecto.
 - **FR-002**: Cada evento de la EGPP DEBE quedar con su código de distrito oficial (ubigeo), de modo que se pueda cruzar con los casos de la Defensoría y con las operaciones.
 - **FR-003**: La carga DEBE ser idempotente: cargar dos veces el mismo archivo no duplica eventos; cargar una versión más nueva agrega solo lo nuevo.
-- **FR-004**: Los eventos individuales de la EGPP NO DEBEN publicarse ni subirse al repositorio; solo se publican agregados por distrito y mes.
+- **FR-004**: El sistema DEBE construir para cada distrito un perfil de conflictividad con las particularidades de la EGPP: número de protestas por año, reclamos y sub-reclamos (vulnerabilidades), sectores y tipos de actor (capacidad de acción colectiva), acciones, adversarios (incluidas empresas privadas y estatales), heridos, muertos, detenidos e intervención de la fuerza estatal.
+- **FR-004a**: Los distritos DEBEN poder ordenarse por conflictividad, en total y por tipo de reclamo, para identificar los lugares más conflictivos alrededor de actividades extractivas.
+- **FR-004b**: Los eventos individuales de la EGPP NO DEBEN publicarse ni subirse al repositorio; lo publicado son los perfiles agregados por distrito (y distrito y año).
 
 **Recolección de prensa**
 
@@ -190,6 +201,7 @@ las cifras tal como salen.
 - **Nota de prensa**: una publicación de un medio; medio, titular, fecha, enlace, texto si es abierto, fecha de descarga.
 - **Codificación**: lo que una nota dice de una protesta, con las variables del manual de la EGPP y la precisión del lugar.
 - **Evento de prensa**: una protesta identificada a partir de una o más notas; estado (anunciada, ocurrida, suspendida), fecha del anuncio, fecha del evento, distrito y sus fuentes.
+- **Perfil de distrito**: resumen de la conflictividad histórica de un distrito (frecuencia, reclamos, actores, acciones, adversarios, violencia), con la EGPP y la Defensoría.
 - **Distrito**: la unidad territorial oficial (ubigeo) que une la EGPP, la Defensoría, la prensa y, más adelante, las operaciones extractivas.
 
 ## Success Criteria *(mandatory)*
@@ -197,6 +209,7 @@ las cifras tal como salen.
 ### Measurable Outcomes
 
 - **SC-001**: Los 25 429 eventos de la EGPP quedan cargados y al menos el 95% tiene distrito válido; el conteo por año coincide con el archivo original.
+- **SC-001a**: Entre los 10 distritos más conflictivos por reclamos ambientales y territoriales aparecen al menos 5 de los focos extractivos conocidos (p. ej. Cocachacra, Challhuahuacho, Espinar, Sorochuco, Huasmín), como verificación de que el perfil captura lo que se busca.
 - **SC-002**: Una semana de recolección trae notas de al menos 20 de los 25 departamentos y de al menos 30 medios distintos.
 - **SC-003**: En una muestra revisada a mano, la decisión "es protesta / no es protesta" acierta en al menos el 90% de las notas, y el distrito es correcto en al menos el 80% de las que lo mencionan.
 - **SC-004**: La prensa detecta al menos la mitad de las protestas que registra la Defensoría en el mismo mes; se informa cuántas de ellas aparecieron antes como anunciadas y con cuántos días de anticipación (mediana).
