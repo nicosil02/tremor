@@ -51,8 +51,8 @@ actores, acciones, adversarios y violencia.
    por periodo, la distribución de reclamos, sectores de actores, acciones y adversarios, y la proporción con
    violencia o fuerza estatal, y se puede ordenar los distritos por conflictividad dentro de un tipo de reclamo
    (p. ej. ambientales y territoriales).
-4. **Given** el perfil, **When** se publica, **Then** sale como perfil agregado por distrito (y por distrito y año),
-   no como la lista de eventos, por el uso académico de la base.
+4. **Given** la base publicada, **When** alguien la descarga, **Then** trae los eventos de la EGPP con su fuente citada,
+   sin la columna de comentarios libres.
 
 ---
 
@@ -172,8 +172,8 @@ las cifras tal como salen.
 - **FR-004c**: El perfil DEBE separar el conflicto laboral minero (huelgas de trabajadores mineros, 74% laborales) del conflicto comunitario y socioambiental (comunidades, rondas, frentes de defensa, reclamos ambientales y territoriales), porque anticipan riesgos distintos.
 - **FR-004d**: Cuando el reclamo, el comentario o la institución adversaria nombran una operación o empresa (Tía María, Conga, Las Bambas, Lote 192…), el evento DEBE quedar enlazado a esa operación; es el puente con el mapa de operaciones del módulo 004.
 - **FR-004e**: Los eventos repetidos (misma fecha, distrito, actor, acción y reclamo, unos 220 pares) DEBEN consolidarse en uno.
-- **FR-004f**: Los textos libres de la EGPP (comentarios y nombres de actores) NO DEBEN publicarse, porque pueden contener nombres de dirigentes; se usan solo para clasificar y enlazar.
-- **FR-004b**: Los eventos individuales de la EGPP NO DEBEN publicarse ni subirse al repositorio; lo publicado son los perfiles agregados por distrito (y distrito y año).
+- **FR-004f**: La columna de comentarios libres de la EGPP NO DEBE guardarse, porque contiene nombres de dirigentes; de ella solo se extrae la operación nombrada.
+- **FR-004b**: Los eventos de la EGPP se guardan en la misma base del proyecto y se publican con ella, citando la fuente.
 
 **Recolección de prensa**
 
@@ -231,7 +231,7 @@ las cifras tal como salen.
   - Los conflictos territoriales y ambientales son los más violentos (4,4% y 2,1% con muertos, frente a 0,4% en los laborales) y los ambientales usan más el bloqueo de vías (35%).
   - El 36% de los distritos con protesta socioambiental en 2015–2019 vuelve a tenerla en 2021–2025: el historial del lugar sí informa el riesgo.
 
-- La base de la EGPP (`protestas_1980-2025.xlsx`, versión de diciembre de 2025) la entrega el autor, que colabora con la EGPP; se usa solo con fines académicos y vive solo en la máquina del autor y en la base local, no en el repositorio.
+- La base de la EGPP (`protestas_1980-2025.xlsx`, versión de diciembre de 2025) la entrega el autor, que colabora con la EGPP; es descargable desde la web de la EGPP y se usa con fines académicos, citándola.
 - La fuente de prensa principal es un agregador público de noticias (Google News en su versión RSS), que cubre medios nacionales y regionales y permite buscar por departamento; solo cubre semanas recientes, así que el histórico largo viene de la EGPP y de la Defensoría.
 - El servicio de lenguaje es gratuito (Groq con un modelo abierto, mediante un endpoint compatible con OpenAI configurable por variables de entorno), con un límite cercano a 1 000 solicitudes al día.
 - El catálogo oficial de distritos (ubigeo del INEI) es público y se usa para llevar los nombres de lugares a códigos.

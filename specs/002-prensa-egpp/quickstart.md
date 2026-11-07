@@ -1,7 +1,7 @@
 # Quickstart / validación: 002
 
 Requisitos: `pip install -r requirements.txt`; `.env` con `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`
-(ver `.env.example`); el archivo de la EGPP en la máquina del autor (no en el repo).
+(ver `.env.example`); el archivo de la EGPP (descargado de su web).
 
 ## 1. EGPP y perfil (US1)
 

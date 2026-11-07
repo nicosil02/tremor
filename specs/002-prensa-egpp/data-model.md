@@ -1,6 +1,6 @@
 # Data model: 002 prensa y EGPP
 
-## `datos/egpp.db` (local, nunca publicada)
+## `datos/tremor.db` — EGPP
 
 ### egpp_evento
 | Campo | Notas |
@@ -9,23 +9,23 @@
 | fecha TEXT | ISO |
 | ubigeo TEXT | `Distrito_id` con 6 dígitos (cero a la izquierda) |
 | capital_por_defecto INTEGER | 1 si el distrito termina en 01 (posible capital asignada por falta de dato) |
-| periodico, sector, actor, actor_t, accion_1..4, adversario, institucion_1, institucion_2, reclamo, sub_reclamo, reclamo_t, comentario | tal cual |
+| periodico, sector, actor, actor_t, accion_1..4, adversario, institucion_1, institucion_2, reclamo, sub_reclamo, reclamo_t | tal cual (sin `Comentar_t`) |
 | participantes, duracion_h, heridos, muertos, detenidos, fuerza_estatal | numéricos |
 | tipo_conflicto TEXT | `socioambiental_extractivo` / `laboral_minero` / `otro` (research R6) |
 | operacion TEXT | operación o empresa nombrada (R7), o NULL |
 | duplicado_de INTEGER | id del evento que se conserva si es repetido (FR-004e) |
 | version TEXT | versión del archivo cargado (`2025-12`) |
 
-## `datos/perfil_distrito_egpp.csv` (publicado, versionado)
+## perfil_distrito (tabla y `datos/exportes/perfil_distrito.csv`)
 
 Una fila por ubigeo con al menos un evento no duplicado: `ubigeo, region, provincia, distrito, eventos,
 eventos_2015_2025, primer_anio, ultimo_anio, socioambiental, laboral_minero, ambientales, territoriales,
 laborales, politicos, economicos, servicios, top_subreclamos, top_actores, pct_bloqueo, pct_heridos,
 pct_muertos, pct_represion, contra_empresa, operaciones, pct_capital_por_defecto`.
 Columnas de texto (`top_*`, `operaciones`) son categorías o nombres de empresas, nunca texto libre.
-Y `perfil_distrito_anio_egpp.csv`: `ubigeo, anio, eventos, socioambiental, laboral_minero, con_violencia`.
+Y `perfil_distrito_anio.csv`: `ubigeo, anio, eventos, socioambiental, laboral_minero, con_violencia`.
 
-## `datos/tremor.db` (pública) — tablas nuevas
+## `datos/tremor.db` — prensa
 
 ### nota
 | Campo | Notas |

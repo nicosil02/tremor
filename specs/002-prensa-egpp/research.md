@@ -4,12 +4,13 @@ Pruebas hechas el 7 nov 2026 (scripts en el scratchpad de la sesión; cifras en 
 
 ## R1. Dónde vive la EGPP
 
-- **Decision**: `datos/egpp.db` local (ignorada por `*.db`), con una tabla `egpp_evento`. Lo publicado
-  es `datos/perfil_distrito_egpp.csv`, versionado en `main` con `!datos/perfil_distrito_egpp.csv` en
-  `.gitignore`.
-- **Rationale**: uso académico; `tremor.db` se publica entera.
-- **Alternatives**: tablas en `tremor.db` (riesgo de fuga); `ATTACH` permanente (igual de riesgoso al
-  copiar la base).
+- **Decision**: en la misma `datos/tremor.db`, tabla `egpp_evento`, publicada con el resto en la rama
+  `datos` y citada como fuente. Se carga una vez desde la máquina del autor; el workflow diario la
+  conserva porque parte de la base anterior.
+- **Rationale**: la base es descargable desde la web de la EGPP y el proyecto es académico; una sola
+  base (principio VI) simplifica todos los cruces.
+- **Excepción**: no se guarda `Comentar_t` (≈30 comentarios con nombres de dirigentes, principio I); de
+  él solo se extrae la operación nombrada.
 
 ## R2. Catálogo de distritos
 

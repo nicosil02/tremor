@@ -8,10 +8,10 @@
 
 Dos piezas que llegan al distrito (ubigeo):
 
-1. **EGPP → perfil de conflictividad por distrito.** Se cargan los 25 429 eventos a una base local
-   aparte (`datos/egpp.db`, nunca publicada), se clasifica cada evento en *socioambiental-extractivo*,
-   *laboral minero* u *otro*, se extrae la operación o empresa nombrada, y se publica solo el perfil
-   agregado por distrito (`perfil_distrito_egpp.csv`, versionado en el repo).
+1. **EGPP → perfil de conflictividad por distrito.** Se cargan los 25 429 eventos a la misma base
+   (`datos/tremor.db`), se clasifica cada evento en *socioambiental-extractivo*, *laboral minero* u
+   *otro*, se extrae la operación o empresa nombrada y se arma el perfil por distrito. Se publica con
+   la base, citando a la EGPP; no se guarda la columna de comentarios libres (trae nombres de dirigentes).
 2. **Prensa en vivo.** Google News RSS por departamento × palabras de acción (titulares), un filtro
    por reglas, codificación en lotes con Groq usando las categorías del libro de códigos de la EGPP
    más el estado *anunciada/ocurrida/suspendida*, lugar resuelto a ubigeo por reglas sobre el
@@ -26,8 +26,7 @@ Dos piezas que llegan al distrito (ubigeo):
 `openpyxl`, solo para leer el `.xlsx` de la EGPP. El LLM se llama con `requests` al endpoint compatible
 con OpenAI (sin SDK).
 
-**Storage**: `datos/tremor.db` (pública, en la rama `datos`) para prensa, codificaciones y eventos;
-`datos/egpp.db` (local, nunca publicada) para los eventos de la EGPP.
+**Storage**: una sola base, `datos/tremor.db` (rama `datos`): Defensoría, EGPP, prensa y eventos.
 
 **Testing**: pytest, como en 001: pruebas con textos y titulares cortos, sin red.
 
@@ -38,7 +37,7 @@ con OpenAI (sin SDK).
 **Performance Goals**: corrida diaria de prensa < 15 min; carga y perfil de la EGPP < 2 min.
 
 **Constraints**: costo cero; < 1 000 solicitudes/día al LLM (objetivo: < 100); sin credenciales de
-suscripción; eventos EGPP no publicados.
+suscripción.
 
 **Scale/Scope**: ~25 dptos × 8 palabras ≈ 200 consultas RSS/día; ~1 000–2 000 titulares/día antes del
 filtro; validación retro de un mes ≈ 25 × 30 consultas.
@@ -47,14 +46,14 @@ filtro; validación retro de un mes ≈ 25 × 30 consultas.
 
 | Principio | Cómo se cumple |
 |---|---|
-| I. Fuentes públicas y trazables | Cada nota guarda medio, titular, fecha, enlace y fecha de descarga; cada evento, sus notas. Actores por rol (categorías EGPP); los textos libres de la EGPP no se publican. La EGPP es de uso académico y no se redistribuye. |
+| I. Fuentes públicas y trazables | Cada nota guarda medio, titular, fecha, enlace y fecha de descarga; cada evento, sus notas. Actores por rol (categorías EGPP); el comentario libre de la EGPP no se guarda. La EGPP se cita como fuente (Arce 2024; EGPP PUCP 2025). |
 | II. Medir antes de avanzar | `prensa validar` publica exhaustividad y anticipación contra la Defensoría, y precisión, exhaustividad, F1 y kappa contra la EGPP, tal como salen. El perfil se verifica con SC-001a. |
 | III. Costo cero, sin proveedor fijo | Groq gratis vía `LLM_BASE_URL/LLM_MODEL/LLM_API_KEY`; reglas antes que LLM (filtro y ubigeo por reglas); caché por contenido (`llm_cache`). |
 | IV. Incremental e idempotente | Nota identificada por hash de medio + titular normalizado; `INSERT OR IGNORE`; la codificación se guarda por nota y versión del prompt. |
 | V. Identidad por contenido | Ídem: no se usa el enlace de Google (cambia) como identidad. |
 | VI. Simple | Un paquete `tremor/prensa` de 4 archivos, `tremor/egpp.py`, `tremor/lugares.py`, `tremor/llm.py`. Sin SDK ni frameworks. |
 
-**Resultado**: pasa, con una excepción justificada (abajo).
+**Resultado**: pasa, sin excepciones.
 
 ## Project Structure
 
@@ -79,7 +78,7 @@ tremor/
 ├── lugares.py            # catálogo ubigeo (tremor/ubigeo.csv) y nombre → ubigeo con desambiguación
 ├── ubigeo.csv            # 1 892 distritos INEI 2023
 ├── codigos_egpp.json     # categorías del libro de códigos (acción, actor, adversario, reclamo)
-├── egpp.py               # cargar xlsx → datos/egpp.db; perfil → datos/perfil_distrito_egpp.csv
+├── egpp.py               # cargar xlsx → tabla egpp_evento; perfil → tabla y CSV perfil_distrito
 └── prensa/
     ├── __main__.py       # CLI: recolectar, codificar, agrupar, validar, exportar, todo
     ├── recolectar.py     # Google News RSS → nota
@@ -98,7 +97,4 @@ y los módulos 004–005.
 
 ## Complexity Tracking
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| Segunda base SQLite (`datos/egpp.db`) frente a "una sola base" (VI) | La EGPP es de uso académico: sus eventos no pueden terminar en `tremor.db`, que se publica en la rama `datos` | Tablas EGPP dentro de `tremor.db`: basta con publicar la base local una vez (como el 7 nov) para redistribuirla sin querer |
-| `perfil_distrito_egpp.csv` versionado en `main` (excepción a `datos/*` en `.gitignore`) | El workflow reconstruye la rama `datos` como huérfana en cada corrida y GitHub Actions no tiene el archivo de la EGPP | Subirlo a `datos` a mano: el workflow lo borraría al día siguiente |
+Sin violaciones.
