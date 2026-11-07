@@ -12,9 +12,10 @@ from tremor.lugares import catalogo, nombre, norm
 
 mcp = MCPServer("tremor", instructions=(
     "Conflictos sociales en el Perú por distrito (ubigeo INEI): historia de protestas de la EGPP PUCP (1980-2025), "
-    "acciones de protesta de la Defensoría, protestas en la prensa (incluidas las anunciadas), bloqueos de la SUTRAN "
-    "y presupuesto municipal del MEF. Primero ubica el lugar con buscar_lugar y usa su ubigeo. Cita la fuente de "
-    "cada cifra; para el MEF, la URL que devuelve consulta_amigable."))
+    "acciones de protesta de la Defensoría, protestas en la prensa (incluidas las anunciadas), bloqueos de la SUTRAN, "
+    "presupuesto municipal del MEF, pobreza departamental de la ENAHO, y precios y producción minera del BCRP. "
+    "Primero ubica el lugar con buscar_lugar y usa su ubigeo. Cita la fuente de cada cifra; para el MEF, la URL que "
+    "devuelve consulta_amigable."))
 
 
 def _sql(q, args=()):
@@ -54,9 +55,36 @@ def perfil_distrito(ubigeo: str) -> dict:
                                (prov + "%",)),
         "mef_canon": _sql("SELECT anio, municipalidad, devengado_total, devengado_canon FROM mef_municipal "
                           "WHERE ubigeo = ? ORDER BY anio", (ubigeo,)),
+        "enaho_pobreza_departamento": _sql("SELECT anio, pobreza, pobreza_extrema FROM enaho_departamento "
+                                           "WHERE ccdd = ? ORDER BY anio", (ubigeo[:2],)),
+        "bcrp_produccion_minera_departamento": _mineria(ubigeo[:2]),
         "fuentes": "EGPP PUCP (Arce 2024; actualización dic. 2025); Defensoría del Pueblo, reportes mensuales; "
-                   "prensa (enlaces en eventos_prensa.csv); SUTRAN alertasviales.sutran.gob.pe; MEF Consulta Amigable.",
+                   "prensa (enlaces en eventos_prensa.csv); SUTRAN alertasviales.sutran.gob.pe; MEF Consulta Amigable; "
+                   "INEI ENAHO módulo 34 (pobreza monetaria, % de personas); BCRP series RD129xx (producción minera "
+                   "por departamento).",
     }
+
+
+def _mineria(ccdd):
+    """Producción minera anual del departamento por metal: las series del BCRP se llaman 'Cobre - Apurimac (tm.f)'."""
+    depto = norm(nombre(ccdd))
+    filas = _sql("SELECT nombre, substr(periodo, 1, 4) AS anio, SUM(valor) AS produccion, COUNT(*) AS meses "
+                 "FROM bcrp_mensual WHERE serie LIKE 'RD%' GROUP BY serie, anio ORDER BY nombre, anio")
+    return [f for f in filas if norm(f["nombre"].split(" - ")[1].split(" (")[0]) == depto]
+
+
+@mcp.tool()
+def serie_bcrp(texto: str, desde: str = "2020-01", hasta: str = "2100-12") -> list[dict]:
+    """Series mensuales del BCRP guardadas en Tremor cuyo nombre contiene el texto: precios del cobre, el oro y el
+    petróleo ("Cobre - LME", "Oro - LME", "WTI") y producción minera por departamento ("Oro - Cajamarca").
+    Periodos "AAAA-MM". Cita el código de la serie."""
+    t = norm(texto)
+    codigos = {r["serie"]: r["nombre"] for r in _sql("SELECT DISTINCT serie, nombre FROM bcrp_mensual")
+               if t in norm(r["nombre"])}
+    return [{"serie": c, "nombre": n, "datos": _sql("SELECT periodo, valor FROM bcrp_mensual WHERE serie = ? AND "
+                                                     "periodo BETWEEN ? AND ? ORDER BY periodo", (c, desde, hasta)),
+             "fuente": f"https://estadisticas.bcrp.gob.pe/estadisticas/series/mensuales/resultados/{c}/html"}
+            for c, n in list(codigos.items())[:5]]
 
 
 @mcp.tool()

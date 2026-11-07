@@ -90,3 +90,12 @@ def test_parsear_mef():
 def test_mcp_buscar_lugar():
     from tremor.mcp_server import buscar_lugar
     assert buscar_lugar("challhuahuacho")[0]["ubigeo"] == "030506"
+
+
+def test_bcrp_y_pobreza_enaho():
+    import pandas as pd
+    from tremor.territorio import periodo_bcrp, pobreza
+    assert periodo_bcrp("Set.2024") == "2024-09"
+    s = pd.DataFrame({"ubigeo": [10101, 10102, 80101], "factor07": [1.0, 3.0, 2.0], "mieperho": [2, 2, 1],
+                      "pobreza": [1, 3, 2]})
+    assert pobreza(s) == [("01", 25.0, 25.0, 2), ("08", 100.0, 0.0, 1), ("00", 40.0, 20.0, 3)]

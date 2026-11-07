@@ -77,6 +77,8 @@ carpeta, aprobar el servidor MCP `tremor` (`.mcp.json`).
 | `nota`, `codificacion`, `evento_prensa`, `evento_nota`, `llm_cache` | 1 469 notas, 256 codificadas (quedan 92), 35 eventos | 55 feeds RSS + Google News; codifica Groq con el manual EGPP | `python -m tremor.prensa todo` (o recolectar, codificar, agrupar, validar --mes, exportar) |
 | `sutran_alerta` | 28 (se acumulan) | API pública `api.sigea.sutran.gob.pe/public/alerts`: solo da las vigentes | `python -m tremor.sutran` |
 | `mef_municipal` | 28 091 (≈1 890 municipalidades × 2012–2026) | Consulta Amigable del MEF: presupuesto total y rubro 18 (canon, sobrecanon, regalías) | `python -m tremor.territorio mef` |
+| `bcrp_mensual` | 95 series, 25 516 filas, 2004-01 a 2026-10 | API del BCRP: cobre, oro y WTI (PN0165xXM) y producción minera por departamento (grupo RD129xx) | `python -m tremor.territorio bcrp` |
+| `enaho_departamento` | 26 × 2004–2024 (`ccdd` '00' = nacional) | ENAHO módulo 34: pobreza y pobreza extrema (factor07 × mieperho). Los 21 años cuadran con la serie oficial del INEI (±0.1) | `python -m tremor.territorio enaho` |
 
 Archivos que acompañan a la base:
 - `tremor/fuentes_facebook.csv`: 158 páginas para vigilar a mano, por departamento;
@@ -88,7 +90,9 @@ Archivos que acompañan a la base:
 - `perfil_distrito`;
 - `ranking`;
 - `consulta_amigable`: el MEF libre, con la URL como fuente; el método viene del MCP de Noelia León
-  (`NoeliaLRuiz/mcp-consulta-amigable`).
+  (`NoeliaLRuiz/mcp-consulta-amigable`);
+- `serie_bcrp`: las series del BCRP guardadas (precios y producción minera por departamento).
+- `perfil_distrito` también trae la pobreza (ENAHO) y la producción minera anual (BCRP) del departamento.
 
 **Workflow** `.github/workflows/defensoria.yml`:
 - corre cada 4 h: Defensoría → SUTRAN → prensa → perfil EGPP, y publica en `datos`;
@@ -145,11 +149,8 @@ Archivos que acompañan a la base:
 **C. Perfil territorial del distrito** (`tremor/territorio.py`). Cada variable va con su año, para no usar un dato
 publicado después del mes que se predice.
 1. ✅ MEF: canon y presupuesto municipal.
-2. BCRP: precio mensual del cobre y del oro, y producción minera mensual por departamento (series `RD12957DM` y
-   similares; servidor MCP del autor en `agente-socioeconomico-peru/tarea_4/mcp/server.py`). Llamar la API
-   directo desde el código.
-3. ENAHO: pobreza por departamento y año desde 2004 (skills del autor en `enaho-skills` y
-   `agente-socioeconomico-peru`). Pobreza sobre miembros con `p204==1`.
+2. ✅ BCRP: precios y producción minera mensual por departamento (`bcrp_mensual`).
+3. ✅ ENAHO: pobreza por departamento 2004–2024 (`enaho_departamento`). Falta el código del portal para 2025.
 4. Distrito:
    - Mapa de pobreza distrital del INEI e IDH del PNUD;
    - Censo 2017: servicios básicos, ruralidad, lengua materna y autoidentificación indígena;
