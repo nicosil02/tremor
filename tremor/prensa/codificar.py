@@ -8,11 +8,11 @@ import re
 from pathlib import Path
 
 from tremor.egpp import tipo_conflicto
-from tremor.llm import SinCuota, chat_json
+from tremor.llm import RespuestaInvalida, SinCuota, chat_json
 from tremor.lugares import resolver
 
-VERSION = "v1"
-LOTE = 25
+VERSION = "v2"
+LOTE = 15
 CODIGOS = json.loads((Path(__file__).resolve().parent.parent / "codigos_egpp.json").read_text(encoding="utf-8"))
 ESTADOS = {"anunciada", "ocurrida", "suspendida"}
 
@@ -35,6 +35,10 @@ Responde SOLO un JSON {{"notas": [...]}} con un objeto por nota, con estas clave
 - adversario: de la lista; empresa: nombre de la empresa si se nombra; operacion: proyecto, mina, lote o unidad si se nombra
 - reclamo y sub_reclamo: de las listas (sub_reclamo debe pertenecer al reclamo)
 - heridos, muertos, detenidos: números si la nota los da; si no, null
+Si la protesta ocurre FUERA DEL PERÚ (Argentina, Bolivia, Chile, Colombia, Ecuador, México, Venezuela, España, Francia…),
+es_protesta = false aunque la nota sea de un medio peruano.
+"departamento_de_la_busqueda" es solo la búsqueda que trajo la nota, NO es el lugar: no lo copies en region salvo que la
+nota hable de ese lugar.
 Si es_protesta es false, las demás claves pueden ser null. Usa exactamente los textos de las listas o null.
 
 SECTORES Y ACTORES: {json.dumps(CODIGOS["sector_actor"], ensure_ascii=False)}
@@ -78,6 +82,19 @@ COLUMNAS = ["es_protesta", "estado", "fecha_evento", "region", "provincia", "dis
             "heridos", "muertos", "detenidos", "tipo_conflicto"]
 
 
+def _pedir(con, entrada) -> dict:
+    """Un lote → {id: respuesta}. Si el modelo devuelve JSON inválido, parte el lote en dos (hasta una nota)."""
+    try:
+        resp = chat_json(con, SISTEMA, json.dumps(entrada, ensure_ascii=False), VERSION)
+        return {str(x.get("id")): x for x in resp.get("notas", []) if isinstance(x, dict)}
+    except RespuestaInvalida as e:
+        if len(entrada) == 1:
+            print(f"  Nota {entrada[0]['id']} sin codificar: {e}")
+            return {}
+        m = len(entrada) // 2
+        return _pedir(con, entrada[:m]) | _pedir(con, entrada[m:])
+
+
 def codificar(con, max_solicitudes=200) -> tuple[int, int, bool]:
     """Codifica las notas que pasaron el filtro y no tienen codificación de esta versión.
     Devuelve (solicitudes, notas, quedó_pendiente)."""
@@ -92,12 +109,11 @@ def codificar(con, max_solicitudes=200) -> tuple[int, int, bool]:
         entrada = [{"id": r[0], "fecha_publicacion": (r[3] or "")[:10], "departamento_de_la_busqueda": r[4],
                     "titular": r[1], "resumen": r[2] or None} for r in lote]
         try:
-            resp = chat_json(con, SISTEMA, json.dumps(entrada, ensure_ascii=False), VERSION)
+            por_id = _pedir(con, entrada)
         except SinCuota as e:
             print(f"  Sin cuota: {e}")
             return solicitudes, hechas, True
         solicitudes += 1
-        por_id = {str(x.get("id")): x for x in resp.get("notas", []) if isinstance(x, dict)}
         for r in lote:
             if r[0] not in por_id:
                 continue  # el LLM la omitió: se reintenta en la próxima corrida

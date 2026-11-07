@@ -28,6 +28,10 @@ class SinCuota(Exception):
     pass
 
 
+class RespuestaInvalida(Exception):
+    """400 de Groq: casi siempre JSON mal formado por el modelo (json_validate_failed)."""
+
+
 def chat_json(con, sistema: str, usuario: str, version: str) -> dict:
     url, modelo, clave = _env()
     k = hashlib.sha256(f"{modelo}\n{version}\n{sistema}\n{usuario}".encode()).hexdigest()
@@ -38,7 +42,7 @@ def chat_json(con, sistema: str, usuario: str, version: str) -> dict:
         raise SinCuota("Falta LLM_API_KEY en .env")
     cuerpo = {"model": modelo, "temperature": 0, "response_format": {"type": "json_object"},
               "messages": [{"role": "system", "content": sistema}, {"role": "user", "content": usuario}]}
-    for intento in range(4):
+    for intento in range(8):
         r = requests.post(f"{url}/chat/completions", json=cuerpo, timeout=120,
                           headers={"Authorization": f"Bearer {clave}"})
         if r.status_code == 429:
@@ -47,6 +51,8 @@ def chat_json(con, sistema: str, usuario: str, version: str) -> dict:
                 raise SinCuota(r.text[:200])
             time.sleep(espera)
             continue
+        if r.status_code == 400:
+            raise RespuestaInvalida(r.text[:300])
         r.raise_for_status()
         texto = r.json()["choices"][0]["message"]["content"]
         datos = json.loads(texto)
