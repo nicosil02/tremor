@@ -68,9 +68,14 @@ identifica por su portada. De cada uno extrae:
 - fallecidos y heridos, enlazados al caso del mes.
 
 Cada reporte se compara con sus propios totales y queda marcado `valido`, `aproximado` (±3 casos),
-`fuente_incompleta` (el propio PDF trae menos fichas de las que declara), `fuente_distinta` (el detalle
-numera sus casos sin huecos, pero el resumen del mismo reporte declara otra cifra) o `fallido`. Las protestas
-se comparan con las filas que trae el reporte, no con las que anuncia.
+`fuente_incompleta` (el propio PDF trae menos fichas de las que declara) o `fallido`. Manda el detalle: si se
+leyeron todas las fichas y filas que el reporte publica y su resumen declara otra cifra, es `valido` con una
+nota. Las protestas se comparan con las filas que trae la tabla, no con las que anuncia el texto.
+
+Resultado (7 nov 2026): 266 de 271 reportes válidos; quedan 4, 5 y 6 (2004, a 1 caso), 265 (publica menos
+fichas de las que declara) y el n.° 1 (no declara totales). 1 843 casos seguidos en promedio 25 meses,
+~46 500 filas caso-mes, 29 707 acciones de protesta (completas en 160 de 162 reportes con tabla; en el 134
+faltan 3 filas cuyos actores bajan a la fila siguiente) y 103 filas de víctimas.
 
 ```bash
 pip install -r requirements.txt
