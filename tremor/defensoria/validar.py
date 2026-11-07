@@ -75,6 +75,12 @@ def veredicto(r: dict) -> tuple[str, dict]:
     if r.get("acciones"):
         d["acciones_declaradas"], d["acciones_leidas"] = tot.get("acciones"), len(r["acciones"])
         d["acciones_en_texto"] = r["acciones_en_texto"]
+        # La referencia son las filas que trae el propio reporte (sus fechas); lo declarado queda como dato,
+        # porque en algunos meses (130, 167, 264, 270) el PDF publica menos filas de las que anuncia.
+        ref = r["acciones_en_texto"] or tot.get("acciones") or 0
+        d["acciones_estado"] = "completa" if len(r["acciones"]) >= ref else "parcial"
+        if tot.get("acciones") and r["acciones_en_texto"] and r["acciones_en_texto"] < tot["acciones"]:
+            d["acciones_nota"] = f"el reporte declara {tot['acciones']} y publica {r['acciones_en_texto']}"
     if dif > TOLERANCIA and r.get("fichas_en_texto") == len(r["fichas"]) and d["activos_leidos"]:
         d["nota"] = (f"el reporte publica {len(r['fichas'])} fichas y todas se leyeron; "
                      "faltan en la fuente, no en la lectura")
