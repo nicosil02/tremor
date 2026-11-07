@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS caso (
     nombre TEXT,                      -- solo los reportes de 2026 traen nombre corto
     nombres_anteriores TEXT,
     descripcion TEXT, ubicacion TEXT, actores TEXT,  -- última versión, para enlazar meses sin código
-    tipo TEXT,
+    tipo TEXT, ingreso TEXT,         -- mes de ingreso al registro: llave del enlace entre meses
     departamento TEXT, provincia TEXT, distrito TEXT, ubigeo TEXT
 );
 CREATE TABLE IF NOT EXISTS caso_mes (
@@ -101,4 +101,6 @@ def conectar(ruta: Path = RUTA_DB) -> sqlite3.Connection:
     for col, tipo in [("anio", "INTEGER"), ("mes", "INTEGER"), ("rol", "TEXT")]:
         if col not in existentes:
             con.execute(f"ALTER TABLE documento ADD COLUMN {col} {tipo}")
+    if "ingreso" not in {f[1] for f in con.execute("PRAGMA table_info(caso)")}:
+        con.execute("ALTER TABLE caso ADD COLUMN ingreso TEXT")
     return con

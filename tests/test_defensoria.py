@@ -178,3 +178,14 @@ def test_ficha_a_dos_columnas():
     [f] = fichas(texto)
     assert f["dialogo"] == "HAY DIÁLOGO" and f["hechos_mes"].startswith("No se registraron")
     assert f["actores_terciarios"] == "Defensoría del Pueblo"
+
+
+def test_enlace_por_ingreso():
+    # Misma fecha de ingreso decide aunque el texto cambie; fecha distinta separa aunque el texto se parezca.
+    from tremor.defensoria.validar import _con_tokens, calcular_idf, enlazar_reporte
+    base = {"departamento": "Puno", "descripcion": "La comunidad de Ocuviri reclama a la minera Arasi.",
+            "ubicacion": "Distrito de Ocuviri", "actores_primarios": "CC Ocuviri"}
+    casos = {1: _con_tokens(dict(base, ingreso="Marzo de 2012")), 2: _con_tokens(dict(base, ingreso="Junio de 2019"))}
+    idf = calcular_idf([base["descripcion"]] * 3)
+    reescrito = dict(base, descripcion="Pobladores exigen cumplimiento de compromisos.", ingreso="Jun-19")
+    assert enlazar_reporte([reescrito], casos, idf)[0][0] == 2

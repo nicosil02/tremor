@@ -369,3 +369,21 @@ def victimas(doc, pagina: int) -> list[dict]:
                 elif nombre and not valores and filas and filas[-1]["lugar_caso"] != "TOTAL":
                     filas[-1]["lugar_caso"] += " – " + nombre
     return filas
+
+
+_MESES_CORTOS = {m[:3]: i for i, m in enumerate("enero febrero marzo abril mayo junio julio agosto setiembre octubre noviembre diciembre".split(), 1)} | {"sep": 9}
+
+
+def periodo(s: str | None) -> tuple[int, int] | None:
+    """(año, mes) de "Diciembre de 2008", "Julio 2017", "12/2018" o "Jul-17"."""
+    t = _sin_tildes((s or "").lower())
+    m = re.search(r"(%s)\s+(?:de\s+|del\s+)?(\d{4})" % _MES_RE, t)
+    if m:
+        return int(m.group(2)), _MESES_CORTOS[m.group(1)[:3]]
+    m = re.search(r"\b(\d{1,2})/(\d{4})\b", t)
+    if m:
+        return int(m.group(2)), int(m.group(1))
+    m = re.search(r"\b([a-z]{3})-(\d{2})\b", t)
+    if m and m.group(1) in _MESES_CORTOS:
+        return 2000 + int(m.group(2)), _MESES_CORTOS[m.group(1)]
+    return None
