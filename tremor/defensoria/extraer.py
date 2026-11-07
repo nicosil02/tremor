@@ -350,8 +350,9 @@ def declarado_en_seccion(texto: str) -> int | None:
     return int(m.group(1)) if m else None
 
 
-# "01/06/2017", "2/08/2026" o, en 2014-2015, "5 de octubre".
-_FECHA = re.compile(r"^(\d{1,2}/\d{1,2}/\d{2,4}|\d{1,2} de (?:%s)|\d{1,2} de$)" % _MES_RE, re.I)  # "30 de" / "agosto"
+# "01/06/2017", "2/08/2026", en 2009 "16 y 17/12/2009" o, en 2014-2015, "5 de octubre" ("30 de" / "agosto").
+_FECHA = re.compile(r"^((?:\d{1,2}(?:, \d{1,2})* (?:y|al) )?(?:\d{1,2}/\d{1,2}/\d{2,4}|\d{1,2} de (?:%s)|\d{1,2} de$))"
+                    % _MES_RE, re.I)
 COLUMNAS = ("fecha", "medida", "actores", "lugar", "demanda")
 
 
@@ -373,12 +374,22 @@ def acciones(doc, paginas_: list[int]) -> list[dict]:
                 # Pueden continuar la fila anterior las filas sin fecha de la misma tabla (texto partido en
                 # varias líneas) o de la primera tabla de la página siguiente (fila partida entre páginas).
                 misma = ultima is not None and (ultima[2] == (num, nt) or (nt == 0 and ultima[2][0] == num - 1))
+                cab = None  # columnas del encabezado, si la tabla lo trae: sirven para filas con una celda vacía
                 for celdas in t.extract():
                     celdas = [re.sub(r"\s+", " ", c or "").strip() for c in celdas]
                     llenas = [(i, c) for i, c in enumerate(celdas) if c]
+                    nombres = [_sin_tildes(c.lower()) for c in celdas]
+                    if "fecha" in nombres and "medida" in nombres:
+                        cab = [next((i for i, c in enumerate(nombres) if c in opc), None) for opc in
+                               (("fecha",), ("medida",), ("actores",), ("lugar", "ambito"), ("demanda",))]
+                        cab = None if None in cab else cab
                     k = next((j for j, (_, c) in enumerate(llenas) if _FECHA.match(c)), None)
+                    campos = None
                     if k is not None and len(llenas) - k >= 5:
                         campos = llenas[k:k + 4] + [(llenas[k + 4][0], " ".join(c for _, c in llenas[k + 4:]))]
+                    elif k is not None and cab and len(llenas) - k >= 3 and llenas[k][0] == cab[0]:  # n.° 65
+                        campos = [(i, celdas[i]) for i in cab[:4]] + [(cab[4], " ".join(c for i, c in llenas if i >= cab[4]))]
+                    if campos:
                         fila = dict(zip(COLUMNAS, (c for _, c in campos)), pagina=num)
                         fila["fecha"] = _FECHA.match(fila["fecha"]).group(1)
                         filas.append(fila)
@@ -396,7 +407,7 @@ def acciones(doc, paginas_: list[int]) -> list[dict]:
         for num in (p for p in paginas_ if p <= len(d)):
             tabla = [f for f in filas if f["pagina"] == num]
             alt, centros = _acciones_por_posicion(d[num - 1], centros)
-            fechas = len(_FECHA_SOLA.findall(d[num - 1].get_text()))
+            fechas = _fechas_en_columna(d[num - 1])
             salida += [dict(f, pagina=num) for f in alt] if len(tabla) < len(alt) <= fechas else tabla
         filas = salida
     return filas
@@ -541,8 +552,17 @@ def acciones_en_texto(doc, paginas_: list[int]) -> int:
     import pymupdf
     pymupdf.TOOLS.mupdf_display_errors(False)
     with pymupdf.open(CRUDOS / f"{doc['huella']}.pdf") as d:
-        t = "\n".join(d[p - 1].get_text() for p in paginas_ if p <= len(d))
-    return len(_FECHA_SOLA.findall(t))
+        return sum(_fechas_en_columna(d[p - 1]) for p in paginas_ if p <= len(d))
+
+
+def _fechas_en_columna(pagina) -> int:
+    """Líneas que son solo una fecha en el tercio izquierdo de la página (columna Fecha). Las de más a la derecha
+    son notas de la demanda ("Nota: la huelga inició el 18 de agosto", n.° 259)."""
+    lineas = ["".join(s["text"] for s in l["spans"]).strip() for b in pagina.get_text("dict")["blocks"]
+              for l in b.get("lines", []) if l["bbox"][0] < pagina.rect.width / 3]
+    # "03/11/2009" / "y" / "04/11/2009" (2009) es una sola fila
+    return sum(1 for i, l in enumerate(lineas) if _FECHA_SOLA.fullmatch(l)
+               and not (i and lineas[i - 1] in ("y", "al")))
 
 
 def acciones_declaradas(texto: str) -> int | None:

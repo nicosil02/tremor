@@ -319,7 +319,11 @@ def validar(con, desde: int = 1) -> dict:
         if r.get("victimas_declaradas"):
             vd, filas_v = r["victimas_declaradas"], r.get("victimas", [])
             total = next((v for v in filas_v if v["lugar_caso"] == "TOTAL"), None)
-            if total and (total["fallecidos"], total["heridos"]) == (vd["fallecidos"], vd["heridos"]):
+            # Las filas con nota ("Huarupampa 1/": "los hechos se produjeron en mayo", n.° 160) son de otro mes:
+            # el texto no las suma, pero la tabla sí.
+            del_mes_v = [v for v in filas_v if v["lugar_caso"] != "TOTAL" and not re.search(r"\d/\s*$", v["lugar_caso"])]
+            suma = tuple(sum(v[k] for v in del_mes_v) for k in ("fallecidos", "heridos"))
+            if total and (vd["fallecidos"], vd["heridos"]) in ((total["fallecidos"], total["heridos"]), suma):
                 filas_v = [v for v in filas_v if v["lugar_caso"] != "TOTAL"]
             else:
                 filas_v = [{"lugar_caso": "TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto)",

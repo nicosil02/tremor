@@ -24,12 +24,13 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      # La base de la corrida anterior vive en la rama `datos`; sin ella, se arma desde cero.
+      # La base de la corrida anterior vive en la rama `datos`, comprimida (sin comprimir pasa los 100 MB que
+      # GitHub acepta por archivo); sin ella, se arma desde cero.
       - name: Traer la base anterior
         run: |
           mkdir -p datos
           if git fetch --depth 1 origin datos; then
-            git show origin/datos:tremor.db > datos/tremor.db || rm -f datos/tremor.db
+            git show origin/datos:tremor.db.gz | gunzip > datos/tremor.db || rm -f datos/tremor.db
           fi
 
       - name: Recolectar
@@ -37,13 +38,13 @@ jobs:
 
       - name: Publicar en la rama datos
         run: |
-          mkdir -p /tmp/datos && cp datos/tremor.db /tmp/datos/ && cp datos/exportes/*.csv /tmp/datos/
+          mkdir -p /tmp/datos && gzip -9 -c datos/tremor.db > /tmp/datos/tremor.db.gz && cp datos/exportes/*.csv /tmp/datos/
           git config user.name "tremor-bot"
           git config user.email "tremor-bot@users.noreply.github.com"
           git checkout --orphan datos-nueva
           git rm -rq --cached . && git clean -fdq -e datos
           cp /tmp/datos/* .
-          git add tremor.db *.csv
+          git add tremor.db.gz *.csv
           if git fetch --depth 1 origin datos && git diff --quiet origin/datos -- *.csv; then
             echo "Sin reporte nuevo: no se publica."
             exit 0

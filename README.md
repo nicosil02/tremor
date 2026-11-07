@@ -81,5 +81,5 @@ python -m pytest                        # pruebas
 ```
 
 Los CSV quedan en `datos/exportes/` (`reportes`, `casos`, `caso_mes`, `acciones_protesta`,
-`victimas`). Una tarea diaria de GitHub Actions corre el recolector y publica la base en la rama
-`datos`.
+`victimas`). Una tarea diaria de GitHub Actions corre el recolector y publica los CSV y la base
+(`tremor.db.gz`, comprimida porque pasa los 100 MB por archivo de GitHub) en la rama `datos`.
