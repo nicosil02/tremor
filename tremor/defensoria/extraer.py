@@ -82,7 +82,9 @@ DERECHA = "  "  # prefijo de las líneas de la columna derecha (espacio: \s 
 
 
 # Inicio de ficha: "Tipo:" (en 2009 también "Tipo."), "Código:" o, en un reclasificado, "CASO RECLASIFICADO / De: x. A: y.".
-_INICIO_FICHA = re.compile(r"\s*(C[oó]digo:|Tipo[:.]|CASO RECLASIFICADO)")
+# El texto del PDF a veces llega roto: "T Tipo:", "ipo:", "55Tipo:" (número de página pegado).
+_INICIO_FICHA = re.compile(r"\s*(?:\d+|T )?(C[oó]digo:|T?ipo[:.]|CASO (?:FUSIONADO Y )?RECLASIFICADO)")
+_CASO = re.compile(r"\s*Caso\s?[:.]")
 
 
 def _texto_con_columnas(pagina, bandas=None) -> str:
@@ -252,23 +254,35 @@ _FASES = r"temprana|escalamiento|crisis|desescalamiento|acuerdos"
 def fichas(texto: str) -> list[dict]:
     """Fichas de casos activos. Cada ficha empieza en su etiqueta 'Tipo:' (o 'Código:' si la precede)."""
     lineas = texto.splitlines()
-    depto, inicios = None, []
+    depto, inicios, caso_visto, etiqueta = None, [], False, None
     for i, l in enumerate(lineas):
         m = _DEP.match(l.strip())
         if m:
             depto = m.group(1)
-        if _INICIO_FICHA.match(l):
-            # 'Tipo:' y 'Código:' seguidos, en cualquier orden, son la misma ficha.
-            entre = [z for z in lineas[inicios[-1][0] + 1:i] if z.strip()] if inicios else []
-            if inicios and len(entre) <= 2 and lineas[inicios[-1][0]].strip()[:4] != l.strip()[:4] \
-                    and not l.strip().startswith("CASO"):
+        ini = _INICIO_FICHA.match(l)
+        if not ini and _CASO.match(l):
+            # Un segundo "Caso:" sin "Tipo:" antes (o uno antes de la primera ficha) abre otra ficha (n.° 123, 268).
+            if inicios and not caso_visto:
+                caso_visto = True
                 continue
-            nombre = None
-            for j in range(i - 1, max(i - 8, -1), -1):  # en el HTML el nombre va encima: "Wampis - X (Amazonas)"
-                if re.search(r"\(([^)]+)\)\s*$", lineas[j]) and len(lineas[j]) < 160:
-                    nombre = re.sub(r"\s*\([^)]+\)\s*$", "", lineas[j]).strip()
-                    break
-            inicios.append((i, depto, nombre))
+        elif not ini:
+            continue
+        if ini:
+            # 'Tipo:' y 'Código:' seguidos, en cualquier orden, son la misma ficha.
+            g = ini.group(1)
+            et = "r" if g.startswith("CASO") else "c" if g.startswith("C") else "t"
+            entre = [z for z in lineas[inicios[-1][0] + 1:i] if z.strip()] if inicios else []
+            if inicios and len(entre) <= 2 and {etiqueta, et} == {"c", "t"}:
+                etiqueta = et
+                continue
+            etiqueta = et
+        caso_visto = bool(_CASO.match(l))
+        nombre = None
+        for j in range(i - 1, max(i - 8, -1), -1):  # en el HTML el nombre va encima: "Wampis - X (Amazonas)"
+            if re.search(r"\(([^)]+)\)\s*$", lineas[j]) and len(lineas[j]) < 160:
+                nombre = re.sub(r"\s*\([^)]+\)\s*$", "", lineas[j]).strip()
+                break
+        inicios.append((i, depto, nombre))
     out = []
     for k, (i, dep, nombre) in enumerate(inicios):
         fin = inicios[k + 1][0] if k + 1 < len(inicios) else len(lineas)
@@ -659,8 +673,16 @@ def filas_lista(texto: str) -> list[dict]:
             if nums and int(l[:-1]) <= int(ls[nums[-1]][:-1]):
                 break
             nums.append(i)
+    segs = []
     for a, b in zip(nums, nums[1:] + [len(ls)]):
         seg = ls[a + 1:b]
+        # Fila sin su número en el texto (126, 127: falta "23."): dos tipologías en un tramo; se corta en el
+        # departamento en mayúsculas con su "(ubicación)" que va entre ambas.
+        tip = [j for j, l in enumerate(seg) if l.startswith("Confli")]
+        corte = max((j for j in range(tip[0] + 1, tip[1]) if seg[j].isupper() and seg[j + 1].startswith("(")
+                     and _DEP_ANTIGUO.match(_sin_tildes(seg[j]).upper())), default=None) if len(tip) >= 2 else None
+        segs += [seg[:corte], seg[corte:]] if corte else [seg]
+    for seg in segs:
         if not seg:
             continue
         k = next((j for j, l in enumerate(seg) if re.match(r"(Tipo|Conflicto)\b", l)), None)

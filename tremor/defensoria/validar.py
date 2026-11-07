@@ -30,7 +30,8 @@ def procesar(doc) -> dict:
     en_texto = sum(len(re.findall(r"^\s*Caso[:.]", s["texto"], re.M))
                    for s in secs if s["canonica"] == "fichas_activos")
     sin = sum(x.contar_lista(s["texto"]) for s in secs if s["canonica"] == "activos_sin_hechos")
-    lat = sum(x.contar_lista(s["texto"]) for s in secs if s["canonica"] == "latentes")
+    lat = sum(max(x.contar_lista(s["texto"]), len(x.filas_lista(s["texto"])))  # filas sin número (126)
+              for s in secs if s["canonica"] == "latentes")
     lista = [dict(f, estado="latente" if s["canonica"] == "latentes" else "activo", pagina=s["pagina"])
              for s in secs if s["canonica"] in ("activos_sin_hechos", "latentes") for f in x.filas_lista(s["texto"]) or x.filas_tabla(s["texto"])]
     # Acciones colectivas de protesta (Historia 5): solo en los PDF con la tabla de detalle.
@@ -60,7 +61,14 @@ def procesar(doc) -> dict:
         acc, vict, vict_decl = [], [], None
     return {"totales": tot, "fichas": fichas, "fichas_en_texto": en_texto, "acciones": acc, "acciones_en_texto": acc_texto,
             "victimas": vict, "victimas_declaradas": vict_decl, "sin_hechos": sin, "latentes": lat, "lista": lista,
+            "latentes_completos": _lista_completa([s["texto"] for s in secs if s["canonica"] == "latentes"], lista),
             "secciones": [(s["titulo"], s["canonica"], s["pagina"]) for s in secs]}
+
+
+def _lista_completa(textos: list[str], lista: list[dict]) -> bool:
+    """La lista de latentes viene numerada 1..N sin huecos y se leyeron sus N filas."""
+    nums = sorted({int(n) for t in textos for n in re.findall(r"(?m)^\s*(\d{1,3})\.\s*$", t)})
+    return bool(nums) and nums == list(range(1, nums[-1] + 1)) and sum(f["estado"] == "latente" for f in lista) == nums[-1]
 
 
 def veredicto(r: dict) -> tuple[str, dict]:
@@ -70,10 +78,24 @@ def veredicto(r: dict) -> tuple[str, dict]:
     d = {"activos_declarados": tot["activos"], "activos_leidos": len(r["fichas"]) + r["sin_hechos"],
          "latentes_declarados": tot["latentes"], "latentes_leidos": r["latentes"]}
     difs = [abs(d["activos_declarados"] - d["activos_leidos"])]
+    # Se manda el detalle: si se leyeron todas las fichas que trae y ninguna va en lista, la cifra declarada que
+    # no cuadra es de la fuente (239: el resumen dice 169 activos y el detalle publica 172 casos distintos).
+    # Desde 2025 los activos sin hechos van en lista: cuenta si se leyó cada fila (una por fecha de inicio).
+    lista_act = sum(f["estado"] == "activo" for f in r.get("lista", []))
+    detalle_completo = r.get("fichas_en_texto") == len(r["fichas"]) > 0 and r["sin_hechos"] == lista_act
+    if difs[0] and detalle_completo and abs(difs[0]) <= TOLERANCIA:
+        d["nota"] = (f"el reporte declara {tot['activos']} activos y su detalle publica {d['activos_leidos']} "
+                     f"({len(r['fichas'])} fichas y {lista_act} en lista); se leyeron todos")
+        difs[0] = 0
     if d["latentes_leidos"] * 2 < d["latentes_declarados"]:
         d["nota"] = "el reporte no lista todos los latentes (2012); se validan solo los activos"
     else:
-        difs.append(abs(d["latentes_declarados"] - d["latentes_leidos"]))
+        dl = abs(d["latentes_declarados"] - d["latentes_leidos"])
+        if dl and r.get("latentes_completos") and dl <= TOLERANCIA:  # la lista numerada 1..N se leyó entera (111, 235)
+            d["nota_latentes"] = (f"el reporte declara {tot['latentes']} latentes y su lista publica "
+                                  f"{d['latentes_leidos']}; se leyeron todos")
+            dl = 0
+        difs.append(dl)
     if d["activos_leidos"] == 0:
         d["nota"] = "texto del PDF desarmado (p. ej. '18 4 conflictos'); no se puede leer con reglas"
     dif = max(difs)
@@ -237,7 +259,7 @@ def veredicto_antiguo(r: dict) -> tuple[str, dict]:
     if dif is None:
         return "sin_totales", d
     nums = sorted(f["num_fuente"] for f in r["fichas"] + r["lista"] if f.get("num_fuente") and f["estado"] != "resuelto")
-    if dif > TOLERANCIA and nums and nums == list(range(nums[0], nums[0] + len(nums))):
+    if dif and nums and nums == list(range(nums[0], nums[0] + len(nums))):
         # El detalle numera sus casos sin huecos y se leyeron todos: el resumen del propio reporte no coincide
         # con su detalle (p. ej. n.° 45: el detalle trae 33 activos y el resumen declara 28).
         # Manda el detalle: es lo que el reporte describe caso por caso.
