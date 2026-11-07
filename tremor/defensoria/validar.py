@@ -37,7 +37,14 @@ def veredicto(r: dict) -> tuple[str, dict]:
         return "sin_totales", {}
     d = {"activos_declarados": tot["activos"], "activos_leidos": len(r["fichas"]) + r["sin_hechos"],
          "latentes_declarados": tot["latentes"], "latentes_leidos": r["latentes"]}
-    dif = max(abs(d["activos_declarados"] - d["activos_leidos"]), abs(d["latentes_declarados"] - d["latentes_leidos"]))
+    difs = [abs(d["activos_declarados"] - d["activos_leidos"])]
+    if d["latentes_leidos"] * 2 < d["latentes_declarados"]:
+        d["nota"] = "el reporte no lista todos los latentes (2012); se validan solo los activos"
+    else:
+        difs.append(abs(d["latentes_declarados"] - d["latentes_leidos"]))
+    if d["activos_leidos"] == 0:
+        d["nota"] = "texto del PDF desarmado (p. ej. '18 4 conflictos'); no se puede leer con reglas"
+    dif = max(difs)
     return ("valido" if dif == 0 else "aproximado" if dif <= TOLERANCIA else "fallido"), d
 
 
@@ -70,10 +77,12 @@ def enlazar(con, f: dict, usados: set, num: int) -> tuple[int, float]:
             mejor, puntaje = cid, p
     if mejor is not None and puntaje >= 0.8:
         if f.get("codigo"):
-            con.execute("UPDATE caso SET codigo = ? WHERE id = ? AND codigo IS NULL", (f["codigo"], mejor))
+            con.execute("UPDATE OR IGNORE caso SET codigo = ? WHERE id = ? AND codigo IS NULL", (f["codigo"], mejor))
         return mejor, round(puntaje, 3)
+    # Un código ya tomado (la misma ficha repetida en el reporte) no se vuelve a asignar.
+    libre = f.get("codigo") and not con.execute("SELECT 1 FROM caso WHERE codigo = ?", (f["codigo"],)).fetchone()
     cur = con.execute("INSERT INTO caso (codigo, nombre, tipo, departamento, descripcion) VALUES (?, ?, ?, ?, ?)",
-                      (f.get("codigo"), f.get("nombre"), f.get("tipo"), f.get("departamento"), desc))
+                      (f["codigo"] if libre else None, f.get("nombre"), f.get("tipo"), f.get("departamento"), desc))
     return cur.lastrowid, 0.0
 
 

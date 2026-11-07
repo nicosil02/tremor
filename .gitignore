@@ -14,6 +14,5 @@ datos/cache/
 # Sistema
 .DS_Store
 Thumbs.db
-# Solo los exportes de datos van al repo
+# Los datos (base y CSV) van en la rama `datos`, no en main (ver T027)
 datos/*
-!datos/exportes/
