@@ -385,14 +385,14 @@ def exportar(con):
     consultas = {
         "reportes.csv": "SELECT num, anio, mes, total, activos, latentes, en_dialogo, acciones_declaradas,"
                         " estado, detalle_validacion FROM reporte ORDER BY num",
-        "casos.csv": "SELECT id, codigo, nombre, tipo, departamento FROM caso ORDER BY id",
+        "casos.csv": "SELECT id, codigo, nombre, tipo, departamento, ubigeo FROM caso ORDER BY id",
         "caso_mes.csv": "SELECT cm.reporte_num, r.anio, r.mes, cm.caso_id, c.codigo, c.tipo, c.departamento,"
                         " cm.fase, cm.dialogo, cm.competencia, cm.actores_primarios, cm.actores_secundarios,"
                         " cm.actores_terciarios, cm.hechos_mes, cm.pagina, cm.enlace_confianza"
                         " FROM caso_mes cm JOIN caso c ON c.id = cm.caso_id JOIN reporte r ON r.num = cm.reporte_num"
                         " ORDER BY cm.reporte_num, cm.caso_id",
         "acciones_protesta.csv": "SELECT a.reporte_num, r.anio, r.mes, a.n, a.fecha, a.medida, a.actores, a.lugar,"
-                                 " a.demanda, a.pagina FROM accion_protesta a JOIN reporte r ON r.num = a.reporte_num"
+                                 " a.demanda, a.pagina, a.ubigeo FROM accion_protesta a JOIN reporte r ON r.num = a.reporte_num"
                                  " ORDER BY a.reporte_num, a.n",
         "victimas.csv": "SELECT v.reporte_num, r.anio, r.mes, v.lugar_caso, v.fallecidos, v.heridos, v.pagina"
                         " FROM victimas v JOIN reporte r ON r.num = v.reporte_num ORDER BY v.reporte_num",
