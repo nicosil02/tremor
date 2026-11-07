@@ -6,6 +6,7 @@ formato de 2012 en adelante. Los reportes de 2004 a 2011 quedan como `formato_an
 import re
 import unicodedata
 
+import pymupdf
 from bs4 import BeautifulSoup
 
 from tremor.defensoria.catalogo import CRUDOS
@@ -72,25 +73,83 @@ def paginas(doc) -> list[tuple[int, str]]:
     import pymupdf
     pymupdf.TOOLS.mupdf_display_errors(False)
     with pymupdf.open(ruta) as d:
-        return [(i + 1, _texto_con_columnas(p)) for i, p in enumerate(d)]
+        ps = list(d)
+        bandas = _resolver_bandas([_bandas_departamento(p) for p in ps])
+        return [(i + 1, _texto_con_columnas(p, b)) for i, (p, b) in enumerate(zip(ps, bandas))]
 
 
 DERECHA = "  "  # prefijo de las líneas de la columna derecha (espacio: \s lo absorbe en las demás reglas)
 
 
-def _texto_con_columnas(pagina) -> str:
+# Inicio de ficha: "Tipo:" (en 2009 también "Tipo."), "Código:" o, en un reclasificado, "CASO RECLASIFICADO / De: x. A: y.".
+_INICIO_FICHA = re.compile(r"\s*(C[oó]digo:|Tipo[:.]|CASO RECLASIFICADO)")
+
+
+def _texto_con_columnas(pagina, bandas=None) -> str:
     """Texto de la página en el orden de PyMuPDF, marcando las líneas de la columna derecha.
 
     En las fichas la columna derecha trae el diálogo y los hechos del mes; cuando una ficha cruza de página,
-    ese texto queda antes de los actores y sin la marca se pierde."""
+    ese texto queda antes de los actores y sin la marca se pierde. Con `bandas` (2008-2011), antes de cada
+    ficha va el nombre de su departamento, tomado de la celda en que cae y no del orden del texto."""
     mitad = pagina.rect.width * 0.5
-    lineas = []
+    lineas, ultimo = [], None
     for b in pagina.get_text("blocks"):
         if b[6] != 0:
             continue
         pref = DERECHA if b[0] > mitad else ""
-        lineas += [pref + l for l in b[4].splitlines()]
+        ls = b[4].splitlines()
+        for k, l in enumerate(ls):
+            if bandas:
+                if _DEP.match(l.strip()):
+                    continue  # el rótulo suelto de la celda: va como marca antes de cada ficha
+                if _INICIO_FICHA.match(l):
+                    y = b[1] + (k + 0.5) * (b[3] - b[1]) / len(ls)
+                    dep = next((d for top, d in reversed(bandas) if top <= y + 2), None)
+                    if dep and dep != ultimo:
+                        lineas.append(dep)
+                        ultimo = dep
+            lineas.append(pref + l)
     return "\n".join(lineas)
+
+
+def _bandas_departamento(pagina):
+    """2008-2011: las fichas van en una tabla cuya primera columna es el departamento, en una celda que abarca
+    todas sus fichas y con el nombre centrado en ella (a veces en otra página). [(borde superior, nombre o None)]
+    de cada celda de esa columna, o None si la página no tiene esa tabla."""
+    xs = _reglas_verticales(pagina, 0)
+    if len(xs) < 3 or not 40 <= xs[1] - xs[0] <= 110 or not re.search(r"(?m)^\s*(Tipo:|CASO)", pagina.get_text()):
+        return None
+    x0, x1 = xs[0], xs[1]
+    bordes = {pagina.rect.height}
+    for dib in pagina.get_drawings():
+        for it in dib["items"]:
+            r = it[1] if it[0] == "re" else pymupdf.Rect(it[1], it[2]) if it[0] == "l" else None
+            if r is not None and r.height < 2 and r.x0 <= x0 + 3 and r.x1 >= x1 - 3:
+                bordes.add(round(r.y0, 1))
+    bordes = sorted(bordes)
+    palabras = sorted((w for w in pagina.get_text("words") if w[0] >= x0 - 2 and w[2] <= x1 + 2),
+                      key=lambda w: (w[1], w[0]))
+    out = []
+    for a, b in zip(bordes, bordes[1:]):
+        t = " ".join(w[4] for w in palabras if a <= (w[1] + w[3]) / 2 < b).strip()
+        out.append((a, t if _DEP.match(t) else None))
+    return out
+
+
+def _resolver_bandas(paginas_: list) -> list:
+    """Nombre de las celdas sin rótulo: la primera de la página sigue a la anterior; una que empieza más abajo
+    tiene el rótulo al inicio de la página siguiente."""
+    if not any(d for b in paginas_ if b for _, d in b):
+        return [None] * len(paginas_)
+    ultimo = None
+    for i, b in enumerate(paginas_):
+        for k, (top, d) in enumerate(b or []):
+            if d is None:
+                sig = paginas_[i + 1][0][1] if k and i + 1 < len(paginas_) and paginas_[i + 1] else None
+                d = sig or ultimo
+            b[k] = (top, d)
+            ultimo = d or ultimo
+    return paginas_
 
 
 def _texto_html(ruta) -> str:
@@ -184,8 +243,8 @@ ETIQUETAS = [
     ("actores_primarios", r"Actores(?:\s+[Pp]rimarios)?:"), ("actores_secundarios", r"Actores\s+[Ss]ecundarios:"),
     ("actores_terciarios", r"Actores\s+[Tt]erciarios:"),
 ]
-# En 2012 algunas fichas usan punto ("Caso.", "Ubicación."): se acepta solo al inicio de línea.
-_ETIQ = re.compile("|".join(f"(?P<{k}>{p}|(?m:^)[ \\t]*{p[:-1]}\\.)" for k, p in ETIQUETAS))
+# En 2012 algunas fichas usan punto ("Caso.", "Ubicación."): se acepta solo al inicio de línea. En 2008, "Caso :".
+_ETIQ = re.compile("|".join(f"(?P<{k}>{p[:-1]} ?:|(?m:^)[ \\t]*{p[:-1]}\\.)" for k, p in ETIQUETAS))
 _DIALOGO = re.compile(r"\b(NO HAY DI[AÁ]LOGO|HAY DI[AÁ]LOGO)\b", re.I)
 _FASES = r"temprana|escalamiento|crisis|desescalamiento|acuerdos"
 
@@ -198,10 +257,11 @@ def fichas(texto: str) -> list[dict]:
         m = _DEP.match(l.strip())
         if m:
             depto = m.group(1)
-        if re.match(r"\s*(C[oó]digo:|Tipo:)", l):
+        if _INICIO_FICHA.match(l):
             # 'Tipo:' y 'Código:' seguidos, en cualquier orden, son la misma ficha.
             entre = [z for z in lineas[inicios[-1][0] + 1:i] if z.strip()] if inicios else []
-            if inicios and len(entre) <= 2 and lineas[inicios[-1][0]].strip()[:4] != l.strip()[:4]:
+            if inicios and len(entre) <= 2 and lineas[inicios[-1][0]].strip()[:4] != l.strip()[:4] \
+                    and not l.strip().startswith("CASO"):
                 continue
             nombre = None
             for j in range(i - 1, max(i - 8, -1), -1):  # en el HTML el nombre va encima: "Wampis - X (Amazonas)"
@@ -217,6 +277,8 @@ def fichas(texto: str) -> list[dict]:
         if "descripcion" not in f and "ubicacion" not in f:
             continue  # 'Tipo:' suelto fuera de una ficha
         f["departamento"], f["nombre"] = dep, nombre
+        if not f.get("tipo") and (m := re.search(r"^\s*A:\s*(.+)$", bloque, re.M)):
+            f["tipo"] = tipo_canonico(m.group(1))
         out.append(f)
     return out
 
@@ -289,7 +351,7 @@ def declarado_en_seccion(texto: str) -> int | None:
 
 
 # "01/06/2017", "2/08/2026" o, en 2014-2015, "5 de octubre".
-_FECHA = re.compile(r"^(\d{1,2}/\d{1,2}/\d{2,4}|\d{1,2} de (?:%s))" % _MES_RE, re.I)
+_FECHA = re.compile(r"^(\d{1,2}/\d{1,2}/\d{2,4}|\d{1,2} de (?:%s)|\d{1,2} de$)" % _MES_RE, re.I)  # "30 de" / "agosto"
 COLUMNAS = ("fecha", "medida", "actores", "lugar", "demanda")
 
 
@@ -325,7 +387,7 @@ def acciones(doc, paginas_: list[int]) -> list[dict]:
                     elif misma and llenas and len(celdas) == ultima[0]                             and not any(_sin_tildes(c.lower()).startswith("fecha") for _, c in llenas):
                         for i, c in llenas:  # cada trozo va al campo cuya columna está más cerca a su izquierda
                             col = max((n for n, ic in enumerate(ultima[1]) if ic <= i), default=0)
-                            if col:
+                            if col or filas[-1]["fecha"].endswith(" de"):
                                 filas[-1][COLUMNAS[col]] += " " + c
         # Respaldo por posición, página por página: en una misma tabla hay páginas que find_tables() lee bien y
         # otras donde junta filas de a dos (n.° 130, págs. 104-109). Una página se reemplaza si la lectura por
@@ -340,8 +402,9 @@ def acciones(doc, paginas_: list[int]) -> list[dict]:
     return filas
 
 
-# La fecha sola en su línea; en 2014 viene partida: "1 de" / "septiembre".
-_FECHA_SOLA = re.compile(r"^\s*(?:\d{1,2}/\d{1,2}/\d{2,4}|\d{1,2} de\s+(?:%s))\s*$" % _MES_RE, re.M | re.I)
+# La fecha sola en su línea; en 2014 viene partida: "1 de" / "septiembre", y al pie de página el mes puede
+# quedar en la página siguiente ("6 de", n.° 126).
+_FECHA_SOLA = re.compile(r"^\s*(?:\d{1,2}/\d{1,2}/\d{2,4}|\d{1,2} de\s+(?:%s)|\d{1,2} de)\s*$" % _MES_RE, re.M | re.I)
 _CABECERAS = ("Fecha", "Medida", "Actores", "Lugar", "Demanda")  # en 2014 "Lugar" se llama "Ámbito"
 
 
@@ -692,3 +755,34 @@ def casos_antiguos(pags: list[tuple[int, str]]) -> list[dict]:
         if len(texto) > 40:
             out.append(f)
     return out
+
+
+_CABECERA_TABLA = re.compile(r"^(?:N[º°o]\.?|Lugares?|Caso|Motivo|Estado actual|REGI[OÓ]N\s.*)$")
+
+
+def filas_tabla(texto: str) -> list[dict]:
+    """Casos en tabla "N.° / Lugares / Caso / Motivo / Estado actual" (2008-2011: reactivados y los que pasan
+    a latentes). Cada fila se ancla en el departamento en mayúsculas seguido de "Conflicto ..."; el lugar va
+    encima, el motivo debajo y lo ocurrido en el mes en la columna derecha."""
+    ls = [l for l in texto.splitlines() if l.strip()]
+    anclas = [i for i, l in enumerate(ls[:-1]) if not l.startswith(DERECHA) and l.strip() == l.strip().upper()
+              and _DEP_ANTIGUO.match(_sin_tildes(l.strip()).upper()) and ls[i + 1].strip().startswith("Conflicto")]
+    filas = []
+    for k, a in enumerate(anclas):
+        lugar, j = [], a - 1
+        while j >= 0 and not ls[j].startswith(DERECHA) and not _CABECERA_TABLA.match(ls[j].strip()) \
+                and (k == 0 or j > anclas[k - 1] + 1):
+            lugar.insert(0, ls[j].strip())
+            j -= 1
+        fin = anclas[k + 1] - 1 if k + 1 < len(anclas) else len(ls)
+        cuerpo = ls[a + 2:fin]
+        desc = []
+        for l in cuerpo:
+            if l.startswith(DERECHA):
+                break
+            desc.append(l.strip())
+        hechos = [l.strip() for l in cuerpo if l.startswith(DERECHA)]
+        filas.append({"departamento": _sin_tildes(ls[a].strip()).title(), "ubicacion": " ".join(lugar).strip(" ,."),
+                      "tipo": tipo_canonico(ls[a + 1]), "descripcion": " ".join(desc),
+                      "hechos_mes": " ".join(hechos)})
+    return filas
