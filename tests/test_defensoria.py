@@ -283,3 +283,23 @@ def test_filas_tabla():
         ("Cajamarca", "Distrito de Lajas, Provincia de Chota", "Asuntos de gobierno local"),
         ("Lima", "Comunidad de Oyón", "Socioambiental")]
     assert fs[1]["hechos_mes"] == "Se reunieron."
+
+
+def test_fichas_texto_roto():
+    """'T Tipo:', '55Tipo:' (página pegada) y un segundo 'Caso:' sin 'Tipo:' abren fichas (n.° 123, 168, 254)."""
+    from tremor.defensoria.extraer import fichas
+    texto = ("T Tipo: Socioambiental.\nCaso: Comunidad nativa reclama.\nUbicación: Datem.\n"
+             "55Tipo: Comunal.\nCaso: Comuneros de Cochas.\nUbicación: Junín.\n"
+             "Caso: Comerciantes ambulantes de Puno.\nUbicación: Puno.\n")
+    assert [f["descripcion"][:10] for f in fichas(texto)] == ["Comunidad ", "Comuneros ", "Comerciant"]
+
+
+def test_lista_sin_numero():
+    """Una fila de la lista de latentes sin su número (126: falta '23.') se separa por su segunda tipología."""
+    from tremor.defensoria.extraer import DERECHA, filas_lista
+    texto = ("22.\nLA LIBERTAD\n(Centro poblado de Chota)\nRonderos se oponen a la minera.\n"
+             f"{DERECHA}Conflicto\n{DERECHA}socioambiental\nLA LIBERTAD\n(Provincia de Sánchez Carrión)\n"
+             f"Ronderos reclaman al Ejecutivo.\n{DERECHA}Conflicto por otros\n{DERECHA}asuntos\n")
+    fs = filas_lista(texto)
+    assert [(f["departamento"], f["tipo"]) for f in fs] == [("La Libertad", "Socioambiental"),
+                                                          ("La Libertad", "Otros asuntos")]
