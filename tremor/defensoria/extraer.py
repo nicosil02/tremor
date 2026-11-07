@@ -10,7 +10,8 @@ from bs4 import BeautifulSoup
 
 from tremor.defensoria.catalogo import CRUDOS
 
-_DEP = re.compile(r"^(%s)$" % "|".join(sorted({d.replace("_", " ") for d in
+# Encabezado de departamento: "Amazonas" o, en 2012-2014, "Amazonas: Tres (3)" y "Amazonas / San Martín: un (1)...".
+_DEP = re.compile(r"^(%s)(?:\s*(?::|/).*)?$" % "|".join(sorted({d.replace("_", " ") for d in
                   "Amazonas|Áncash|Ancash|Apurímac|Arequipa|Ayacucho|Cajamarca|Callao|Cusco|Huancavelica|"
                   "Huánuco|Ica|Junín|La Libertad|Lambayeque|Lima|Lima Metropolitana|Lima Provincias|Loreto|"
                   "Madre de Dios|Moquegua|Pasco|Piura|Puno|San Martín|Tacna|Tumbes|Ucayali|"
@@ -44,7 +45,8 @@ SECCIONES_HTML = {
     "sec-protestas": "acciones_protesta", "sec-alertas-prioritarias": "alertas",
     "sec-acuerdos": "acuerdos", "sec-mediacion": "dialogo", "sec-portada": "resumen",
 }
-_TITULO = re.compile(r"^\s*(?:[IVX]+\.|\d\.\d(?:\.\d)?)\s+([A-ZÁÉÍÓÚÑ].{6,})$")
+_MES_RE = "enero|febrero|marzo|abril|mayo|junio|julio|agosto|setiembre|septiembre|octubre|noviembre|diciembre"
+_TITULO = re.compile(r"^\s*(?:[IVX]+\.|\d{1,2}\.\d{1,2}(?:\.\d)?)\s+([A-ZÁÉÍÓÚÑ].{6,})$")
 # 2012-2013: títulos sin numeración. Solo estos abren sección (las fichas tienen otras líneas en mayúsculas).
 _TITULO_SUELTO = re.compile(r"^\s*(DETALLE DE LOS CONFLICTOS SOCIALES ACTIVOS|DETALLE DE LOS CONFLICTOS LATENTES|"
                             r"Conflictos (?:latentes|resueltos|reactivados)\..*|ACCIONES COLECTIVAS DE PROTESTA|"
@@ -153,7 +155,8 @@ ETIQUETAS = [
     ("actores_primarios", r"Actores\s+primarios:"), ("actores_secundarios", r"Actores\s+secundarios:"),
     ("actores_terciarios", r"Actores\s+terciarios:"),
 ]
-_ETIQ = re.compile("|".join(f"(?P<{k}>{p})" for k, p in ETIQUETAS))
+# En 2012 algunas fichas usan punto ("Caso.", "Ubicación."): se acepta solo al inicio de línea.
+_ETIQ = re.compile("|".join(f"(?P<{k}>{p}|(?m:^)[ \\t]*{p[:-1]}\\.)" for k, p in ETIQUETAS))
 _DIALOGO = re.compile(r"\b(NO HAY DI[AÁ]LOGO|HAY DI[AÁ]LOGO)\b", re.I)
 _FASES = r"temprana|escalamiento|crisis|desescalamiento|acuerdos"
 
@@ -163,8 +166,9 @@ def fichas(texto: str) -> list[dict]:
     lineas = texto.splitlines()
     depto, inicios = None, []
     for i, l in enumerate(lineas):
-        if _DEP.match(l.strip()):
-            depto = l.strip()
+        m = _DEP.match(l.strip())
+        if m:
+            depto = m.group(1)
         if re.match(r"\s*(C[oó]digo:|Tipo:)", l):
             # 'Tipo:' y 'Código:' seguidos, en cualquier orden, son la misma ficha.
             if inicios and i - inicios[-1][0] <= 3 and lineas[inicios[-1][0]].strip()[:4] != l.strip()[:4]:
@@ -228,3 +232,97 @@ def declarado_en_seccion(texto: str) -> int | None:
     t = re.sub(r"\s+", " ", texto[:1500])
     m = re.search(r"(?:existencia de|registraron|se registraron) (\d+) (?:conflictos|casos)", t)
     return int(m.group(1)) if m else None
+
+
+# "01/06/2017", "2/08/2026" o, en 2014-2015, "5 de octubre".
+_FECHA = re.compile(r"^(\d{1,2}/\d{1,2}/\d{2,4}|\d{1,2} de (?:%s))" % _MES_RE, re.I)
+COLUMNAS = ("fecha", "medida", "actores", "lugar", "demanda")
+
+
+def acciones(doc, paginas_: list[int]) -> list[dict]:
+    """Filas de la tabla de acciones colectivas de protesta, con find_tables() de PyMuPDF.
+
+    Según el año, la tabla tiene celdas combinadas y la fecha no cae bajo su encabezado; por eso cada fila
+    se lee por contenido: la primera celda con fecha y las cuatro celdas no vacías que la siguen (medida,
+    actores, lugar y demanda). Al inicio de una página, las filas sin fecha de una tabla con las mismas
+    columnas continúan la última fila (fila partida entre páginas)."""
+    import pymupdf
+    pymupdf.TOOLS.mupdf_display_errors(False)
+    filas, ultima = [], None  # ultima: (número de columnas, índice de cada campo) de la última fila
+    with pymupdf.open(CRUDOS / f"{doc['huella']}.pdf") as d:
+        for num in paginas_:
+            if num > len(d):
+                continue
+            for nt, t in enumerate(d[num - 1].find_tables().tables):
+                # Pueden continuar la fila anterior las filas sin fecha de la misma tabla (texto partido en
+                # varias líneas) o de la primera tabla de la página siguiente (fila partida entre páginas).
+                misma = ultima is not None and (ultima[2] == (num, nt) or (nt == 0 and ultima[2][0] == num - 1))
+                for celdas in t.extract():
+                    celdas = [re.sub(r"\s+", " ", c or "").strip() for c in celdas]
+                    llenas = [(i, c) for i, c in enumerate(celdas) if c]
+                    k = next((j for j, (_, c) in enumerate(llenas) if _FECHA.match(c)), None)
+                    if k is not None and len(llenas) - k >= 5:
+                        campos = llenas[k:k + 4] + [(llenas[k + 4][0], " ".join(c for _, c in llenas[k + 4:]))]
+                        fila = dict(zip(COLUMNAS, (c for _, c in campos)), pagina=num)
+                        fila["fecha"] = _FECHA.match(fila["fecha"]).group(1)
+                        filas.append(fila)
+                        ultima = (len(celdas), [i for i, _ in campos], (num, nt))
+                        misma = True
+                    elif misma and llenas and len(celdas) == ultima[0]                             and not any(_sin_tildes(c.lower()).startswith("fecha") for _, c in llenas):
+                        for i, c in llenas:  # cada trozo va al campo cuya columna está más cerca a su izquierda
+                            col = max((n for n, ic in enumerate(ultima[1]) if ic <= i), default=0)
+                            if col:
+                                filas[-1][COLUMNAS[col]] += " " + c
+    return filas
+
+
+def acciones_en_texto(doc, paginas_: list[int]) -> int:
+    """Fechas sueltas en líneas propias: cuántas filas trae la tabla según el texto, para separar un error
+    del lector de una tabla que la propia Defensoría publica incompleta."""
+    import pymupdf
+    pymupdf.TOOLS.mupdf_display_errors(False)
+    with pymupdf.open(CRUDOS / f"{doc['huella']}.pdf") as d:
+        t = "\n".join(d[p - 1].get_text() for p in paginas_ if p <= len(d))
+    return len(re.findall(r"^\s*(?:\d{1,2}/\d{1,2}/\d{2,4}|\d{1,2} de (?:%s))\s*$" % _MES_RE, t, re.M | re.I))
+
+
+def acciones_declaradas(texto: str) -> int | None:
+    m = re.search(r"(?:registrado|registraron)\s+(\d[\d ]*)\s+acciones colectivas", re.sub(r"\s+", " ", texto))
+    return int(m.group(1).replace(" ", "")) if m else None
+
+
+def victimas_declaradas(texto: str) -> dict:
+    """Fallecidos y heridos del mes según la frase del inicio de la sección ("se registró cuatro heridos")."""
+    t = _sin_tildes(re.sub(r"\s+", " ", texto[:800]).lower())
+    out = {"fallecidos": 0, "heridos": 0}
+    for cantidad, tipo in re.findall(r"(\d+|\w+) (?:personas )?(herid[oa]s?|fallecid[oa]s?|muert[oa]s?)", t):
+        n = _num(cantidad)
+        if n is not None:
+            out["heridos" if tipo.startswith("herid") else "fallecidos"] += n
+    return out
+
+
+def victimas(doc, pagina: int) -> list[dict]:
+    """Filas de la tabla "muertos y/o heridos": lugar o caso y seis valores (muertos total, civiles, PNP;
+    heridos total, civiles, PNP). La primera fila es el TOTAL. Un nombre sin valores completa la fila anterior."""
+    import pymupdf
+    pymupdf.TOOLS.mupdf_display_errors(False)
+    filas = []
+    with pymupdf.open(CRUDOS / f"{doc['huella']}.pdf") as d:
+        if pagina > len(d):
+            return []
+        for t in d[pagina - 1].find_tables().tables:
+            for celdas in t.extract():
+                llenas = [re.sub(r"\s+", " ", c).strip() for c in celdas if c and c.strip()]
+                if llenas and re.match(r"(Cuadro|Fuente|Nota|Gr[aá]fico)", llenas[0]):
+                    return filas  # termina la tabla; lo que sigue son los cuadros por mes
+                valores = [c for c in llenas if re.fullmatch(r"\d+|-", c)]
+                nombre = " ".join(c for c in llenas if not re.fullmatch(r"\d+|-", c))
+                if len(re.findall(r"(?:Ene|Feb|Mar|Abr|May|Jun|Jul|Ago|Set|Sep|Oct|Nov|Dic)", nombre)) >= 3:
+                    return filas  # fila del gráfico por mes que sigue a la tabla
+                if len(valores) == 6 and nombre:
+                    v = [0 if c == "-" else int(c) for c in valores]
+                    filas.append({"lugar_caso": nombre, "fallecidos": v[0], "heridos": v[3], "pagina": pagina})
+                elif nombre and not valores and filas and filas[-1]["lugar_caso"] != "TOTAL":
+                    filas[-1]["lugar_caso"] += " – " + nombre
+    return filas

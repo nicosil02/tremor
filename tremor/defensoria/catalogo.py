@@ -265,18 +265,45 @@ def _guardar(contenido: bytes, formato: str) -> str:
     return huella
 
 
+TRUNCADO = 1048576  # el Wayback guardó algunos PDF cortados justo en 1 MB (185, 189, 190 y 198)
+
+
+def _bajar(url: str) -> bytes:
+    """Contenido de un documento. Para lo rescatado del Wayback se prueba antes el enlace original,
+    que suele seguir vivo, y si no, la captura más grande (las primeras pueden estar truncadas)."""
+    m = re.match(r"https://web\.archive\.org/web/\d+id_/(.+)", url)
+    if m:
+        original = m.group(1)
+        try:
+            r = _get(original.replace("http://", "https://"), timeout=180)
+            if r.ok and r.content[:4] == b"%PDF":
+                return r.content
+        except requests.RequestException:
+            pass
+        filas = _get(requests.Request("GET", CDX, params={
+            "url": original, "output": "json", "fl": "timestamp,length", "filter": "statuscode:200"},
+        ).prepare().url, timeout=180).json()[1:]
+        if filas:
+            marca = max(filas, key=lambda f: int(f[1]))[0]
+            url = f"https://web.archive.org/web/{marca}id_/{original}"
+    r = _get(url, timeout=180)
+    r.raise_for_status()
+    if len(r.content) == TRUNCADO:
+        raise ValueError("copia truncada en 1 MB")
+    return r.content
+
+
 def descargar(con) -> tuple[int, int]:
     """Descarga los documentos sin huella. Los zip se abren y cada PDF interno es un documento."""
     ok = errores = 0
     pendientes = con.execute("SELECT url, formato FROM documento WHERE huella IS NULL").fetchall()
     for doc in pendientes:
         try:
-            r = _get(doc["url"], timeout=180)
-            r.raise_for_status()
-            huella = _guardar(r.content, doc["formato"])
+            contenido = _bajar(doc["url"])
+            huella = _guardar(contenido, doc["formato"])
             con.execute("UPDATE documento SET huella = ?, error = NULL WHERE url = ?", (huella, doc["url"]))
             if doc["formato"] == "zip":
-                with zipfile.ZipFile(io.BytesIO(r.content)) as z:
+                with zipfile.ZipFile(io.BytesIO(contenido)) as z:
                     for nombre in z.namelist():
                         if nombre.lower().endswith(".pdf"):
                             h = _guardar(z.read(nombre), "pdf")

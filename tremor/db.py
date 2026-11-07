@@ -48,14 +48,14 @@ CREATE TABLE IF NOT EXISTS caso (
     codigo TEXT UNIQUE,
     nombre TEXT,                      -- solo los reportes de 2026 traen nombre corto
     nombres_anteriores TEXT,
-    descripcion TEXT,                 -- texto normalizado del "Caso:", para enlazar meses sin código
+    descripcion TEXT, ubicacion TEXT, actores TEXT,  -- última versión, para enlazar meses sin código
     tipo TEXT,
     departamento TEXT, provincia TEXT, distrito TEXT, ubigeo TEXT
 );
 CREATE TABLE IF NOT EXISTS caso_mes (
     caso_id INTEGER NOT NULL REFERENCES caso(id),
     reporte_num INTEGER NOT NULL,
-    estado TEXT, con_hechos INTEGER, fase TEXT, dialogo TEXT, competencia TEXT,
+    estado TEXT, con_hechos INTEGER, fase TEXT, dialogo TEXT, competencia TEXT, ubicacion TEXT,
     actores_primarios TEXT, actores_secundarios TEXT, actores_terciarios TEXT,
     descripcion TEXT, hechos_mes TEXT,
     pagina INTEGER,
@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS accion_protesta (
 CREATE TABLE IF NOT EXISTS victimas (
     reporte_num INTEGER NOT NULL,
     caso_id INTEGER,
+    lugar_caso TEXT,                  -- como lo escribe la tabla; enlazar con caso queda pendiente
     fallecidos INTEGER, heridos INTEGER,
     pagina INTEGER
 );

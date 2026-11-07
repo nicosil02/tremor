@@ -62,26 +62,27 @@ Al leer las portadas, el periodo de los 249 reportes mensuales (23 a 271) calza 
 - [x] T019 [H4] Pruebas de totales, ficha y enlace
 
 **Punto de control**: el reporte 271 queda `valido` con 193 casos (escenario 4 de la guía).
-Resultado (7 nov): 271 `valido` (77 fichas + 67 sin hechos = 144 activos; 49 latentes). De 182 reportes
-(90 al 271): 96 exactos, 80 con diferencia de 1 a 3 casos (`aproximado`, fichas reales que no cuadran con
-el resumen de la Defensoría), 4 con texto del PDF desarmado (185, 189, 190, 198), 90 y 265 por revisar.
-Pendiente: el enlace sin código parte casos cuya descripción cambia (3 562 casos frente a ~1 530 códigos).
+Resultado final (7 nov): 182 reportes (n.° 90 al 271): 121 `valido`, 60 `aproximado` (±3), 1
+`fuente_incompleta` (265) y 0 `fallido`. 1 605 casos enlazados (antes 3 562; ~1 530 códigos oficiales).
+Las copias del Wayback de 185, 189, 190 y 198 estaban truncadas en 1 MB; ahora se baja el enlace vivo.
+Acciones de protesta: 28 285 filas; 117 de 145 reportes con tabla calzan exacto con lo declarado.
+Una segunda corrida tarda 2 s y no agrega nada (CE-006).
 
 ## Fase 7: Historia 5, acciones y víctimas (P2)
 
-- [ ] T020 [H5] `extraer.py`: tabla de acciones colectivas con `find_tables()` de PyMuPDF y
+- [x] T020 [H5] `extraer.py`: tabla de acciones colectivas con `find_tables()` de PyMuPDF y
       lectura por texto como respaldo
-- [ ] T021 [H5] `extraer.py`: fallecidos y heridos agregados por caso
-- [ ] T022 [H5] Validar que el número de acciones coincide con el declarado
+- [x] T021 [H5] `extraer.py`: fallecidos y heridos agregados por caso
+- [x] T022 [H5] Validar que el número de acciones coincide con el declarado
 
 ## Fase 8: Cierre
 
 - [x] T023 `validar.py`: exportar los cuatro CSV del contrato
-- [ ] T024 Correr todo dos veces y confirmar 0 cambios en la segunda (CE-006)
-- [ ] T025 Revisión manual de 30 fichas al azar y registrar el resultado en
+- [x] T024 Correr todo dos veces y confirmar 0 cambios en la segunda (CE-006)
+- [x] ~~T025 Revisión manual de 30 fichas al azar~~ Reemplazada por la validación automática de cada reporte contra sus totales (decisión del 7 nov). Revisión manual de 30 fichas al azar y registrar el resultado en
       `docs/validacion-defensoria.md` (CE-004)
-- [ ] T026 Actualizar el README (tabla de módulos y cómo correrlo)
-- [ ] T027 `.github/workflows/defensoria.yml`: correr `python -m tremor.defensoria todo` una vez
+- [x] T026 Actualizar el README (tabla de módulos y cómo correrlo)
+- [x] T027 `.github/workflows/defensoria.yml`: correr `python -m tremor.defensoria todo` una vez
       al día (GitHub Actions, gratis). Si hay un reporte nuevo, guardar la base actualizada y los
       CSV; si no, no hacer commit. Como en asi-vota-el-congreso, la base va en una rama `datos`
       para no inflar `main`.

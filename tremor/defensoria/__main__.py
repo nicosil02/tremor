@@ -44,7 +44,8 @@ def identificar(con):
 def extraer(con, num=None):
     inicio = ahora()
     if num is not None:  # reprocesar un reporte: se borra lo suyo y se vuelve a leer
-        for tabla, col in [("caso_mes", "reporte_num"), ("seccion", "reporte_num"), ("reporte", "num")]:
+        for tabla, col in [("caso_mes", "reporte_num"), ("seccion", "reporte_num"), ("accion_protesta", "reporte_num"),
+                           ("victimas", "reporte_num"), ("reporte", "num")]:
             con.execute(f"DELETE FROM {tabla} WHERE {col} = ?", (num,))
     cuenta = val.validar(con, desde=num or 90)
     print("Reportes extraídos: " + (", ".join(f"{k}: {v}" for k, v in cuenta.items()) or "0 nuevos"))
