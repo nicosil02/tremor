@@ -32,27 +32,27 @@ Prueba independiente: `python -m tremor.egpp cargar …` y `perfil`; conteo por 
 
 Prueba independiente: `python -m tremor.prensa recolectar` dos veces; mismas filas.
 
-- [ ] T014 [US2] `tremor/prensa/recolectar.py`: consultas Google News RSS por departamento × palabra (research R4), `when:1d` o `after/before` por día; pausa 1 s; separar " - Medio" del título; `nota.id` = sha1(medio + titular normalizados); `INSERT OR IGNORE`
-- [ ] T015 [US2] Filtro por reglas en `tremor/prensa/recolectar.py` (`nota.filtro`): sin palabra de acción, deportes, espectáculos, "marcha blanca", "paro cardiaco"
-- [ ] T016 [P] [US2] `tests/test_prensa.py`: parseo de un RSS de ejemplo, identidad estable y filtro
+- [x] T014 [US2] `tremor/prensa/recolectar.py`: consultas Google News RSS por departamento × palabra (research R4), `when:1d` o `after/before` por día; pausa 1 s; separar " - Medio" del título; `nota.id` = sha1(medio + titular normalizados); `INSERT OR IGNORE`
+- [x] T015 [US2] Filtro por reglas en `tremor/prensa/recolectar.py` (`nota.filtro`): sin palabra de acción, deportes, espectáculos, "marcha blanca", "paro cardiaco"
+- [x] T016 [P] [US2] `tests/test_prensa.py`: parseo de un RSS de ejemplo, identidad estable y filtro
 
 ## Phase 5: US3 — Codificar como la EGPP, con lugar preciso (P1)
 
 Requiere `.env` con `LLM_API_KEY`.
 
-- [ ] T017 `tremor/llm.py`: `chat_json(sistema, usuario)` contra `{LLM_BASE_URL}/chat/completions`, `response_format json_object`, temperatura 0, reintento ante 429; caché `llm_cache` por sha256(modelo + versión + entrada); lee `.env` sin dependencias
-- [ ] T018 [US3] `tremor/prensa/codificar.py`: lotes de 25 titulares con id, fecha de publicación y departamento de consulta; prompt con la definición de protesta del manual, estado anunciada/ocurrida/suspendida y listas de `codigos_egpp.json`; valor fuera de lista → NULL; `ubigeo` y `precision` con `lugares.resolver`; `tipo_conflicto` con la regla R6; `--max-solicitudes`
-- [ ] T019 [P] [US3] `tests/test_prensa.py`: validación de la respuesta (categorías fuera de lista, fechas relativas ya resueltas, lote incompleto) con una respuesta LLM fija
+- [x] T017 `tremor/llm.py`: `chat_json(sistema, usuario)` contra `{LLM_BASE_URL}/chat/completions`, `response_format json_object`, temperatura 0, reintento ante 429; caché `llm_cache` por sha256(modelo + versión + entrada); lee `.env` sin dependencias
+- [x] T018 [US3] `tremor/prensa/codificar.py`: lotes de 25 titulares con id, fecha de publicación y departamento de consulta; prompt con la definición de protesta del manual, estado anunciada/ocurrida/suspendida y listas de `codigos_egpp.json`; valor fuera de lista → NULL; `ubigeo` y `precision` con `lugares.resolver`; `tipo_conflicto` con la regla R6; `--max-solicitudes`
+- [x] T019 [P] [US3] `tests/test_prensa.py`: validación de la respuesta (categorías fuera de lista, fechas relativas ya resueltas, lote incompleto) con una respuesta LLM fija
 
 ## Phase 6: US4 — Un evento, varias notas (P2)
 
-- [ ] T020 [US4] `tremor/prensa/eventos.py` `agrupar()`: union-find por provincia (o distrito), familia de acción y fecha ±1 (±3 huelga/paro indefinido); `fecha_anuncio`, `estado`, `n_notas`, `n_medios`; reconstruye `evento_prensa` y `evento_nota`
-- [ ] T021 [P] [US4] `tests/test_prensa.py`: cinco notas del mismo paro → 1 evento; anunciada + ocurrida → 1 evento con dos fechas; mismo gremio en dos provincias → 2
-- [ ] T022 [US4] CLI `python -m tremor.prensa {recolectar,codificar,agrupar,validar,exportar,todo}` en `tremor/prensa/__main__.py`; `exportar` → `datos/exportes/notas.csv`, `eventos_prensa.csv`
+- [x] T020 [US4] `tremor/prensa/eventos.py` `agrupar()`: union-find por provincia (o distrito), familia de acción y fecha ±1 (±3 huelga/paro indefinido); `fecha_anuncio`, `estado`, `n_notas`, `n_medios`; reconstruye `evento_prensa` y `evento_nota`
+- [x] T021 [P] [US4] `tests/test_prensa.py`: cinco notas del mismo paro → 1 evento; anunciada + ocurrida → 1 evento con dos fechas; mismo gremio en dos provincias → 2
+- [x] T022 [US4] CLI `python -m tremor.prensa {recolectar,codificar,agrupar,validar,exportar,todo}` en `tremor/prensa/__main__.py`; `exportar` → `datos/exportes/notas.csv`, `eventos_prensa.csv`
 
 ## Phase 7: US5 — Medir la señal (P2)
 
-- [ ] T023 [US5] Llenar `accion_protesta.ubigeo` y `departamento` con `lugares.resolver` sobre `lugar` y `actores` (en `tremor/prensa/eventos.py`, reutilizable desde 001)
+- [x] T023 [US5] Llenar `accion_protesta.ubigeo` y `departamento` con `lugares.resolver` sobre `lugar` y `actores` (en `tremor/prensa/eventos.py`, reutilizable desde 001)
 - [ ] T024 [US5] `validar(mes)` en `tremor/prensa/eventos.py`: exhaustividad contra la Defensoría (provincia, ±1 día), global, por departamento y socioambiental; anticipación mediana de las anunciadas; contra EGPP: P/R/F1 y kappa de acción, reclamo, adversario y distrito
 - [ ] T025 [US5] Recolección retro 2026-09 y 2025-12, codificar, agrupar y `validar`; exportar muestra de 100 para revisión a mano (SC-003) en `datos/exportes/muestra_revision.csv`
 

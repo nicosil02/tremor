@@ -46,6 +46,15 @@ Pruebas hechas el 7 nov 2026 (scripts en el scratchpad de la sesión; cifras en 
 - **Alternatives**: GDELT (limita a 1 consulta/5 s y cubre poco la prensa regional peruana); RSS propios
   de cada medio (se pueden sumar después como otra `consulta`); suscripciones (prohibidas, FR-008).
 
+- **Cambio tras probar (7 nov)**: Google News trae ~10 notas por consulta y mezcla otros países si la
+  búsqueda no dice "Perú". La fuente principal pasa a ser **los feeds RSS de 21 medios** (RPP, Correo, El
+  Comercio, Infobae, Andina, Servindi, Observatorio de Conflictos Mineros, Pachamama, Los Andes, El Búho,
+  Radio Uno, Sin Fronteras, Prensa Regional, Inforegión, Diario Ahora, Radio Marañón…), que traen enlace real
+  y resumen; Google News queda con 12 búsquedas temáticas + 25 por departamento, todas con "Perú". Una
+  corrida: ~850 notas, ~170 pasan el filtro, ~100 s. La recolección retro (validación) usa solo Google News.
+- **Validación**: diciembre 2025, porque ese mes tiene a la vez la tabla de la Defensoría (reporte 262) y la
+  EGPP. El reporte 271 (septiembre 2026, HTML) no tiene acciones leídas: hueco de 001.
+
 ## R5. LLM
 
 - **Decision**: `tremor/llm.py`, `POST {LLM_BASE_URL}/chat/completions` con `response_format:

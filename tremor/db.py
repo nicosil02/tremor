@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS egpp_evento (
 CREATE INDEX IF NOT EXISTS egpp_fecha_lugar ON egpp_evento (fecha, ubigeo);
 -- 002: prensa (specs/002-prensa-egpp/data-model.md)
 CREATE TABLE IF NOT EXISTS nota (
-    id TEXT PRIMARY KEY, medio TEXT, titular TEXT NOT NULL, publicado TEXT, enlace TEXT,
+    id TEXT PRIMARY KEY, medio TEXT, titular TEXT NOT NULL, resumen TEXT, publicado TEXT, enlace TEXT,
     consulta TEXT, departamento_consulta TEXT, descargado TEXT NOT NULL, filtro TEXT
 );
 CREATE TABLE IF NOT EXISTS codificacion (
@@ -135,4 +135,7 @@ def conectar(ruta: Path = RUTA_DB) -> sqlite3.Connection:
             con.execute(f"ALTER TABLE documento ADD COLUMN {col} {tipo}")
     if "ingreso" not in {f[1] for f in con.execute("PRAGMA table_info(caso)")}:
         con.execute("ALTER TABLE caso ADD COLUMN ingreso TEXT")
+    if "resumen" not in {f[1] for f in con.execute("PRAGMA table_info(nota)")}:  # nota se creó sin resumen (vacía)
+        con.execute("DROP TABLE nota")
+        con.executescript(ESQUEMA)
     return con

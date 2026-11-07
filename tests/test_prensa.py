@@ -1,0 +1,55 @@
+from tremor.prensa.codificar import limpiar
+from tremor.prensa.recolectar import filtro, id_nota, parsear
+
+RSS = """<rss><channel><item><title>Comuneros anuncian paro indefinido contra minera - Pachamama Radio</title>
+<link>https://news.google.com/rss/articles/abc</link><pubDate>Thu, 05 Nov 2026 23:29:00 GMT</pubDate>
+<description>&lt;a href="x"&gt;Comuneros anuncian paro&lt;/a&gt;</description><source url="x">Pachamama Radio</source></item>
+</channel></rss>"""
+
+
+def test_parsear_google_news():
+    n, = parsear(RSS)
+    assert n["medio"] == "Pachamama Radio" and n["titular"] == "Comuneros anuncian paro indefinido contra minera"
+    assert n["publicado"] == "2026-11-05T18:29-05:00" and n["resumen"] == ""
+
+
+def test_identidad_estable_y_filtro():
+    assert id_nota("RPP", "Paro  en Puno") == id_nota("rpp", "paro en puno")
+    assert filtro("Cienciano toma ventaja en la Sudamericana") == "no_es_protesta"
+    assert filtro("Inauguran hospital en Juliaca") == "sin_palabra_de_accion"
+    assert filtro("Ronderos bloquean la vía Cajamarca-Bambamarca") is None
+
+
+def test_limpiar_respuesta_llm():
+    c = limpiar({"es_protesta": True, "estado": "anunciada", "fecha_evento": "12 de noviembre",
+                 "sector": "Comunidades tradicionales", "actor": "Docentes colegios", "accion": "Paro",
+                 "reclamo": "Ambientales", "sub_reclamo": "Aumentos salariales", "adversario": "Empresas Privadas",
+                 "heridos": "3", "region": "Cusco"})
+    assert c["es_protesta"] == 1 and c["estado"] == "anunciada" and c["accion"] == "Paro"
+    assert c["fecha_evento"] is None            # no es AAAA-MM-DD
+    assert c["actor"] is None                   # no pertenece al sector
+    assert c["sub_reclamo"] is None             # no pertenece al reclamo
+    assert c["heridos"] == 3 and c["region"] == "Cusco"
+
+
+from datetime import date
+
+from tremor.prensa.eventos import mismo_evento, ubicar_texto
+
+
+def _c(ubigeo, accion, d, sector=None):
+    return {"ubigeo": ubigeo, "accion": accion, "fecha": date(2026, 11, d), "sector": sector}
+
+
+def test_mismo_evento():
+    assert mismo_evento(_c("210501", "Paro", 12), _c("2105", "Bloqueo de vías", 13))      # mismo paro, otra nota
+    assert mismo_evento(_c("0807", "Paro", 12), _c("080701", "Paro", 15))                # paro de varios días
+    assert not mismo_evento(_c("0807", "Marcha", 12), _c("0807", "Marcha", 15))
+    assert not mismo_evento(_c("0807", "Paro", 12), _c("0803", "Paro", 12))              # otra provincia
+    assert not mismo_evento(_c("0807", "Paro", 12, "Educativo"), _c("0807", "Paro", 12, "Transporte"))
+
+
+def test_ubicar_texto_defensoria():
+    assert ubicar_texto("Espinar, Cusco") == ("080801", "distrito")
+    assert ubicar_texto("Lima Metropolitana") == ("1501", "provincia")
+    assert ubicar_texto("Cusco") == ("08", "departamento")
