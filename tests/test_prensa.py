@@ -70,3 +70,10 @@ def test_sutran_fila():
     f = fila({"region": "Huanuco", "provincia": "Huanuco", "distrito": "Pillco Marca", "fechaEvento": "04/11/2026",
               "estadoVia": "interrumpido", "motivo": "humano", "submotivo": "humano.protestas"})
     assert f["fecha_evento"] == "2026-11-04" and f["precision"] == "distrito" and f["ubigeo"].startswith("1001")
+
+
+def test_parsear_mef():
+    from tremor.territorio import parsear_mef
+    fila = ('<tr id="tr1"><td><input name="grp1" value="010101"></td><td>010101-300001: MUNICIPALIDAD PROVINCIAL DE '
+            'CHACHAPOYAS</td><td>1,000</td><td>4,242,072</td><td></td><td></td><td></td><td>2,110,431</td></tr>')
+    assert parsear_mef(fila) == {"010101": ("MUNICIPALIDAD PROVINCIAL DE CHACHAPOYAS", 4242072, 2110431)}
