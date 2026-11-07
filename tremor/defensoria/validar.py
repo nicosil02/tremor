@@ -98,17 +98,27 @@ def _parecido(a, b, idf):
     if not (a and b):
         return 0.0
     peso = lambda conj: sum(idf.get(t, 8.0) for t in conj)
-    return peso(a & b) / peso(a | b)
+    total = peso(a | b)
+    return peso(a & b) / total if total else 0.0
 
 
 def puntaje(f, c, idf):
-    return (PESOS[0] * _parecido(f["_d"], c["_d"], idf) + PESOS[1] * _parecido(f["_u"], c["_u"], idf)
-            + PESOS[2] * _parecido(f["_a"], c["_a"], idf))
+    """Parecido de texto, corregido por la fecha de ingreso: si ambos la tienen y difiere, son casos distintos;
+    si coincide (mismo mes y año, mismo departamento), es casi seguro el mismo caso."""
+    if f["_ing"] and c["_ing"] and f["_ing"] != c["_ing"]:
+        return 0.0
+    p = (PESOS[0] * _parecido(f["_d"], c["_d"], idf) + PESOS[1] * _parecido(f["_u"], c["_u"], idf)
+         + PESOS[2] * _parecido(f["_a"], c["_a"], idf))
+    return p + BONO_INGRESO if f["_ing"] and f["_ing"] == c["_ing"] else p
+
+
+BONO_INGRESO = 0.3
 
 
 def _con_tokens(f):
     return dict(f, _d=tokens(f.get("descripcion")), _u=tokens(f.get("ubicacion")),
-                _a=tokens(f.get("actores_primarios")), _dep=depto(f.get("departamento")))
+                _a=tokens(f.get("actores_primarios")), _dep=depto(f.get("departamento")),
+                _ing=x.periodo(f.get("ingreso")))
 
 
 def calcular_idf(textos):
@@ -153,7 +163,7 @@ def enlazar_reporte(fichas, casos, idf):
 def _cargar_casos(con):
     return {c["id"]: _con_tokens({"descripcion": c["descripcion"], "ubicacion": c["ubicacion"],
                                   "actores_primarios": c["actores"], "departamento": c["departamento"],
-                                  "codigo": c["codigo"]})
+                                  "codigo": c["codigo"], "ingreso": c["ingreso"]})
             for c in con.execute("SELECT * FROM caso")}
 
 
@@ -206,15 +216,18 @@ def validar(con, desde: int = 90) -> dict:
                 tomados.add(codigo)
             if cid is None:
                 cid = con.execute("INSERT INTO caso (codigo, nombre, tipo, departamento, descripcion, ubicacion,"
-                                  " actores) VALUES (?,?,?,?,?,?,?)",
+                                  " actores, ingreso) VALUES (?,?,?,?,?,?,?,?)",
                                   (codigo, f.get("nombre"), f.get("tipo"), f.get("departamento"),
-                                   f.get("descripcion"), f.get("ubicacion"), f.get("actores_primarios"))).lastrowid
+                                   f.get("descripcion"), f.get("ubicacion"), f.get("actores_primarios"),
+                                   f.get("ingreso"))).lastrowid
             else:  # se guarda la versión más reciente del caso
                 con.execute("UPDATE caso SET descripcion = ?, ubicacion = ?, actores = ?,"
-                            " codigo = COALESCE(codigo, ?), nombre = COALESCE(?, nombre) WHERE id = ?",
+                            " codigo = COALESCE(codigo, ?), nombre = COALESCE(?, nombre), ingreso = COALESCE(ingreso, ?) WHERE id = ?",
                             (f.get("descripcion"), f.get("ubicacion"), f.get("actores_primarios"), codigo,
-                             f.get("nombre"), cid))
-            casos[cid] = _con_tokens(dict(f, codigo=casos.get(cid, {}).get("codigo") or codigo))
+                             f.get("nombre"), f.get("ingreso"), cid))
+            previo = casos.get(cid, {})
+            casos[cid] = _con_tokens(dict(f, codigo=previo.get("codigo") or codigo,
+                                          ingreso=previo.get("ingreso") or f.get("ingreso")))
             con.execute("INSERT INTO caso_mes (caso_id, reporte_num, estado, con_hechos, fase, dialogo,"
                         " competencia, ubicacion, actores_primarios, actores_secundarios, actores_terciarios,"
                         " descripcion, hechos_mes, pagina, enlace_confianza)"
