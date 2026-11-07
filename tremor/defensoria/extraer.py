@@ -316,7 +316,60 @@ def acciones(doc, paginas_: list[int]) -> list[dict]:
                             col = max((n for n, ic in enumerate(ultima[1]) if ic <= i), default=0)
                             if col:
                                 filas[-1][COLUMNAS[col]] += " " + c
+        fechas = sum(len(_FECHA_SOLA.findall(d[p - 1].get_text())) for p in paginas_ if p <= len(d))
+        if len(filas) < 0.8 * fechas:  # tabla sin líneas internas (p. ej. n.° 166, 173, 174)
+            alt, centros = [], None
+            for num in (p for p in paginas_ if p <= len(d)):
+                fs, centros = _acciones_por_posicion(d[num - 1], centros)
+                alt += [dict(f, pagina=num) for f in fs]
+            if len(alt) > len(filas):
+                return alt
     return filas
+
+
+# La fecha sola en su línea; en 2014 viene partida: "1 de" / "septiembre".
+_FECHA_SOLA = re.compile(r"^\s*(?:\d{1,2}/\d{1,2}/\d{2,4}|\d{1,2} de\s+(?:%s))\s*$" % _MES_RE, re.M | re.I)
+_CABECERAS = ("Fecha", "Medida", "Actores", "Lugar", "Demanda")  # en 2014 "Lugar" se llama "Ámbito"
+
+
+def _acciones_por_posicion(pagina, centros=None):
+    """Filas de la tabla de protestas armadas por la posición de cada línea de texto, para tablas sin líneas.
+
+    Cada línea va a la columna cuyo encabezado le queda más cerca; cada fecha abre una fila que va hasta la
+    mitad del camino a la fecha siguiente (las celdas vienen centradas en vertical). Los centros de las
+    columnas se toman del encabezado y se arrastran a las páginas siguientes que no lo repiten.
+    ponytail: la última línea corta de una celda ancha puede caer en la columna vecina."""
+    ws = pagina.get_text("words")
+    cab = {}
+    for w in sorted(ws, key=lambda w: w[1]):
+        nombre = "Lugar" if w[4] == "Ámbito" else w[4]
+        cab.setdefault(nombre, w) if nombre in _CABECERAS else None
+    tope = 0
+    if len(cab) == 5 and max(w[1] for w in cab.values()) - min(w[1] for w in cab.values()) < 15:
+        centros = [(cab[k][0] + cab[k][2]) / 2 for k in _CABECERAS]
+        tope = max(w[3] for w in cab.values())
+    if not centros:
+        return [], centros
+    grupos = {}
+    for w in ws:
+        if w[1] >= tope and not re.fullmatch(r"\d{1,3}\.", w[4]):  # sin la columna N.°
+            grupos.setdefault((w[5], w[6]), []).append(w)
+    lineas = []
+    for l in grupos.values():
+        medio = (min(w[0] for w in l) + max(w[2] for w in l)) / 2
+        col = min(range(5), key=lambda k: abs(medio - centros[k]))
+        lineas.append((col, (l[0][1] + l[0][3]) / 2, " ".join(w[4] for w in sorted(l, key=lambda w: w[0]))))
+    lineas.sort(key=lambda l: l[1])
+    fechas = [(y, t) for c, y, t in lineas if c == 0 and re.match(r"\d{1,2}(?:/\d{1,2}/\d{2,4}| de\b)", t)]
+    filas = []
+    for i, (y, t) in enumerate(fechas):
+        y0 = (fechas[i - 1][0] + y) / 2 if i else tope
+        y1 = (y + fechas[i + 1][0]) / 2 if i + 1 < len(fechas) else pagina.rect.height - 50
+        fila = {"fecha": " ".join(t2 for c, y2, t2 in lineas if c == 0 and y0 <= y2 < y1)}
+        for k, nombre in enumerate(COLUMNAS[1:], 1):
+            fila[nombre] = " ".join(t2 for c, y2, t2 in lineas if c == k and y0 <= y2 < y1)
+        filas.append(fila)
+    return filas, centros
 
 
 def acciones_en_texto(doc, paginas_: list[int]) -> int:
@@ -326,7 +379,7 @@ def acciones_en_texto(doc, paginas_: list[int]) -> int:
     pymupdf.TOOLS.mupdf_display_errors(False)
     with pymupdf.open(CRUDOS / f"{doc['huella']}.pdf") as d:
         t = "\n".join(d[p - 1].get_text() for p in paginas_ if p <= len(d))
-    return len(re.findall(r"^\s*(?:\d{1,2}/\d{1,2}/\d{2,4}|\d{1,2} de (?:%s))\s*$" % _MES_RE, t, re.M | re.I))
+    return len(_FECHA_SOLA.findall(t))
 
 
 def acciones_declaradas(texto: str) -> int | None:
@@ -337,12 +390,17 @@ def acciones_declaradas(texto: str) -> int | None:
 def victimas_declaradas(texto: str) -> dict:
     """Fallecidos y heridos del mes según la frase del inicio de la sección ("se registró cuatro heridos")."""
     t = _sin_tildes(re.sub(r"\s+", " ", texto[:800]).lower())
-    out = {"fallecidos": 0, "heridos": 0}
-    for cantidad, tipo in re.findall(r"(\d+|\w+) (?:personas )?(herid[oa]s?|fallecid[oa]s?|muert[oa]s?)", t):
-        n = _num(cantidad)
-        if n is not None:
-            out["heridos" if tipo.startswith("herid") else "fallecidos"] += n
-    return out
+    t = re.sub(r"\s*\(\d+\)", "", t)  # "cinco (05) heridos"
+    # Solo la primera oración con cifras de víctimas: la siguiente suele traer el acumulado del año.
+    for oracion in re.split(r"\.\s", t):
+        out = {"fallecidos": 0, "heridos": 0}
+        for cantidad, tipo in re.findall(r"(\d+|\w+) (?:personas )?(herid[oa]s?|fallecid[oa]s?|muert[oa]s?)", oracion):
+            n = _num(cantidad)
+            if n is not None:
+                out["heridos" if tipo.startswith("herid") else "fallecidos"] += n
+        if any(out.values()):
+            return out
+    return {"fallecidos": 0, "heridos": 0}
 
 
 def victimas(doc, pagina: int) -> list[dict]:
@@ -433,4 +491,19 @@ def filas_lista(texto: str) -> list[dict]:
                     if not (k is not None and j in (k, k + 1)) and not _SIN_NOVEDAD.match(l)]
         filas.append({"departamento": seg[0].title(), "ubicacion": " ".join(ubic).strip("() "),
                       "descripcion": re.sub(r"\s+", " ", " ".join(desc)).strip(), "tipo": tipo})
+    return filas
+
+
+def victimas_html(ruta) -> list[dict]:
+    """Filas de la tabla "Departamento / Caso · Fallecidos · Heridos" del reporte en HTML (2026).
+
+    Columnas: caso, y civiles, PNP, FF. AA. y total, primero de fallecidos y luego de heridos."""
+    sopa = BeautifulSoup(ruta.read_text(encoding="utf-8", errors="replace"), "html.parser")
+    tabla = next((t for t in sopa.find_all("table") if "Departamento / Caso" in t.get_text()), None)
+    filas = []
+    for tr in tabla.find_all("tr") if tabla else []:
+        celdas = [c.get_text(" ", strip=True) for c in tr.find_all(["td", "th"])]
+        if len(celdas) == 9 and celdas[4].isdigit() and celdas[8].isdigit():
+            lugar = "TOTAL" if celdas[0].upper().startswith("TOTAL") else re.sub(r"\)\s.*", ")", celdas[0])
+            filas.append({"lugar_caso": lugar, "fallecidos": int(celdas[4]), "heridos": int(celdas[8]), "pagina": None})
     return filas

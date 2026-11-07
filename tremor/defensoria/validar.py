@@ -47,7 +47,12 @@ def procesar(doc) -> dict:
     # la tabla coincide con él (en algunos meses find_tables corre las celdas de columna, p. ej. n.° 200).
     sv = next((s for s in secs if s["canonica"] == "victimas"), None)
     vict_decl = x.victimas_declaradas(sv["texto"]) if sv else None
-    vict = x.victimas(doc, sv["pagina"]) if sv and doc["formato"] == "pdf" else []
+    if not sv:
+        vict = []
+    elif doc["formato"] == "pdf":
+        vict = x.victimas(doc, sv["pagina"])
+    else:
+        vict = x.victimas_html(x.CRUDOS / f"{doc['huella']}.html")
     return {"totales": tot, "fichas": fichas, "fichas_en_texto": en_texto, "acciones": acc, "acciones_en_texto": acc_texto,
             "victimas": vict, "victimas_declaradas": vict_decl, "sin_hechos": sin, "latentes": lat, "lista": lista,
             "secciones": [(s["titulo"], s["canonica"], s["pagina"]) for s in secs]}
@@ -167,6 +172,15 @@ def caso_de_victima(lugar: str, del_mes, idf, umbral: float = 0.5):
 
     Mismo departamento y la mayor parte (ponderada por IDF) de las palabras de la fila presentes en el caso.
     Se mide qué parte de la fila está en el caso, no Jaccard: la fila es corta y la ficha larga."""
+    cod = re.search(r"\((\d{3,4}-\d{4})\)", lugar or "")  # 2026: "Piura · Comunidad X (1193-1020)"
+    if cod:
+        cid = next((cid for cid, c in del_mes if c.get("codigo") == cod.group(1)), None)
+        if cid is not None:
+            return cid
+        lugar = lugar[:cod.start()]
+    if "·" in (lugar or ""):
+        dep, _, resto = lugar.partition("·")
+        lugar = f"{resto} ({dep.strip()})"
     m = re.search(r"\(([^)]+)\)\W*$", lugar or "")  # 2025-2026: "Caso: Atupa y Antahurán – Barrick (Áncash)"
     if m:
         dep, resto = m.group(1), lugar[:m.start()]

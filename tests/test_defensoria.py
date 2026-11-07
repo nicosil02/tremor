@@ -211,3 +211,16 @@ def test_caso_de_victima():
     assert caso_de_victima("ÁNCASH – Caso Huaripampa - Nyrstar", del_mes, {}) == 7
     assert caso_de_victima("LORETO – Requena – ERM 2018", del_mes, {}) is None
     assert caso_de_victima("Caso: Huaripampa – Nyrstar (ÁNCASH).", del_mes, {}) == 7
+
+
+def test_victimas_declaradas_sin_acumulado():
+    from tremor.defensoria.extraer import victimas_declaradas
+    t = ("En setiembre de 2026 no se registraron fallecidos y se reportaron cinco (05) heridos en el marco de "
+         "conflictos sociales. En lo que va del año suman 2 fallecidos y 24 heridos.")
+    assert victimas_declaradas(t) == {"fallecidos": 0, "heridos": 5}
+
+
+def test_victima_por_codigo():
+    from tremor.defensoria.validar import _con_tokens, caso_de_victima
+    del_mes = [(9, _con_tokens({"departamento": "Piura", "descripcion": "Comuneros de Sechura.", "codigo": "1193-1020"}))]
+    assert caso_de_victima("Piura · Comunidad San Martín de Sechura (1193-1020)", del_mes, {}) == 9
