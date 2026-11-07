@@ -14,3 +14,6 @@ datos/cache/
 # Sistema
 .DS_Store
 Thumbs.db
+# Solo los exportes de datos van al repo
+datos/*
+!datos/exportes/
