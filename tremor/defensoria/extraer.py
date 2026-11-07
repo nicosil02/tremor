@@ -165,6 +165,10 @@ def totales(texto: str) -> dict:
                       r" \(\d+%\),? (?:y |mientras que )?(\w+) (?:se encuentran |permanecen )?(?:en )?estado latente", t)
         if m and None not in (vals := [_num(g) for g in m.groups()]):
             out = {"total": vals[0], "activos": vals[1], "latentes": vals[2]}
+    if not out:  # 2004: "da cuenta de 63 casos"; fines de 2004: "da cuenta de la existencia de 54 conflictos activos"
+        m = re.search(r"(?:da cuenta de (?:la existencia de )?|Los )(\d+) (?:casos|conflictos activos)", t)
+        if m:
+            out = {"total": int(m.group(1)), "activos": int(m.group(1))}
     m = re.search(r"Acciones colectivas de protesta registradas:? (\d+)", t)
     if m:
         out["acciones"] = int(m.group(1))
@@ -527,3 +531,88 @@ def victimas_html(ruta) -> list[dict]:
             lugar = "TOTAL" if celdas[0].upper().startswith("TOTAL") else re.sub(r"\)\s.*", ")", celdas[0])
             filas.append({"lugar_caso": lugar, "fallecidos": int(celdas[4]), "heridos": int(celdas[8]), "pagina": None})
     return filas
+
+
+
+# Reportes n.° 1 al 49 (2004 - marzo 2008). El formato cambia de un mes a otro, pero siempre hay secciones
+# por estado ("CONFLICTOS ACTIVOS", "LATENTES", "RESUELTOS"; en 2004, solo "REGIÓN X"), subtítulos por
+# departamento y casos que empiezan con su número ("3. Samanco, provincia del Santa") o, en 2007, con
+# "Ubicación:". De cada caso se guarda el bloque completo como descripción y lo que traiga con etiqueta.
+_DEPTOS = ("AMAZONAS ANCASH APURIMAC AREQUIPA AYACUCHO CAJAMARCA CALLAO CUSCO HUANCAVELICA HUANUCO ICA JUNIN "
+           "LA LIBERTAD LAMBAYEQUE LIMA LORETO MADRE DE DIOS MOQUEGUA PASCO PIURA PUNO SAN MARTIN TACNA TUMBES "
+           "UCAYALI NACIONAL")
+_ALT_DEP = "|".join(sorted(re.findall(r"LA LIBERTAD|MADRE DE DIOS|SAN MARTIN|\w+", _DEPTOS), key=len, reverse=True))
+_DEP_ANTIGUO = re.compile(r"^(?:REGION\s+)?((?:%s)(?:\s*(?:Y|/|-)\s*(?:%s))*)\.?$" % (_ALT_DEP, _ALT_DEP))
+_ESTADO_ANTIGUO = [(re.compile(r"^(?:\d\.\s*)?CONFLICTOS (?:ACTIVOS|REACTIVADOS)(?:\s+\d)?\.?$"), "activo"),
+                   (re.compile(r"^(?:\d\.\s*)?CONFLICTOS LATENTES(?:\s+\d)?\.?$"), "latente"),
+                   (re.compile(r"^(?:\d\.\s*)?(?:CONFLICTOS|CASOS) RESUELTOS(?:\s+\d)?\.?$"), None),
+                   # 2004: "1. NUEVOS CASOS", "2. CONFLICTOS VIGENTES"; los concluidos cuentan en el total del mes.
+                   (re.compile(r"^\d\.\s*(?:NUEVOS )?CASOS\b|^(?:\d\.\s*)?CONFLICTOS VIGENTES"), "activo"),
+                   (re.compile(r"^(?:\d\.\s*)?CONFLICTOS CONCLUIDOS"), "resuelto"),
+                   (re.compile(r"^(?:[IVX]+\.\s|DESCRIPCI[OÓ]N DE PAROS|ACCIONES)"), None)]
+_NUM_CASO = re.compile(r"^\s*(\d{1,3})\.\s*(\S.*)?$")
+_UBIC = re.compile(r"^\s*Ubicaci[oó]n\s*[:.]")
+
+
+def casos_antiguos(pags: list[tuple[int, str]]) -> list[dict]:
+    """Casos activos y latentes de un reporte de 2004 a marzo de 2008, con su estado, departamento y página."""
+    lineas = [(p, l) for p, t in pags for l in t.splitlines()]
+    plano = [_sin_tildes(l.strip()).upper() for _, l in lineas]
+    # El detalle empieza en el último título "CONFLICTOS ACTIVOS" (antes hay un resumen con los mismos
+    # títulos); en 2004 no hay estados: empieza en el primer "REGIÓN X" y todos los casos están activos.
+    act = [i for i, l in enumerate(plano) if _ESTADO_ANTIGUO[0][0].match(l)]
+    if act:
+        inicio, estado = act[-1], "activo"
+    else:
+        inicio = next((i for i, l in enumerate(plano) if _DEP_ANTIGUO.match(l) and lineas[i][1].strip().isupper()
+                       or re.match(r"^\d\.\s*(?:NUEVOS )?CASOS\b", l)), len(plano))
+        estado = "activo"
+    por_ubic = sum(bool(_UBIC.match(l)) for _, l in lineas[inicio:]) >= 5
+    casos, dep, ultimo, actual = [], None, None, None
+    for i in range(inicio, len(lineas)):
+        pag, l = lineas[i]
+        titulo = l.strip() == l.strip().upper()  # los títulos van en mayúsculas ("acciones de..." no lo es)
+        cambio = next((e for rx, e in _ESTADO_ANTIGUO if rx.match(plano[i])), "sigue") if titulo else "sigue"
+        if cambio != "sigue":
+            estado, ultimo, actual = cambio, None, None
+            continue
+        m = _DEP_ANTIGUO.match(plano[i])
+        if m and l.strip().upper() == l.strip():
+            dep = m.group(1).title()
+            continue
+        if estado is None:
+            continue
+        n = _NUM_CASO.match(l)
+        nuevo = (bool(_UBIC.match(l)) if por_ubic else
+                 bool(n) and (ultimo is None or ultimo < int(n.group(1)) <= ultimo + 3))  # la fuente salta números
+        if nuevo:
+            if not por_ubic:
+                ultimo = int(n.group(1))
+                l = n.group(2) or ""
+            actual = {"estado": estado, "departamento": dep, "pagina": pag, "lineas": [],
+                      "num_fuente": None if por_ubic else ultimo}
+            casos.append(actual)
+        if actual is not None and not _RUIDO.match(l):
+            actual["lineas"].append(l)
+    out = []
+    for c in casos:
+        bloque = "\n".join(c.pop("lineas"))
+        f = _campos(bloque)
+        texto = re.sub(r"\s+", " ", bloque.replace(DERECHA, " ")).strip()
+        if not f.get("ubicacion"):  # numerados: las primeras líneas son el lugar ("Samanco, Provincia del Santa")
+            lugar = []
+            for l in bloque.splitlines():
+                if re.match(r"\s*(Estado|Actores|Autoridad|Hechos|Antecedentes|Cuestionamientos|Motivo|Caso)\b", l) \
+                        or len(lugar) >= 3 or l.startswith(DERECHA):
+                    break
+                lugar.append(l.strip())
+            f["ubicacion"] = " ".join(lugar).strip(" ,.")
+        if not f.get("descripcion"):
+            f["descripcion"] = texto
+        if not f.get("actores_primarios"):
+            m = re.search(r"(?:Actores|Autoridad cuestionada)\s*[:.]\s*(.{5,300}?)(?:\.\s+[A-ZÁÉÍÓÚ][a-záéíóú]+\s*[:.]|$)", texto)
+            f["actores_primarios"] = m.group(1).strip() if m else ""
+        f.update(c)
+        if len(texto) > 40:
+            out.append(f)
+    return out

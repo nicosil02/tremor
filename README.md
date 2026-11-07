@@ -51,7 +51,7 @@ especificación en [`specs/`](specs/).
 
 | Módulo | Especificación | Estado |
 |---|---|---|
-| 001 Recolector de la Defensoría | [spec](specs/001-recolector-defensoria/spec.md) | Funciona: 271 reportes, totales 2004–2026, panel caso-mes 2008–2026 |
+| 001 Recolector de la Defensoría | [spec](specs/001-recolector-defensoria/spec.md) | Funciona: 271 reportes, panel caso-mes 2004–2026 |
 
 ### Módulo 001: recolector de la Defensoría
 
@@ -60,16 +60,17 @@ identifica por su portada. De cada uno extrae:
 
 - los totales que el reporte declara de sí mismo (activos, latentes, en diálogo y acciones de protesta),
   desde 2004;
-- desde abril de 2008 (n.° 50), una fila por caso y mes: las fichas de los casos activos (tipo, ubicación,
-  fase, diálogo, actores, hechos del mes) y, cuando el reporte las lista, las filas de activos sin hechos
-  y de latentes. Cada fila se enlaza al mismo caso a lo largo de los años: por código, por fecha de
+- una fila por caso y mes, desde 2004: las fichas de los casos activos (tipo, ubicación, fase, diálogo,
+  actores, hechos del mes) y las de activos sin hechos y latentes. De 2004 a marzo de 2008, donde el formato
+  cambia de mes a mes, cada caso se lee por su número dentro de las secciones por estado y departamento. Cada fila se enlaza al mismo caso a lo largo de los años: por código, por fecha de
   ingreso al registro y por parecido de descripción, ubicación y actores;
 - la tabla de acciones colectivas de protesta (fecha, medida, actores, lugar, demanda);
 - fallecidos y heridos, enlazados al caso del mes.
 
 Cada reporte se compara con sus propios totales y queda marcado `valido`, `aproximado` (±3 casos),
-`fuente_incompleta` (el propio PDF trae menos fichas de las que declara), `fallido` o, antes de 2008,
-`solo_totales`.
+`fuente_incompleta` (el propio PDF trae menos fichas de las que declara), `fuente_distinta` (el detalle
+numera sus casos sin huecos, pero el resumen del mismo reporte declara otra cifra) o `fallido`. Las protestas
+se comparan con las filas que trae el reporte, no con las que anuncia.
 
 ```bash
 pip install -r requirements.txt

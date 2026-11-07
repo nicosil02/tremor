@@ -236,3 +236,15 @@ def test_victima_por_codigo():
 ])
 def test_totales_antiguos(texto, esperado):
     assert totales(texto) == esperado
+
+
+def test_casos_antiguos():
+    from tremor.defensoria.extraer import casos_antiguos
+    texto = ("RESUMEN\nCONFLICTOS ACTIVOS\nPUNO\n1. Distrito de Ilave, provincia de El Collao\n"
+             "Actores. Población, alcalde.\nHechos. La población toma el local municipal.\n"
+             "1. Conformar una comisión\n2. Distrito de Tilali\nHechos. Piden la vacancia del alcalde distrital.\n"
+             "CONFLICTOS LATENTES\nCUSCO\n4. Provincia de Espinar\nHechos. Reclamos a la minera Tintaya por el agua.\n"
+             "CONFLICTOS RESUELTOS\n5. Accha\nHechos. Se firmó un acta con el alcalde.\n")
+    cs = casos_antiguos([(1, texto)])
+    assert [(c["estado"], c["departamento"]) for c in cs] == [("activo", "Puno"), ("activo", "Puno"), ("latente", "Cusco")]
+    assert cs[0]["ubicacion"].startswith("Distrito de Ilave") and "Población" in cs[0]["actores_primarios"]
