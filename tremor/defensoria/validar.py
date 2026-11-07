@@ -162,6 +162,25 @@ def enlazar_reporte(fichas, casos, idf):
     return [asignado.get(i, (None, 0.0)) for i in range(len(fs))]
 
 
+def caso_de_victima(lugar: str, del_mes, idf, umbral: float = 0.5):
+    """Caso del mes al que corresponde una fila de víctimas ("ÁNCASH – Caso Huaripampa - Nyrstar").
+
+    Mismo departamento y la mayor parte (ponderada por IDF) de las palabras de la fila presentes en el caso.
+    Se mide qué parte de la fila está en el caso, no Jaccard: la fila es corta y la ficha larga."""
+    m = re.search(r"\(([^)]+)\)\W*$", lugar or "")  # 2025-2026: "Caso: Atupa y Antahurán – Barrick (Áncash)"
+    if m:
+        dep, resto = m.group(1), lugar[:m.start()]
+    else:  # 2014-2024: "ÁNCASH – Caso Huaripampa - Nyrstar"
+        dep, _, resto = (lugar or "").replace("–", "-").partition(" - ")
+    t = tokens(resto) - {"caso"}
+    if not t:
+        return None
+    peso = lambda conj: sum(idf.get(w, 8.0) for w in conj)
+    mejor = max(((peso(t & (c["_d"] | c["_u"] | c["_a"])) / (peso(t) or 1), cid) for cid, c in del_mes
+                 if c["_dep"] == depto(dep)), default=(0, None))
+    return mejor[1] if mejor[0] >= umbral else None
+
+
 def _cargar_casos(con):
     return {c["id"]: _con_tokens({"descripcion": c["descripcion"], "ubicacion": c["ubicacion"],
                                   "actores_primarios": c["actores"], "departamento": c["departamento"],
@@ -195,23 +214,13 @@ def validar(con, desde: int = 90) -> dict:
         for titulo, canon, pag in r["secciones"]:
             con.execute("INSERT OR IGNORE INTO seccion (reporte_num, titulo_original, canonica, pagina_inicio)"
                         " VALUES (?,?,?,?)", (n, titulo, canon, pag))
-        if r.get("victimas_declaradas"):
-            vd, filas_v = r["victimas_declaradas"], r.get("victimas", [])
-            total = next((v for v in filas_v if v["lugar_caso"] == "TOTAL"), None)
-            if total and (total["fallecidos"], total["heridos"]) == (vd["fallecidos"], vd["heridos"]):
-                filas_v = [v for v in filas_v if v["lugar_caso"] != "TOTAL"]
-            else:
-                filas_v = [{"lugar_caso": "TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto)",
-                            "pagina": None, **vd}] if vd["fallecidos"] or vd["heridos"] else []
-            for v in filas_v:
-                con.execute("INSERT INTO victimas (reporte_num, lugar_caso, fallecidos, heridos, pagina)"
-                            " VALUES (?,?,?,?,?)", (n, v["lugar_caso"], v["fallecidos"], v["heridos"], v["pagina"]))
         for k, ac in enumerate(r.get("acciones", []), 1):
             con.execute("INSERT INTO accion_protesta (reporte_num, n, fecha, medida, actores, lugar, demanda, pagina)"
                         " VALUES (?,?,?,?,?,?,?,?)", (n, k, ac["fecha"], ac["medida"], ac["actores"], ac["lugar"],
                                                       ac["demanda"], ac["pagina"]))
         tomados = {c.get("codigo") for c in casos.values()}
         items = r["fichas"] + r.get("lista", [])
+        del_mes = []  # (caso, tokens) de este reporte, para enlazar las víctimas
         for k, (f, (cid, conf)) in enumerate(zip(items, enlazar_reporte(items, casos, idf))):
             ficha = k < len(r["fichas"])  # las filas de las listas traen menos texto: no pisan la versión del caso
             # Un código ya tomado (la misma ficha repetida en el reporte) no se vuelve a asignar.
@@ -237,6 +246,7 @@ def validar(con, desde: int = 90) -> dict:
                 casos[cid] = _con_tokens(dict(base, codigo=previo.get("codigo") or codigo,
                                               ingreso=previo.get("ingreso") or f.get("ingreso"),
                                               departamento=previo.get("departamento") or f.get("departamento")))
+            del_mes.append((cid, _con_tokens(f)))
             con.execute("INSERT INTO caso_mes (caso_id, reporte_num, estado, con_hechos, fase, dialogo,"
                         " competencia, ubicacion, actores_primarios, actores_secundarios, actores_terciarios,"
                         " descripcion, hechos_mes, pagina, enlace_confianza)"
@@ -245,6 +255,18 @@ def validar(con, desde: int = 90) -> dict:
                          f.get("competencia"), f.get("ubicacion"), f.get("actores_primarios"),
                          f.get("actores_secundarios"), f.get("actores_terciarios"), f.get("descripcion"),
                          f.get("hechos_mes"), f["pagina"], conf))
+        if r.get("victimas_declaradas"):
+            vd, filas_v = r["victimas_declaradas"], r.get("victimas", [])
+            total = next((v for v in filas_v if v["lugar_caso"] == "TOTAL"), None)
+            if total and (total["fallecidos"], total["heridos"]) == (vd["fallecidos"], vd["heridos"]):
+                filas_v = [v for v in filas_v if v["lugar_caso"] != "TOTAL"]
+            else:
+                filas_v = [{"lugar_caso": "TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto)",
+                            "pagina": None, **vd}] if vd["fallecidos"] or vd["heridos"] else []
+            for v in filas_v:
+                con.execute("INSERT INTO victimas (reporte_num, caso_id, lugar_caso, fallecidos, heridos, pagina)"
+                            " VALUES (?,?,?,?,?,?)", (n, caso_de_victima(v["lugar_caso"], del_mes, idf), v["lugar_caso"],
+                                                    v["fallecidos"], v["heridos"], v["pagina"]))
         con.commit()
         cuenta[estado] = cuenta.get(estado, 0) + 1
     return cuenta
