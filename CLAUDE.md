@@ -78,7 +78,7 @@ carpeta, aprobar el servidor MCP `tremor` (`.mcp.json`).
 | `sutran_alerta` | 28 (se acumulan) | API pública `api.sigea.sutran.gob.pe/public/alerts`: solo da las vigentes | `python -m tremor.sutran` |
 | `mef_municipal` | 28 091 (≈1 890 municipalidades × 2012–2026) | Consulta Amigable del MEF: presupuesto total y rubro 18 (canon, sobrecanon, regalías) | `python -m tremor.territorio mef` |
 | `bcrp_mensual` | 95 series, 25 516 filas, 2004-01 a 2026-10 | API del BCRP: cobre, oro y WTI (PN0165xXM) y producción minera por departamento (grupo RD129xx) | `python -m tremor.territorio bcrp` |
-| `enaho_departamento` | 26 × 2004–2024 (`ccdd` '00' = nacional) | ENAHO módulo 34: pobreza y pobreza extrema (factor07 × mieperho). Los 21 años cuadran con la serie oficial del INEI (±0.1) | `python -m tremor.territorio enaho` |
+| `enaho_departamento` | 26 × 2004–2025 (`ccdd` '00' = nacional) | ENAHO módulo 34: pobreza y pobreza extrema (factor07 × mieperho). Los 22 años cuadran con la serie oficial del INEI (±0.1) | `python -m tremor.territorio enaho` |
 
 Archivos que acompañan a la base:
 - `tremor/fuentes_facebook.csv`: 158 páginas para vigilar a mano, por departamento;
@@ -150,7 +150,7 @@ Archivos que acompañan a la base:
 publicado después del mes que se predice.
 1. ✅ MEF: canon y presupuesto municipal.
 2. ✅ BCRP: precios y producción minera mensual por departamento (`bcrp_mensual`).
-3. ✅ ENAHO: pobreza por departamento 2004–2024 (`enaho_departamento`). Falta el código del portal para 2025.
+3. ✅ ENAHO: pobreza por departamento 2004–2025 (`enaho_departamento`).
 4. Distrito:
    - Mapa de pobreza distrital del INEI e IDH del PNUD;
    - Censo 2017: servicios básicos, ruralidad, lengua materna y autoidentificación indígena;
