@@ -324,12 +324,12 @@ def acciones(doc, paginas_: list[int]) -> list[dict]:
                             if col:
                                 filas[-1][COLUMNAS[col]] += " " + c
         fechas = sum(len(_FECHA_SOLA.findall(d[p - 1].get_text())) for p in paginas_ if p <= len(d))
-        if len(filas) < 0.8 * fechas:  # tabla sin líneas internas (p. ej. n.° 166, 173, 174)
+        if len(filas) < fechas:  # tabla sin líneas internas (p. ej. n.° 166, 173, 174)
             alt, centros = [], None
             for num in (p for p in paginas_ if p <= len(d)):
                 fs, centros = _acciones_por_posicion(d[num - 1], centros)
                 alt += [dict(f, pagina=num) for f in fs]
-            if len(alt) > len(filas):
+            if len(filas) < len(alt) <= fechas:  # más filas, pero nunca más que fechas tiene el texto
                 return alt
     return filas
 
@@ -361,11 +361,24 @@ def _acciones_por_posicion(pagina, centros=None):
     for w in ws:
         if w[1] >= tope and not re.fullmatch(r"\d{1,3}\.", w[4]):  # sin la columna N.°
             grupos.setdefault((w[5], w[6]), []).append(w)
-    lineas = []
+    # 1.a pasada: cada línea a la columna cuyo encabezado le queda más cerca de su centro.
+    prev = []
     for l in grupos.values():
-        medio = (min(w[0] for w in l) + max(w[2] for w in l)) / 2
-        col = min(range(5), key=lambda k: abs(medio - centros[k]))
-        lineas.append((col, (l[0][1] + l[0][3]) / 2, " ".join(w[4] for w in sorted(l, key=lambda w: w[0]))))
+        x0 = min(w[0] for w in l)
+        medio = (x0 + max(w[2] for w in l)) / 2
+        prev.append((min(range(5), key=lambda k: abs(medio - centros[k])), x0, l))
+    # 2.a pasada: una línea pasa a la columna de su derecha solo si empieza donde empiezan las líneas de esa
+    # columna (mediana del borde izquierdo). Corrige la última línea corta de una celda ancha ("(CNM)"),
+    # cuyo centro cae cerca del encabezado vecino.
+    bordes = []
+    for k in range(5):
+        xs = sorted(x0 for c, x0, _ in prev if c == k)
+        bordes.append(xs[len(xs) // 2] if xs else None)
+    lineas = []
+    for c, x0, l in prev:
+        if c < 4 and bordes[c + 1] is not None and x0 >= bordes[c + 1] - 3:
+            c += 1
+        lineas.append((c, (l[0][1] + l[0][3]) / 2, " ".join(w[4] for w in sorted(l, key=lambda w: w[0]))))
     lineas.sort(key=lambda l: l[1])
     fechas = [(y, t) for c, y, t in lineas if c == 0 and re.match(r"\d{1,2}(?:/\d{1,2}/\d{2,4}| de\b)", t)]
     filas = []
