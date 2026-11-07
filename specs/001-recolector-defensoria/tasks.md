@@ -72,6 +72,10 @@ Formato: `[P]` se puede hacer en paralelo; `[H#]` es la historia de la spec.
 - [ ] T025 Revisión manual de 30 fichas al azar y registrar el resultado en
       `docs/validacion-defensoria.md` (CE-004)
 - [ ] T026 Actualizar el README (tabla de módulos y cómo correrlo)
+- [ ] T027 `.github/workflows/defensoria.yml`: correr `python -m tremor.defensoria todo` una vez
+      al día (GitHub Actions, gratis). Si hay un reporte nuevo, guardar la base actualizada y los
+      CSV; si no, no hacer commit. Como en asi-vota-el-congreso, la base va en una rama `datos`
+      para no inflar `main`.
 
 ## Dependencias
 
