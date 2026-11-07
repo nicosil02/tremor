@@ -43,25 +43,29 @@ Al leer las portadas, el periodo de los 249 reportes mensuales (23 a 271) calza 
 
 ## Fase 5: Historia 3, mapa de secciones (P1)
 
-- [ ] T012 [H3] `extraer.py`: dividir cada reporte en secciones por sus títulos y asignarlas a
+- [x] T012 [H3] `extraer.py`: dividir cada reporte en secciones por sus títulos y asignarlas a
       las canónicas; lo que no calce queda como `no_mapeada`
-- [ ] T013 [H3] Revisar el mapa en un reporte por época (2007, 2016, 2019, 2021, 2025 y 2026) y
+- [x] T013 [H3] Revisar el mapa en un reporte por época (2007, 2016, 2019, 2021, 2025 y 2026) y
       ajustar los patrones hasta que no queden secciones clave sin mapear
 
 ## Fase 6: Historia 4, casos mes a mes (P1)
 
-- [ ] T014 [P] [H4] `tests/fragmentos/`: frase de totales (2019, 2025, 2026) y una ficha completa
+- [x] T014 [P] [H4] `tests/fragmentos/`: frase de totales (2019, 2025, 2026) y una ficha completa
       de 2021 y otra de 2026
-- [ ] T015 [H4] `extraer.py`: leer los totales del resumen
-- [ ] T016 [H4] `extraer.py`: extraer fichas por etiquetas (código, tipo, ubicación, fase,
+- [x] T015 [H4] `extraer.py`: leer los totales del resumen
+- [x] T016 [H4] `extraer.py`: extraer fichas por etiquetas (código, tipo, ubicación, fase,
       diálogo, actores, caso y hechos) y las listas de activos sin hechos y de latentes
-- [ ] T017 [H4] `validar.py`: comparar con los totales y marcar `valido` o `fallido` con el
+- [x] T017 [H4] `validar.py`: comparar con los totales y marcar `valido` o `fallido` con el
       detalle
-- [ ] T018 [H4] `validar.py`: enlazar casos por código y, sin código, por nombre y departamento
+- [x] T018 [H4] `validar.py`: enlazar casos por código y, sin código, por nombre y departamento
       con `difflib`; los dudosos a revisión
-- [ ] T019 [H4] Pruebas de totales, ficha y enlace
+- [x] T019 [H4] Pruebas de totales, ficha y enlace
 
 **Punto de control**: el reporte 271 queda `valido` con 193 casos (escenario 4 de la guía).
+Resultado (7 nov): 271 `valido` (77 fichas + 67 sin hechos = 144 activos; 49 latentes). De 182 reportes
+(90 al 271): 96 exactos, 80 con diferencia de 1 a 3 casos (`aproximado`, fichas reales que no cuadran con
+el resumen de la Defensoría), 4 con texto del PDF desarmado (185, 189, 190, 198), 90 y 265 por revisar.
+Pendiente: el enlace sin código parte casos cuya descripción cambia (3 562 casos frente a ~1 530 códigos).
 
 ## Fase 7: Historia 5, acciones y víctimas (P2)
 
@@ -72,7 +76,7 @@ Al leer las portadas, el periodo de los 249 reportes mensuales (23 a 271) calza 
 
 ## Fase 8: Cierre
 
-- [ ] T023 `validar.py`: exportar los cuatro CSV del contrato
+- [x] T023 `validar.py`: exportar los cuatro CSV del contrato
 - [ ] T024 Correr todo dos veces y confirmar 0 cambios en la segunda (CE-006)
 - [ ] T025 Revisión manual de 30 fichas al azar y registrar el resultado en
       `docs/validacion-defensoria.md` (CE-004)

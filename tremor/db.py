@@ -46,8 +46,9 @@ CREATE TABLE IF NOT EXISTS seccion (
 CREATE TABLE IF NOT EXISTS caso (
     id INTEGER PRIMARY KEY,
     codigo TEXT UNIQUE,
-    nombre TEXT NOT NULL,
+    nombre TEXT,                      -- solo los reportes de 2026 traen nombre corto
     nombres_anteriores TEXT,
+    descripcion TEXT,                 -- texto normalizado del "Caso:", para enlazar meses sin código
     tipo TEXT,
     departamento TEXT, provincia TEXT, distrito TEXT, ubigeo TEXT
 );
@@ -90,7 +91,7 @@ def ahora() -> str:
 
 
 def conectar(ruta: Path = RUTA_DB) -> sqlite3.Connection:
-    ruta.parent.mkdir(parents=True, exist_ok=True)
+    Path(ruta).parent.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(ruta)
     con.row_factory = sqlite3.Row
     con.executescript(ESQUEMA)

@@ -47,3 +47,94 @@ def test_es_reporte_mensual(titulo, url, esperado):
 ])
 def test_leer_portada(texto, esperado):
     assert leer_portada(texto) == esperado
+
+
+from tremor.defensoria.extraer import contar_lista, fichas, totales
+
+
+@pytest.mark.parametrize("texto, esperado", [
+    ("Se da cuenta de 180 conflictos sociales: 133 activos y 47 latentes (Pág. 5).",
+     {"total": 180, "activos": 133, "latentes": 47}),
+    ("Se da cuenta de 206 conflictos sociales: 161activos, de los cuales 90 están en proceso de diálogo, y 45 latentes.",
+     {"total": 206, "activos": 161, "latentes": 45, "en_dialogo": 90}),
+    ("Se da cuenta de 193 conflictos sociales registrados: 144 activos (de los cuales 59 están en diálogo) y 49 latentes ."
+     " Acciones colectivas de protesta registradas: 151 .",
+     {"total": 193, "activos": 144, "latentes": 49, "en_dialogo": 59, "acciones": 151}),
+    ("Se da cuenta de 153 conflictos activos y 75 conflictos latentes (P. 5).",
+     {"activos": 153, "latentes": 75, "total": 228}),
+])
+def test_totales(texto, esperado):
+    assert totales(texto) == esperado
+
+
+FICHA_2019 = """Amazonas
+Tipo: Socioambiental.
+Ingresó como caso nuevo: Diciembre de 2008.
+Caso: La Organización para el Desarrollo de las Comunidades
+Fronterizas de El Cenepa (ODECOFROC) se opone a la actividad minera.
+Ubicación: Distrito de El Cenepa, provincia de Condorcanqui,
+región Amazonas.
+Actores primarios: ODECOFROC, Compañía Minera Afrodita S.A.C.
+Actores secundarios: Ministerio del Ambiente (MINAM).
+Actores terciarios: Defensoría del Pueblo.
+NO HAY DIÁLOGO
+El 15 de enero, la comunidad denunció el ingreso de mineros.
+"""
+
+FICHA_2026 = """Wampis - Minería ilegal (Amazonas)
+Tipo: Socioambiental
+Código: 1053-0717
+Desescalamiento
+Ubicación:
+ Distrito de Río Santiago, provincia de Condorcanqui
+Ingreso al registro:
+ Julio 2017
+Competencia:
+ Gobierno nacional
+Fase / Diálogo:
+ Desescalamiento · No Hay Diálogo
+Actuaciones DP:
+ 2
+Caso:
+El Gobierno Territorial Autónomo de la Nación Wampis expresó su preocupación por la minería ilegal.
+Actores primarios:
+Gobierno Territorial Autónomo de la Nación Wampis
+Actores secundarios:
+Gobierno Regional de Amazonas
+Actores terciarios:
+Defensoría del Pueblo
+NO HAY DIÁLOGO
+El 29 de setiembre, la Defensoría convocó una reunión de coordinación.
+"""
+
+
+def test_ficha_2019():
+    [f] = fichas(FICHA_2019)
+    assert f["departamento"] == "Amazonas" and f["tipo"] == "Socioambiental"
+    assert f["ubicacion"].startswith("Distrito de El Cenepa")
+    assert f["dialogo"] == "NO HAY DIÁLOGO" and f["hechos_mes"].startswith("El 15 de enero")
+    assert f["actores_terciarios"] == "Defensoría del Pueblo"
+
+
+def test_ficha_2026():
+    [f] = fichas(FICHA_2026)
+    assert f["codigo"] == "1053-0717" and f["nombre"] == "Wampis - Minería ilegal"
+    assert f["fase"] == "desescalamiento" and f["competencia"] == "Gobierno nacional"
+    assert f["hechos_mes"].startswith("El 29 de setiembre")
+
+
+def test_contar_lista():
+    assert contar_lista("03/2025\nApurímac\nTapayrihua\nSocioambiental\n06/2022\nApurímac\nChuicuni\nSocioambiental") == 2
+    assert contar_lista("1.\n\nAbr-22\nAmazonas\nKuélap\n2.\n\nOct-22\nAmazonas\nX\n") == 2
+
+
+def test_enlace_por_descripcion():
+    from tremor.db import conectar
+    from tremor.defensoria.validar import enlazar
+    con = conectar(":memory:")
+    f = {"departamento": "Amazonas", "descripcion": "Comunidades awajún se oponen a la minería en El Cenepa."}
+    a, _ = enlazar(con, f, set(), 100)
+    con.execute("INSERT INTO caso_mes (caso_id, reporte_num) VALUES (?, 100)", (a,))
+    b, conf = enlazar(con, dict(f, descripcion=f["descripcion"] + " Exigen consulta previa."), set(), 101)
+    c, _ = enlazar(con, dict(f, departamento="Puno"), set(), 101)
+    assert a == b and conf >= 0.8 and c != a

@@ -3,7 +3,7 @@ import argparse
 import sys
 
 from tremor.db import ahora, conectar
-from tremor.defensoria import catalogo
+from tremor.defensoria import catalogo, validar as val
 
 
 def _registrar(con, paso, inicio, nuevos=0, errores=0, detalle=""):
@@ -41,6 +41,33 @@ def identificar(con):
     return 0
 
 
+def extraer(con, num=None):
+    inicio = ahora()
+    if num is not None:  # reprocesar un reporte: se borra lo suyo y se vuelve a leer
+        for tabla, col in [("caso_mes", "reporte_num"), ("seccion", "reporte_num"), ("reporte", "num")]:
+            con.execute(f"DELETE FROM {tabla} WHERE {col} = ?", (num,))
+    cuenta = val.validar(con, desde=num or 90)
+    print("Reportes extraídos: " + (", ".join(f"{k}: {v}" for k, v in cuenta.items()) or "0 nuevos"))
+    _registrar(con, "extraer", inicio, sum(cuenta.values()), cuenta.get("fallido", 0), repr(cuenta))
+    return 0
+
+
+def validar(con):
+    print("Validación contra los totales de cada reporte:")
+    for e, n in con.execute("SELECT estado, COUNT(*) FROM reporte GROUP BY estado ORDER BY estado"):
+        print(f"  {e}: {n}")
+    for r in con.execute("SELECT num, estado, detalle_validacion FROM reporte"
+                         " WHERE estado NOT IN ('valido') ORDER BY num"):
+        print(f"  n.° {r[0]} {r[1]}: {r[2]}")
+    return 0
+
+
+def exportar(con):
+    val.exportar(con)
+    print(f"CSV en {val.EXPORTES}")
+    return 0
+
+
 def estado(con):
     q = lambda sql: con.execute(sql).fetchone()[0]
     nums = catalogo.numeros_conocidos(con)
@@ -62,6 +89,10 @@ def main(argv=None):
     d.add_argument("--completo", action="store_true", help="recorrer las 120 páginas")
     sub.add_parser("descargar", help="bajar lo que no tiene huella")
     sub.add_parser("identificar", help="leer número y mes de cada portada")
+    e = sub.add_parser("extraer", help="secciones, totales y fichas de los reportes nuevos")
+    e.add_argument("--num", type=int, help="reprocesar solo este reporte")
+    sub.add_parser("validar", help="resultado de comparar cada reporte con sus totales")
+    sub.add_parser("exportar", help="CSV en datos/exportes/")
     sub.add_parser("estado", help="resumen del catálogo")
     t = sub.add_parser("todo", help="todos los pasos en orden")
     t.add_argument("--completo", action="store_true")
@@ -74,10 +105,17 @@ def main(argv=None):
         return descargar(con)
     if a.comando == "identificar":
         return identificar(con)
+    if a.comando == "extraer":
+        return extraer(con, a.num)
+    if a.comando == "validar":
+        return validar(con)
+    if a.comando == "exportar":
+        return exportar(con)
     if a.comando == "estado":
         return estado(con)
     if a.comando == "todo":
-        codigo = descubrir(con, a.completo) | descargar(con) | identificar(con)
+        codigo = descubrir(con, a.completo) | descargar(con) | identificar(con) | extraer(con)
+        exportar(con)
         estado(con)
         return codigo
 
