@@ -149,6 +149,7 @@ las cifras tal como salen.
 ### Edge Cases
 
 - Una nota menciona varias protestas en lugares distintos (un "paro nacional" con focos en cinco regiones): se codifica un evento por lugar mencionado.
+- Protestas registradas en la capital (Lima, la capital regional) por un conflicto que nace en otro distrito: el perfil distingue "dónde se protestó" de "dónde está el conflicto" cuando la nota o el reclamo lo permiten, para no inflar las capitales.
 - Un lugar con nombre repetido en varios departamentos (p. ej. "San Juan"): se usa el contexto de la nota (provincia o departamento); si no alcanza, se deja al nivel que sí es seguro.
 - Fechas relativas ("mañana", "el próximo lunes", "desde el 15"): se resuelven a partir de la fecha de publicación de la nota.
 - Una protesta anunciada que se suspende o se levanta: el evento queda marcado como suspendido si una nota posterior lo dice.
@@ -209,7 +210,7 @@ las cifras tal como salen.
 ### Measurable Outcomes
 
 - **SC-001**: Los 25 429 eventos de la EGPP quedan cargados y al menos el 95% tiene distrito válido; el conteo por año coincide con el archivo original.
-- **SC-001a**: Entre los 10 distritos más conflictivos por reclamos ambientales y territoriales aparecen al menos 5 de los focos extractivos conocidos (p. ej. Cocachacra, Challhuahuacho, Espinar, Sorochuco, Huasmín), como verificación de que el perfil captura lo que se busca.
+- **SC-001a**: Entre los 10 distritos más conflictivos por reclamos ambientales y territoriales aparecen al menos 5 de los focos extractivos conocidos (p. ej. Cocachacra, Challhuahuacho, Espinar, Andoas, Urarinas, Bambamarca, Celendín), como verificación de que el perfil captura lo que se busca.
 - **SC-002**: Una semana de recolección trae notas de al menos 20 de los 25 departamentos y de al menos 30 medios distintos.
 - **SC-003**: En una muestra revisada a mano, la decisión "es protesta / no es protesta" acierta en al menos el 90% de las notas, y el distrito es correcto en al menos el 80% de las que lo mencionan.
 - **SC-004**: La prensa detecta al menos la mitad de las protestas que registra la Defensoría en el mismo mes; se informa cuántas de ellas aparecieron antes como anunciadas y con cuántos días de anticipación (mediana).
