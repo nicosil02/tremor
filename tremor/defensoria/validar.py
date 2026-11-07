@@ -84,8 +84,9 @@ def veredicto(r: dict) -> tuple[str, dict]:
         # porque en algunos meses (130, 167, 264, 270) el PDF publica menos filas de las que anuncia.
         ref = r["acciones_en_texto"] or tot.get("acciones") or 0
         d["acciones_estado"] = "completa" if len(r["acciones"]) >= ref else "parcial"
-        if tot.get("acciones") and r["acciones_en_texto"] and r["acciones_en_texto"] < tot["acciones"]:
-            d["acciones_nota"] = f"el reporte declara {tot['acciones']} y publica {r['acciones_en_texto']}"
+        publica = max(r["acciones_en_texto"], len(r["acciones"]))  # hay fechas que no van solas en su línea
+        if tot.get("acciones") and publica < tot["acciones"]:
+            d["acciones_nota"] = f"el reporte declara {tot['acciones']} y publica {publica}"
     if dif > TOLERANCIA and r.get("fichas_en_texto") == len(r["fichas"]) and d["activos_leidos"]:
         d["nota"] = (f"el reporte publica {len(r['fichas'])} fichas y todas se leyeron; "
                      "faltan en la fuente, no en la lectura")
@@ -239,8 +240,9 @@ def veredicto_antiguo(r: dict) -> tuple[str, dict]:
     if dif > TOLERANCIA and nums and nums == list(range(nums[0], nums[0] + len(nums))):
         # El detalle numera sus casos sin huecos y se leyeron todos: el resumen del propio reporte no coincide
         # con su detalle (p. ej. n.° 45: el detalle trae 33 activos y el resumen declara 28).
-        d["nota"] = f"el detalle numera {len(nums)} casos y todos se leyeron; el resumen declara otra cifra"
-        return "fuente_distinta", d
+        # Manda el detalle: es lo que el reporte describe caso por caso.
+        d["nota"] = f"el detalle numera {len(nums)} casos y todos se leyeron; el resumen del reporte declara otra cifra"
+        return "valido", d
     return ("valido" if dif == 0 else "aproximado" if dif <= TOLERANCIA else "fallido"), d
 
 

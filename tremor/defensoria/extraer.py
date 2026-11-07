@@ -327,14 +327,16 @@ def acciones(doc, paginas_: list[int]) -> list[dict]:
                             col = max((n for n, ic in enumerate(ultima[1]) if ic <= i), default=0)
                             if col:
                                 filas[-1][COLUMNAS[col]] += " " + c
-        fechas = sum(len(_FECHA_SOLA.findall(d[p - 1].get_text())) for p in paginas_ if p <= len(d))
-        if len(filas) < fechas:  # tabla sin líneas internas (p. ej. n.° 166, 173, 174)
-            alt, centros = [], None
-            for num in (p for p in paginas_ if p <= len(d)):
-                fs, centros = _acciones_por_posicion(d[num - 1], centros)
-                alt += [dict(f, pagina=num) for f in fs]
-            if len(filas) < len(alt) <= fechas:  # más filas, pero nunca más que fechas tiene el texto
-                return alt
+        # Respaldo por posición, página por página: en una misma tabla hay páginas que find_tables() lee bien y
+        # otras donde junta filas de a dos (n.° 130, págs. 104-109). Una página se reemplaza si la lectura por
+        # posición da más filas que la tabla, sin pasar de las fechas que esa página trae en el texto.
+        centros, salida = None, []
+        for num in (p for p in paginas_ if p <= len(d)):
+            tabla = [f for f in filas if f["pagina"] == num]
+            alt, centros = _acciones_por_posicion(d[num - 1], centros)
+            fechas = len(_FECHA_SOLA.findall(d[num - 1].get_text()))
+            salida += [dict(f, pagina=num) for f in alt] if len(tabla) < len(alt) <= fechas else tabla
+        filas = salida
     return filas
 
 
@@ -366,8 +368,27 @@ def _acciones_por_posicion(pagina, centros=None):
         if w[1] >= tope and not re.fullmatch(r"\d{1,3}\.", w[4]):  # sin la columna N.°
             grupos.setdefault((w[5], w[6]), []).append(w)
     # 1.a pasada: cada línea a la columna cuyo encabezado le queda más cerca de su centro.
-    prev = []
+    # Una "línea" del PDF puede cruzar columnas ("Paro de 48 horas  Gremios de trabajadores"): se corta donde
+    # el espacio entre dos palabras es mayor que el de una frase (hueco entre columnas).
+    limites = [(centros[k] + centros[k + 1]) / 2 for k in range(4)]
+    trozos = []
     for l in grupos.values():
+        l = sorted(l, key=lambda w: w[0])
+        actual = [l[0]]
+        for w in l[1:]:
+            hueco = w[0] - actual[-1][2]
+            cruza = any(actual[-1][2] <= m <= w[0] for m in limites)  # el hueco cae en el límite entre columnas
+            otra_altura = abs(w[1] - actual[-1][1]) > 2  # celdas vecinas con distinta línea base
+            if hueco > 8 or (hueco > 2 and (cruza or otra_altura)):
+                trozos.append(actual)
+                actual = []
+            actual.append(w)
+        trozos.append(actual)
+    # Sin la columna N.° (números a la izquierda de la fecha, con o sin punto: "120", "6.").
+    trozos = [t for t in trozos if not (re.fullmatch(r"\d{1,3}\.?", " ".join(w[4] for w in t))
+                                        and t[-1][2] < centros[0] - 5)]
+    prev = []
+    for l in trozos:
         x0 = min(w[0] for w in l)
         medio = (x0 + max(w[2] for w in l)) / 2
         prev.append((min(range(5), key=lambda k: abs(medio - centros[k])), x0, l))
