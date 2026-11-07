@@ -351,7 +351,7 @@ def declarado_en_seccion(texto: str) -> int | None:
 
 
 # "01/06/2017", "2/08/2026" o, en 2014-2015, "5 de octubre".
-_FECHA = re.compile(r"^(\d{1,2}/\d{1,2}/\d{2,4}|\d{1,2} de (?:%s))" % _MES_RE, re.I)
+_FECHA = re.compile(r"^(\d{1,2}/\d{1,2}/\d{2,4}|\d{1,2} de (?:%s)|\d{1,2} de$)" % _MES_RE, re.I)  # "30 de" / "agosto"
 COLUMNAS = ("fecha", "medida", "actores", "lugar", "demanda")
 
 
@@ -387,7 +387,7 @@ def acciones(doc, paginas_: list[int]) -> list[dict]:
                     elif misma and llenas and len(celdas) == ultima[0]                             and not any(_sin_tildes(c.lower()).startswith("fecha") for _, c in llenas):
                         for i, c in llenas:  # cada trozo va al campo cuya columna está más cerca a su izquierda
                             col = max((n for n, ic in enumerate(ultima[1]) if ic <= i), default=0)
-                            if col:
+                            if col or filas[-1]["fecha"].endswith(" de"):
                                 filas[-1][COLUMNAS[col]] += " " + c
         # Respaldo por posición, página por página: en una misma tabla hay páginas que find_tables() lee bien y
         # otras donde junta filas de a dos (n.° 130, págs. 104-109). Una página se reemplaza si la lectura por
@@ -402,8 +402,9 @@ def acciones(doc, paginas_: list[int]) -> list[dict]:
     return filas
 
 
-# La fecha sola en su línea; en 2014 viene partida: "1 de" / "septiembre".
-_FECHA_SOLA = re.compile(r"^\s*(?:\d{1,2}/\d{1,2}/\d{2,4}|\d{1,2} de\s+(?:%s))\s*$" % _MES_RE, re.M | re.I)
+# La fecha sola en su línea; en 2014 viene partida: "1 de" / "septiembre", y al pie de página el mes puede
+# quedar en la página siguiente ("6 de", n.° 126).
+_FECHA_SOLA = re.compile(r"^\s*(?:\d{1,2}/\d{1,2}/\d{2,4}|\d{1,2} de\s+(?:%s)|\d{1,2} de)\s*$" % _MES_RE, re.M | re.I)
 _CABECERAS = ("Fecha", "Medida", "Actores", "Lugar", "Demanda")  # en 2014 "Lugar" se llama "Ámbito"
 
 
