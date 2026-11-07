@@ -6,27 +6,27 @@ Pruebas: una prueba pequeña por lógica no trivial (constitución VI y práctic
 
 ## Phase 1: Setup
 
-- [ ] T001 Agregar `pandas` y `openpyxl` a `requirements.txt`
-- [ ] T002 [P] Exportar la hoja `Espaciales` del formulario de la EGPP a `tremor/ubigeo.csv` (columnas `ubigeo` de 6 dígitos, `region`, `provincia`, `distrito`; 1 892 filas)
-- [ ] T003 [P] Exportar las hojas `Acción`, `Actor`, `Adversario` y `Reclamo` del formulario y las listas de sub-reclamo de la base a `tremor/codigos_egpp.json` (acción 29, sector 32, actor ≈105, adversario 15, reclamo 6, sub-reclamo 51)
+- [x] T001 Agregar `pandas` y `openpyxl` a `requirements.txt`
+- [x] T002 [P] Exportar la hoja `Espaciales` del formulario de la EGPP a `tremor/ubigeo.csv` (columnas `ubigeo` de 6 dígitos, `region`, `provincia`, `distrito`; 1 892 filas)
+- [x] T003 [P] Exportar las hojas `Acción`, `Actor`, `Adversario` y `Reclamo` del formulario y las listas de sub-reclamo de la base a `tremor/codigos_egpp.json` (acción 29, sector 32, actor ≈105, adversario 15, reclamo 6, sub-reclamo 51)
 
 ## Phase 2: Foundational
 
-- [ ] T004 `tremor/lugares.py`: cargar `ubigeo.csv`, normalizar nombres (sin tildes, minúsculas) y `resolver(region, provincia, distrito, localidad, pista_departamento)` → `(ubigeo, precision)`; nombres repetidos se desambiguan con provincia/región; si no alcanza, queda en el nivel seguro (research R3)
-- [ ] T005 [P] `tests/test_lugares.py`: "Ilave" con Puno → 210401; "San Juan" sin pista no resuelve a distrito; "Cusco" solo → precisión departamento
-- [ ] T006 Tablas nuevas en `tremor/db.py`: `egpp_evento`, `perfil_distrito`, `nota`, `codificacion`, `evento_prensa`, `evento_nota`, `llm_cache` según `data-model.md`
+- [x] T004 `tremor/lugares.py`: cargar `ubigeo.csv`, normalizar nombres (sin tildes, minúsculas) y `resolver(region, provincia, distrito, localidad, pista_departamento)` → `(ubigeo, precision)`; nombres repetidos se desambiguan con provincia/región; si no alcanza, queda en el nivel seguro (research R3)
+- [x] T005 [P] `tests/test_lugares.py`: "Ilave" con Puno → 210401; "San Juan" sin pista no resuelve a distrito; "Cusco" solo → precisión departamento
+- [x] T006 Tablas nuevas en `tremor/db.py`: `egpp_evento`, `perfil_distrito`, `nota`, `codificacion`, `evento_prensa`, `evento_nota`, `llm_cache` según `data-model.md`
 
 ## Phase 3: US1 — Perfil de conflictividad por distrito (P1) 🎯 MVP
 
 Prueba independiente: `python -m tremor.egpp cargar …` y `perfil`; conteo por año = archivo; ranking socioambiental trae Challhuahuacho, Cocachacra, Andoas, Urarinas, Espinar (SC-001a).
 
-- [ ] T007 [US1] `tremor/egpp.py` `cargar(ruta)`: leer el xlsx, mapear a `egpp_evento` sin `Comentar_t`; `ubigeo` = `Distrito_id` con 6 dígitos (`1101`→`110101`; `160405`→ provincia `1604` con precisión provincia); `capital_por_defecto` = distrito termina en 01; reemplaza la versión anterior (idempotente)
-- [ ] T008 [US1] En `cargar`: `tipo_conflicto` (`laboral_minero`, `socioambiental_extractivo`, `otro`) con la regla de research R6, y `operacion` con la regex + alias de R7 sobre `Reclamo_t`, `Comentar_t` e `Institución_2` (se lee `Comentar_t` solo para esto)
-- [ ] T009 [US1] En `cargar`: marcar `duplicado_de` en eventos con misma fecha, ubigeo, actor, acción 1 y `Reclamo_t` (conserva el de menor id)
-- [ ] T010 [US1] `perfil()` en `tremor/egpp.py`: tabla `perfil_distrito` y `datos/exportes/perfil_distrito.csv` + `perfil_distrito_anio.csv` con las columnas de `data-model.md`, sin duplicados
-- [ ] T011 [US1] CLI `python -m tremor.egpp {cargar,perfil,ranking}` (contracts/cli.md); `ranking --tipo --n` excluye capitales por defecto con `--sin-capitales`
-- [ ] T012 [P] [US1] `tests/test_egpp.py`: `tipo_conflicto` y `operacion` sobre filas de ejemplo (Tía María, huelga minera laboral, marcha docente)
-- [ ] T013 [US1] Correr sobre el archivo real; verificar SC-001 y SC-001a; exportar en `datos/exportes/` para la rama `datos`
+- [x] T007 [US1] `tremor/egpp.py` `cargar(ruta)`: leer el xlsx, mapear a `egpp_evento` sin `Comentar_t`; `ubigeo` = `Distrito_id` con 6 dígitos (`1101`→`110101`; `160405`→ provincia `1604` con precisión provincia); `capital_por_defecto` = distrito termina en 01; reemplaza la versión anterior (idempotente)
+- [x] T008 [US1] En `cargar`: `tipo_conflicto` (`laboral_minero`, `socioambiental_extractivo`, `otro`) con la regla de research R6, y `operacion` con la regex + alias de R7 sobre `Reclamo_t`, `Comentar_t` e `Institución_2` (se lee `Comentar_t` solo para esto)
+- [x] T009 [US1] En `cargar`: marcar `duplicado_de` en eventos con misma fecha, ubigeo, actor, acción 1 y `Reclamo_t` (conserva el de menor id)
+- [x] T010 [US1] `perfil()` en `tremor/egpp.py`: tabla `perfil_distrito` y `datos/exportes/perfil_distrito.csv` + `perfil_distrito_anio.csv` con las columnas de `data-model.md`, sin duplicados
+- [x] T011 [US1] CLI `python -m tremor.egpp {cargar,perfil,ranking}` (contracts/cli.md); `ranking --tipo --n` excluye capitales por defecto con `--sin-capitales`
+- [x] T012 [P] [US1] `tests/test_egpp.py`: `tipo_conflicto` y `operacion` sobre filas de ejemplo (Tía María, huelga minera laboral, marcha docente)
+- [x] T013 [US1] Correr sobre el archivo real; verificar SC-001 y SC-001a; exportar en `datos/exportes/` para la rama `datos`
 
 ## Phase 4: US2 — Notas de prensa del día (P1)
 

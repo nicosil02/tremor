@@ -77,6 +77,38 @@ CREATE TABLE IF NOT EXISTS victimas (
     fallecidos INTEGER, heridos INTEGER,
     pagina INTEGER
 );
+-- 002: base de protestas de la EGPP PUCP (Arce 2024; actualización dic. 2025), sin Comentar_t.
+CREATE TABLE IF NOT EXISTS egpp_evento (
+    id INTEGER PRIMARY KEY,
+    fecha TEXT NOT NULL, ubigeo TEXT NOT NULL, precision TEXT, capital_por_defecto INTEGER,
+    periodico TEXT, sector TEXT, actor TEXT, actor_t TEXT,
+    accion_1 TEXT, accion_2 TEXT, accion_3 TEXT, accion_4 TEXT, accion_t TEXT,
+    adversario TEXT, institucion_1 TEXT, institucion_2 TEXT,
+    reclamo TEXT, sub_reclamo TEXT, reclamo_t TEXT,
+    participantes REAL, duracion_h REAL, heridos REAL, muertos REAL, detenidos REAL, fuerza_estatal INTEGER,
+    tipo_conflicto TEXT, operacion TEXT, duplicado_de INTEGER, version TEXT
+);
+CREATE INDEX IF NOT EXISTS egpp_fecha_lugar ON egpp_evento (fecha, ubigeo);
+-- 002: prensa (specs/002-prensa-egpp/data-model.md)
+CREATE TABLE IF NOT EXISTS nota (
+    id TEXT PRIMARY KEY, medio TEXT, titular TEXT NOT NULL, publicado TEXT, enlace TEXT,
+    consulta TEXT, departamento_consulta TEXT, descargado TEXT NOT NULL, filtro TEXT
+);
+CREATE TABLE IF NOT EXISTS codificacion (
+    nota_id TEXT NOT NULL, version TEXT NOT NULL,
+    es_protesta INTEGER, estado TEXT, fecha_evento TEXT,
+    region TEXT, provincia TEXT, distrito TEXT, localidad TEXT, ubigeo TEXT, precision TEXT,
+    sector TEXT, actor TEXT, accion TEXT, adversario TEXT, empresa TEXT, operacion TEXT,
+    reclamo TEXT, sub_reclamo TEXT, heridos INTEGER, muertos INTEGER, detenidos INTEGER, tipo_conflicto TEXT,
+    PRIMARY KEY (nota_id, version)
+);
+CREATE TABLE IF NOT EXISTS evento_prensa (
+    id INTEGER PRIMARY KEY, estado TEXT, fecha_anuncio TEXT, fecha_evento TEXT, ubigeo TEXT, precision TEXT,
+    accion TEXT, actor TEXT, reclamo TEXT, tipo_conflicto TEXT, empresa TEXT, operacion TEXT,
+    n_notas INTEGER, n_medios INTEGER
+);
+CREATE TABLE IF NOT EXISTS evento_nota (evento_id INTEGER NOT NULL, nota_id TEXT NOT NULL, PRIMARY KEY (evento_id, nota_id));
+CREATE TABLE IF NOT EXISTS llm_cache (clave TEXT PRIMARY KEY, respuesta TEXT NOT NULL, modelo TEXT, creado TEXT);
 CREATE TABLE IF NOT EXISTS corrida (
     id INTEGER PRIMARY KEY,
     paso TEXT NOT NULL,

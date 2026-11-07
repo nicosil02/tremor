@@ -1,0 +1,292 @@
+{
+ "accion": [
+  "Abandonos",
+  "Agresión física",
+  "Apedreamento",
+  "Bloqueo de vías",
+  "Boicot",
+  "Cacerolazo",
+  "Destruccion propiedad",
+  "Dolor autoinfligido",
+  "Encadenamiento / cerco",
+  "Enfrentamiento",
+  "Entrega petición",
+  "Huelga",
+  "Huelga de hambre",
+  "Invasión",
+  "Lanzamiento de objetos",
+  "Lavados",
+  "Marcha",
+  "Mitin",
+  "Motín",
+  "Olla común",
+  "Paro",
+  "Pasacalle / caravana",
+  "Plantón",
+  "Protesta simbolica",
+  "Quemas",
+  "Saqueo",
+  "Secuestro / rehenes",
+  "Toma de local",
+  "Vigilia"
+ ],
+ "sector_actor": {
+  "Administrativo": [
+   "Colegios profesionales",
+   "Trabajadores diplomáticos",
+   "Trabajadores ministerios",
+   "Trabajadores organismos autónomos"
+  ],
+  "Agropecuario": [
+   "Agricultores",
+   "Algodoneros",
+   "Arroceros",
+   "Azucareros",
+   "Cafetaleros",
+   "Cocaleros",
+   "Ganaderos",
+   "Madereros"
+  ],
+  "Bancario": [
+   "Bancarios"
+  ],
+  "Centrales sindicales": [
+   "CGTP",
+   "CITE",
+   "CTP",
+   "CUT",
+   "Federaciones departamentales"
+  ],
+  "Ciudadanía": [
+   "Comunidad LGTB",
+   "Padres de familia",
+   "Pobladores",
+   "Pobladores AAHH",
+   "Usuarios"
+  ],
+  "Comercial": [
+   "Ambulantes",
+   "Comerciantes",
+   "Estibadores",
+   "Recicladores",
+   "Repartidores",
+   "Trabajadores hoteleros",
+   "Trabajadores super mercados"
+  ],
+  "Comunidades tradicionales": [
+   "Comunidades campesinas",
+   "Comunidades nativas",
+   "Pueblos indígenas",
+   "Rondas campesinas"
+  ],
+  "Deporte": [
+   "Deportistas"
+  ],
+  "Educativo": [
+   "Docentes colegios",
+   "Docentes institutos técnicos y superiores",
+   "Docentes universidades",
+   "Trabajadores colegios",
+   "Trabajadores universidades"
+  ],
+  "Entretenimiento": [
+   "Artistas",
+   "Guías turísticos",
+   "Trabajadores cinematográficos",
+   "Trabajadores sexuales",
+   "Trabajadores tragamonedas"
+  ],
+  "Estudiantes": [
+   "Estudiantes colegios",
+   "Estudiantes técnicos",
+   "Estudiantes universidades"
+  ],
+  "Extractivo": [
+   "Mineros",
+   "Trabajadores petroleros"
+  ],
+  "Judicial": [
+   "Magistrados",
+   "Trabajadores judiciales",
+   "Trabajadores penitenciarios"
+  ],
+  "Legislativo": [
+   "Trabajadores legislativos"
+  ],
+  "Municipal": [
+   "Administrativos",
+   "Obreros",
+   "Trabajadores municipales"
+  ],
+  "Obrero-Industrial": [
+   "Construcción civil",
+   "Mecánicos",
+   "Trabajadores eléctricos",
+   "Trabajadores industriales",
+   "Trabajadores siderúrgicos",
+   "Trabajadores textiles"
+  ],
+  "Operadores políticos": [
+   "Autoridades",
+   "Partidarios políticos"
+  ],
+  "Pensionistas": [
+   "Pensionistas"
+  ],
+  "Personas privadas de libertad": [
+   "Familiares reos",
+   "Pobladores",
+   "Reos"
+  ],
+  "Pesquero": [
+   "Pescadores"
+  ],
+  "Población desempleada": [
+   "Trabajadores despedidos"
+  ],
+  "Portuario": [
+   "Trabajadores portuarios"
+  ],
+  "Prensa": [
+   "Periodistas",
+   "Trabajadores gráficos"
+  ],
+  "Salud": [
+   "Enfermeras",
+   "Médicos",
+   "Obstetrices",
+   "Odontólogos",
+   "Trabajadores farmaceuticos"
+  ],
+  "Saneamiento": [
+   "Trabajadores saneamiento"
+  ],
+  "Seguridad": [
+   "Fuerzas castrenses",
+   "Policías",
+   "Seguridad privada",
+   "Serenazgo"
+  ],
+  "Sociedad civil": [
+   "Asociaciones civiles",
+   "Colectivos",
+   "Comités",
+   "Coordinadoras",
+   "Federaciones sociales",
+   "Frentes de defensa",
+   "Gremios y organizaciones sociales",
+   "Movimientos",
+   "Uniones",
+   "Uniones sociales"
+  ],
+  "Telecomunicaciones": [
+   "Trabajadores postales",
+   "Trabajadores telefónicos"
+  ],
+  "Trabajadores del hogar": [
+   "Trabajadores del hogar"
+  ],
+  "Transporte": [
+   "Controladores aéreos",
+   "Trabajadores aduaneros",
+   "Transportistas de carga",
+   "Transportistas ferroviarios",
+   "Transportistas urbanos"
+  ],
+  "Turistas": [
+   "Turistas"
+  ],
+  "Víctimas": [
+   "Damnificados",
+   "Discapacitados",
+   "Pacientes",
+   "Refugiados",
+   "Víctimas violencia"
+  ]
+ },
+ "adversario": [
+  "Empresas Estatales",
+  "Empresas Privadas",
+  "Gobierno Distrital",
+  "Gobierno Provincial",
+  "Gobierno Regional",
+  "Iglesia",
+  "Internacionales",
+  "Organismos Autónomos",
+  "Organización gremial",
+  "Partidos Políticos",
+  "Poder Ejecutivo",
+  "Poder Judicial",
+  "Poder Legislativo",
+  "Sociedad Civil",
+  "Universidades"
+ ],
+ "reclamo": {
+  "Ambientales": [
+   "Protección a la naturaleza",
+   "Reparaciones por daños",
+   "Retiro de empresa",
+   "Suspensión de concesiones"
+  ],
+  "Económicos": [
+   "Aumento de presupuesto",
+   "Aumento del precio de productos",
+   "Aumentos salariales",
+   "Condonación de deudas",
+   "Créditos",
+   "Mejor administración de recursos",
+   "Pago de deudas",
+   "Protección de la producción nacional",
+   "Rechazo a la privatización",
+   "Reducción de impuestos",
+   "Reducción de precios"
+  ],
+  "Laborales": [
+   "Aumentos salariales",
+   "Bonificaciones",
+   "Contra reducción de salarios",
+   "Estabilidad laboral",
+   "Mejores condiciones laborales",
+   "Nombramiento",
+   "Pago atrasados de salarios",
+   "Puestos de trabajo",
+   "Recategorización",
+   "Reposición laboral"
+  ],
+  "Políticos": [
+   "Cumplimiento de pactos",
+   "Destitución de autoridad electa",
+   "Destitución de funcionario",
+   "Ejecución de funciones",
+   "Ejecución de reformas",
+   "Participación en procesos electorales",
+   "Promulgación de normas",
+   "Proyectos desarrollo",
+   "Rechazo a la privatización",
+   "Rechazo a postura política",
+   "Rechazo a resultados electorales",
+   "Rechazo al programa de erradicación de la hoja de coca",
+   "Rechazo de mandatos",
+   "Rechazo de normas"
+  ],
+  "Servicios": [
+   "Alimentación",
+   "Beneficios sociales",
+   "Educación",
+   "Proyectos de irrigación",
+   "Proyectos desarrollo",
+   "Salud",
+   "Saneamiento",
+   "Seguridad",
+   "Transporte",
+   "Vivienda"
+  ],
+  "Territoriales": [
+   "Adjudicación de tierras",
+   "Defensa de territorio",
+   "Definir límites",
+   "Modificar límites territoriales",
+   "Nueva zonificación"
+  ]
+ }
+}
