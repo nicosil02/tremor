@@ -74,8 +74,8 @@ nota. Las protestas se comparan con las filas que trae la tabla, no con las que 
 
 Resultado (7 nov 2026): 266 de 271 reportes válidos; quedan 4, 5 y 6 (2004, a 1 caso), 265 (publica menos
 fichas de las que declara) y el n.° 1 (no declara totales). 1 843 casos seguidos en promedio 25 meses,
-~46 500 filas caso-mes, 29 707 acciones de protesta (completas en 160 de 162 reportes con tabla; en el 134
-faltan 3 filas cuyos actores bajan a la fila siguiente) y 103 filas de víctimas.
+~46 500 filas caso-mes, ~29 700 acciones de protesta (todas las filas que trae la tabla en los 162 reportes que la tienen) y
+103 filas de víctimas.
 
 ```bash
 pip install -r requirements.txt
