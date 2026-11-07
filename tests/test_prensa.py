@@ -55,6 +55,14 @@ def test_ubicar_texto_defensoria():
     assert ubicar_texto("Cusco") == ("08", "departamento")
 
 
+def test_ubicar_caso_defensoria():
+    from tremor.prensa.eventos import ubicar_caso
+    assert ubicar_caso("Cusco", ["Distrito de Chamaca, provincia de Chumbivilcas, región Cusco"]) == ("080703", "distrito")
+    assert ubicar_caso("Ayacucho", ["Provincia de Cangallo Eduardo, Alcalde Provincial"]) == ("0502", "provincia")
+    assert ubicar_caso("Ica", ["", "Distrito de San Andrés, provincia de Pisco, región Ica"])[1] == "distrito"
+    assert ubicar_caso("Puno", [""]) == ("21", "departamento")
+
+
 def test_medio_extranjero_y_departamento_copiado():
     from tremor.prensa.codificar import ubicar
     from tremor.prensa.recolectar import filtro

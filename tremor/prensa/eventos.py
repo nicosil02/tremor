@@ -121,6 +121,33 @@ def ubicar_texto(texto):
     return mejor if mejor[0] else resolver(region=region)
 
 
+def _prefijo_lugar(texto, tabla):
+    """'Cangallo Eduardo Oscar...' → 'Cangallo': la ficha a veces sigue sin coma después del nombre."""
+    w = (texto or "").split()
+    return next((" ".join(w[:k]) for k in range(min(len(w), 5), 0, -1) if norm(" ".join(w[:k])) in tabla), None)
+
+
+def ubicar_caso(departamento, textos):
+    """Ubicación de la ficha ('Distrito de X, provincia de Y, región Z') → (código, precisión). `textos`: la
+    ubicación del caso y la de sus meses, en ese orden; gana la primera que llega a distrito."""
+    _, provincias, distritos, _ = catalogo()
+    mejor = (None, None)
+    for t in textos:
+        d = re.search(r"distritos? (?:de )?([^,;.()]+)", t or "", re.I)
+        p = re.search(r"provincias? (?:de )?([^,;.()]+)", t or "", re.I)
+        u = resolver(region=departamento, provincia=p and _prefijo_lugar(p[1], provincias),
+                     distrito=d and _prefijo_lugar(d[1], distritos), pista=departamento)
+        if not u[0] or len(u[0]) < 6:  # sin etiquetas: "Espinar, Cusco"; solo si afina, nunca si contradice
+            u2 = ubicar_texto(f"{t}, {departamento or ''}")
+            if u2[0] and len(u2[0]) > len(u[0] or "") and (not u[0] or u2[0].startswith(u[0])):
+                u = u2
+        if u[0] and len(u[0]) > len(mejor[0] or ""):
+            mejor = u
+        if mejor[1] == "distrito":
+            break
+    return mejor if mejor[0] else resolver(region=departamento)
+
+
 def ubicar_defensoria(con) -> int:
     filas = con.execute("SELECT reporte_num, n, lugar, actores FROM accion_protesta WHERE ubigeo IS NULL").fetchall()
     n = 0
@@ -129,6 +156,12 @@ def ubicar_defensoria(con) -> int:
         if u:
             con.execute("UPDATE accion_protesta SET ubigeo = ?, departamento = ? WHERE reporte_num = ? AND n = ?",
                         (u, catalogo()[3].get(u[:2]), num, i)); n += 1
+    for cid, dep, ubic in con.execute("SELECT id, departamento, ubicacion FROM caso WHERE ubigeo IS NULL").fetchall():
+        meses = [r[0] for r in con.execute("SELECT DISTINCT ubicacion FROM caso_mes WHERE caso_id = ? AND ubicacion "
+                                           "!= '' ORDER BY reporte_num DESC", (cid,))]
+        u, _ = ubicar_caso(dep, [ubic] + meses)
+        if u:
+            con.execute("UPDATE caso SET ubigeo = ? WHERE id = ?", (u, cid)); n += 1
     con.commit()
     return n
 
