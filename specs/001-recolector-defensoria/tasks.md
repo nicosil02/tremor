@@ -1,0 +1,79 @@
+# Tareas: Recolector de reportes de la Defensoría
+
+**Entrada**: [plan.md](plan.md), [spec.md](spec.md), [data-model.md](data-model.md),
+[contracts/cli.md](contracts/cli.md)
+
+Formato: `[P]` se puede hacer en paralelo; `[H#]` es la historia de la spec.
+
+## Fase 1: Preparación
+
+- [ ] T001 Crear `requirements.txt` con `requests`, `pymupdf`, `beautifulsoup4` y `pytest`
+- [ ] T002 Crear `tremor/__init__.py`, `tremor/defensoria/__init__.py` y la carpeta `datos/`
+      (ignorada salvo `datos/exportes/`)
+
+## Fase 2: Base común (bloquea todo lo demás)
+
+- [ ] T003 `tremor/db.py`: conexión y creación del esquema completo de
+      [data-model.md](data-model.md), con claves únicas para que nada se duplique
+- [ ] T004 `tremor/defensoria/__main__.py`: subcomandos del contrato, con registro en `corrida`
+
+## Fase 3: Historia 1, catálogo (P1) 🎯 primer entregable
+
+- [ ] T005 [H1] `catalogo.py`: recorrer el listado y guardar cada tarjeta de conflictos en
+      `documento` (modo completo y modo incremental, que se detiene en lo ya conocido)
+- [ ] T006 [H1] `catalogo.py`: para cada número faltante, buscar en la API CDX del Wayback
+      Machine y registrar la fuente probada
+- [ ] T007 [H1] `catalogo.py`: descargar con reintentos, guardar por huella SHA-256 y abrir los
+      zip de 2004 y 2005
+- [ ] T008 [H1] Comando `estado` con catálogo, descargados y faltantes
+
+**Punto de control**: `descubrir --completo` y `estado` muestran al menos 249 reportes (CE-001).
+
+## Fase 4: Historia 2, identidad por contenido (P1)
+
+- [ ] T009 [P] [H2] `tests/fragmentos/`: portadas reales de los reportes 42, 179, 263 y 271
+- [ ] T010 [H2] `catalogo.py`: leer número y mes de la portada (PDF y HTML) y resolver los
+      duplicados (reporte regular y especial)
+- [ ] T011 [H2] Prueba en `tests/test_defensoria.py` para las cuatro portadas
+
+## Fase 5: Historia 3, mapa de secciones (P1)
+
+- [ ] T012 [H3] `extraer.py`: dividir cada reporte en secciones por sus títulos y asignarlas a
+      las canónicas; lo que no calce queda como `no_mapeada`
+- [ ] T013 [H3] Revisar el mapa en un reporte por época (2007, 2016, 2019, 2021, 2025 y 2026) y
+      ajustar los patrones hasta que no queden secciones clave sin mapear
+
+## Fase 6: Historia 4, casos mes a mes (P1)
+
+- [ ] T014 [P] [H4] `tests/fragmentos/`: frase de totales (2019, 2025, 2026) y una ficha completa
+      de 2021 y otra de 2026
+- [ ] T015 [H4] `extraer.py`: leer los totales del resumen
+- [ ] T016 [H4] `extraer.py`: extraer fichas por etiquetas (código, tipo, ubicación, fase,
+      diálogo, actores, caso y hechos) y las listas de activos sin hechos y de latentes
+- [ ] T017 [H4] `validar.py`: comparar con los totales y marcar `valido` o `fallido` con el
+      detalle
+- [ ] T018 [H4] `validar.py`: enlazar casos por código y, sin código, por nombre y departamento
+      con `difflib`; los dudosos a revisión
+- [ ] T019 [H4] Pruebas de totales, ficha y enlace
+
+**Punto de control**: el reporte 271 queda `valido` con 193 casos (escenario 4 de la guía).
+
+## Fase 7: Historia 5, acciones y víctimas (P2)
+
+- [ ] T020 [H5] `extraer.py`: tabla de acciones colectivas con `find_tables()` de PyMuPDF y
+      lectura por texto como respaldo
+- [ ] T021 [H5] `extraer.py`: fallecidos y heridos agregados por caso
+- [ ] T022 [H5] Validar que el número de acciones coincide con el declarado
+
+## Fase 8: Cierre
+
+- [ ] T023 `validar.py`: exportar los cuatro CSV del contrato
+- [ ] T024 Correr todo dos veces y confirmar 0 cambios en la segunda (CE-006)
+- [ ] T025 Revisión manual de 30 fichas al azar y registrar el resultado en
+      `docs/validacion-defensoria.md` (CE-004)
+- [ ] T026 Actualizar el README (tabla de módulos y cómo correrlo)
+
+## Dependencias
+
+Fase 1 → Fase 2 → Historia 1 → Historia 2 → Historias 3 y 4 → Historia 5 → Cierre.
+T009 y T014 (fragmentos de prueba) se pueden preparar en cualquier momento.
