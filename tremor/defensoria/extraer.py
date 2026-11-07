@@ -345,6 +345,35 @@ _FECHA_SOLA = re.compile(r"^\s*(?:\d{1,2}/\d{1,2}/\d{2,4}|\d{1,2} de\s+(?:%s))\s
 _CABECERAS = ("Fecha", "Medida", "Actores", "Lugar", "Demanda")  # en 2014 "Lugar" se llama "Ámbito"
 
 
+def _reglas_verticales(pagina, desde: float) -> list[float]:
+    """Posiciones x de las líneas verticales de una tabla bajo `desde` (bordes de columna), sin repetir."""
+    import collections
+    xs = collections.Counter()
+    for dib in pagina.get_drawings():
+        for it in dib["items"]:
+            if it[0] == "l" and abs(it[1].x - it[2].x) < 1 and abs(it[2].y - it[1].y) > 8 and max(it[1].y, it[2].y) > desde:
+                xs[round(it[1].x)] += 1
+            elif it[0] == "re" and it[1].width < 2 and it[1].height > 8 and it[1].y1 > desde:
+                xs[round(it[1].x0)] += 1
+    out = []
+    for x in sorted(x for x, n in xs.items() if n >= 2):  # una línea que se repite en varias filas es un borde
+        if not out or x - out[-1] > 5:
+            out.append(x)
+    return out
+
+
+def _reglas_horizontales(pagina, desde: float) -> list[float]:
+    """Alturas de las líneas horizontales dibujadas bajo `desde` (bordes de fila de una tabla)."""
+    ys = set()
+    for dib in pagina.get_drawings():
+        for it in dib["items"]:
+            if it[0] == "l" and abs(it[1].y - it[2].y) < 1 and abs(it[2].x - it[1].x) > 30:
+                ys.add(round(it[1].y, 1))
+            elif it[0] == "re" and it[1].height < 2 and it[1].width > 30:
+                ys.add(round(it[1].y0, 1))
+    return sorted(y for y in ys if y >= desde - 2)
+
+
 def _acciones_por_posicion(pagina, centros=None):
     """Filas de la tabla de protestas armadas por la posición de cada línea de texto, para tablas sin líneas.
 
@@ -366,7 +395,9 @@ def _acciones_por_posicion(pagina, centros=None):
     grupos = {}
     for w in ws:
         if w[1] >= tope and not re.fullmatch(r"\d{1,3}\.", w[4]):  # sin la columna N.°
-            grupos.setdefault((w[5], w[6]), []).append(w)
+            # Por bloque y línea base, no por la línea del PDF: con texto justificado cada palabra es su propia
+            # "línea" (n.° 174) y una palabra suelta ("del") caería en la columna vecina.
+            grupos.setdefault((w[5], round(w[3])), []).append(w)
     # 1.a pasada: cada línea a la columna cuyo encabezado le queda más cerca de su centro.
     # Una "línea" del PDF puede cruzar columnas ("Paro de 48 horas  Gremios de trabajadores"): se corta donde
     # el espacio entre dos palabras es mayor que el de una frase (hueco entre columnas).
@@ -379,7 +410,10 @@ def _acciones_por_posicion(pagina, centros=None):
             hueco = w[0] - actual[-1][2]
             cruza = any(actual[-1][2] <= m <= w[0] for m in limites)  # el hueco cae en el límite entre columnas
             otra_altura = abs(w[1] - actual[-1][1]) > 2  # celdas vecinas con distinta línea base
-            if hueco > 8 or (hueco > 2 and (cruza or otra_altura)):
+            # Una celda nueva empieza con mayúscula o número; con texto justificado hay huecos grandes dentro de
+            # una misma frase ("provincia   de"), que no se cortan.
+            empieza = bool(re.match(r"[A-ZÁÉÍÓÚÑ0-9(“\"]", w[4]))
+            if empieza and (hueco > 8 or (hueco > 4 and (cruza or otra_altura))):  # entre palabras el hueco es ~2
                 trozos.append(actual)
                 actual = []
             actual.append(w)
@@ -404,12 +438,33 @@ def _acciones_por_posicion(pagina, centros=None):
         if c < 4 and bordes[c + 1] is not None and x0 >= bordes[c + 1] - 3:
             c += 1
         lineas.append((c, (l[0][1] + l[0][3]) / 2, " ".join(w[4] for w in sorted(l, key=lambda w: w[0]))))
+    bordes_v = _reglas_verticales(pagina, tope)
+    if len(bordes_v) >= 6:
+        # La tabla dibuja sus columnas: cada palabra va a la columna entre cuyas líneas cae su centro. Es exacto y
+        # reemplaza lo anterior (que estima los límites por los encabezados y los huecos).
+        limites_v = bordes_v[-6:]  # las 5 últimas columnas: fecha, medida, actores, lugar, demanda (sin N.°)
+        celdas = {}
+        for w in ws:
+            medio = (w[0] + w[2]) / 2
+            if w[1] < tope or not limites_v[0] <= medio <= limites_v[-1]:
+                continue
+            col = max(k for k in range(5) if limites_v[k] <= medio)
+            celdas.setdefault((col, round(w[3])), []).append(w)
+        lineas = [(col, (l[0][1] + l[0][3]) / 2, " ".join(w[4] for w in sorted(l, key=lambda w: w[0])))
+                  for (col, _), l in celdas.items()]
     lineas.sort(key=lambda l: l[1])
     fechas = [(y, t) for c, y, t in lineas if c == 0 and re.match(r"\d{1,2}(?:/\d{1,2}/\d{2,4}| de\b)", t)]
     filas = []
+    reglas = _reglas_horizontales(pagina, tope)
     for i, (y, t) in enumerate(fechas):
         y0 = (fechas[i - 1][0] + y) / 2 if i else tope
         y1 = (y + fechas[i + 1][0]) / 2 if i + 1 < len(fechas) else pagina.rect.height - 50
+        # Si la tabla dibuja líneas entre filas, la fila va de la línea de arriba a la de abajo de su fecha: una
+        # celda alta (n.° 127) no se reparte con la fila vecina. Si entre esas líneas hay otra fecha (falta una
+        # línea), queda el punto medio entre fechas.
+        arriba, abajo = [r for r in reglas if r < y - 1], [r for r in reglas if r > y + 1]
+        if arriba and abajo and not any(max(arriba) < y2 < min(abajo) for y2, _ in fechas if y2 != y):
+            y0, y1 = max(arriba), min(abajo)
         fila = {"fecha": " ".join(t2 for c, y2, t2 in lineas if c == 0 and y0 <= y2 < y1)}
         for k, nombre in enumerate(COLUMNAS[1:], 1):
             fila[nombre] = " ".join(t2 for c, y2, t2 in lineas if c == k and y0 <= y2 < y1)
