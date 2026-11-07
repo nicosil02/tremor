@@ -133,10 +133,10 @@ def bcrp(con, desde="2004-1"):
 ENAHO = "https://proyectos.inei.gob.pe/iinei/srienaho/descarga/STATA/{codigo}-Modulo34.zip"
 CODIGOS_ENAHO = {2004: 280, 2005: 281, 2006: 282, 2007: 283, 2008: 284, 2009: 285, 2010: 279, 2011: 291, 2012: 324,
                  2013: 404, 2014: 440, 2015: 498, 2016: 546, 2017: 603, 2018: 634, 2019: 687, 2020: 737, 2021: 759,
-                 2022: 784, 2023: 906, 2024: 966}  # shortcut: falta 2025, agregar su código cuando el INEI lo publique
+                 2022: 784, 2023: 906, 2024: 966, 2025: 1031}  # código del portal del INEI: cada año nuevo se agrega a mano
 POBREZA_OFICIAL = {2004: 58.7, 2005: 55.6, 2006: 49.1, 2007: 42.4, 2008: 37.3, 2009: 33.5, 2010: 30.8, 2011: 27.8,
                    2012: 25.8, 2013: 23.9, 2014: 22.7, 2015: 21.8, 2016: 20.7, 2017: 21.7, 2018: 20.5, 2019: 20.2,
-                   2020: 30.1, 2021: 25.9, 2022: 27.5, 2023: 29.0, 2024: 27.6}  # INEI, pobreza monetaria nacional (%)
+                   2020: 30.1, 2021: 25.9, 2022: 27.5, 2023: 29.0, 2024: 27.6, 2025: 25.7}  # INEI, pobreza monetaria nacional (%)
 
 
 def pobreza(sumaria) -> list[tuple]:
