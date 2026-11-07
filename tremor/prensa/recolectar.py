@@ -38,6 +38,15 @@ FEEDS = {
     "Diario Ahora": ("https://www.diarioahora.pe/feed/", "Huánuco"),
     "Radio Marañón": ("https://www.radiomaranon.org.pe/feed/", "Cajamarca"),
     "Observatorio de Conflictos Mineros": ("https://conflictosmineros.org.pe/feed/", None),
+    # Tomados de Base_legislativa (probados el 7 nov 2026)
+    "La República": ("https://larepublica.pe/rss/sociedad.xml", None),
+    "Gestión": ("https://gestion.pe/arcio/rss/category/peru/", None),
+    "Perú21": ("https://peru21.pe/arcio/rss/category/politica/", None),
+    "IDL-Reporteros": ("https://idl-reporteros.pe/feed/", None),
+    "CEPES": ("https://www.cepes.org.pe/feed/", None),
+    "La Revista Agraria": ("https://larevistaagraria.org/feed/", None),
+    "Conveagro": ("https://www.conveagro.org.pe/feed/", None),
+    "Agronoticias": ("https://agronoticias.pe/feed/", None),
     # Radios locales (directorio radio-browser, feeds probados el 7 nov 2026)
     "Exitosa": ("https://www.exitosanoticias.pe/feed/", None),
     "Radio Panamericana": ("https://www.radiopanamericana.com/feed/", None),
@@ -77,7 +86,9 @@ TEMAS = ["(paro OR bloqueo OR huelga) Perú", "(protesta OR movilización OR mar
          "paro regional Perú", "(anuncian OR convocan) (paro OR huelga OR movilización) Perú",
          "(comuneros OR comunidades campesinas OR ronderos) Perú", "(comunidades nativas OR indígenas) protesta Perú",
          "minera (protesta OR conflicto OR bloqueo OR paro) Perú", "(lote petrolero OR derrame OR oleoducto) Perú",
-         "frente de defensa Perú", "(enfrentamiento OR heridos) protesta Perú", "conflicto social Perú"]
+         "frente de defensa Perú", "(enfrentamiento OR heridos) protesta Perú", "conflicto social Perú",
+         # medios sin feed propio (Base_legislativa los lee así)
+         f"{PALABRAS} site:expreso.com.pe", f"{PALABRAS} site:ojo-publico.com", f"{PALABRAS} site:canaln.pe"]
 LIMA = timezone(timedelta(hours=-5))
 UA = {"User-Agent": "Mozilla/5.0 (tremor)"}
 
