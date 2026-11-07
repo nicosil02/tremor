@@ -3,14 +3,14 @@
 Desde la raíz del repo; todos idempotentes.
 
 ```
-python -m tremor.egpp cargar RUTA.xlsx        # → datos/egpp.db (reemplaza la versión cargada)
-python -m tremor.egpp perfil                  # → datos/perfil_distrito_egpp.csv y perfil_distrito_anio_egpp.csv
+python -m tremor.egpp cargar RUTA.xlsx        # → tabla egpp_evento en datos/tremor.db (reemplaza la versión cargada)
+python -m tremor.egpp perfil                  # → datos/exportes/perfil_distrito.csv y perfil_distrito_anio.csv
 python -m tremor.egpp ranking [--tipo socioambiental_extractivo] [--n 20]   # imprime los distritos más conflictivos
 
 python -m tremor.prensa recolectar [--desde AAAA-MM-DD --hasta AAAA-MM-DD]  # sin fechas: últimas 24 h
 python -m tremor.prensa codificar [--max-solicitudes 200]                   # lo que falta, en lotes
 python -m tremor.prensa agrupar
-python -m tremor.prensa validar [--mes AAAA-MM]                             # contra Defensoría (y EGPP si existe datos/egpp.db)
+python -m tremor.prensa validar [--mes AAAA-MM]                             # contra Defensoría y contra la EGPP
 python -m tremor.prensa exportar                                           # datos/exportes/notas.csv, eventos_prensa.csv
 python -m tremor.prensa todo                                               # recolectar, codificar, agrupar, exportar
 ```
