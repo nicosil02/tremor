@@ -1,0 +1,16 @@
+# Secretos
+.env
+*.key
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+# Datos descargados y generados (se reconstruyen con los scripts)
+datos/crudos/
+datos/cache/
+*.db
+*.db-journal
+# Sistema
+.DS_Store
+Thumbs.db
