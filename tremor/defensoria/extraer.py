@@ -390,21 +390,30 @@ def acciones(doc, paginas_: list[int]) -> list[dict]:
                 # Pueden continuar la fila anterior las filas sin fecha de la misma tabla (texto partido en
                 # varias líneas) o de la primera tabla de la página siguiente (fila partida entre páginas).
                 misma = ultima is not None and (ultima[2] == (num, nt) or (nt == 0 and ultima[2][0] == num - 1))
-                cab = None  # columnas del encabezado, si la tabla lo trae: sirven para filas con una celda vacía
+                # Columnas del encabezado, si la tabla lo trae: sirven para filas con una celda vacía. Puede ocupar
+                # dos filas ("Actores" en la segunda, n.° 134).
+                cab, parcial = None, None
                 for celdas in t.extract():
                     celdas = [re.sub(r"\s+", " ", c or "").strip() for c in celdas]
                     llenas = [(i, c) for i, c in enumerate(celdas) if c]
                     nombres = [_sin_tildes(c.lower()) for c in celdas]
                     if "fecha" in nombres and "medida" in nombres:
-                        cab = [next((i for i, c in enumerate(nombres) if c in opc), None) for opc in
-                               (("fecha",), ("medida",), ("actores",), ("lugar", "ambito"), ("demanda",))]
-                        cab = None if None in cab else cab
+                        parcial = [None] * 5
+                    if parcial and None in parcial:
+                        for j, opc in enumerate((("fecha",), ("medida",), ("actores",), ("lugar", "ambito", "region"),
+                                                 ("demanda",))):
+                            parcial[j] = parcial[j] if parcial[j] is not None else \
+                                next((i for i, c in enumerate(nombres) if c in opc), None)
+                        cab = None if None in parcial else parcial
                     k = next((j for j, (_, c) in enumerate(llenas) if _FECHA.match(c)), None)
                     campos = None
                     if k is not None and len(llenas) - k >= 5:
                         campos = llenas[k:k + 4] + [(llenas[k + 4][0], " ".join(c for _, c in llenas[k + 4:]))]
                     elif k is not None and cab and len(llenas) - k >= 3 and llenas[k][0] == cab[0]:  # n.° 65
-                        campos = [(i, celdas[i]) for i in cab[:4]] + [(cab[4], " ".join(c for i, c in llenas if i >= cab[4]))]
+                        # el valor puede caer una celda a la derecha de su encabezado (antes de la columna siguiente)
+                        campos = [next(((i, c) for i, c in llenas if cab[j] <= i < cab[j + 1]), (cab[j], ""))
+                                  for j in range(4)]
+                        campos.append((cab[4], " ".join(c for i, c in llenas if i >= cab[4])))
                     if campos:
                         fila = dict(zip(COLUMNAS, (c for _, c in campos)), pagina=num)
                         fila["fecha"] = _FECHA.match(fila["fecha"]).group(1)
@@ -425,7 +434,7 @@ def acciones(doc, paginas_: list[int]) -> list[dict]:
             alt, centros = _acciones_por_posicion(d[num - 1], centros)
             fechas = _fechas_en_columna(d[num - 1])
             salida += [dict(f, pagina=num) for f in alt] if len(tabla) < len(alt) <= fechas else tabla
-        filas = salida
+        filas = [{k: v.strip() if isinstance(v, str) else v for k, v in f.items()} for f in salida]
     return filas
 
 
@@ -572,13 +581,18 @@ def acciones_en_texto(doc, paginas_: list[int]) -> int:
 
 
 def _fechas_en_columna(pagina) -> int:
-    """Líneas que son solo una fecha en el tercio izquierdo de la página (columna Fecha). Las de más a la derecha
-    son notas de la demanda ("Nota: la huelga inició el 18 de agosto", n.° 259)."""
-    lineas = ["".join(s["text"] for s in l["spans"]).strip() for b in pagina.get_text("dict")["blocks"]
+    """Líneas que son solo una fecha alineadas con la columna Fecha (el borde izquierdo más repetido entre las
+    fechas). Las demás son texto de otras columnas: notas de la demanda ("la huelga inició el 18 de agosto",
+    n.° 259) o nombres ("Centro de Salud 7 de Junio", n.° 169)."""
+    lineas = [(l["bbox"][0], "".join(s["text"] for s in l["spans"]).strip()) for b in pagina.get_text("dict")["blocks"]
               for l in b.get("lines", []) if l["bbox"][0] < pagina.rect.width / 3]
     # "03/11/2009" / "y" / "04/11/2009" (2009) es una sola fila
-    return sum(1 for i, l in enumerate(lineas) if _FECHA_SOLA.fullmatch(l)
-               and not (i and lineas[i - 1] in ("y", "al")))
+    fechas = [x0 for i, (x0, l) in enumerate(lineas) if _FECHA_SOLA.fullmatch(l)
+              and not (i and lineas[i - 1][1] in ("y", "al"))]
+    if not fechas:
+        return 0
+    col = max(set(round(x0 / 10) for x0 in fechas), key=[round(x0 / 10) for x0 in fechas].count) * 10
+    return sum(1 for x0 in fechas if abs(x0 - col) <= 25)
 
 
 def acciones_declaradas(texto: str) -> int | None:
