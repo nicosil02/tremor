@@ -120,6 +120,7 @@ def faltantes(con) -> list[int]:
 # El CDX solo admite comodín al final, así que el nombre se filtra con una expresión regular.
 PATRONES_WAYBACK = [
     "defensoria.gob.pe/modules/Downloads/conflictos/",
+    "defensoria.gob.pe/conflictos-sociales/objetos/",  # aquí estaba el n.° 70 (diciembre 2009)
     "defensoria.gob.pe/wp-content/uploads/",
 ]
 
@@ -156,6 +157,103 @@ def buscar_en_wayback(con) -> int:
     con.execute(f"DELETE FROM faltante WHERE num NOT IN ({','.join(map(str, faltantes(con))) or 'NULL'})")
     con.commit()
     return nuevos
+
+
+MESES = {m: i for i, m in enumerate(
+    "enero febrero marzo abril mayo junio julio agosto setiembre octubre noviembre diciembre".split(), 1)}
+MESES["septiembre"] = 9
+_MES = "|".join(MESES)
+
+# Formas en que la portada dice el número, de la más a la menos específica (ver tests).
+PATRONES_NUM = [
+    r"reporte\s+(?:mensual\s+)?(?:de\s+)?(?:conflictos\s+sociales\s+)?n\s*[.°ºo]*\s*°?\s*(\d{1,3})\b",
+    r"\b(\d{1,3})\s*°\s*reporte",                       # "60°REPORTE" (2009)
+    r"conflictos\s+sociales\W{0,3}n\s*[.°ºo]*\s*°?\s*(\d{1,3})\b",
+]
+PATRON_PERIODO = rf"\b({_MES})\s+(?:de\s+|del\s+)?(\d{{4}})\b"
+
+
+def texto_inicial(ruta, formato: str, paginas: int = 3) -> str:
+    """Texto de las primeras páginas (PDF) o del inicio de la página (HTML)."""
+    if formato == "html":
+        sopa = BeautifulSoup(ruta.read_text(encoding="utf-8", errors="replace"), "html.parser")
+        for s in sopa(["script", "style"]):
+            s.decompose()
+        return sopa.get_text("\n")[:20000]
+    import pymupdf
+    pymupdf.TOOLS.mupdf_display_errors(False)
+    with pymupdf.open(ruta) as d:
+        return "\n".join(d[i].get_text() for i in range(min(paginas, len(d))))
+
+
+def leer_portada(texto: str) -> tuple[int | None, int | None, int | None]:
+    """(número, mes, año) del reporte según su propio texto."""
+    plano = re.sub(r"\s+", " ", texto)
+    num = None
+    for p in PATRONES_NUM:
+        m = re.search(p, plano, re.I)
+        if m:
+            num = int(m.group(1))
+            break
+    m = re.search(PATRON_PERIODO, plano, re.I)
+    mes, anio = (MESES[m.group(1).lower()], int(m.group(2))) if m else (None, None)
+    return num, mes, anio
+
+
+def identificar(con) -> dict:
+    """Lee la portada de cada documento descargado y elige un documento principal por número."""
+    conteo = {"leidos": 0, "discrepancias": []}
+    pend = con.execute("SELECT url, formato, huella, num_titulo FROM documento"
+                       " WHERE huella IS NOT NULL AND formato != 'zip' AND rol IS NULL").fetchall()
+    for d in pend:
+        ruta = CRUDOS / f"{d['huella']}.{d['formato']}"
+        num, mes, anio = leer_portada(texto_inicial(ruta, d["formato"]))
+        if num is None:  # la portada no lo dice en las primeras páginas: se buscan más
+            num, mes2, anio2 = leer_portada(texto_inicial(ruta, d["formato"], paginas=10))
+            mes, anio = mes or mes2, anio or anio2
+        if num is None and d["num_titulo"] is not None:
+            # El reporte n.° 1 y la edición especial del 35 no dicen su número en el texto.
+            # ponytail: se acepta el del nombre del archivo; la secuencia de meses lo contrasta.
+            num = d["num_titulo"]
+        if num is not None and d["num_titulo"] is not None and num != d["num_titulo"]:
+            conteo["discrepancias"].append((d["url"], d["num_titulo"], num))
+        con.execute("UPDATE documento SET reporte_num = ?, mes = ?, anio = ? WHERE url = ?",
+                    (num, mes, anio, d["url"]))
+        conteo["leidos"] += 1
+    con.commit()
+    _asignar_roles(con)
+    return conteo
+
+
+def _asignar_roles(con):
+    """Un principal por número; el resto es copia, parte, especial o sin número."""
+    prioridad = {"listado": 0, "zip": 1, "wayback": 2}
+    docs = con.execute("SELECT url, fuente, huella, reporte_num FROM documento"
+                       " WHERE huella IS NOT NULL AND formato != 'zip'").fetchall()
+    por_num = {}
+    for d in docs:
+        if d["reporte_num"] is None:
+            # conflictos_2005.pdf es el resumen anual, no un reporte mensual.
+            rol = "anual" if re.search(r"conflictos_\d{4}\.pdf$", d["url"]) else "sin_numero"
+            con.execute("UPDATE documento SET rol = ? WHERE url = ?", (rol, d["url"]))
+        else:
+            por_num.setdefault(d["reporte_num"], []).append(d)
+    for num, grupo in por_num.items():
+        grupo.sort(key=lambda d: (prioridad[d["fuente"]], d["url"]))
+        principal = next((d for d in grupo if not re.search(r"especial", d["url"], re.I)), grupo[0])
+        for d in grupo:
+            archivo = unquote(d["url"].rsplit("/", 1)[-1])
+            if d is principal:
+                rol = "principal"
+            elif re.search(r"especial", archivo, re.I):
+                rol = "especial"
+            elif re.search(r"-\d\.pdf$", archivo) and d["huella"] != principal["huella"] \
+                    and d["fuente"] == principal["fuente"]:
+                rol = "parte"  # reporte subido en varios archivos (n.° 155)
+            else:
+                rol = "copia"
+            con.execute("UPDATE documento SET rol = ? WHERE url = ?", (rol, d["url"]))
+    con.commit()
 
 
 def _guardar(contenido: bytes, formato: str) -> str:

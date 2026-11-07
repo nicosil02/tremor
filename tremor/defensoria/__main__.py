@@ -31,6 +31,16 @@ def descargar(con):
     return 1 if errores else 0
 
 
+def identificar(con):
+    inicio = ahora()
+    r = catalogo.identificar(con)
+    print(f"Portadas leídas: {r['leidos']}. Número distinto al del título: {len(r['discrepancias'])}.")
+    for url, pista, real in r["discrepancias"]:
+        print(f"  {url.rsplit('/', 1)[-1]}: título {pista}, portada {real}")
+    _registrar(con, "identificar", inicio, r["leidos"], 0, repr(r["discrepancias"]))
+    return 0
+
+
 def estado(con):
     q = lambda sql: con.execute(sql).fetchone()[0]
     nums = catalogo.numeros_conocidos(con)
@@ -51,6 +61,7 @@ def main(argv=None):
     d = sub.add_parser("descubrir", help="listado oficial y Wayback para los faltantes")
     d.add_argument("--completo", action="store_true", help="recorrer las 120 páginas")
     sub.add_parser("descargar", help="bajar lo que no tiene huella")
+    sub.add_parser("identificar", help="leer número y mes de cada portada")
     sub.add_parser("estado", help="resumen del catálogo")
     t = sub.add_parser("todo", help="todos los pasos en orden")
     t.add_argument("--completo", action="store_true")
@@ -61,10 +72,12 @@ def main(argv=None):
         return descubrir(con, a.completo)
     if a.comando == "descargar":
         return descargar(con)
+    if a.comando == "identificar":
+        return identificar(con)
     if a.comando == "estado":
         return estado(con)
     if a.comando == "todo":
-        codigo = descubrir(con, a.completo) | descargar(con)
+        codigo = descubrir(con, a.completo) | descargar(con) | identificar(con)
         estado(con)
         return codigo
 

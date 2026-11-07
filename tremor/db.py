@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS documento (
     num_titulo INTEGER,               -- número según el título o la URL (pista, no verdad)
     huella TEXT,                      -- SHA-256 del contenido, vacío si no se descargó
     reporte_num INTEGER,              -- número leído de la portada
+    anio INTEGER, mes INTEGER,        -- periodo leído de la portada
+    rol TEXT,                         -- principal | copia | parte | especial | sin_numero
     error TEXT,
     descubierto_en TEXT NOT NULL
 );
@@ -92,4 +94,9 @@ def conectar(ruta: Path = RUTA_DB) -> sqlite3.Connection:
     con = sqlite3.connect(ruta)
     con.row_factory = sqlite3.Row
     con.executescript(ESQUEMA)
+    # Columnas añadidas después de la primera versión (bases ya creadas).
+    existentes = {f[1] for f in con.execute("PRAGMA table_info(documento)")}
+    for col, tipo in [("anio", "INTEGER"), ("mes", "INTEGER"), ("rol", "TEXT")]:
+        if col not in existentes:
+            con.execute(f"ALTER TABLE documento ADD COLUMN {col} {tipo}")
     return con
