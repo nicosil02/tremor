@@ -55,6 +55,12 @@ Pruebas hechas el 7 nov 2026 (scripts en el scratchpad de la sesión; cifras en 
 - **Validación**: diciembre 2025, porque ese mes tiene a la vez la tabla de la Defensoría (reporte 262) y la
   EGPP. El reporte 271 (septiembre 2026, HTML) no tiene acciones leídas: hueco de 001.
 
+- **Facebook (7 nov)**: no se lee automáticamente (condiciones de Meta; la Meta Content Library es solo para
+  investigación dentro de su entorno seguro). Se arma `tremor/fuentes_facebook.csv`: páginas a vigilar por
+  departamento, tomadas solo de fuentes verificables (el directorio radio-browser y el enlace a Facebook en la
+  web de cada medio u organización). La página (006) las muestra como "fuentes a revisar" del lugar. YouTube y
+  el audio de las radios quedan para el módulo 003.
+
 ## R5. LLM
 
 - **Decision**: `tremor/llm.py`, `POST {LLM_BASE_URL}/chat/completions` con `response_format:
