@@ -53,6 +53,11 @@ def procesar(doc) -> dict:
         vict = x.victimas(doc, sv["pagina"])
     else:
         vict = x.victimas_html(x.CRUDOS / f"{doc['huella']}.html")
+    if doc["reporte_num"] < PRIMERO_CON_FICHAS:  # 2004 - marzo 2008: casos por número, sin fichas estables
+        antiguos = x.casos_antiguos(pags)
+        fichas = [f for f in antiguos if f["estado"] == "activo"]
+        lista = [f for f in antiguos if f["estado"] != "activo"]
+        acc, vict, vict_decl = [], [], None
     return {"totales": tot, "fichas": fichas, "fichas_en_texto": en_texto, "acciones": acc, "acciones_en_texto": acc_texto,
             "victimas": vict, "victimas_declaradas": vict_decl, "sin_hechos": sin, "latentes": lat, "lista": lista,
             "secciones": [(s["titulo"], s["canonica"], s["pagina"]) for s in secs]}
@@ -208,8 +213,35 @@ def _cargar_casos(con):
             for c in con.execute("SELECT * FROM caso")}
 
 
-# Antes del n.° 50 (abril de 2008) las fichas no siguen un formato estable: solo se guardan los totales.
+# Antes del n.° 50 (abril de 2008) los casos se leen con casos_antiguos(): numerados por sección y departamento.
 PRIMERO_CON_FICHAS = 50
+
+
+def veredicto_antiguo(r: dict) -> tuple[str, dict]:
+    """Validación de 2004 - marzo 2008. Desde 2005 el reporte declara activos y latentes; en 2004 solo el total de
+    casos, que incluye los concluidos del mes; a fines de 2004, solo los activos."""
+    tot = r["totales"]
+    cuenta = {e: sum(f["estado"] == e for f in r["fichas"] + r["lista"]) for e in ("activo", "latente", "resuelto")}
+    d = {"activos_leidos": cuenta["activo"], "latentes_leidos": cuenta["latente"], "resueltos_leidos": cuenta["resuelto"],
+         "activos_declarados": tot.get("activos"), "latentes_declarados": tot.get("latentes")}
+    if tot.get("latentes") is not None:
+        dif = max(abs(tot["activos"] - cuenta["activo"]), abs(tot["latentes"] - cuenta["latente"]))
+    elif cuenta["resuelto"]:  # 2004: "da cuenta de 63 casos" = vigentes + nuevos + concluidos
+        d["total_declarado"] = tot.get("total")
+        dif = abs(tot["total"] - cuenta["activo"] - cuenta["resuelto"]) if tot.get("total") else None
+    elif tot.get("activos") is not None:
+        dif = abs(tot["activos"] - cuenta["activo"])
+    else:
+        dif = None
+    if dif is None:
+        return "sin_totales", d
+    nums = sorted(f["num_fuente"] for f in r["fichas"] + r["lista"] if f.get("num_fuente") and f["estado"] != "resuelto")
+    if dif > TOLERANCIA and nums and nums == list(range(nums[0], nums[0] + len(nums))):
+        # El detalle numera sus casos sin huecos y se leyeron todos: el resumen del propio reporte no coincide
+        # con su detalle (p. ej. n.° 45: el detalle trae 33 activos y el resumen declara 28).
+        d["nota"] = f"el detalle numera {len(nums)} casos y todos se leyeron; el resumen declara otra cifra"
+        return "fuente_distinta", d
+    return ("valido" if dif == 0 else "aproximado" if dif <= TOLERANCIA else "fallido"), d
 
 
 def validar(con, desde: int = 1) -> dict:
@@ -229,8 +261,7 @@ def validar(con, desde: int = 1) -> dict:
     for doc, r in leidos:
         n = doc["reporte_num"]
         if n < PRIMERO_CON_FICHAS:
-            r.update(fichas=[], lista=[], acciones=[], victimas=[], victimas_declaradas=None)
-            estado, det = ("solo_totales" if "activos" in r["totales"] else "sin_totales"), {}
+            estado, det = veredicto_antiguo(r)
         else:
             estado, det = veredicto(r)
         tot = r["totales"]
