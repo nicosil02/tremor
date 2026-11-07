@@ -117,8 +117,12 @@ Archivos que acompañan a la base:
 - **Canon:** Challhuahuacho pasó de casi S/ 0 (2012) a S/ 95 millones (2024), y llegó a depender de él en un 88%
   en 2020. San Marcos (Antamina) dependía en un 97% en 2012.
 - **Huecos de la Defensoría:**
-  - **ningún caso tiene ubigeo** (0 de 1 843);
-  - la **fase** solo se leyó en 77 de 46 470 caso-mes;
+  - casos ubicados (`ubicar_caso`, 7 nov): 1 420 a distrito, 144 a provincia, 221 a departamento (la ficha no
+    trae ubicación), 58 sin lugar;
+  - la **fase por caso no se publica en los PDF** (revisados 2016 y 2024): solo el total por fase. Existe desde el
+    reporte 271 (HTML), 77 caso-mes. En su lugar, un indicador de escalamiento por reglas: diálogo (leído en
+    ~30 900 caso-mes desde el reporte 50), latente → activo, hechos del mes (violencia, heridos, paro, bloqueo) y
+    víctimas;
   - el **reporte 271** (HTML) no tiene sus acciones de protesta leídas.
 
 ## 6. Pasos que siguen (en este orden)
@@ -134,10 +138,8 @@ Archivos que acompañan a la base:
 5. El autor revisa las 26 páginas de Facebook con confianza "media" (columna `origen`).
 
 **B. Completar la Defensoría (módulo 001)**
-1. Ubicar los casos: `caso.ubigeo` con `lugares.resolver` sobre `departamento`, `provincia`, `distrito` y
-   `ubicacion`, como `ubicar_defensoria` en `tremor/prensa/eventos.py`.
-2. Leer bien la **fase** de cada caso-mes (temprana, escalamiento, crisis, desescalamiento, diálogo). Es
-   probablemente el mejor predictor.
+1. ✅ Ubicar los casos (`ubicar_caso` en `tremor/prensa/eventos.py`, corre con `validar`).
+2. Indicador de escalamiento por caso-mes en lugar de la fase (ver sección 5).
 3. Leer las acciones de protesta del reporte 271 (HTML).
 
 **C. Perfil territorial del distrito** (`tremor/territorio.py`). Cada variable va con su año, para no usar un dato
