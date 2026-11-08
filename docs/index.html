@@ -52,8 +52,8 @@
   .btn:hover { background: var(--piedra); }
   .btn:active { transform: scale(0.97); }
   .panel.en-detalle .elegir, .panel.en-detalle .sugerencias, .panel.en-detalle #bajada { display: none; }
-  .vistas.pestanas { grid-template-columns: repeat(4, auto); margin: 4px 0 14px; }
-  .vistas.pestanas button { font-size: 14px; padding: 7px 8px; }
+  .vistas.pestanas { gap: 16px; margin: 6px 0 14px; }
+  .vistas.pestanas button { font-size: 14px; }
   .pest > h3:first-child { display: none; }
   .pest h3 { border-top: 0; padding-top: 0; margin-top: 16px; }
   .panel.en-detalle #alertas-sec, .panel.en-detalle #bloque-ops, .panel.en-detalle #avisos-sec { display: none; }
@@ -96,11 +96,11 @@
   .elegir input { width: 100%; font: inherit; font-size: 17px; font-weight: 600; padding: 11px 14px; border: 1px solid var(--linea); border-radius: 8px;
                   background: #fff; color: var(--tinta); }
   .elegir input::placeholder { color: var(--tinta-3); font-weight: 400; }
-  .vistas { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: var(--vacio); border-radius: 9px; margin-bottom: 12px; }
-  .vistas button { border: 0; background: transparent; padding: 8px 10px; border-radius: 6px; font-size: 15px; font-weight: 600; color: var(--tinta-2); cursor: pointer;
-                   transition: background-color 140ms ease, transform 140ms var(--ease-out); }
-  .vistas button:active { transform: scale(0.97); }
-  .vistas button[aria-selected="true"] { background: #fff; color: var(--tinta); box-shadow: 0 1px 3px rgb(28 38 41 / .12); }
+  .vistas { display: flex; gap: 20px; border-bottom: 1px solid var(--linea); margin-bottom: 14px; }
+  .vistas button { border: 0; background: none; padding: 6px 0 9px; margin-bottom: -1px; font-size: 15px; font-weight: 600; color: var(--tinta-3);
+                  border-bottom: 2px solid transparent; cursor: pointer; transition: color 140ms ease, border-color 140ms ease; }
+  .vistas button:hover { color: var(--tinta); }
+  .vistas button[aria-selected="true"] { color: var(--tinta); border-bottom-color: var(--cobre); }
   .cuanto { margin: 0 0 4px; font-size: 16px; }
   .cuanto b { font-weight: 650; }
   .detalle-op ul.temas { list-style: none; padding: 0 !important; margin: 4px 0 0; display: grid; gap: 4px; }
@@ -356,8 +356,8 @@ function iniciar(D, G, H, C) {
     map.setTerrain({ source: "dem-3d", exaggeration: 1.3 });
     map.addSource("sat", { type: "raster", tileSize: 256, maxzoom: 18, attribution: "Esri, Maxar",
       tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"] });
-    map.addLayer({ id: "sat", type: "raster", source: "sat", minzoom: 10,
-      paint: { "raster-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0, 12, 1] } }, bajoNombres);
+    map.addLayer({ id: "sat", type: "raster", source: "sat", minzoom: 6.5,  // de cerca, la tierra: el satélite entra al acercarse a una región
+      paint: { "raster-opacity": ["interpolate", ["linear"], ["zoom"], 6.5, 0, 8, 1] } }, bajoNombres);
     const rampa = ["step", ["get", "p"], css("--cobre-1"), 0.1, css("--cobre-2"), 0.25, css("--cobre-3"), 0.5, css("--cobre-4")];
     map.addSource("zonas", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     // Sobre el satélite la zona se vuelve transparente: manda la huella de la operación
@@ -878,7 +878,7 @@ function iniciar(D, G, H, C) {
         t: `Vía bloqueada por una protesta en ${nombre(s.distrito || "")}, ${s.via || ""}`, src: "SUTRAN" })),
       ...filas.map((f, i) => { const p = mesP(f.a) ?? 0;
         return { f: String(D.creado), i, s: p >= 0.5 ? "alta" : p >= 0.25 ? "media" : null,
-                 t: `Riesgo ${banda(p).toLowerCase()} para ${enMes.replace(/^en /, "")}: ${pct(p)} de probabilidad de paro o bloqueo`, src: "Modelo Tremor" }; })
+                 t: `Riesgo ${banda(p).toLowerCase()} de paro o bloqueo, ${pct(p)} ${enMes}`, src: "Modelo Tremor" }; })
     ].filter(x => x.s).sort((a, b) => (a.s === "alta" ? 0 : 1) - (b.s === "alta" ? 0 : 1) || b.f.localeCompare(a.f));
     document.getElementById("alertas").innerHTML = items.slice(0, 8).map(x => `<li class="alerta"><span class="sev ${x.s}"></span>
         <div><div class="a-meta"><time>${dia(x.f)}</time>${x.i >= 0 ? `<b>${esc(titFila(filas[x.i]))}</b>` : ""}</div>
