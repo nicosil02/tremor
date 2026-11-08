@@ -1,0 +1,80 @@
+# Módulo 003: escucha las radios regionales en franjas de noticieros, transcribe con faster-whisper (en la máquina de
+# GitHub, sin cuota), codifica los fragmentos como notas de prensa y publica en la rama `datos`. Mismo esquema que
+# tv-en-vivo.yml de Base_legislativa. Lima = UTC-5.
+# shortcut: el cron de GitHub puede arrancar 10-30 min tarde; si hace falta puntualidad, dispararlo desde cron-job.org.
+name: radio
+
+on:
+  schedule:
+    - cron: "0 11 * * *"    # 6:00 Lima, noticiero de la mañana
+    - cron: "30 17 * * *"   # 12:30 Lima, noticiero del mediodía
+  workflow_dispatch:
+    inputs:
+      minutos:
+        description: "Minutos de escucha por radio"
+        required: false
+        default: "30"
+
+permissions:
+  contents: write
+
+concurrency:            # comparte la rama `datos` con defensoria.yml
+  group: datos
+  cancel-in-progress: false
+
+jobs:
+  escuchar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Caché del modelo Whisper
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: whisper-small
+
+      - run: |
+          pip install -r requirements.txt faster-whisper
+          sudo apt-get install -y -qq ffmpeg
+
+      - name: Traer la base anterior
+        run: |
+          mkdir -p datos
+          git fetch --depth 1 origin datos
+          git show origin/datos:tremor.db.gz | gunzip > datos/tremor.db
+          git show origin/datos:distritos.geojson > datos/distritos.geojson || true
+
+      - name: Escuchar y transcribir
+        run: python -m tremor.radio --minutos "${{ github.event.inputs.minutos || '30' }}"
+
+      - name: Codificar y agrupar (prensa)
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        run: |
+          python -m tremor.prensa codificar
+          python -m tremor.prensa agrupar
+          python -m tremor.prensa exportar
+
+      - name: Publicar en la rama datos
+        run: |
+          mkdir -p /tmp/datos && gzip -9 -c datos/tremor.db > /tmp/datos/tremor.db.gz && cp datos/exportes/*.csv /tmp/datos/
+          cp datos/distritos.geojson /tmp/datos/ || true
+          git config user.name "tremor-bot"
+          git config user.email "tremor-bot@users.noreply.github.com"
+          git checkout --orphan datos-nueva
+          git rm -rq --cached . && git clean -fdq -e datos
+          cp /tmp/datos/* .
+          git add tremor.db.gz *.csv *.geojson
+          if git fetch --depth 1 origin datos && git diff --quiet origin/datos -- *.csv; then
+            echo "Sin datos nuevos: no se publica."
+            exit 0
+          fi
+          git commit -qm "Radio al $(date -u +'%F %H:%M') UTC"
+          git push -f origin datos-nueva:datos

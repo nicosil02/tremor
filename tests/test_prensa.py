@@ -161,3 +161,10 @@ def test_acled_extractivo():
     assert not etiqueta("artisanal miners blocked the Panamericana demanding REINFO extension")
     assert etiqueta("artisan fishers marched against the oil spill")
     assert not etiqueta("teachers protested in Lima demanding higher wages")
+
+
+def test_radio_trozos():
+    from tremor.radio import trozos
+    texto = "Comuneros de Chumbivilcas anuncian paro. " * 60
+    partes = trozos(texto, 300)
+    assert all(len(x) <= 350 for x in partes) and "".join(partes).count("paro") == 60
