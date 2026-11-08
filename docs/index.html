@@ -375,6 +375,20 @@ function iniciar(D, G, H) {
       <p style="margin:4px 0 0;font-size:14px;color:var(--tinta-3)">En cobre, los meses en alerta. Los puntos son meses con paro. ${total ? `Avisó ${vistos} de ${total}.` : ""}</p>`;
   }
 
+  // Caja [oeste, sur, este, norte] de las huellas OEFA de las unidades de una fila. A mano: d3.geoBounds lee los
+  // anillos antihorarios del GeoJSON como "todo el mundo menos la mina".
+  function cajaHuella(fila) {
+    const unidades = new Set(fila.os.map(o => `${o.empresa}|${o.unidad}`));
+    const suyas = H.features.filter(f => unidades.has(`${f.properties.empresa}|${f.properties.unidad}`));
+    if (!suyas.length) return null;
+    let o = 180, s = 90, e = -180, n = -90;
+    const recorrer = x => typeof x[0] === "number" ? (o = Math.min(o, x[0]), e = Math.max(e, x[0]), s = Math.min(s, x[1]), n = Math.max(n, x[1])) : x.forEach(recorrer);
+    suyas.forEach(f => recorrer(f.geometry.coordinates));
+    return [o, s, e, n];
+  }
+  // El punto de la operación va en el centro de su huella; si no hay huella, en el centro del distrito
+  const puntoOp = fila => { const k = cajaHuella(fila); return k ? [(k[0] + k[2]) / 2, (k[1] + k[3]) / 2] : centroDe(fila.u); };
+
   let vista = null;  // la cámara de la empresa elegida, para volver al cerrar una operación
   function abrir(i, volar) {
     document.querySelectorAll(".op").forEach(li => { const si = +li.dataset.i === i && !li.classList.contains("abierta");
@@ -385,14 +399,9 @@ function iniciar(D, G, H) {
       if (vista) map.flyTo({ ...vista, duration: quieto ? 0 : 1400, essential: true });
       return;
     }
-    const unidades = new Set(filas[i].os.map(o => `${o.empresa}|${o.unidad}`));
-    const suyas = H.features.filter(f => unidades.has(`${f.properties.empresa}|${f.properties.unidad}`));
-    const c = centroDe(filas[i].u);
-    if (suyas.length) {  // la huella de la mina, inclinada, para ver el tajo, la vía y quién vive al lado
-      // Caja a mano: d3.geoBounds lee los anillos antihorarios del GeoJSON como "todo el mundo menos la mina"
-      let o = 180, s = 90, e = -180, n = -90;
-      const recorrer = x => typeof x[0] === "number" ? (o = Math.min(o, x[0]), e = Math.max(e, x[0]), s = Math.min(s, x[1]), n = Math.max(n, x[1])) : x.forEach(recorrer);
-      suyas.forEach(f => recorrer(f.geometry.coordinates));
+    const caja = cajaHuella(filas[i]), c = centroDe(filas[i].u);
+    if (caja) {  // la huella de la mina, inclinada, para ver el tajo, la vía y quién vive al lado
+      const [o, s, e, n] = caja;
       const cam = map.cameraForBounds([[o, s], [e, n]], { padding: 90 });
       map.flyTo({ center: cam.center, zoom: Math.min(cam.zoom, 13.5), pitch: 55, bearing: -15, curve: 1.4,
                   duration: quieto ? 0 : 2400, essential: true });
@@ -433,7 +442,7 @@ function iniciar(D, G, H) {
       return { type: "Feature", geometry: f.geometry, properties: { p: mesP(a) ?? 0,
         h: `<b>${esc(lugar(f.properties.u))}</b><br>${pct(mesP(a))} de que haya un paro o bloqueo en la zona ${enMes}` } }; });
     map.getSource("zonas").setData({ type: "FeatureCollection", features: feats });
-    const pts = [...filas.map((f, i) => ({ c: centroDe(f.u), k: "op", i })), ...puntosEventos].filter(p => p.c)
+    const pts = [...filas.map((f, i) => ({ c: puntoOp(f), k: "op", i })), ...puntosEventos].filter(p => p.c)
       .map(p => ({ type: "Feature", geometry: { type: "Point", coordinates: p.c }, properties: { k: p.k, h: p.h || "", i: p.i ?? -1 } }));
     map.getSource("puntos").setData({ type: "FeatureCollection", features: pts });
     const cs = filas.map(f => centroDe(f.u)).filter(Boolean);
