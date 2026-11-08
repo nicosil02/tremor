@@ -422,18 +422,22 @@ function iniciar(D, G, H, C) {
       layout: { ...TEXTO, "text-field": ["get", "t"], "text-size": 13, "text-offset": [0, 1.3], "text-anchor": "top" }, paint: HALO });
     map.addLayer({ id: "eventos-nombre", type: "symbol", source: "puntos", minzoom: 7.5, filter: ["!=", ["get", "k"], "op"],
       layout: { ...TEXTO, "text-field": ["get", "t"], "text-size": 12, "text-offset": [0, 1.1], "text-anchor": "top" }, paint: HALO });
-    for (const capa of ["eventos", "ops", "zonas", "com-fondo", "com-punto", "huella"]) {
+    for (const capa of ["eventos", "ops", "ops-nombre", "zonas", "com-fondo", "com-punto", "huella"]) {
       map.on("mouseenter", capa, () => map.getCanvas().style.cursor = "pointer");
       map.on("mouseleave", capa, () => map.getCanvas().style.cursor = "");
     }
     map.on("click", e => {
       // Lo más chico gana: punto, comunidad, unidad, distrito
-      const ORDEN = ["com-punto", "eventos", "ops", "com-fondo", "huella", "zona-sel-fondo", "zonas"];
+      const ORDEN = ["com-punto", "eventos", "ops", "ops-nombre", "com-fondo", "huella", "zona-sel-fondo", "zonas"];
+      // Tocar una operación, su nombre, su área o su zona la abre y acerca el mapa (si ya está abierta, no la cierra)
+      const ir = i => { if (i >= 0 && !document.querySelector(`.op[data-i="${i}"]`)?.classList.contains("abierta")) abrir(i, true); };
+      const deUnidad = p => filas.findIndex(x => x.os.some(o => o.empresa === p.empresa && o.unidad === p.unidad));
       const f = map.queryRenderedFeatures(e.point, { layers: ORDEN }).sort((x, y) => ORDEN.indexOf(x.layer.id) - ORDEN.indexOf(y.layer.id))[0];
       if (!f) { popup.remove(); ficha.remove(); return; }
-      if (f.layer.id === "ops") { ficha.remove(); return abrir(f.properties.i, false); }
+      if (f.layer.id === "ops" || f.layer.id === "ops-nombre") { ficha.remove(); popup.remove(); return ir(f.properties.i); }
       if (f.layer.id === "com-punto" || f.layer.id === "com-fondo") return globoCom(f.properties.n, e.lngLat, f.properties.u);
-      if (f.layer.id === "huella") return fichaUnidad(f.properties, e.lngLat);
+      if (f.layer.id === "huella") { ir(deUnidad(f.properties)); return fichaUnidad(f.properties, e.lngLat); }
+      if (f.layer.id === "zonas") { const i = filas.findIndex(x => x.u === f.properties.u); if (i >= 0) { popup.remove(); return ir(i); } }
       if (f.layer.id === "zona-sel-fondo") return fichaDistrito(f.properties.u, e.lngLat);
       ficha.remove();
       popup.setLngLat(e.lngLat).setHTML(f.properties.h).addTo(map);
@@ -897,7 +901,7 @@ function iniciar(D, G, H, C) {
     await listo;
     popup.remove();
     const feats = G.features.filter(f => f.geometry && zonas.has(f.properties.u)).map(f => { const a = A.get(f.properties.u) || {};
-      return { type: "Feature", geometry: f.geometry, properties: { p: mesP(a) ?? 0,
+      return { type: "Feature", geometry: f.geometry, properties: { p: mesP(a) ?? 0, u: f.properties.u,
         h: `<b>${esc(lugar(f.properties.u))}</b><br>${pct(mesP(a))} de que haya un paro o bloqueo en la zona ${enMes}` } }; });
     map.getSource("zonas").setData({ type: "FeatureCollection", features: feats });
     // En la vista de una empresa el color va en sus operaciones; la zona queda como un fondo tenue
