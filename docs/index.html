@@ -140,6 +140,20 @@
   .leyenda .punto { display: flex; align-items: center; gap: 6px; }
   .leyenda .punto i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
   .maplibregl-popup-content { font: 14px/1.4 "Archivo", sans-serif; padding: 10px 12px; border-radius: 8px; max-width: 280px; color: var(--tinta); }
+  .tarjeta .maplibregl-popup-content { padding: 14px 16px 12px; max-width: none; width: 300px; border-radius: 10px; box-shadow: 0 8px 28px rgb(28 38 41 / .28); }
+  .tarjeta .maplibregl-popup-close-button { font-size: 20px; width: 30px; height: 30px; color: var(--tinta-3); }
+  .tarjeta h4 { margin: 0 24px 2px 0; font: 650 18px/1.2 "Archivo", sans-serif; }
+  .tarjeta .sub { color: var(--tinta-3); font-size: 14px; }
+  .tarjeta .cifra { display: flex; align-items: baseline; gap: 8px; margin: 10px 0 2px; }
+  .tarjeta .cifra b { font: 700 30px/1 "Archivo", sans-serif; }
+  .tarjeta .cifra span { color: var(--tinta-3); font-size: 14px; line-height: 1.25; }
+  .tarjeta .marca { display: inline-block; margin-top: 10px; padding: 3px 8px; border-radius: 4px; background: rgb(255 112 67 / .16); color: #b23c17; font-weight: 600; font-size: 14px; }
+  .tarjeta .marca.calma { background: rgb(28 38 41 / .06); color: var(--tinta-3); font-weight: 500; }
+  .tarjeta dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 10px 0 0; padding-top: 10px; border-top: 1px solid rgb(28 38 41 / .1); }
+  .tarjeta dt { font-weight: 650; font-variant-numeric: tabular-nums; text-align: right; }
+  .tarjeta dd { margin: 0; color: var(--tinta-2, var(--tinta)); }
+  .tarjeta p { margin: 10px 0 0; }
+  .tarjeta .fuente { margin-top: 8px; font-size: 12px; color: var(--tinta-3); }
   .maplibregl-popup-content b { font-weight: 650; }
   .cargando { position: absolute; inset: 0; display: grid; place-items: center; color: var(--tinta-3); font-size: 15px; }
 </style>
@@ -246,7 +260,17 @@ function iniciar(D, G, H, C) {
   const map = new maplibregl.Map({ container: "mapa", style: BASE, bounds: PERU, fitBoundsOptions: { padding: 30 }, attributionControl: { compact: true } });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
   const listo = new Promise(r => map.on("load", r));
-  const popup = new maplibregl.Popup({ closeButton: false, offset: 10 });
+  const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 10 });
+  const ficha = new maplibregl.Popup({ className: "tarjeta", closeOnClick: false, maxWidth: "320px", offset: 14 });
+  // La tarjeta de un lugar: título, qué es, una cifra grande y lo que sirve para decidir
+  const tarjeta = ({ titulo, sub, cifra, sobre, marca, calma, datos = [], texto, fuente }) =>
+    `<h4>${esc(titulo)}</h4>${sub ? `<div class="sub">${esc(sub)}</div>` : ""}` +
+    (cifra ? `<div class="cifra"><b>${cifra}</b><span>${sobre}</span></div>` : "") +
+    (marca ? `<span class="marca${calma ? " calma" : ""}">${esc(marca)}</span>` : "") +
+    (texto ? `<p>${esc(texto)}</p>` : "") +
+    (datos.length ? `<dl>${datos.map(([n, d]) => `<dt>${n}</dt><dd>${d}</dd>`).join("")}</dl>` : "") +
+    (fuente ? `<div class="fuente">${esc(fuente)}</div>` : "");
+  const mostrar = (lngLat, html) => { popup.remove(); ficha.setLngLat(lngLat).setHTML(html).addTo(map); };
   listo.then(() => {
     document.getElementById("cargando").remove();
     for (const c of map.getStyle().layers) if (c.type === "symbol" && JSON.stringify(c.layout?.["text-field"] ?? "").includes("name"))  // nombres en castellano
@@ -332,19 +356,15 @@ function iniciar(D, G, H, C) {
       map.on("mouseleave", capa, () => map.getCanvas().style.cursor = "");
     }
     map.on("click", e => {
-      const f = map.queryRenderedFeatures(e.point, { layers: ["com-punto", "eventos", "ops", "com-fondo", "huella", "zona-sel-fondo", "zonas"] })[0];
-      if (!f) return popup.remove();
-      if (f.layer.id === "ops") return abrir(f.properties.i, false);
-      if (f.layer.id === "com-punto" || f.layer.id === "com-fondo") return globoCom(f.properties.n, e.lngLat);
-      if (f.layer.id === "huella") {  // tocar un área minera abre esa operación
-        const i = filas.findIndex(x => x.os.some(o => o.empresa === f.properties.empresa && o.unidad === f.properties.unidad));
-        if (i >= 0 && !document.querySelector(`.op[data-i="${i}"]`).classList.contains("abierta")) abrir(i, true);
-        return popup.setLngLat(e.lngLat).setHTML(`<b>${esc(f.properties.unidad)}</b><br>${esc(nombre(f.properties.empresa))}`).addTo(map);
-      }
-      if (f.layer.id === "zona-sel-fondo") {  // un distrito de la zona de influencia, con su propio riesgo
-        const u = f.properties.u, a = A.get(u);
-        return popup.setLngLat(e.lngLat).setHTML(`<b>${esc(lugar(u))}</b><br>${pct(a?.prob)} de probabilidad de paro o bloqueo en el distrito hasta ${hasta}.`).addTo(map);
-      }
+      // Lo más chico gana: punto, comunidad, unidad, distrito
+      const ORDEN = ["com-punto", "eventos", "ops", "com-fondo", "huella", "zona-sel-fondo", "zonas"];
+      const f = map.queryRenderedFeatures(e.point, { layers: ORDEN }).sort((x, y) => ORDEN.indexOf(x.layer.id) - ORDEN.indexOf(y.layer.id))[0];
+      if (!f) { popup.remove(); ficha.remove(); return; }
+      if (f.layer.id === "ops") { ficha.remove(); return abrir(f.properties.i, false); }
+      if (f.layer.id === "com-punto" || f.layer.id === "com-fondo") return globoCom(f.properties.n, e.lngLat, f.properties.u);
+      if (f.layer.id === "huella") return fichaUnidad(f.properties, e.lngLat);
+      if (f.layer.id === "zona-sel-fondo") return fichaDistrito(f.properties.u, e.lngLat);
+      ficha.remove();
       popup.setLngLat(e.lngLat).setHTML(f.properties.h).addTo(map);
     });
   });
@@ -506,6 +526,7 @@ function iniciar(D, G, H, C) {
       map.getSource("com-punto").setData(VACIO());
       map.getSource("lazos").setData(VACIO());
       abierta = fila;
+      ficha.remove();
       map.setFilter("com-sel", ["==", ["get", "n"], ""]);
       if (fila) map.once("idle", () => {
         casosDe(fila.u).filter(c => c.com && !c.territorio && !PUNTOS[c.com]).forEach(c => { const p = buscarEnMapa(c.com); if (p) PUNTOS[c.com] = p; });
@@ -521,27 +542,54 @@ function iniciar(D, G, H, C) {
     });
   }
   const PUNTOS = {};  // comunidad → lugar hallado en el mapa base
-  const primera = s => String(s || "").split(/(?<=\.)\s/)[0];
+  const primera = s => { s = String(s || "").split(/(?<=\.)\s/)[0]; return s.length > 200 ? s.slice(0, 200).replace(/[\s,;(]+\S*$/, "") + "…" : s; };
   const contra = c => (c.nombre || c.caso || "").split(/\s+[-–]\s+|-(?=[A-ZÁÉÍÓÚ])/)[1]?.trim() || "";
   let abierta = null;  // la operación abierta en el mapa
   // Una comunidad a la vez: se marca en el panel, en el mapa y se cuenta con quién es el conflicto
   function elegirCaso(li, volar) {
     const ya = li.classList.contains("elegida");
     document.querySelectorAll(".casos li").forEach(x => x.classList.toggle("elegida", x === li && !ya));
-    if (ya) { listo.then(() => map.setFilter("com-sel", ["==", ["get", "n"], ""])); popup.remove(); return; }
+    if (ya) { listo.then(() => map.setFilter("com-sel", ["==", ["get", "n"], ""])); ficha.remove(); return; }
     const c = casosDe(li.dataset.u)[+li.dataset.k];
-    if (volar) verComunidad(c);
+    if (volar) { verComunidad(c); map.once("moveend", () => { const k = c.territorio ? cajaDe([c.territorio]) : null;
+      const p = k ? [(k[0] + k[2]) / 2, (k[1] + k[3]) / 2] : PUNTOS[c.com]; if (p && c.com) globoCom(c.com, p); }); }
   }
-  function globoCom(nombreCom, lngLat) {
-    if (!abierta) return;
-    const cs = casosDe(abierta.u), k = cs.findIndex(c => c.com && llano(c.com) === llano(nombreCom)), c = cs[k];
+  function globoCom(nombreCom, lngLat, u) {
+    const cs = abierta ? casosDe(abierta.u) : [], k = cs.findIndex(c => c.com && llano(c.com) === llano(nombreCom)), c = cs[k];
     const li = document.querySelector(`.op.abierta .casos li[data-k="${k}"]`);
     if (li && !li.classList.contains("elegida")) { elegirCaso(li, false); li.scrollIntoView({ block: "nearest", behavior: quieto ? "auto" : "smooth" }); }
     map.setFilter("com-sel", ["==", ["get", "n"], nombreCom]);
-    popup.setLngLat(lngLat).setHTML(c
-      ? `<b>${esc(nombreCom)}</b><br>${esc(estadoCaso(c))}.${c.reclamo ? `<br>${esc(primera(c.reclamo))}` : ""}`
-      : `<b>${esc(nombreCom)}</b><br>Comunidad campesina. Sin conflicto abierto en la Defensoría.`).addTo(map);
+    const dist = lugar(String(c?.ubigeo || u || "")).split(", ")[0];
+    mostrar(lngLat, tarjeta(c
+      ? { titulo: nombreCom, sub: `Comunidad campesina en ${dist}`, marca: estadoCaso(c), texto: primera(c.reclamo),
+          fuente: `Defensoría del Pueblo, reporte de ${MESES_TXT[c.mes - 1]} ${c.anio}` }
+      : { titulo: nombreCom, sub: `Comunidad campesina en ${dist}`, marca: "Sin conflicto abierto en la Defensoría", calma: true,
+          fuente: "Territorio según el Ministerio de Cultura" }));
   }
+  // Un distrito de la zona: su riesgo, sus comunidades, sus conflictos y lo que pasó en 45 días
+  function fichaDistrito(u, lngLat) {
+    const a = A.get(u), com = C.features.filter(f => f.properties.u === u);
+    const conf = (D.casos || []).filter(c => String(c.ubigeo) === u);
+    const prot = D.eventos.filter(e => String(e.ubigeo) === u).length + D.sutran.filter(s => String(s.ubigeo) === u).length;
+    const n = (x, uno, varios) => `${x === 1 ? uno : varios}`;
+    mostrar(lngLat, tarjeta({ titulo: lugar(u).split(", ")[0], sub: `Distrito de ${lugar(u).split(", ")[1] || ""}, en la zona de influencia`,
+      cifra: pct(a?.prob), sobre: `probabilidad de paro o bloqueo<br>en el distrito hasta ${hasta}`,
+      datos: [[com.length, n(com.length, "comunidad campesina o nativa", "comunidades campesinas o nativas")],
+              [conf.length, n(conf.length, "conflicto abierto en la Defensoría", "conflictos abiertos en la Defensoría")],
+              [prot, n(prot, "protesta en los últimos 45 días", "protestas en los últimos 45 días")]] }));
+  }
+  // Una unidad minera: el riesgo de su zona y con quién tiene conflictos
+  function fichaUnidad(p, lngLat) {
+    const i = filas.findIndex(x => x.os.some(o => o.empresa === p.empresa && o.unidad === p.unidad)), f = filas[i];
+    if (!f) return mostrar(lngLat, tarjeta({ titulo: p.unidad, sub: nombre(p.empresa) }));
+    const d = Math.round((f.a.cambio_zona_1m ?? 0) * 100), cs = casosDe(f.u).filter(c => c.com);
+    mostrar(lngLat, tarjeta({ titulo: p.unidad, sub: `${nombre(p.empresa)}, ${lugar(f.u)}`,
+      cifra: pct(mesP(f.a)), sobre: `probabilidad de paro o bloqueo<br>en su zona ${enMes}`,
+      marca: Math.abs(d) >= 2 ? `${d > 0 ? "+" : "−"}${Math.abs(d)} puntos frente a lo normal (${pct(f.a.normal_zona_1m)})` : "Igual que lo normal", calma: d < 2,
+      datos: [[comunidadesDe(new Set(zonaDe(f.u))).length, "comunidades en su zona"], [cs.length, `con conflicto abierto${cs.length ? `: ${esc(cs.slice(0, 3).map(c => c.com).join(", "))}${cs.length > 3 ? ` y ${cs.length - 3} más` : ""}` : ""}`]] }));
+    return i;
+  }
+
   const comunidadesDe = z => C.features.filter(f => z.has(f.properties.u));
   // "Conflicto activo con Minera Las Bambas, en diálogo"
   const estadoCaso = c => c.caso || c.nombre ? `Conflicto ${c.estado === "activo" ? "activo" : "latente"}${contra(c) ? ` con ${contra(c)}` : ""}${/NO HAY/i.test(c.dialogo || "") ? ", sin diálogo" : /HAY/i.test(c.dialogo || "") ? ", en diálogo" : ""}` : "";
@@ -593,7 +641,7 @@ function iniciar(D, G, H, C) {
     const cs = casosDe(u), n = comunidadesDe(new Set(zonaDe(u))).length;
     const fila = (c, k) => `<li data-u="${u}" data-k="${k}"><button type="button"><b>${esc(c.com || c.nombre.split(" - ")[0])}</b>
         <span>${esc(lugar(String(c.ubigeo)).split(", ")[0])}. ${esc(estadoCaso(c))}.</span></button>
-        ${c.reclamo ? `<p>${esc(primera(c.reclamo))}</p>` : ""}</li>`;
+</li>`;
     return `<h3>Comunidades de la zona</h3>
       <p class="fondo" style="margin-top:0">${n ? `${n} en el registro del Ministerio de Cultura, marcadas en el mapa. ` : ""}${cs.length ? "En naranja, las que tienen un conflicto abierto en la Defensoría. Elige una aquí o en el mapa para ver dónde está y qué pide." : "Ninguna tiene un conflicto abierto en la Defensoría."}</p>
       ${cs.length ? `<ul class="casos">${cs.slice(0, 4).map(fila).join("")}</ul>
