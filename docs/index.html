@@ -80,6 +80,8 @@
   .op ul.casos { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 10px; }
   .op ul.casos { gap: 4px; }
   .op ul.casos summary { cursor: pointer; list-style: none; }
+  .op ul.casos summary span { display: block; margin-left: 14px; font-size: 15px; }
+  .op ul.casos li { border-left: 3px solid #ff7043; padding-left: 8px; }
   .op ul.casos summary::-webkit-details-marker { display: none; }
   .op ul.casos summary::before { content: "+"; display: inline-block; width: 14px; color: var(--tinta-3); }
   .op ul.casos details[open] summary::before { content: "−"; }
@@ -130,6 +132,8 @@
   .leyenda .l-unidad::after { border-top: 2px solid #fff; }
   .leyenda .l-sel::after { border-top: 3px solid #fff; box-shadow: 0 0 4px #fff; }
   .leyenda .l-zona::after { border-top: 2px dashed #ffd28a; }
+  .leyenda .l-com::after { inset: 2px; border: 1px solid rgb(255 255 255 / .8); }
+  .leyenda .l-conf { background: rgb(255 112 67 / .55) !important; box-shadow: inset 0 0 0 2px #ff7043; }
   .leyenda .punto { display: flex; align-items: center; gap: 6px; }
   .leyenda .punto i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
   .maplibregl-popup-content { font: 14px/1.4 "Archivo", sans-serif; padding: 10px 12px; border-radius: 8px; max-width: 280px; color: var(--tinta); }
@@ -174,7 +178,9 @@
       <div class="detalle"><b>Qué se ve en la imagen</b>
         <div class="linea"><i class="l-unidad"></i>Área de la unidad minera, según OEFA</div>
         <div class="linea"><i class="l-sel"></i>Unidad que abriste</div>
-        <div class="linea"><i class="l-zona"></i>Zona de influencia: su distrito y los vecinos</div></div>
+        <div class="linea"><i class="l-zona"></i>Zona de influencia: su distrito y los vecinos</div>
+        <div class="linea"><i class="l-com"></i>Comunidad campesina o nativa</div>
+        <div class="linea"><i class="l-conf"></i>Comunidad con conflicto abierto</div></div>
       <div class="punto"><i style="background:var(--patina)"></i>Protesta anunciada</div>
       <div class="punto"><i style="background:var(--tinta-3)"></i>Protesta de los últimos 45 días</div>
       <div class="punto"><i style="background:#fff;border:2px solid var(--tinta)"></i>Operación</div>
@@ -200,13 +206,14 @@ async function json(urls) {
   throw new Error("sin datos");
 }
 
-Promise.all([json(FUENTES), json(["distritos.json"]), json(["operaciones.json"]).catch(() => ({ type: "FeatureCollection", features: [] }))])
-  .then(([D, G, H]) => iniciar(D, G, H)).catch(() => {
+const VACIO = () => ({ type: "FeatureCollection", features: [] });
+Promise.all([json(FUENTES), json(["distritos.json"]), json(["operaciones.json"]).catch(VACIO), json(["comunidades.json"]).catch(VACIO)])
+  .then(([D, G, H, C]) => iniciar(D, G, H, C)).catch(() => {
   document.getElementById("h1").textContent = "No se pudieron cargar los datos";
   document.getElementById("bajada").textContent = "Vuelve a cargar la página en unos minutos.";
 });
 
-function iniciar(D, G, H) {
+function iniciar(D, G, H, C) {
   const A = new Map(D.alerta.map(a => [a.ubigeo, a]));
   const lugar = u => { u = String(u || ""); const a = A.get(u) || [...A.values()].find(x => x.ubigeo.startsWith(u)); if (!a) return u;
     const [dep, prov, dist] = (a.lugar || "").split(" / ").map(nombre);
@@ -271,6 +278,15 @@ function iniciar(D, G, H) {
     map.addSource("zona-sel", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     map.addLayer({ id: "zona-sel-borde", type: "line", source: "zona-sel", filter: ["==", ["geometry-type"], "Polygon"],
       paint: { "line-color": "#ffd28a", "line-width": 3, "line-dasharray": [2.5, 1.5] } });
+    // Comunidades campesinas y nativas de la zona (Ministerio de Cultura); en naranja, las que tienen conflicto abierto
+    const CONF = "#ff7043", conf = ["to-boolean", ["get", "caso"]];
+    map.addSource("com", { type: "geojson", data: VACIO() });
+    map.addLayer({ id: "com-fondo", type: "fill", source: "com", paint: { "fill-color": ["case", conf, CONF, "#fff"], "fill-opacity": ["case", conf, 0.3, 0.07] } });
+    map.addLayer({ id: "com-borde", type: "line", source: "com", paint: { "line-color": ["case", conf, CONF, "#fff"],
+      "line-width": ["case", conf, 2.5, 1], "line-opacity": ["case", conf, 1, 0.6] } });
+    map.addLayer({ id: "com-sel", type: "line", source: "com", filter: ["==", ["get", "n"], ""], paint: { "line-color": "#fff", "line-width": 4 } });
+    map.addSource("com-punto", { type: "geojson", data: VACIO() });  // comunidades con conflicto que no están en el registro
+    map.addLayer({ id: "com-punto", type: "circle", source: "com-punto", paint: { "circle-radius": 8, "circle-color": CONF, "circle-stroke-width": 2, "circle-stroke-color": "#fff" } });
     map.addLayer({ id: "huella-sel-brillo", type: "line", source: "huellas", filter: ["==", ["get", "empresa"], ""],
       paint: { "line-color": "#fff", "line-opacity": 0.55, "line-blur": 6, "line-width": ["interpolate", ["linear"], ["zoom"], 8, 6, 13, 14] } });
     map.addLayer({ id: "huella-sel", type: "line", source: "huellas", filter: ["==", ["get", "empresa"], ""],
@@ -279,6 +295,11 @@ function iniciar(D, G, H) {
     const HALO = { "text-color": "#fff", "text-halo-color": "rgb(28 38 41 / .85)", "text-halo-width": 1.6 };
     map.addLayer({ id: "zona-sel-nombre", type: "symbol", source: "zona-sel", filter: ["==", ["geometry-type"], "Point"],
       layout: { ...TEXTO, "text-field": ["get", "n"], "text-size": 12, "text-font": ["Noto Sans Italic"] }, paint: HALO });
+    const NOMBRE_COM = { ...TEXTO, "text-field": ["case", conf, ["format", ["get", "n"], {}, "\n", {}, ["get", "nota"], { "font-scale": 0.85 }], ["get", "n"]],
+      "text-size": ["case", conf, 14, 11] };
+    const HALO_COM = { ...HALO, "text-color": ["case", conf, "#ffd0bf", "#fff"] };
+    map.addLayer({ id: "com-nombre", type: "symbol", source: "com", minzoom: 9.5, layout: NOMBRE_COM, paint: HALO_COM });
+    map.addLayer({ id: "com-punto-nombre", type: "symbol", source: "com-punto", layout: { ...NOMBRE_COM, "text-offset": [0, 1.2], "text-anchor": "top" }, paint: HALO_COM });
     // Un nombre por unidad, en el centro de su área (sobre el polígono saldría uno por cada pedazo)
     map.addSource("huellas-centro", { type: "geojson", data: { type: "FeatureCollection", features: H.features.map(f => {
       const k = cajaDe([f]); return { type: "Feature", geometry: { type: "Point", coordinates: [(k[0] + k[2]) / 2, (k[1] + k[3]) / 2] },
@@ -361,10 +382,11 @@ function iniciar(D, G, H) {
           ${quienes(f.u)}
           ${enZona(f.u)}
           ${linea(f.u)}
-          <p class="fondo">Hasta ${hasta}, ${pct(a.prob_zona)} de que haya un paro o bloqueo en la zona.</p>
+          <p class="fondo">${pct(a.prob_zona)} de probabilidad de paro o bloqueo en la zona hasta ${hasta}.</p>
           ${a.alerta_inmediata ? `<p class="fondo"><a href="${esc(a.enlace_prensa)}" target="_blank" rel="noopener">Ya hay una protesta anunciada cerca</a></p>` : ""}
         </div></div></div></li>`; }).join("");
     document.querySelectorAll(".op > button").forEach(b => b.onclick = () => abrir(+b.parentNode.dataset.i, true));
+    document.querySelectorAll(".casos details").forEach(d => d.ontoggle = () => d.open && verComunidad(casosDe(d.dataset.u)[+d.dataset.k]));
   }
 
   // Deja solo las señales que van en la dirección del cambio y redondea lo habitual
@@ -459,6 +481,50 @@ function iniciar(D, G, H) {
       const nom = [...z].map(u => ({ type: "Feature", geometry: { type: "Point", coordinates: centroDe(u) },
                                      properties: { n: `${lugar(u).split(", ")[0]}${A.get(u)?.prob != null ? ` ${pct(A.get(u).prob)}` : ""}` } })).filter(f => f.geometry.coordinates);
       map.getSource("zona-sel").setData({ type: "FeatureCollection", features: [...pol, ...nom] });
+      map.getSource("com").setData({ type: "FeatureCollection", features: comunidadesDe(z).map(f => ({ ...f, properties: { ...f.properties, nota: estadoCaso(f.properties) } })) });
+      map.getSource("com-punto").setData(VACIO());
+      map.setFilter("com-sel", ["==", ["get", "n"], ""]);
+      if (fila) map.once("idle", () => {
+        casosDe(fila.u).filter(c => c.com && !c.territorio && !PUNTOS[c.com]).forEach(c => { const p = buscarEnMapa(c.com); if (p) PUNTOS[c.com] = p; });
+        map.getSource("com-punto").setData({ type: "FeatureCollection", features: casosDe(fila.u).filter(c => PUNTOS[c.com] && !c.territorio)
+          .map(c => ({ type: "Feature", geometry: { type: "Point", coordinates: PUNTOS[c.com] }, properties: { n: c.com, caso: c.nombre, nota: estadoCaso(c) } })) });
+      });
+    });
+  }
+  const PUNTOS = {};  // comunidad → lugar hallado en el mapa base
+  const comunidadesDe = z => C.features.filter(f => z.has(f.properties.u));
+  const estadoCaso = c => c.caso || c.nombre ? `conflicto ${c.estado === "activo" ? "activo" : "latente"}${/NO HAY/i.test(c.dialogo || "") ? ", sin diálogo" : /HAY/i.test(c.dialogo || "") ? ", en diálogo" : ""}` : "";
+  // El nombre de la comunidad en un caso de la Defensoría: "CC Chuicuni - Las Bambas" → "Chuicuni"
+  const PREFIJO = /^(comunidad(es)? (campesinas?|nativas?)|comunidad(es)?|cc\.?|c\.c\.|cn|c\.n\.)\s+(de(l)?\s+)?/i;
+  const comDe = n => PREFIJO.test(n) ? nombre(n.replace(PREFIJO, "").split(/\s+[-–]\s+|-/)[0].trim()) : null;
+  function casosDe(u) {
+    const z = new Set(zonaDe(u)), prov = u.slice(0, 4), mias = comunidadesDe(z);
+    const peso = c => (c.estado === "activo" ? 0 : 2) + (/NO HAY/i.test(c.dialogo || "") ? 0 : 1) + (c.com ? 0 : 3);
+    return (D.casos || []).filter(c => z.has(String(c.ubigeo)) || String(c.ubigeo) === prov).map(c => {
+      const com = comDe(c.nombre);
+      return { ...c, com, territorio: com && mias.find(f => llano(f.properties.n) === llano(com)) };
+    }).sort((x, y) => peso(x) - peso(y));
+  }
+  // Las comunidades que no están en el registro de Cultura se buscan entre los nombres de poblados del mapa base
+  function buscarEnMapa(n) {
+    for (const s of Object.keys(map.getStyle().sources)) {
+      let fs = []; try { fs = map.querySourceFeatures(s, { sourceLayer: "place" }); } catch (e) { continue; }
+      const f = fs.find(p => llano(p.properties.name || "").includes(llano(n)));
+      if (f) return f.geometry.coordinates; }
+    return null;
+  }
+  // Con relieve, el punto pedido queda más arriba de la pantalla: al llegar, se lleva al centro
+  const centrar = c => map.once("moveend", () => { const p = map.project(c), k = map.getContainer();
+    const dx = p.x - k.clientWidth / 2, dy = p.y - k.clientHeight / 2;
+    if (Math.hypot(dx, dy) > 40) map.panBy([dx, dy], { duration: quieto ? 0 : 600 }); });
+  function verComunidad(c) {
+    listo.then(() => {
+      const k = c.territorio ? cajaDe([c.territorio]) : null, p = k ? null : PUNTOS[c.com] || buscarEnMapa(c.com || "");
+      if (!k && !p) return;
+      map.setFilter("com-sel", ["==", ["get", "n"], c.territorio ? c.territorio.properties.n : ""]);
+      const cam = k ? map.cameraForBounds([[k[0], k[1]], [k[2], k[3]]], { padding: 120 }) : { center: p, zoom: 13 };
+      map.flyTo({ center: cam.center, zoom: Math.min(cam.zoom, 13), pitch: 45, duration: quieto ? 0 : 1600 });
+      centrar(cam.center);
     });
   }
   // Lo que pasó en los últimos 45 días en la zona de una operación (o en su provincia, si la nota no da el distrito)
@@ -473,17 +539,14 @@ function iniciar(D, G, H) {
   }
   // Dónde y quiénes: los distritos de la zona que más pesan y los conflictos que la Defensoría tiene abiertos en ella
   function quienes(u) {
-    const z = zonaDe(u), prov = u.slice(0, 4);
-    const dist = z.map(v => [v, A.get(v)?.prob]).filter(([, p]) => p != null).sort((x, y) => y[1] - x[1]).slice(0, 2);
-    const peso = c => (c.estado === "activo" ? 0 : 2) + (c.fase === "escalamiento" ? -1 : 0) + (/NO HAY/i.test(c.dialogo || "") ? 0 : 1);
-    const cs = (D.casos || []).filter(c => z.includes(String(c.ubigeo)) || String(c.ubigeo) === prov).sort((x, y) => peso(x) - peso(y));
-    const nom = c => c.nombre.split(" - ")[0];
-    const estado = c => `${c.estado === "activo" ? "activo" : "latente"}${/NO HAY/i.test(c.dialogo || "") ? ", sin diálogo" : /HAY/i.test(c.dialogo || "") ? ", en diálogo" : ""}`;
-    const donde = dist.length ? `<p class="fondo" style="margin-top:0">Más riesgo en ${dist.map(([v, p]) => `${esc(lugar(v).split(", ")[0])} (${pct(p)})`).join(" y ")}.</p>` : "";
-    return `<h3>Quiénes reclaman</h3>${donde}` + (cs.length
-      ? `<ul class="casos">${cs.slice(0, 3).map(c => `<li><details><summary><b>${esc(nom(c))}</b> <span>${estado(c)}</span></summary>${c.reclamo ? `<p>${esc(c.reclamo)}</p>` : ""}</details></li>`).join("")}</ul>
-         <p class="fuente">Defensoría del Pueblo, ${MESES_TXT[cs[0].mes - 1]} ${cs[0].anio}${cs.length > 3 ? `, ${cs.length - 3} casos más` : ""}</p>`
-      : `<p class="fondo" style="margin-top:0">Sin conflictos abiertos en la Defensoría.</p>`);
+    const cs = casosDe(u), n = comunidadesDe(new Set(zonaDe(u))).length;
+    const fila = (c, k) => `<li><details data-u="${u}" data-k="${k}"><summary><b>${esc(c.com || c.nombre.split(" - ")[0])}</b>
+        <span>${esc(lugar(String(c.ubigeo)).split(", ")[0])}. ${esc(estadoCaso(c).replace(/^c/, "C"))}.</span></summary>
+        ${c.reclamo ? `<p>${esc(c.reclamo.split(/(?<=\.)\s/)[0])}</p>` : ""}</details></li>`;
+    return `<h3>Comunidades de la zona</h3>
+      <p class="fondo" style="margin-top:0">${n ? `${n} en el registro del Ministerio de Cultura, marcadas en el mapa. ` : ""}${cs.length ? "En naranja, las que tienen un conflicto abierto en la Defensoría. Toca una para verla." : "Ninguna tiene un conflicto abierto en la Defensoría."}</p>
+      ${cs.length ? `<ul class="casos">${cs.slice(0, 4).map(fila).join("")}</ul>
+      <p class="fuente">Defensoría del Pueblo, reporte de ${MESES_TXT[cs[0].mes - 1]} ${cs[0].anio}${cs.length > 4 ? `. ${cs.length - 4} casos más en la provincia` : ""}</p>` : ""}`;
   }
   const MESES_TXT = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
   const corta = e => { const a = `${e.accion || ""}`.toLowerCase();
@@ -508,9 +571,7 @@ function iniciar(D, G, H) {
       map.flyTo({ center: cam.center, zoom: Math.min(cam.zoom, 12.3), pitch: 50, bearing: -15, curve: 1.4,
                   duration: quieto ? 0 : 2400, essential: true });
       // Con relieve la mina queda más arriba de lo pedido (está a 4 000 m): al llegar, se centra donde se ve
-      map.once("moveend", () => { const p = map.project(cam.center), k = map.getContainer();
-        const dx = p.x - k.clientWidth / 2, dy = p.y - k.clientHeight / 2;
-        if (Math.hypot(dx, dy) > 40) map.panBy([dx, dy], { duration: quieto ? 0 : 600 }); });
+      centrar(cam.center);
     } else if (c) map.flyTo({ center: c, zoom: 10.5, pitch: 45, bearing: -10, duration: quieto ? 0 : 2000, essential: true });
   }
 
@@ -528,13 +589,13 @@ function iniciar(D, G, H) {
     const vias = D.sutran.filter(s => pais || provs.has(String(s.ubigeo || "").slice(0, 4)));
     document.getElementById("nota-avisos").textContent = pais
       ? "Por minería, petróleo o ambiente, últimos 45 días."
-      : "Últimos 45 días.";
+      : "Cerca de sus operaciones, últimos 45 días.";
     const fecha = e => new Date(cuando(e) + "T12:00").toLocaleDateString("es-PE", { day: "numeric", month: "long" });
     document.getElementById("avisos").innerHTML = [
       ...ev.map(e => `<li class="aviso ${e.estado}"><i></i><div><a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.titular)}</a>
         <div class="m">${e.estado === "anunciada" ? "Anunciada" : "Ocurrió"} el ${fecha(e)} en ${esc(lugar(e.ubigeo))}. ${esc(e.medio)}</div></div></li>`),
       ...vias.map(s => `<li class="aviso via"><i></i><div><b>Vía cortada por una protesta</b><div class="m">${esc(s.via || "")} ${esc(s.km || "")} en ${esc(nombre(s.distrito || ""))}, ${esc(s.region || "")}. Según SUTRAN</div></div></li>`)
-    ].join("") || `<li class="vacio">Nada en los últimos 45 días.</li>`;
+    ].join("") || `<li class="vacio">No hubo.</li>`;
     puntosEventos = [
       ...ev.map(e => ({ c: centroDe(e.ubigeo), k: e.estado, t: `${corta(e)}, ${fecha(e).replace(/ de /, " ")}`, h: `<b>${esc(e.titular)}</b><br>${e.estado === "anunciada" ? "Anunciada" : "Ocurrió"} en ${esc(lugar(e.ubigeo))}. <a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.medio)}</a>` })),
       ...vias.map(s => ({ c: centroDe(s.ubigeo), k: "via", t: "Vía cortada", h: `<b>Vía cortada por una protesta</b><br>${esc(s.via || "")} ${esc(s.km || "")}` }))];

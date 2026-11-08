@@ -359,3 +359,11 @@ def test_fusion_estima_lo_que_nadie_vio():
     assert len(f) == sum(np.any(list(vistas.values()), axis=0))
     lo, hi, ll = no_vistas(f, ("defensoria", "egpp", "acled"))
     assert 70 < ll < 135 and lo <= ll <= hi
+
+
+def test_comunidad_de_caso():
+    from tremor.comunidades import comunidad_de_caso as c
+    assert c("CC Chuicuni - Las Bambas") == "chuicuni"
+    assert c("Comunidad Campesina de Maure – Penal de Challapalca") == "maure"
+    assert c("CC Ajoyani-MINSUR") == "ajoyani"
+    assert c("Wampis - Minería ilegal") is None
