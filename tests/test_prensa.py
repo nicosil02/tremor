@@ -250,3 +250,16 @@ def test_historial_empresa():
                   "puntaje": 0.5, "y": [1, 1, 0, 0, 1], "pct": [0.05, 0.5, 0.05, 0.9, 0.01]}).to_sql("modelo_prediccion", con)
     h = historial(con, "minera x").iloc[0]
     assert (h.eventos, h.vistos, h.alertas) == (2, 1, 2)
+
+
+def test_web_anillo_horario(monkeypatch, tmp_path):
+    from shapely.geometry import Polygon
+    from shapely.geometry.polygon import orient
+    from tremor import web
+    import json
+    antihorario = orient(Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]), sign=1.0)
+    geo = {"features": [{"properties": {"ubigeo": "010101"}, "geometry": antihorario.__geo_interface__}]}
+    (tmp_path / "distritos.geojson").write_text(json.dumps(geo), encoding="utf-8")
+    monkeypatch.setattr(web, "DATOS", tmp_path)
+    anillo = json.loads(web.geo())["features"][0]["geometry"]["coordinates"][0]
+    assert not Polygon(anillo).exterior.is_ccw  # d3 lo necesita horario

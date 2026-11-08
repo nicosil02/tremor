@@ -52,13 +52,15 @@ jobs:
         run: |
           rm -rf datos/crudos/acled
           sqlite3 datos/tremor.db "DROP TABLE IF EXISTS acled_evento; VACUUM;"
+          python -m tremor.web   # web.json: lo que lee la página (docs/index.html)
           mkdir -p /tmp/datos && gzip -9 -c datos/tremor.db > /tmp/datos/tremor.db.gz && cp datos/exportes/*.csv /tmp/datos/
+          cp datos/exportes/web.json /tmp/datos/
           cp datos/distritos.geojson /tmp/datos/
           git config user.name "tremor-bot"
           git config user.email "tremor-bot@users.noreply.github.com"
           git checkout --orphan datos-nueva
           git rm -rq --cached . && git clean -fdq -e datos
           cp /tmp/datos/* .
-          git add tremor.db.gz *.csv *.geojson
+          git add tremor.db.gz *.csv *.geojson web.json
           git commit -qm "Modelo al $(date -u +'%F %H:%M') UTC"
           git push -f origin datos-nueva:datos

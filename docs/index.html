@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tremor. Alerta de conflicto social cerca de operaciones extractivas en el Perú</title>
+<meta name="description" content="Dónde es más probable un paro, un bloqueo o una toma en los próximos meses, por distrito y por zona de operación minera o petrolera. Datos públicos, actualizados cada hora.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23c2410c'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<style>
+  /* Tokens: un solo acento (óxido) para el riesgo; neutros fríos. Claro por defecto, oscuro según el sistema. */
+  :root {
+    --fondo: #f4f5f6; --papel: #ffffff; --linea: #e2e5e8; --borde: #cdd2d7;
+    --tinta: #16191d; --tinta-2: #434a52; --tinta-3: #6b737c;
+    --acento: #c2410c; --acento-suave: #fbe3d6; --vacio: #e9ecef;
+    --r1: #fde7db; --r2: #f6b48f; --r3: #e3713f; --r4: #b8390a;
+    --ok: #2f6b4f;
+    --sombra: 0 1px 2px rgb(22 25 29 / .06), 0 8px 24px rgb(22 25 29 / .06);
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --radio: 10px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fondo: #0f1114; --papel: #171a1e; --linea: #262a30; --borde: #363c44;
+      --tinta: #eceef0; --tinta-2: #bfc5cb; --tinta-3: #8d959e;
+      --acento: #f0703a; --acento-suave: #3a2016; --vacio: #22262b;
+      --r1: #3a2419; --r2: #7a3a1d; --r3: #c4561f; --r4: #f5824a;
+      --ok: #6fbf95;
+      --sombra: 0 1px 2px rgb(0 0 0 / .3), 0 8px 24px rgb(0 0 0 / .25);
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--fondo); color: var(--tinta); font: 16px/1.55 "Geist", system-ui, sans-serif;
+         -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
+  a { color: inherit; }
+  .num, .mono { font-family: "Geist Mono", ui-monospace, monospace; }
+  .envoltura { max-width: 1320px; margin: 0 auto; padding: 0 28px; }
+
+  nav.barra { position: sticky; top: 0; z-index: 30; height: 60px; display: flex; align-items: center;
+              background: color-mix(in srgb, var(--fondo) 88%, transparent); backdrop-filter: blur(10px);
+              border-bottom: 1px solid var(--linea); }
+  nav.barra .envoltura { display: flex; align-items: center; gap: 28px; width: 100%; }
+  .marca { font-weight: 700; font-size: 19px; letter-spacing: -0.02em; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+  .marca i { color: var(--acento); font-size: 22px; }
+  nav.barra ul { display: flex; gap: 22px; list-style: none; margin: 0 0 0 auto; padding: 0; font-size: 15px; }
+  nav.barra ul a { text-decoration: none; color: var(--tinta-2); transition: color 150ms ease; }
+  nav.barra ul a:hover { color: var(--tinta); }
+  @media (max-width: 760px) { nav.barra ul { display: none; } }
+
+  /* Portada: el mapa es la imagen */
+  .portada { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: center;
+             padding: 40px 0 28px; min-height: min(760px, calc(100dvh - 60px)); }
+  .portada h1 { font-size: clamp(32px, 3.4vw, 46px); line-height: 1.06; letter-spacing: -0.035em; margin: 0 0 18px; font-weight: 650; }
+  .portada p.sub { font-size: 19px; color: var(--tinta-2); margin: 0 0 26px; max-width: 34ch; }
+  .acciones { display: flex; gap: 12px; flex-wrap: wrap; }
+  .boton { font: inherit; font-size: 15px; font-weight: 600; padding: 11px 18px; border-radius: 999px; border: 1px solid var(--borde);
+           background: var(--papel); color: var(--tinta); cursor: pointer; text-decoration: none; display: inline-flex; gap: 8px;
+           align-items: center; white-space: nowrap; transition: transform 160ms var(--ease-out), background-color 150ms ease; }
+  .boton:active { transform: scale(0.97); }
+  .boton.primario { background: var(--acento); border-color: var(--acento); color: #fff; }
+  @media (prefers-color-scheme: dark) { .boton.primario { color: #1a0d06; } }
+  .cifras { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 28px; margin-top: 38px; }
+  .cifra b { display: block; font-family: "Geist Mono", monospace; font-size: 30px; font-weight: 500; letter-spacing: -0.02em; color: var(--acento); }
+  .cifra span { font-size: 14px; color: var(--tinta-2); line-height: 1.4; display: block; max-width: 30ch; }
+  .lienzo { position: relative; }
+  .lienzo svg { width: 100%; height: auto; display: block; }
+  #mapa-portada svg { max-height: calc(100dvh - 130px); }
+  .leyenda { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--tinta-2); margin-top: 6px; }
+  .leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+  .leyenda i.c { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  @media (max-width: 900px) { .portada { grid-template-columns: 1fr; min-height: 0; } }
+
+  section.bloque { padding: 72px 0 24px; border-top: 1px solid var(--linea); }
+  section.bloque > .envoltura > h2 { font-size: clamp(26px, 2.6vw, 34px); letter-spacing: -0.025em; line-height: 1.15; margin: 0 0 10px; font-weight: 650; }
+  section.bloque > .envoltura > p.intro { color: var(--tinta-2); max-width: 68ch; margin: 0 0 28px; font-size: 17px; }
+
+  /* Empresa */
+  .buscador { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; margin-bottom: 26px; }
+  .campo label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .campo input, .campo select { font: inherit; font-size: 16px; padding: 10px 14px; border-radius: 999px; border: 1px solid var(--borde);
+                  background: var(--papel); color: var(--tinta); min-width: min(420px, 82vw); }
+  .campo input:focus-visible, .campo select:focus-visible, .boton:focus-visible, .seg button:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+  .rapidas { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { font: inherit; font-size: 14px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--linea); background: transparent;
+          color: var(--tinta-2); cursor: pointer; transition: transform 160ms var(--ease-out), border-color 150ms ease, color 150ms ease; }
+  .chip:active { transform: scale(0.97); }
+  .chip.on { border-color: var(--acento); color: var(--acento); }
+  .empresa { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 32px; align-items: start; }
+  @media (max-width: 960px) { .empresa { grid-template-columns: 1fr; } }
+  .ops { display: grid; gap: 12px; }
+  .op { background: var(--papel); border: 1px solid var(--linea); border-radius: var(--radio); padding: 16px 18px; box-shadow: var(--sombra);
+        display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 18px; }
+  .op h3 { margin: 0; font-size: 17px; letter-spacing: -0.01em; }
+  .op .donde { font-size: 14px; color: var(--tinta-3); }
+  .op .probs { grid-row: span 2; display: flex; gap: 18px; text-align: right; }
+  .op .probs div b { display: block; font-family: "Geist Mono", monospace; font-size: 24px; font-weight: 500; }
+  .op .probs div small { font-size: 12px; color: var(--tinta-3); display: block; max-width: 12ch; line-height: 1.3; }
+  @media (max-width: 560px) { .op { grid-template-columns: 1fr; } .op .probs { grid-row: auto; text-align: left; } }
+  .op .razones { grid-column: 1 / -1; margin: 6px 0 0; padding: 0; list-style: none; font-size: 14px; color: var(--tinta-2); display: grid; gap: 3px; }
+  .op .razones li::before { content: "+ "; color: var(--acento); font-family: "Geist Mono", monospace; }
+  .op .senales { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
+  .marca-v { font-size: 13px; padding: 3px 10px; border-radius: 999px; background: var(--acento-suave); color: var(--acento); text-decoration: none; }
+  .marca-n { font-size: 13px; padding: 3px 10px; border-radius: 999px; background: var(--vacio); color: var(--tinta-2); }
+  .lateral { position: sticky; top: 76px; display: grid; gap: 18px; }
+  .panel { background: var(--papel); border: 1px solid var(--linea); border-radius: var(--radio); padding: 18px; box-shadow: var(--sombra); }
+  .panel h3 { margin: 0 0 4px; font-size: 16px; }
+  .panel p.nota { margin: 0 0 14px; font-size: 14px; color: var(--tinta-3); }
+  .historial { display: grid; gap: 16px; }
+  .fila-h { display: grid; grid-template-columns: 1fr auto auto; gap: 4px 18px; align-items: baseline; }
+  .fila-h .t { font-size: 14px; font-weight: 600; grid-column: 1 / -1; }
+  .fila-h .k { font-size: 13px; color: var(--tinta-3); }
+  .fila-h .v { font-family: "Geist Mono", monospace; font-size: 20px; }
+  .fila-h .v.debil { color: var(--tinta-3); font-size: 16px; }
+  .vacio { font-size: 15px; color: var(--tinta-3); padding: 18px 0; }
+
+  /* Mapa nacional */
+  .seg { display: inline-flex; border: 1px solid var(--borde); border-radius: 999px; padding: 3px; background: var(--papel); gap: 2px; flex-wrap: wrap; }
+  .seg button { font: inherit; font-size: 14px; padding: 7px 14px; border: 0; border-radius: 999px; background: none; color: var(--tinta-2); cursor: pointer;
+                transition: background-color 150ms ease, color 150ms ease, transform 160ms var(--ease-out); }
+  .seg button:active { transform: scale(0.97); }
+  .seg button.on { background: var(--acento); color: #fff; }
+  @media (prefers-color-scheme: dark) { .seg button.on { color: #1a0d06; } }
+  .nacional { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 32px; margin-top: 22px; align-items: start; }
+  @media (max-width: 960px) { .nacional { grid-template-columns: 1fr; } }
+  .ranking { list-style: none; margin: 0; padding: 0; counter-reset: r; display: grid; gap: 2px; max-height: 640px; overflow: auto; }
+  .ranking li { display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: baseline; padding: 8px 10px; border-radius: 8px; cursor: pointer;
+                transition: background-color 150ms ease; }
+  @media (hover: hover) and (pointer: fine) { .ranking li:hover { background: var(--vacio); } }
+  .ranking li.sel { background: var(--acento-suave); }
+  .ranking .p { font-family: "Geist Mono", monospace; color: var(--tinta-3); font-size: 13px; }
+  .ranking .l { font-size: 15px; }
+  .ranking .l small { display: block; color: var(--tinta-3); font-size: 12px; }
+  .ranking .x { font-family: "Geist Mono", monospace; font-size: 15px; }
+  path.d { stroke: var(--papel); stroke-width: .25; transition: opacity 150ms ease; }
+  path.d.sel { stroke: var(--tinta); stroke-width: 1.4; }
+  path.d.op { stroke: var(--tinta); stroke-width: .9; }
+  .tip { position: absolute; pointer-events: none; background: var(--papel); border: 1px solid var(--linea); border-radius: 8px; box-shadow: var(--sombra);
+         padding: 8px 10px; font-size: 13px; max-width: 260px; opacity: 0; transform: translateY(4px);
+         transition: opacity 120ms ease, transform 120ms var(--ease-out); }
+  .tip.on { opacity: 1; transform: translateY(0); }
+  .ficha h3 { margin: 0; font-size: 19px; }
+  .ficha .donde { color: var(--tinta-3); font-size: 14px; margin-bottom: 12px; }
+  .ficha .tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .ficha .tres b { display: block; font-family: "Geist Mono", monospace; font-size: 22px; font-weight: 500; }
+  .ficha .tres small { font-size: 12px; color: var(--tinta-3); line-height: 1.3; display: block; }
+
+  /* En vivo */
+  .vivo { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 32px; align-items: start; }
+  @media (max-width: 960px) { .vivo { grid-template-columns: 1fr; } }
+  .eventos { display: grid; gap: 10px; }
+  .evento { display: grid; grid-template-columns: 92px 1fr; gap: 14px; padding: 14px 16px; background: var(--papel); border: 1px solid var(--linea); border-radius: var(--radio); }
+  .evento .f { font-family: "Geist Mono", monospace; font-size: 13px; color: var(--tinta-3); }
+  .evento .f b { display: block; font-family: "Geist", sans-serif; font-size: 12px; font-weight: 600; margin-top: 4px; }
+  .evento .f b.anun { color: var(--acento); }
+  .evento a { text-decoration: none; font-weight: 550; line-height: 1.35; display: block; }
+  .evento a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .evento .m { font-size: 13px; color: var(--tinta-3); margin-top: 4px; }
+
+  /* Precisión */
+  .precision { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr)); gap: 18px; }
+  .medida h3 { margin: 0 0 2px; font-size: 16px; }
+  .medida p.nota { margin: 0 0 12px; font-size: 13px; color: var(--tinta-3); }
+  .medida svg { width: 100%; height: auto; display: block; }
+  .medida svg text { font: 13px "Geist", sans-serif; fill: var(--tinta-2); }
+  .medida svg text.n { font-family: "Geist Mono", monospace; fill: var(--tinta); }
+
+  .metodo { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 28px; font-size: 15px; color: var(--tinta-2); }
+  .metodo h3 { color: var(--tinta); font-size: 16px; margin: 0 0 6px; }
+  .metodo p { margin: 0 0 10px; }
+  footer { padding: 40px 0 60px; color: var(--tinta-3); font-size: 14px; border-top: 1px solid var(--linea); margin-top: 56px; }
+
+  /* Entrada: aparece una vez, al cargar; sin movimiento si el sistema lo pide */
+  .entra { animation: entra 420ms var(--ease-out) both; }
+  .entra.d1 { animation-delay: 60ms; } .entra.d2 { animation-delay: 120ms; } .entra.d3 { animation-delay: 180ms; }
+  @keyframes entra { from { opacity: 0; transform: translateY(8px); } }
+  @media (prefers-reduced-motion: reduce) { .entra { animation: none; } .tip { transition: opacity 120ms ease; transform: none; } }
+  .esqueleto { background: linear-gradient(90deg, var(--vacio), var(--linea), var(--vacio)); background-size: 200% 100%; border-radius: var(--radio);
+               animation: brillo 1.4s linear infinite; }
+  @keyframes brillo { to { background-position: -200% 0; } }
+  @media (prefers-reduced-motion: reduce) { .esqueleto { animation: none; } }
+  .error { padding: 28px; border: 1px solid var(--acento); border-radius: var(--radio); color: var(--tinta); background: var(--acento-suave); }
+</style>
+</head>
+<body>
+<nav class="barra" aria-label="Secciones">
+  <div class="envoltura">
+    <a class="marca" href="#"><i class="ph ph-wave-sawtooth" aria-hidden="true"></i>Tremor</a>
+    <ul>
+      <li><a href="#empresa">Por empresa</a></li>
+      <li><a href="#mapa">Mapa nacional</a></li>
+      <li><a href="#vivo">En vivo</a></li>
+      <li><a href="#precision">Precisión</a></li>
+      <li><a href="#metodo">Método</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main>
+  <div class="envoltura">
+    <header class="portada">
+      <div>
+        <h1 class="entra">Dónde puede estallar el próximo paro cerca de una mina</h1>
+        <p class="sub entra d1">Riesgo de paro, bloqueo o toma por distrito y por zona de operación en el Perú, con datos públicos.</p>
+        <div class="acciones entra d2">
+          <a class="boton primario" href="#empresa"><i class="ph ph-buildings" aria-hidden="true"></i>Ver una empresa</a>
+          <a class="boton" href="#precision">Cómo acierta</a>
+        </div>
+        <div class="cifras entra d3" id="cifras"></div>
+      </div>
+      <div class="lienzo">
+        <div id="mapa-portada" class="esqueleto" style="aspect-ratio: 4 / 5; max-height: calc(100dvh - 140px); margin: 0 auto"></div>
+        <div class="leyenda" id="leyenda-portada"></div>
+      </div>
+    </header>
+  </div>
+
+  <section class="bloque" id="empresa">
+    <div class="envoltura">
+      <h2>El riesgo de cada operación de una empresa</h2>
+      <p class="intro" id="intro-empresa">Cada mina o lote petrolero fiscalizado por el OEFA, con la probabilidad de una medida de fuerza en su zona (el distrito y sus vecinos) y por qué.</p>
+      <div class="buscador">
+        <div class="campo">
+          <label for="buscar-empresa">Empresa o unidad</label>
+          <input id="buscar-empresa" list="lista-empresas" placeholder="Escribe: Southern, Las Bambas, Antamina" autocomplete="off">
+          <datalist id="lista-empresas"></datalist>
+        </div>
+        <div class="rapidas" id="rapidas" aria-label="Empresas de ejemplo"></div>
+      </div>
+      <div class="empresa">
+        <div class="ops" id="ops"><div class="esqueleto" style="height: 340px"></div></div>
+        <aside class="lateral">
+          <div class="panel"><div id="mapa-empresa"></div></div>
+          <div class="panel">
+            <h3>Cómo le habría ido en 2024-2026</h3>
+            <p class="nota">Meses en que su zona estuvo entre el 10% más riesgoso de las zonas con operación, y si después hubo una medida de fuerza.</p>
+            <div class="historial" id="historial"></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloque" id="mapa">
+    <div class="envoltura">
+      <h2>Todo el país, distrito por distrito</h2>
+      <p class="intro" id="intro-mapa"></p>
+      <div class="seg" id="seg-objetivo" role="tablist" aria-label="Qué se predice"></div>
+      <div class="nacional">
+        <div class="lienzo"><div id="mapa-nacional"></div><div class="tip" id="tip"></div></div>
+        <div class="panel">
+          <div class="ficha" id="ficha"></div>
+          <h3 style="margin-top: 18px">Los 20 distritos más riesgosos</h3>
+          <ol class="ranking" id="ranking"></ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloque" id="vivo">
+    <div class="envoltura">
+      <h2>Lo que la prensa y la radio ya están anunciando</h2>
+      <p class="intro">Protestas anunciadas u ocurridas en los últimos 45 días, leídas de 55 medios y radios regionales y codificadas con el manual de la base de protestas de la PUCP. Un paro anunciado en el distrito o su provincia lo sube a alerta inmediata.</p>
+      <div class="vivo">
+        <div class="eventos" id="eventos"></div>
+        <aside class="lateral">
+          <div class="panel"><h3>Vías interrumpidas por protestas</h3><p class="nota">Alertas vigentes de SUTRAN.</p><div id="sutran"></div></div>
+          <div class="panel"><h3>Ánimo hacia los proyectos</h3><p class="nota">Menciones en la última semana frente a una semana normal.</p><div id="animo"></div></div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloque" id="precision">
+    <div class="envoltura">
+      <h2>Cuánto acierta, medido con meses que el modelo nunca vio</h2>
+      <p class="intro">Se entrena hasta 2023 y se prueba en 2024-2026. Cada mes se toman las 20 zonas o distritos más riesgosos y se cuenta cuántos tuvieron de verdad una medida de fuerza en los 3 meses siguientes. Se compara con la regla de "si hubo paro el mes pasado, habrá paro" y con el azar.</p>
+      <div class="precision" id="medidas"></div>
+    </div>
+  </section>
+
+  <section class="bloque" id="metodo">
+    <div class="envoltura">
+      <h2>Método y fuentes</h2>
+      <div class="metodo">
+        <div><h3>Qué se predice</h3><p>La probabilidad de una medida de fuerza (paro, bloqueo, toma, huelga) en los 3 meses siguientes al último reporte de la Defensoría del Pueblo, por distrito y por zona de operación. La versión extractiva cuenta solo las de reclamo minero, petrolero o ambiental.</p></div>
+        <div><h3>Con qué</h3><p>Un panel de 1 892 distritos, mes a mes desde 2010, con unas 60 variables: historia de conflictos, casos de la Defensoría, operaciones y concesiones, comunidades, pobreza, canon, municipalidad y elecciones. Compiten lasso, bosque aleatorio, boosting y su promedio.</p></div>
+        <div><h3>Fuentes</h3><p>Defensoría del Pueblo, base de protestas de la Escuela de Gobierno PUCP (uso académico), OEFA, INGEMMET y MINEM, SENACE, MEF, INEI (ENAHO, censo), JNE y ONPE, SUTRAN y la prensa y radio regionales.</p></div>
+        <div><h3>Límites</h3><p>Las crisis con enfrentamientos son muy raras y el modelo no las anticipa mejor que la regla simple. La prensa en vivo cubre menos que la base de la PUCP. Las personas se nombran solo por su rol.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="envoltura" id="pie">Tremor, proyecto del curso de Ciencia de Datos con Python. Código en <a href="https://github.com/nicosil02/tremor">github.com/nicosil02/tremor</a>.</div></footer>
+
+<script>
+// La página lee la rama `datos` (se actualiza sola cada hora); si no está, usa la copia de docs/.
+const FUENTES = ["https://raw.githubusercontent.com/nicosil02/tremor/datos/web.json", "web.json"];
+const pct = (v, d = 0) => v == null || isNaN(v) ? "s/d" : `${(v * 100).toFixed(d)}%`;
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const titulo = s => String(s ?? "").toLowerCase().replace(/(^|[\s/(-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
+const sinTildes = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const reducir = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+async function json(urls) {
+  for (const u of urls) { try { const r = await fetch(u, { cache: "no-cache" }); if (r.ok) return await r.json(); } catch (e) {} }
+  throw new Error("sin datos");
+}
+
+Promise.all([json(FUENTES), json(["distritos.json"])]).then(([D, G]) => iniciar(D, G)).catch(() => {
+  document.getElementById("mapa-portada").outerHTML = `<div class="error">No se pudieron cargar los datos. Vuelve a intentar en unos minutos.</div>`;
+});
+
+function iniciar(D, G) {
+  const A = new Map(D.alerta.map(a => [a.ubigeo, a]));
+  const mes = s => s ? new Date(s + "-15").toLocaleDateString("es-PE", { month: "long", year: "numeric" }) : "";
+  const [v0, v1] = (D.ventana || "").split(" a ");
+  const ventana = v0 ? `${mes(v0)} a ${mes(v1)}` : "los próximos 3 meses";
+  const metrica = (o, m, k) => (D.metricas.find(x => x.objetivo === o && x.modelo === m && x.metrica === k) || {}).valor;
+  const mejor = o => D.mejor[o] || "ensamble";
+
+  // Cifras de la portada: lo que se puede sostener con la prueba 2024-2026
+  const capt = metrica("y_extractivo", mejor("y_extractivo"), "captura_top10pct");
+  const zf = metrica("z_fuerza", mejor("z_fuerza"), "precision_top20");
+  const zfi = metrica("z_fuerza", "ingenuo", "precision_top20");
+  const ze = metrica("z_extractivo", mejor("z_extractivo"), "precision_top20");
+  const zeb = metrica("z_extractivo", mejor("z_extractivo"), "tasa_base");
+  document.getElementById("cifras").innerHTML = [
+    [pct(capt), "de las medidas de fuerza extractivas cayeron en el 10% de distritos que el modelo marcó"],
+    [pct(zf), `de las zonas de operación en alerta tuvieron un paro o bloqueo en 3 meses (la regla simple: ${pct(zfi)})`],
+    [pct(ze), `con reclamo minero, petrolero o ambiental (al azar: ${pct(zeb)})`],
+    [String(new Set(D.operaciones.map(o => o.empresa)).size), "empresas con sus operaciones fiscalizadas por el OEFA"],
+  ].map(([b, s]) => `<div class="cifra"><b>${b}</b><span>${s}</span></div>`).join("");
+
+  // Mapa base, compartido
+  const geo = { type: "FeatureCollection", features: G.features.filter(f => f.geometry) };
+  function mapa(el, ancho, alto, feats) {
+    const m = feats ? Math.round(ancho * 0.22) : 6;  // la empresa: sus distritos con aire alrededor para ver los vecinos
+    const proy = d3.geoMercator().fitExtent([[m, m], [ancho - m, alto - m]], feats ? { type: "FeatureCollection", features: feats } : geo);
+    const svg = d3.create("svg").attr("viewBox", `0 0 ${ancho} ${alto}`).attr("role", "img");
+    const g = svg.append("g");
+    const p = g.selectAll("path").data(geo.features).join("path").attr("class", "d").attr("d", d3.geoPath(proy));
+    el.replaceChildren(svg.node());
+    el.classList.remove("esqueleto"); el.style.aspectRatio = "";
+    return { svg, p, proy };
+  }
+  const clases = [[20, "--r4", "Top 20"], [100, "--r3", "21 a 100"], [190, "--r2", "101 a 190 (10%)"], [Infinity, "--r1", "Resto"]];
+  const color = puesto => puesto == null ? css("--vacio") : css(clases.find(c => puesto <= c[0])[1]);
+  const leyenda = el => el.innerHTML = clases.map(c => `<span><i class="c" style="background:var(${c[1]})"></i>${c[2]}</span>`).join("");
+
+  // Portada: riesgo extractivo por distrito
+  const mp = mapa(document.getElementById("mapa-portada"), 520, 650);
+  mp.p.attr("fill", d => color((A.get(d.properties.u) || {}).puesto_extractivo));
+  leyenda(document.getElementById("leyenda-portada"));
+
+  // ---------- Por empresa ----------
+  const ops = d3.groups(D.operaciones, o => o.empresa).sort((a, b) => b[1].length - a[1].length);
+  document.getElementById("lista-empresas").innerHTML = ops.map(([e]) => `<option value="${esc(e)}">`).join("");
+  const ejemplos = [["Las Bambas", "MINERA LAS BAMBAS"], ["Southern", "SOUTHERN PERU"], ["Antamina", "ANTAMINA"], ["Yanacocha", "YANACOCHA"], ["Buenaventura", "BUENAVENTURA"]]
+    .filter(([, t]) => ops.some(([e]) => e.includes(t)));
+  const rap = document.getElementById("rapidas");
+  rap.innerHTML = ejemplos.map(([n, t]) => `<button class="chip" type="button" data-t="${t}">${n}</button>`).join("");
+  rap.onclick = e => { const b = e.target.closest("button"); if (b) mostrar(b.dataset.t); };
+  const input = document.getElementById("buscar-empresa");
+  input.addEventListener("change", () => mostrar(input.value));
+  const me = { el: document.getElementById("mapa-empresa") };
+
+  function mostrar(texto) {
+    const t = sinTildes(texto).trim();
+    if (!t) return;
+    rap.querySelectorAll(".chip").forEach(c => c.classList.toggle("on", sinTildes(c.dataset.t) === t));
+    const suyas = D.operaciones.filter(o => sinTildes(`${o.empresa} ${o.unidad}`).includes(t));
+    const caja = document.getElementById("ops");
+    if (!suyas.length) {
+      caja.innerHTML = `<div class="vacio">No hay operaciones del OEFA con "${esc(texto)}". Prueba con el nombre de la empresa o de la mina.</div>`;
+      document.getElementById("historial").innerHTML = ""; return;
+    }
+    const filas = suyas.map(o => ({ ...o, a: A.get(o.ubigeo) || {} }))
+      .sort((x, y) => (y.a.prob_zona_extractivo ?? -1) - (x.a.prob_zona_extractivo ?? -1));
+    caja.innerHTML = filas.map((o, i) => {
+      const a = o.a, raz = (a.razones_zona_extractivo || a.razones_extractivo || "").split(" · ").filter(Boolean).slice(0, 3);
+      const sen = [a.alerta_inmediata ? `<a class="marca-v" href="${esc(a.enlace_prensa)}" target="_blank" rel="noopener">Alerta inmediata: ${esc(a.senal_prensa)}</a>` : "",
+                   a.animo_proyectos ? `<span class="marca-n">${esc(a.animo_proyectos)}</span>` : "",
+                   a.puesto_zona_extractivo ? `<span class="marca-n">Puesto ${Math.round(a.puesto_zona_extractivo)} de ${D.alerta.filter(x => x.prob_zona != null).length} zonas</span>` : ""].join("");
+      return `<article class="op entra" style="animation-delay:${Math.min(i, 8) * 40}ms">
+        <div><h3>${esc(o.unidad)}</h3><div class="donde">${esc(titulo((a.lugar || o.ubigeo).split(" / ").reverse().join(", ")))}${o.tipo === "hidrocarburos" ? " · lote petrolero" : ""}</div></div>
+        <div class="probs"><div><b>${pct(a.prob_zona)}</b><small>paro o bloqueo en la zona</small></div><div><b style="color:var(--acento)">${pct(a.prob_zona_extractivo)}</b><small>con reclamo extractivo</small></div></div>
+        <ul class="razones">${raz.map(r => `<li>${esc(r)}</li>`).join("")}</ul>
+        <div class="senales">${sen}</div></article>`;
+    }).join("");
+    const empresas = [...new Set(suyas.map(o => o.empresa))];
+    document.getElementById("intro-empresa").textContent = `${empresas.length === 1 ? titulo(empresas[0]) : empresas.length + " empresas"}: ${filas.length} operaciones en ${new Set(suyas.map(o => o.ubigeo)).size} distritos. Riesgo de ${ventana}.`;
+    // Mapa de la empresa: el país en gris, sus distritos con su riesgo
+    const us = new Set(suyas.map(o => o.ubigeo));
+    const feats = geo.features.filter(f => us.has(f.properties.u));
+    const m = mapa(me.el, 420, 420, feats.length ? feats : null);
+    m.p.attr("fill", d => us.has(d.properties.u) ? color((A.get(d.properties.u) || {}).puesto_zona_extractivo) : css("--vacio"))
+       .classed("op", d => us.has(d.properties.u));
+    m.p.filter(d => us.has(d.properties.u)).raise();
+    historial(us);
+  }
+
+  function historial(us) {
+    const caja = document.getElementById("historial");
+    const z = [...us].map(u => D.zonas[u]).filter(Boolean);
+    if (!z.length) { caja.innerHTML = `<div class="vacio">Se calcula en la próxima corrida del modelo.</div>`; return; }
+    caja.innerHTML = [["z_fuerza", "Cualquier paro o bloqueo en la zona"], ["z_extractivo", "Con reclamo minero, petrolero o ambiental"]].map(([o, t]) => {
+      let ev = 0, vm = 0, vi = 0, am = 0, ai = 0;
+      z.forEach(s => { const x = s[o]; if (!x) return; x.y.forEach((y, k) => {
+        const m = x.pct[k] <= 0.1, i = x.ingenuo[k] != null && x.ingenuo[k] <= 0.1;
+        ev += y; vm += y && m; vi += y && i; am += m; ai += i; }); });
+      return `<div class="fila-h"><div class="t">${t}</div>
+        <div class="k">Meses con medida de fuerza que tenía en alerta antes</div><div class="v">${ev ? pct(vm / ev) : "s/d"}</div><div class="v debil">${ev ? pct(vi / ev) : ""}</div>
+        <div class="k">Alertas que acertaron</div><div class="v">${am ? pct(vm / am) : "s/d"}</div><div class="v debil">${ai ? pct(vi / ai) : ""}</div>
+        <div class="k" style="grid-column:1/-1">${ev} meses-zona con medida de fuerza. Gris: la regla simple.</div></div>`;
+    }).join("");
+  }
+  mostrar(ejemplos.length ? ejemplos[0][1] : ops[0][0]);
+
+  // ---------- Mapa nacional ----------
+  const objetivos = [
+    ["extractivo", "Extractiva, 3 meses", "puesto_extractivo", "prob_extractivo", "razones_extractivo", "Medida de fuerza con reclamo minero, petrolero o ambiental"],
+    ["fuerza", "Cualquier medida, 3 meses", "puesto", "prob", "razones", "Cualquier paro, bloqueo, toma o huelga"],
+  ];
+  if (D.alerta.some(a => a.prob_extractivo_1m != null)) {
+    const rk = k => { const o = [...D.alerta].sort((x, y) => (y[k] ?? -1) - (x[k] ?? -1)); o.forEach((a, i) => a["puesto_" + k] = i + 1); };
+    rk("prob_extractivo_1m"); rk("prob_1m");
+    objetivos.push(["1m", "Extractiva, próximo mes", "puesto_prob_extractivo_1m", "prob_extractivo_1m", "razones_extractivo", "Medida de fuerza extractiva en el mes siguiente"]);
+  }
+  const seg = document.getElementById("seg-objetivo");
+  seg.innerHTML = objetivos.map((o, i) => `<button type="button" role="tab" data-i="${i}" class="${i ? "" : "on"}" aria-selected="${!i}">${o[1]}</button>`).join("");
+  const mn = mapa(document.getElementById("mapa-nacional"), 620, 760);
+  const tip = document.getElementById("tip");
+  let actual = objetivos[0], elegido = null;
+  function pintar() {
+    const [, , kp, kx] = actual;
+    mn.p.attr("fill", d => color((A.get(d.properties.u) || {})[kp]));
+    document.getElementById("intro-mapa").textContent = `${actual[5]}, ${actual[0] === "1m" ? "en " + mes(v0) : "de " + ventana}. Toca un distrito para ver por qué.`;
+    const top = [...D.alerta].filter(a => a[kp] != null).sort((x, y) => x[kp] - y[kp]).slice(0, 20);
+    const ol = document.getElementById("ranking");
+    ol.innerHTML = top.map(a => { const [dep, prov, dist] = (a.lugar || "").split(" / ");
+      return `<li data-u="${a.ubigeo}" class="${a.ubigeo === elegido ? "sel" : ""}"><span class="p">${a[kp]}</span><span class="l">${esc(titulo(dist))}<small>${esc(titulo(prov))}, ${esc(titulo(dep))}</small></span><span class="x">${pct(a[kx])}</span></li>`; }).join("");
+    ol.onclick = e => { const li = e.target.closest("li"); if (li) ficha(li.dataset.u); };
+    ficha(elegido || (top[0] || {}).ubigeo);
+  }
+  function ficha(u) {
+    const a = A.get(u); if (!a) return;
+    elegido = u;
+    mn.p.classed("sel", d => d.properties.u === u);
+    mn.p.filter(d => d.properties.u === u).raise();
+    document.querySelectorAll("#ranking li").forEach(li => li.classList.toggle("sel", li.dataset.u === u));
+    const [dep, prov, dist] = (a.lugar || "").split(" / ");
+    const raz = (a[actual[4]] || "").split(" · ").filter(Boolean).slice(0, 4);
+    document.getElementById("ficha").innerHTML = `<h3>${esc(titulo(dist))}</h3><div class="donde">${esc(titulo(prov))}, ${esc(titulo(dep))}${a.corredores ? ". " + esc(a.corredores) : ""}</div>
+      <div class="tres"><div><b>${pct(a.prob)}</b><small>cualquier medida de fuerza</small></div><div><b style="color:var(--acento)">${pct(a.prob_extractivo)}</b><small>con reclamo extractivo</small></div><div><b>${pct(a.prob_crisis)}</b><small>con enfrentamientos</small></div></div>
+      <ul class="razones" style="list-style:none;padding:0;margin:0;font-size:14px;color:var(--tinta-2);display:grid;gap:4px">${raz.map(r => `<li>+ ${esc(r)}</li>`).join("")}</ul>
+      ${a.alerta_inmediata ? `<p style="margin:12px 0 0"><a class="marca-v" href="${esc(a.enlace_prensa)}" target="_blank" rel="noopener">Alerta inmediata: ${esc(a.senal_prensa)}</a></p>` : ""}`;
+  }
+  seg.onclick = e => { const b = e.target.closest("button"); if (!b) return;
+    seg.querySelectorAll("button").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-selected", x === b); });
+    actual = objetivos[+b.dataset.i]; pintar(); };
+  mn.p.on("click", (e, d) => ficha(d.properties.u))
+      .on("pointermove", (e, d) => { const a = A.get(d.properties.u); if (!a) return;
+        const r = e.currentTarget.ownerSVGElement.parentNode.getBoundingClientRect();
+        tip.innerHTML = `<b>${esc(titulo((a.lugar || "").split(" / ")[2]))}</b><br>${pct(a[actual[3]])} · puesto ${a[actual[2]]}`;
+        tip.style.left = `${Math.min(e.clientX - r.left + 14, r.width - 200)}px`; tip.style.top = `${e.clientY - r.top + 14}px`; tip.classList.add("on"); })
+      .on("pointerleave", () => tip.classList.remove("on"));
+  pintar();
+
+  // ---------- En vivo ----------
+  const nom = u => { const a = A.get(u) || [...A.values()].find(x => x.ubigeo.startsWith(u)); if (!a) return u;
+    const p = (a.lugar || "").split(" / "); return titulo(u.length === 6 ? `${p[2]}, ${p[0]}` : u.length === 4 ? `${p[1]}, ${p[0]}` : p[0]); };
+  // primero lo anunciado y, dentro, lo extractivo: es lo que la alerta inmediata necesita ver antes
+  const orden = e => (e.estado === "anunciada" ? 0 : 2) + (e.tipo_conflicto && e.tipo_conflicto !== "otro" ? 0 : 1);
+  const ev = [...D.eventos].sort((x, y) => orden(x) - orden(y));
+  document.getElementById("eventos").innerHTML = ev.length ? ev.map(e => `<article class="evento">
+      <div class="f">${esc(e.fecha_evento || e.fecha_anuncio)}<b class="${e.estado === "anunciada" ? "anun" : ""}">${e.estado === "anunciada" ? "Anunciada" : "Ocurrió"}</b></div>
+      <div><a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.titular)}</a>
+      <div class="m">${esc([e.accion || "Protesta", e.actor ? "de " + e.actor.toLowerCase() : "", "en " + nom(e.ubigeo)].filter(Boolean).join(" "))}. ${esc(e.medio)}${e.n_medios > 1 ? ` y ${e.n_medios - 1} medios más` : ""}.</div></div></article>`).join("")
+    : `<div class="vacio">No hay protestas registradas en los últimos 45 días.</div>`;
+  document.getElementById("sutran").innerHTML = D.sutran.length ? D.sutran.map(s => `<div class="evento" style="grid-template-columns:1fr;margin-bottom:8px">
+      <div><b style="font-weight:550">${esc(titulo(s.titulo))}</b><div class="m">${esc(s.via || "")} ${esc(s.km || "")}, ${esc(s.distrito || "")} (${esc(s.region || "")}). Desde ${esc(s.fecha_evento)}.</div></div></div>`).join("")
+    : `<div class="vacio">Ninguna vía cortada por protestas ahora.</div>`;
+  document.getElementById("animo").innerHTML = D.animo.length ? D.animo.map(a => `<div class="fila-h" style="margin-bottom:12px">
+      <div class="t">${esc(a.proyecto)}</div><div class="k">${a.menciones_7d} menciones (una semana normal: ${(+a.base_7d).toFixed(1)}), ${pct(a.pct_negativo)} negativas</div>
+      ${a.aviso ? `<div class="k" style="grid-column:1/-1;color:var(--acento)">${esc(a.aviso)}</div>` : ""}</div>`).join("")
+    : `<div class="vacio">Sin menciones esta semana.</div>`;
+
+  // ---------- Precisión: modelo, regla y azar en cada ventana (puntos, sin barras de fondo) ----------
+  const medidas = [["z_fuerza", "Paro o bloqueo en la zona de una operación"], ["z_extractivo", "Con reclamo extractivo, en la zona"],
+                   ["y_extractivo", "Con reclamo extractivo, en el distrito"], ["y_fuerza", "Cualquier medida, en el distrito"]];
+  document.getElementById("medidas").innerHTML = medidas.map(([o]) => `<div class="panel medida" id="m-${o}"></div>`).join("");
+  medidas.forEach(([o, t]) => {
+    const filas = D.respaldo.filter(r => r.objetivo === o && !r.ventana.includes("sin"));
+    const ven = [...new Set(filas.map(r => r.ventana))].sort();
+    const el = document.getElementById("m-" + o);
+    const W = 460, fila = 36, H = ven.length * fila + 30, x = d3.scaleLinear().domain([0, 1]).range([92, W - 14]);
+    const svg = d3.create("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", t);
+    svg.append("g").selectAll("text").data([0, .25, .5, .75, 1]).join("text").attr("x", d => x(d)).attr("y", H - 6).attr("text-anchor", "middle").text(d => pct(d));
+    ven.forEach((v, i) => {
+      const y = 16 + i * fila, g = svg.append("g");
+      const mo = filas.find(r => r.ventana === v && r.modelo !== "ingenuo"), ing = filas.find(r => r.ventana === v && r.modelo === "ingenuo");
+      g.append("text").attr("x", 0).attr("y", y + 4).text(v);
+      g.append("line").attr("x1", x(mo.li_90)).attr("x2", x(mo.ls_90)).attr("y1", y).attr("y2", y).attr("stroke", css("--acento")).attr("stroke-width", 2).attr("opacity", .45);
+      [[mo.tasa_base, css("--borde"), 4], [ing.precision_top20, css("--tinta-3"), 5], [mo.precision_top20, css("--acento"), 6]]
+        .forEach(([val, c, r]) => g.append("circle").attr("cx", x(val)).attr("cy", y).attr("r", r).attr("fill", c));
+      g.append("text").attr("class", "n").attr("x", Math.min(x(mo.precision_top20) + 9, W - 30)).attr("y", y - 8).text(pct(mo.precision_top20));
+    });
+    el.innerHTML = `<h3>${t}</h3><p class="nota"><span style="color:var(--acento)">●</span> modelo, con su intervalo al 90%. <span style="color:var(--tinta-3)">●</span> regla simple. <span style="color:var(--borde)">●</span> azar.</p>`;
+    el.append(svg.node());
+  });
+  document.getElementById("pie").insertAdjacentHTML("beforeend", ` Datos al ${esc(D.creado)}; último reporte de la Defensoría: ${esc(mes(D.mes_base))}.`);
+}
+</script>
+</body>
+</html>
