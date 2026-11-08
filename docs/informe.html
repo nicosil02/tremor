@@ -328,7 +328,7 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
     const sevTxt = s => s === "alta" ? "Prioridad alta" : s === "media" ? "Prioridad media" : "Para seguimiento";
     document.getElementById("alerta").innerHTML = `
       <div class="telefono"><div class="hora">12:16</div><div class="fecha">${new Date(hoy + "T12:00").toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}</div>
-        ${alertas.slice().sort((x, y) => y.hora.padStart(5, "0").localeCompare(x.hora.padStart(5, "0"))).map(a => `<button type="button" class="noti"><div class="de"><b>Tremor · ${a.sev === "alta" ? "Prioridad alta" : "Prioridad media"}</b><span>${a.hora}</span></div>
+        ${alertas.slice().sort((x, y) => (x.sev !== "alta") - (y.sev !== "alta") || y.hora.padStart(5, "0").localeCompare(x.hora.padStart(5, "0"))).map(a => `<button type="button" class="noti"><div class="de"><b>Tremor · ${a.sev === "alta" ? "Prioridad alta" : "Prioridad media"}</b><span>${a.hora}</span></div>
           <div class="t">${esc(a.c)}</div><div class="prev">${esc(a.pv)}</div>
           <div class="full"><p>${esc(a.p)}</p><p class="afecta">Puede afectar: ${esc(a.a)}</p></div></button>`).join("")}
       <p class="toca">Toque una notificación para abrirla</p></div>
