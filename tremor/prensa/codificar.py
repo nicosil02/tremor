@@ -107,9 +107,11 @@ def _pedir(con, entrada) -> dict:
 def codificar(con, max_solicitudes=200) -> tuple[int, int, bool]:
     """Codifica las notas que pasaron el filtro y no tienen codificación de esta versión.
     Devuelve (solicitudes, notas, quedó_pendiente)."""
-    pendientes = con.execute("""SELECT n.id, n.titular, n.resumen, n.publicado, n.departamento_consulta FROM nota n
+    from tremor.prensa.historia import ordenar  # lo vivo primero; la historia por valor (lugar con operación)
+    pendientes = ordenar(con, con.execute("""SELECT n.id, n.titular, n.resumen, n.publicado, n.departamento_consulta,
+        n.consulta FROM nota n
         WHERE n.filtro IS NULL AND NOT EXISTS (SELECT 1 FROM codificacion c WHERE c.nota_id = n.id AND c.version = ?)
-        ORDER BY n.publicado DESC""", (VERSION,)).fetchall()
+        """, (VERSION,)).fetchall())
     solicitudes = hechas = 0
     for i in range(0, len(pendientes), LOTE):
         if solicitudes >= max_solicitudes:

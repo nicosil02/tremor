@@ -29,6 +29,9 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("recolectar"); r.add_argument("--desde", type=date.fromisoformat); r.add_argument("--hasta", type=date.fromisoformat)
     c = sub.add_parser("codificar"); c.add_argument("--max-solicitudes", type=int, default=200)
+    h = sub.add_parser("historia"); h.add_argument("--desde", default="2018-01"); h.add_argument("--hasta")
+    h.add_argument("--medio", action="append", help="uno o varios; sin él, todos (ver historia.MEDIOS)")
+    sub.add_parser("historia_resumen")
     sub.add_parser("ampliar")
     sub.add_parser("agrupar")
     v = sub.add_parser("validar"); v.add_argument("--mes", required=True)
@@ -40,6 +43,15 @@ def main(argv=None):
     if a.cmd in ("recolectar", "todo"):
         nuevas, vistas = rec.recolectar(con, getattr(a, "desde", None), getattr(a, "hasta", None))
         print(f"Prensa: {vistas} notas vistas, {nuevas} nuevas.")
+    if a.cmd == "historia":
+        from tremor.prensa import historia as hist
+        for m in a.medio or hist.MEDIOS:
+            vistas, nuevas = hist.historia(con, m, a.desde, a.hasta)
+            print(f"{m}: {vistas} notas vistas, {nuevas} nuevas que pasan el filtro.")
+    if a.cmd == "historia_resumen":
+        from tremor.prensa import historia as hist
+        for fila in hist.resumen(con):
+            print(*fila, sep="	")
     if a.cmd in ("ampliar", "todo"):
         from tremor.prensa.ampliar import ampliar
         vistas, hechas = ampliar(con, cod.VERSION)

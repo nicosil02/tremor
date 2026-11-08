@@ -77,13 +77,20 @@ def _llamar(con, url, clave, modelo, k, sistema, usuario) -> dict:
     cuerpo = {"model": modelo, "temperature": 0, "response_format": {"type": "json_object"},
               "messages": [{"role": "system", "content": sistema}, {"role": "user", "content": usuario}]}
     for intento in range(8):
-        r = requests.post(f"{url}/chat/completions", json=cuerpo, timeout=120,
-                          headers={"Authorization": f"Bearer {clave}"})
+        try:
+            r = requests.post(f"{url}/chat/completions", json=cuerpo, timeout=120,
+                              headers={"Authorization": f"Bearer {clave}"})
+        except requests.ConnectionError:  # red caída un momento: esperar y reintentar
+            time.sleep(20 * (intento + 1))
+            continue
         if r.status_code == 429:
             espera = float(r.headers.get("retry-after", 20 * (intento + 1)))
             if espera > 120 or "per day" in r.text.lower() or "PerDay" in r.text:  # cupo diario: siguiente modelo
                 raise SinCuota(r.text[:200])
             time.sleep(espera)
+            continue
+        if r.status_code >= 500:  # proveedor saturado (Gemini da 503): esperar y reintentar
+            time.sleep(20 * (intento + 1))
             continue
         if r.status_code == 400:
             raise RespuestaInvalida(r.text[:300])

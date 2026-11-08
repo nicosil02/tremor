@@ -8,6 +8,8 @@ python -m tremor.egpp perfil                  # → datos/exportes/perfil_distri
 python -m tremor.egpp ranking [--tipo socioambiental_extractivo] [--n 20]   # imprime los distritos más conflictivos
 
 python -m tremor.prensa recolectar [--desde AAAA-MM-DD --hasta AAAA-MM-DD]  # sin fechas: últimas 24 h
+python -m tremor.prensa historia [--desde 2018-01] [--hasta AAAA-MM] [--medio X ...]  # archivo WordPress de medios regionales; sigue donde quedó
+python -m tremor.prensa historia_resumen                                    # notas vistas y que pasan el filtro, por medio y año
 python -m tremor.prensa codificar [--max-solicitudes 200]                   # lo que falta, en lotes
 python -m tremor.prensa agrupar
 python -m tremor.prensa validar [--mes AAAA-MM]                             # contra Defensoría y contra la EGPP
