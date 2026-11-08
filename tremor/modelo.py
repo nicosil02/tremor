@@ -75,7 +75,7 @@ def nivel_accion(accion) -> int:
 
 def eventos(con) -> pd.DataFrame:
     """Protestas de todas las fuentes propias (Defensoría, EGPP, prensa y radio, SUTRAN, bolsa) → (ubigeo, m, nivel
-    2-4). Solo las que llegan a distrito. ACLED queda fuera: solo valida (su uso comercial pide licencia)."""
+    2-4). Solo las que llegan a distrito. ACLED entra desde 2018 (su uso comercial pide licencia)."""
     q = lambda s: pd.read_sql(s, con)
     d = q("SELECT a.ubigeo, r.anio * 12 + r.mes - 1 AS m, a.medida AS accion, 0 AS victimas, "
           "COALESCE(a.actores, '') AS actores, COALESCE(a.demanda, '') AS texto FROM accion_protesta a "
@@ -97,7 +97,17 @@ def eventos(con) -> pd.DataFrame:
         b = s.iloc[:0]
     for t in (e, p, s, b):
         t["m"] = t["fecha"].map(mes)
-    t = pd.concat([d, e, p, s, b], ignore_index=True)
+    # ACLED (desde 2018, solo el mes): disturbios cuentan como medida de fuerza (en el Perú suelen ser bloqueos con
+    # piedras), la represión con víctimas como crisis y lo pacífico como protesta.
+    # Su uso comercial pide licencia; la tabla no se publica en `datos`.
+    try:
+        a = q("SELECT ubigeo, anio * 12 + mes - 1 AS m, CASE WHEN subtipo IN ('Violent demonstration', 'Mob violence') "
+              "THEN 'bloqueo' WHEN subtipo = 'Excessive force against protesters' THEN 'represion' ELSE 'marcha' END "
+              "AS accion, (subtipo = 'Excessive force against protesters') AS victimas, extractivo FROM acled_evento "
+              "WHERE tipo IN ('Protests', 'Riots') AND length(ubigeo) = 6")
+    except Exception:
+        a = d.iloc[:0]
+    t = pd.concat([d, e, p, s, b, a], ignore_index=True)
     t["nivel"] = [4 if v > 0 else nivel_accion(a) for a, v in zip(t.accion, t.victimas)]
     t.loc[t.get("estado").eq("anunciada").fillna(False).to_numpy(), "nivel"] = 2  # anunciada: tensión, aún no ocurre
     t["extractivo"] = t.extractivo.astype(bool)
