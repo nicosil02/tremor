@@ -796,7 +796,10 @@ def eleccion(r, adelanto=2):
         return f"{'falta 1 mes' if k == 1 else f'faltan {k} meses'} para la elección municipal"
     if k == 0:
         return "es el mes de la elección municipal"
-    return "la elección municipal ya pasó y las nuevas autoridades asumen en enero"
+    if k >= -5:  # de noviembre a marzo: disputas de resultados, transferencia y nuevas autoridades
+        return ("la elección municipal acaba de pasar y entre diciembre y febrero de los años electorales hubo el "
+                "doble de paros que en otros años")
+    return "lejos de la elección municipal"
 
 
 def frase_cambio(g, r, n, sube):
