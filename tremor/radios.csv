@@ -136,7 +136,7 @@ Radio Moderna Junín,Junin,Junin,1205,https://radio.transmite.pe/8020/stream/;ty
 Radio Ondas del Chinchaycocha,Junin,Junin,1205,https://panel.innovatestream.pe/7438/stream,onlineradiobox.com
 Megasat,Junin,Satipo,1206,https://panelautodj.innovatestream.pe/8254/stream,onlineradiobox.com
 Radio Milenio,Junin,Satipo,1206,https://sonic.dattassd.com/9924/;,onlineradiobox.com
-Radio Imperial TV,Junin,Tarma,1207,https://sechin.grupocentroserver.com/listen/imperial_acobamba/radio.mp3,onlineradiobox.com
+Radio Imperial TV,Huancavelica,Acobamba,0902,https://sechin.grupocentroserver.com/listen/imperial_acobamba/radio.mp3,onlineradiobox.com
 Radio Luz de Tarma,Junin,Tarma,1207,https://radio.publikarte.com.pe/listen/radioluz/stream,onlineradiobox.com
 Excélsior Radio &amp; Televisión,Junin,Yauli,1208,https://stream.zeno.fm/vygg3p9afd0uv,onlineradiobox.com
 LA CENTRAL,Junin,Yauli,1208,https://stream.zeno.fm/0wqy8tvmduhvv,onlineradiobox.com
@@ -201,7 +201,7 @@ Flash,Pasco,Pasco,1901,https://stream.zeno.fm/rq7p86wez38uv,onlineradiobox.com
 Radio Cumbre,Pasco,Pasco,1901,https://stream-176.surfernetwork.com/gvxa3mmvdmtuv,onlineradiobox.com
 Radio Mega Hits - Huayllay,Pasco,Pasco,1901,http://radio.transmite.pe:9304/;,onlineradiobox.com
 Radio Nutri Salud Pasco,Pasco,Pasco,1901,https://stream.zeno.fm/076eshpy53duv,onlineradiobox.com
-Catalina Radio 103.1 FM - PAUZA AYACUCHO,Pasco,Daniel Alcides Carrion,1902,https://stream.zeno.fm/crgm8eri4futv,onlineradiobox.com
+Catalina Radio 103.1 FM - PAUZA AYACUCHO,Ayacucho,Paucar del Sara Sara,0508,https://stream.zeno.fm/crgm8eri4futv,onlineradiobox.com
 Radio RVC 95.7FM,Pasco,Daniel Alcides Carrion,1902,https://alaire.visionhd.net/listen/rvc/radio.mp3,onlineradiobox.com
 RadioTV Qorisonqo,Pasco,Daniel Alcides Carrion,1902,https://mediastreamm.com:7115/;,onlineradiobox.com
 Radio Exótica 95.3 fm,Pasco,Oxapampa,1903,https://stream.zeno.fm/q97xphpy53duv,onlineradiobox.com
@@ -248,3 +248,30 @@ Radio Tacna,Tacna,Tacna,2301,https://mediastreamm.com/8056/stream,onlineradiobox
 Radio Uno,Tacna,Tacna,2301,https://stream2.eistreaming.com:10995/;,onlineradiobox.com
 Radio Andina Tarata,Tacna,Tarata,2304,http://sp.oyotunstream.com:8064/,web de la radio / radio-browser.info
 Radio Wiracocha,Tacna,Tarata,2304,https://sp.aljania.com:8232/;,onlineradiobox.com
+Radio Incamach,Moquegua,General Sanchez Cerro,1802,https://sonic.dattassd.com:9954/;,emisoras.com.pe (Ichuña)
+Radio Minería,Moquegua,General Sanchez Cerro,1802,https://sonicpanel.us:8146/stream,emisoras.com.pe (cubre Omate desde Moquegua)
+Radio Apurimeña,Apurimac,Antabamba,0303,http://radio.perustream.com:8014/stream,emisoras.com.pe
+Radio Chalhuanca,Apurimac,Aymaraes,0304,http://radio.perustream.com:8030/stream,emisoras.com.pe
+Radio Surphuy,Apurimac,Grau,0307,https://5949aa132c8fb.streamlock.net:1963/ipradiosurphuy/livesurphuyradio/playlist.m3u8,emisoras.com.pe (cubre Grau desde Challhuahuacho)
+La Loretana FM,Loreto,Ucayali,1606,https://conectperu.com/8384/stream,emisoras.com.pe (Contamana)
+Radio Candaraveña,Tacna,Candarave,2302,http://start.hostreamperu.com:10220/;,emisoras.com.pe
+Radio Ecos del Humalante,Tacna,Candarave,2302,https://stream.zeno.fm/hph7vu3n1nnvv,emisoras.com.pe
+Radio Positiva,Tacna,Jorge Basadre,2303,https://sp.oyotunstream.com:10923/;,emisoras.com.pe (Locumba)
+RCC Tacna Ilabaya,Tacna,Jorge Basadre,2303,https://rcctacna.noveltieserver.com/listen/rcc_tacna/ilabaya.mp3,emisoras.com.pe (Ilabaya)
+Radio Imán de Aija,Ancash,Aija,0202,https://stream.zeno.fm/4beqx9ppeaptv,emisoras.com.pe
+Radio Nor Andino,Ancash,Pallasca,0215,https://server.streamingradios.net:8198/stream,emisoras.com.pe (cubre Pallasca desde Santiago de Chuco)
+Radio Quispillaccta,Ayacucho,Cangallo,0502,https://media.streamingradiomx.com/listen/joel/stream,emisoras.com.pe (comunidad Quispillaccta-Chuschi)
+Radio Sucre 100.5 FM,Ayacucho,Sucre,0509,https://server.streamingradios.net:8120/stream,emisoras.com.pe (Querobamba)
+Radio Wamaqu,Ayacucho,Victor Fajardo,0510,https://sonic.globalstream.pro/8066/stream,emisoras.com.pe (Cayara)
+Radio Kadena 100 Cascas,Cajamarca,Contumaza,0605,https://radio.livestreamingmundial.com:7060/stream,emisoras.com.pe (cubre Contumazá desde Cascas)
+Radio Willaq,Cusco,Paruro,0810,https://stream.zeno.fm/jyguwzem3j0uv,emisoras.com.pe (cubre Paruro desde Acomayo)
+Radio Tawantinsuyo,Cusco,Paruro,0810,https://stream.zeno.fm/zgy0pyh7p98uv,emisoras.com.pe (cubre Paruro desde Cusco)
+Radio Pulsar,Huanuco,Ambo,1002,https://panel.innovatestream.pe:10953/stream,emisoras.com.pe
+Radio Hispana,Ica,Palpa,1104,https://live.tecnohost.ec/8064/stream,emisoras.com.pe
+Radio Huancayo,Junin,Chupaca,1209,https://cloud9.ldwebstudios.net/8002/stream,emisoras.com.pe (cubre Chupaca desde Huancayo)
+Radio Onda Popular Bolívar,La Libertad,Bolivar,1303,https://stream.zeno.fm/yhdbd7wwcuhvv,emisoras.com.pe
+Radio Súper Huancabamba,Piura,Huancabamba,2003,https://panel.innovatestream.pe:10952/stream,emisoras.com.pe
+Radio LaSuperior,Piura,Huancabamba,2003,https://stream.radiolasuperior.com/8194/stream,emisoras.com.pe
+Radio Lacustre 95.1 FM,Puno,Chucuito,2104,https://stream.zeno.fm/rpcwtcucigwuv,emisoras.com.pe (Juli)
+Radio Binacional,Puno,Chucuito,2104,https://stream.zeno.fm/ssxhes5yqgquv,emisoras.com.pe (Desaguadero)
+Radio La Hechicera,Tumbes,Tumbes,2401,http://servistream.info:9220/stream,emisoras.com.pe
