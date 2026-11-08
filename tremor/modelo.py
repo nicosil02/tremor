@@ -207,6 +207,23 @@ def panel(con):
                      "WHERE tipo IN ('Protests', 'Riots')", con)
     AC, AX = (matriz(ac, c, distritos, meses) for c in ("n", "x"))
     sin_acled = (np.array(meses) < 2018 * 12) | (np.array(meses) + HORIZONTE >= ac.m.max())  # último mes: parcial
+    # Gobierno local (tremor/gobierno.py): gasto municipal del mes, JNE en El Peruano, revocatorias e informes de control
+    gm = pd.read_sql("SELECT ubigeo, m, variable, valor FROM distrito_mes", con)
+    G = lambda *vs: matriz(gm[gm.variable.isin(vs)], "valor", distritos, meses)
+    antes = lambda anio: np.array(meses) < anio * 12
+    VAC = ventana(G("jne_vacancia", "jne_convoca", "jne_suspension"), 12)
+    VAC[:, antes(2012)] = np.nan  # El Peruano indexa al JNE desde 2012 (y con huecos: 2014)
+    REV = ventana(G("revocatoria_consulta"), 24)
+    REV[:, antes(2012)] = np.nan
+    CGR = np.roll(G("cgr_con_responsabilidad"), 2, axis=1)  # se publica ~1 mes después de emitirse: 2 de margen
+    CGR = ventana(CGR, 12)
+    CGR[:, antes(2019)] = np.nan  # el buscador empieza en 2018
+    TOT, PRY = ventana(G("dev_total"), 12), ventana(G("dev_proyectos"), 12)
+    INV = np.where(TOT > 0, PRY / np.where(TOT > 0, TOT, 1), np.nan)
+    INV[:, antes(2011)] = np.nan
+    PRY3 = ventana(G("dev_proyectos"), 3)
+    CAE = np.where(np.roll(PRY3, 12, axis=1) > 0, PRY3 / np.where(np.roll(PRY3, 12, axis=1) > 0, np.roll(PRY3, 12, axis=1), 1) - 1, np.nan)
+    CAE[:, antes(2011)] = np.nan  # obras del trimestre frente al mismo trimestre del año anterior
     nivel = np.select([K > 0, F > 0, (P > 0) | (A > 0), L > 0], [4, 3, 2, 1], 0)
     F3 = ventana(F, 3)
     W = vecinos(distritos)
@@ -237,6 +254,8 @@ def panel(con):
          "zona_dialogo_roto_3": zona(ventana(DR, 3)), "zona_certificaciones_3": zona(ventana(C, 3)),
          "zona_protestas_sin_fuerza_3": zona(ventana(P - F, 3)),  # marchas, plantones, pronunciamientos
          "zona_alza": zona(F3) - zona(ventana(F, 12)) / 4, "zona_emergencias_3": zona(EM),
+         "zona_vacancias_12": zona(VAC), "zona_revocatorias_24": zona(REV), "zona_control_12": zona(CGR),
+         "inversion_pct_gasto": np.clip(INV, 0, 1), "obras_vs_anio_previo": np.clip(CAE, -1, 5),
          # El mes que importa es t+2: el reporte del mes t sale a mediados de t+1, y para entonces t+1 ya va por la mitad.
          "z1_fuerza": (futuro(zona(F + K), 2) - futuro(zona(F + K), 1) > 0).astype(float)}
     v["z1_brote"] = np.where(zona(F3) > 0, np.nan, v["z1_fuerza"])
@@ -373,6 +392,8 @@ GRUPOS = {
                 "zona_casos_activados_3", "zona_dialogo_roto_3", "zona_certificaciones_3",
                 "zona_protestas_sin_fuerza_3", "zona_alza", "zona_emergencias_3"],
     "calendario": ["mes_del_anio"],
+    "gobierno": ["zona_vacancias_12", "zona_revocatorias_24", "zona_control_12", "inversion_pct_gasto",
+                 "obras_vs_anio_previo"],
     "anomalias": ["anom_" + c for c in ANOMALIAS],
 }
 VARIABLES = [v for g in GRUPOS.values() for v in g]
@@ -713,7 +734,7 @@ def frase(g, r):
         partes.append("sin oficina ambiental" if r.oficina_ambiental == 0 else "con oficina ambiental")
         partes.append(f"{r.participacion_formas:.0f} formas de participación ciudadana (RENAMU 2023)")
         return "; ".join(partes)
-    if g in ("cambios", "calendario", "anomalias"):
+    if g in ("cambios", "calendario", "anomalias", "gobierno"):
         return frase_cambio(g, r, r, True).removeprefix("sube: ")
     if g == "vias":
         tramo = "en el Corredor Minero del Sur; " if r.corredor_minero_sur else ""
@@ -778,6 +799,13 @@ def frase_cambio(g, r, n, sube):
         return f"{signo}: " + vs(r.fuerza_3_provincia, n.fuerza_3_provincia, "medidas de fuerza en el resto de la provincia en 3 meses")
     if g == "vias":
         return f"{signo}: " + vs(r.fuerza_3_corredor, n.fuerza_3_corredor, "medidas de fuerza en su corredor vial en 3 meses")
+    if g == "gobierno":
+        partes = [p for p in (
+            f"{r.zona_vacancias_12:.0f} pedidos de vacancia o reemplazos de autoridades en la zona en 12 meses" if r.zona_vacancias_12 > 0 else "",
+            f"{r.zona_revocatorias_24:.0f} consultas de revocatoria en la zona en 2 años" if r.zona_revocatorias_24 > 0 else "",
+            f"{r.zona_control_12:.0f} informes de la Contraloría con responsabilidad en la zona en 12 meses" if r.zona_control_12 > 0 else "",
+            f"el gasto en obras del municipio va {r.obras_vs_anio_previo:+.0%} frente al año anterior" if pd.notna(r.obras_vs_anio_previo) else "") if p]
+        return f"{signo}: " + ("; ".join(partes) or "sin vacancias, revocatorias ni informes de control en la zona")
     if g == "calendario":
         return f"{signo}: en {MESES[int(r.mes_del_anio) % 12]} suele haber {'más' if sube else 'menos'} protestas"
     if g == "economia":
