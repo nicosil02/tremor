@@ -58,13 +58,16 @@ hidrocarburos, energía, concesiones) en el Perú, días antes, con razones expl
 - **Sin atribución a Claude:** nada de "Generated with Claude Code" ni co-autor en commits ni PRs.
 - **Código mínimo** (estilo "ponytail"):
   - reglas antes que LLM;
-  - una prueba pequeña por cada lógica que no sea trivial (`python -m pytest -q`, hoy 81 pruebas);
+  - una prueba pequeña por cada lógica que no sea trivial (`python -m pytest -q`, hoy 86 pruebas);
   - mejor borrar que agregar.
 - **Una sola base:** `datos/tremor.db` (SQLite). Se publica comprimida en la rama **`datos`**
   (`tremor.db.gz` + CSV); `datos/` no va en `main`.
 - **Costo cero.** El LLM va por un endpoint compatible con OpenAI (`LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`).
-  - Hoy es Groq: `openai/gpt-oss-120b`, con `openai/gpt-oss-20b` de respaldo cuando el primero agota su cupo.
-  - Cada modelo tiene un cupo de **200 000 tokens por día**, unas 200 notas.
+  - Cadena (`LLM_MODEL`): Groq `openai/gpt-oss-120b` → Gemini `gemini:gemini-3.5-flash-lite` → Groq
+    `openai/gpt-oss-20b`; cada modelo tiene su propio cupo diario y el que se agota cede al siguiente.
+    Gemini usa `GEMINI_API_KEY`, **una clave solo de Tremor** (no la de Base_legislativa: compartirían cupo);
+    sin clave, se salta. Nunca varias claves del mismo proveedor para sumar cupo (lo prohíben sus condiciones).
+  - Groq: **200 000 tokens por día** por modelo, unas 200 notas.
   - Todo queda en la caché `llm_cache`: volver a correr no gasta cuota.
 - **Privacidad:**
   - los actores se nombran por rol, nunca a personas;
@@ -136,7 +139,14 @@ Archivos que acompañan a la base:
 **Workflow** `.github/workflows/defensoria.yml`:
 - corre cada 4 h: Defensoría → SUTRAN → prensa → perfil EGPP, y publica en `datos`;
 - **solo corre desde `main`**: se activa al fusionar el PR de 002;
-- el secreto `LLM_API_KEY` ya está en GitHub.
+- el secreto `LLM_API_KEY` ya está en GitHub; falta `GEMINI_API_KEY` (el autor crea la clave).
+
+**Workflow** `.github/workflows/radio.yml`: 6:00 y 12:30, 15 máquinas × ~15 radios × 45 min; los fragmentos pasan
+por `filtro_radio` (música, prédicas, avisos y repetidos fuera; solo medidas de lucha con contexto) antes del LLM.
+
+**Workflow** `.github/workflows/modelo.yml`: día 20 de cada mes; baja ACLED de su API (`python -m tremor.distritos
+acled_api`, secretos `ACLED_EMAIL` y `ACLED_PASSWORD`, los pone el autor), corre `python -m tremor.modelo` (~2 h) y
+publica en `datos` **borrando `acled_evento`**. Los tres workflows conservan los CSV de los otros al publicar.
 
 ## 5. Hallazgos que guían el diseño
 

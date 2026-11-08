@@ -88,6 +88,7 @@ jobs:
           mkdir -p datos
           git fetch --depth 1 origin datos
           git show origin/datos:tremor.db.gz | gunzip > datos/tremor.db
+          mkdir -p datos/exportes && git archive origin/datos | tar -x -C datos/exportes --wildcards "*.csv"  # conserva los CSV de los otros workflows (la alerta del modelo)
           git show origin/datos:distritos.geojson > datos/distritos.geojson || true
 
       - name: Cargar, codificar y medir el ánimo

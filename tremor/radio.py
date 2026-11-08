@@ -22,7 +22,9 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 from tremor.db import RAIZ, ahora, conectar
-from tremor.prensa.recolectar import LIMA, filtro, id_nota
+import re
+
+from tremor.prensa.recolectar import LIMA, NO_ES, id_nota
 
 CATALOGO = RAIZ / "tremor" / "radios.csv"
 SR = 16_000
@@ -67,15 +69,50 @@ def transcribir(modelo, ruta):
     return " ".join(s.text.strip() for s in segmentos)
 
 
+# Filtro de la radio, más estricto que el de la prensa: un noticiero mezcla música, avisos y prédicas, y cada
+# fragmento que pasa gasta cupo del LLM. Pasa solo si nombra una medida de lucha y su contexto (o dos medidas).
+FUERTE = re.compile(r"\bparo|huelga|bloque[oa]|movilizaci|\bmarcha\b|plant[oó]n|toma (?:de|del|las|los)|"
+                    r"enfrentamiento|protesta|piquete|frente de defensa|comuner|ronder|rondas? campesin|"
+                    r"medida de lucha|acatamiento|acatan|lucha indefinida|vigilia|cacerolazo|desalojo", re.I)
+CONTEXTO = re.compile(r"miner|\bmina\b|empresa|petr[oó]le|\blote\b|oleoducto|derrame|contamina|relave|canon|"
+                      r"municipalidad|alcalde|gobierno|ministerio|congreso|prefect|polic|carretera|\bv[ií]a\b|puente|"
+                      r"comunidad|agricultor|transportista|docente|trabajadores|sindicato|agua|proyecto|dirigente", re.I)
+RELIGIOSO = re.compile(r"\bdios\b|hermanos|biblia|jes[uú]s|iglesia|pastor|am[eé]n|aleluya|esp[ií]ritu santo|"
+                       r"cap[ií]tulo \d+|vers[ií]culo|se[nñ]or nuestro", re.I)
+AVISO = re.compile(r"ll[aá]m(?:a|enos)|whatsapp|promoci[oó]n|oferta|descuento|precio|cont[aá]ctenos|"
+                   r"cel(?:ular)?\b|\b9\d{2}[ .]?\d{3}[ .]?\d{3}|s[ií]guenos|auspicia", re.I)
+
+
+def filtro_radio(x: str) -> str | None:
+    """None si el fragmento va al LLM; si no, el motivo."""
+    palabras = re.findall(r"\w+", x.lower())
+    if len(palabras) < 40 or len(set(palabras)) / len(palabras) < 0.35:
+        return "musica_o_ruido"  # canciones: pocas palabras distintas que se repiten
+    if NO_ES.search(x):
+        return "no_es_protesta"
+    if len(RELIGIOSO.findall(x)) >= 3:
+        return "religioso"
+    if len(AVISO.findall(x)) >= 3:
+        return "aviso"
+    fuertes = len(FUERTE.findall(x))
+    if fuertes >= 2 or (fuertes and CONTEXTO.search(x)):
+        return None
+    return "sin_medida_de_lucha"
+
+
 def notas(radio, inicio, texto):
     if len(texto) < 100:  # música o silencio
         return []
-    medio, salida = radio["medio"], []
+    medio, salida, vistos = radio["medio"], [], set()
     for i, x in enumerate(trozos(texto), 1):
+        huella = " ".join(re.findall(r"\w+", x.lower()))[:300]
+        if huella in vistos:  # el mismo aviso o la misma cortina repetida en la franja
+            continue
+        vistos.add(huella)
         titular = f"{medio}, en vivo {inicio:%d/%m/%Y %H:%M} ({i})"
         salida.append({"id": id_nota(medio, titular), "medio": medio, "titular": titular, "resumen": x,
                        "publicado": inicio.isoformat(timespec="minutes"), "enlace": radio["stream"],
-                       "departamento": radio["departamento"], "filtro": filtro(x)})
+                       "departamento": radio["departamento"], "filtro": filtro_radio(x)})
     return salida
 
 

@@ -203,3 +203,24 @@ def test_cadena_llm_salta_proveedores_sin_clave(monkeypatch):
     assert [m for m, _, _ in llm.cadena()] == ["a", "c"]
     monkeypatch.setenv("GEMINI_API_KEY", "y")
     assert [m for m, _, _ in llm.cadena()] == ["a", "b", "c"]
+
+
+def test_filtro_radio():
+    from tremor.radio import filtro_radio
+    noticia = ("Los comuneros de Chumbivilcas anunciaron un paro indefinido desde el lunes contra la empresa minera "
+               "por el incumplimiento de las actas firmadas, informó el presidente del frente de defensa de la "
+               "provincia, que pidió la presencia de la presidencia del consejo de ministros en la zona para dialogar")
+    assert filtro_radio(noticia) is None
+    assert filtro_radio("mi amor mi amor " * 30) == "musica_o_ruido"
+    predica = ("Isaías capítulo 32, hermanos, lo dice la palabra de Dios: mi pueblo habitará en morada de paz. "
+               "Amén, hermanos, el Señor nuestro Dios es la mejor seguridad que tenemos en esta vida, y no hay otra "
+               "seguridad que la de Jesús, que nos da su paz en la casa y en el trabajo de cada día con la familia")
+    assert filtro_radio(predica) == "religioso"
+
+
+def test_boosting_con_variable_vacia():
+    import numpy as np
+    from tremor.modelo import modelos
+    x = np.random.default_rng(0).random((400, 3)); x[:, 1] = np.nan
+    m = modelos()["gradient_boosting"].fit(x, (x[:, 0] > .5).astype(int))
+    assert m.predict_proba(x[:5]).shape == (5, 2)

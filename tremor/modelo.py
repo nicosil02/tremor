@@ -336,6 +336,25 @@ FOTOS = ["oficina_ambiental", "atiende_denuncias_ambientales", "participacion_fo
 MIEMBROS = ("lasso", "bosque", "gradient_boosting")  # el ensamble los promedia (como en 14.388, ML for wage prediction)
 
 
+class SinVacias:
+    """Las variables que aún no existían en la ventana de entrenamiento (IDH desde 2017, canon por persona…) quedan
+    toda en NaN, y el boosting se cae al buscar sus cortes: se ponen en 0 (sin información) en el ajuste y al predecir."""
+    def fit(self, x, y=None):
+        self.vacias = np.isnan(np.asarray(x, dtype=float)).all(axis=0)
+        return self
+
+    def transform(self, x):
+        x = np.array(x, dtype=float)
+        x[:, self.vacias] = 0.0
+        return x
+
+    def get_params(self, deep=True):
+        return {}
+
+    def set_params(self, **kw):
+        return self
+
+
 def modelos():
     """La competencia de modelos de los cursos del profesor (14.388 y MGTECON 634, en github.com/d2cml-ai):
     lineales con y sin penalización, árbol podado, bosque y boosting; todos de scikit-learn."""
@@ -353,8 +372,8 @@ def modelos():
             "arbol": DecisionTreeClassifier(max_depth=4, min_samples_leaf=500, random_state=0),
             "bosque": RandomForestClassifier(n_estimators=200, min_samples_leaf=50, max_features=0.3, n_jobs=2,  # -1 copia el panel por núcleo: sin memoria en la laptop
                                              random_state=0),
-            "gradient_boosting": HistGradientBoostingClassifier(max_iter=300, learning_rate=0.05, min_samples_leaf=200,
-                                                                l2_regularization=1.0, random_state=0)}
+            "gradient_boosting": make_pipeline(SinVacias(), HistGradientBoostingClassifier(
+                max_iter=300, learning_rate=0.05, min_samples_leaf=200, l2_regularization=1.0, random_state=0))}
 
 
 # Punto 6: cada modelo prueba 3 valores de su parámetro principal; gana el de mejor precisión en el top 20 de un
@@ -362,7 +381,7 @@ def modelos():
 GRILLA = {"logistica": [{}], "lasso": [{"logisticregression__C": c} for c in (0.01, 0.05, 0.2)],
           "arbol": [{"max_depth": d} for d in (3, 4, 6)],
           "bosque": [{"min_samples_leaf": h} for h in (20, 50, 150)],
-          "gradient_boosting": [{"learning_rate": a} for a in (0.02, 0.05, 0.1)]}
+          "gradient_boosting": [{"histgradientboostingclassifier__learning_rate": a} for a in (0.02, 0.05, 0.1)]}
 VALIDA = 2021 * 12
 AFINADO = {}  # (objetivo, modelo) -> parámetros elegidos
 

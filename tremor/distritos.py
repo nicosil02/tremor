@@ -563,8 +563,33 @@ def censo(con):
     guardar(con, filas, f"{REDATAM} (INEI, Censos Nacionales 2017, REDATAM CPV2017DI)")
 
 
+def acled_api(con):
+    """ACLED del Perú 2018+ desde su API (cuenta gratuita; ACLED_EMAIL y ACLED_PASSWORD, secretos del workflow
+    mensual del modelo) al mismo CSV que el Data Export Tool, y lo carga con acled(). El CSV no sale de la máquina."""
+    import os
+    import pandas as pd
+    t = requests.post("https://acleddata.com/oauth/token", timeout=60,
+                      data={"username": os.environ["ACLED_EMAIL"], "password": os.environ["ACLED_PASSWORD"],
+                            "grant_type": "password", "client_id": "acled"})
+    t.raise_for_status()
+    cabecera, filas, pagina = {"Authorization": f"Bearer {t.json()['access_token']}"}, [], 1
+    while True:
+        r = requests.get("https://acleddata.com/api/acled/read", headers=cabecera, timeout=120,
+                         params={"country": "Peru", "event_date": "2018-01-01|2100-12-31",
+                                 "event_date_where": "BETWEEN", "limit": 5000, "page": pagina})
+        r.raise_for_status()
+        datos = r.json()["data"]
+        filas += datos
+        if len(datos) < 5000:
+            break
+        pagina += 1
+    ACLED.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(filas).to_csv(ACLED, index=False)
+    acled(con)
+
+
 PASOS = {"pnud": pnud, "pobreza": pobreza, "catastro": catastro, "pasivos": pasivos, "oefa": oefa, "onpe": onpe,
-         "comunidades": comunidades, "vias": vias, "censo": censo, "ambiente": ambiente, "senace": senace, "ana": ana, "oefa_denuncias": oefa_denuncias, "emergencias": emergencias, "geobosques": geobosques, "renamu": renamu, "acled": acled}
+         "comunidades": comunidades, "vias": vias, "censo": censo, "ambiente": ambiente, "senace": senace, "ana": ana, "oefa_denuncias": oefa_denuncias, "emergencias": emergencias, "geobosques": geobosques, "renamu": renamu, "acled": acled, "acled_api": acled_api}
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(prog="python -m tremor.distritos")
@@ -573,7 +598,7 @@ if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
     con = conectar()
     for nombre, paso in PASOS.items():
-        if a.paso in (nombre, "todo"):
+        if a.paso == nombre or (a.paso == "todo" and nombre != "acled_api"):  # la API solo en el workflow
             print(nombre)
             paso(con)
     (DATOS / "exportes").mkdir(parents=True, exist_ok=True)
