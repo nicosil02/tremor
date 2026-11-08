@@ -119,6 +119,21 @@ def serie_bcrp(texto: str, desde: str = "2020-01", hasta: str = "2100-12") -> li
 
 
 @mcp.tool()
+def alerta(n: int = 20, extractiva: bool = True, ubigeo: str | None = None) -> dict:
+    """Alerta del modelo (specs/005-modelo): probabilidad de una medida de fuerza (paro, bloqueo, toma...) en los
+    3 meses siguientes al último reporte, por distrito, con sus razones. extractiva=True ordena por la de tema
+    minero, de hidrocarburos o ambiental; ubigeo da un solo distrito. Incluye cómo le fue al modelo en 2024+."""
+    orden = "puesto_extractivo" if extractiva else "puesto"
+    filtro, args = ("WHERE ubigeo = ?", (ubigeo,)) if ubigeo else ("", ())
+    filas = _sql(f"SELECT * FROM alerta {filtro} ORDER BY {orden} LIMIT ?", (*args, n))
+    prueba = _sql("SELECT objetivo, modelo, metrica, ROUND(valor, 3) AS valor FROM modelo_metrica WHERE metrica IN "
+                  "('precision_top20', 'precision_top20_nuevos', 'pr_auc', 'tasa_base') ORDER BY objetivo, modelo")
+    return {"distritos": filas, "desempeno_2024_en_adelante": prueba,
+            "como_leer": "prob = probabilidad de nivel ≥ 3 en la ventana; precision_top20 = de los 20 distritos más "
+                         "riesgosos de cada mes, qué fracción tuvo de verdad una medida de fuerza (prueba 2024+)."}
+
+
+@mcp.tool()
 def ranking(tipo: str = "socioambiental", n: int = 15, sin_capitales: bool = True) -> list[dict]:
     """Distritos con más protestas en la EGPP. tipo: "socioambiental", "laboral_minero" o "todos". Sin capitales
     por defecto: cuando la EGPP no sabe el distrito codifica la capital, que entonces queda inflada."""
