@@ -320,3 +320,23 @@ def fusionar(df: pd.DataFrame) -> pd.DataFrame:
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
     {"bajar": bajar, "extraer": extraer}[sys.argv[1]]()
+
+
+CLAVES = ("bambas", "atacocha", "brocal", "chancas", "constancia", "porvenir", "cerro verde", "antapaccay",
+          "san rafael", "cerro lindo", "uchucchacua", "yanacocha", "toquepala", "cuajone", "cerro pasco")
+
+
+def ubigeos_incidentes(con) -> "pd.DataFrame":
+    """Incidentes de un sitio concreto → (ubigeo, fecha) de cada distrito de la unidad (tabla `operacion`, OEFA).
+    Los de alcance nacional ("Perú") no se ubican."""
+    import pandas as pd
+    from tremor.db import RAIZ
+    from tremor.lugares import norm
+    d = pd.read_csv(RAIZ / "datos" / "crudos" / "bolsa" / "incidentes.csv")
+    op = pd.read_sql("SELECT empresa, unidad, ubigeo FROM operacion WHERE tipo = 'mineria'", con)
+    nombre = [norm(f"{e} {u}") for e, u in zip(op.empresa, op.unidad)]
+    filas = []
+    for r in d.itertuples():
+        for k in (k for k in CLAVES if k in norm(r.unidad)):
+            filas += [(u, r.fecha_inicio) for u, n in zip(op.ubigeo, nombre) if k in n]
+    return pd.DataFrame(filas, columns=["ubigeo", "fecha"]).drop_duplicates()

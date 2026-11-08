@@ -337,7 +337,7 @@ def test_gobierno_titulos_jne_y_revocatoria():
     csv = ("UBIGEO;DEPARTAMENTO;PROVINCIA;DISTRITO;UBICACION_EN_CEDULA;VOTOS_SI;VOTOS_NO\n"
            "030317;APURIMAC;ANDAHUAYLAS;HUAYANA;1;55;67\n030317;APURIMAC;ANDAHUAYLAS;HUAYANA;1;45;33\n"
            "030317;APURIMAC;ANDAHUAYLAS;HUAYANA;2;99;0\n")  # la posición 2 (regidor) no cuenta
-    assert resultado_revocatoria(csv, False) == {"030206": 50.0}  # ubigeo RENIEC 030317 → INEI 030206
+    assert resultado_revocatoria(csv.splitlines(), False) == {"030206": (50.0, 1, 100.0)}  # ubigeo RENIEC 030317 → INEI 030206
 
 
 def test_mef_mancomunidad_no_pisa_a_la_municipalidad():
@@ -345,3 +345,17 @@ def test_mef_mancomunidad_no_pisa_a_la_municipalidad():
     filas = [{"nombre": "050101-300507: MUNICIPALIDAD PROVINCIAL DE HUAMANGA", "pim": 9, "devengado": 7},
              {"nombre": "050101-301999: MANCOMUNIDAD MUNICIPAL LOS WARI- MANWARI", "pim": 1, "devengado": 1}]
     assert por_municipalidad(filas) == {"050101": ("MUNICIPALIDAD PROVINCIAL DE HUAMANGA", 9, 7)}
+
+
+def test_fusion_estima_lo_que_nadie_vio():
+    """Tres listas independientes que ven 50% cada una de 800 protestas: ninguna ve 1/8 → unas 100 no vistas."""
+    import numpy as np
+    import pandas as pd
+    from tremor.fusion import fusion, no_vistas
+    r = np.random.default_rng(0)
+    vistas = {k: r.random(800) < 0.5 for k in ("defensoria", "egpp", "acled")}
+    fuentes = {k: pd.DataFrame({"ubigeo": "080101", "m": np.flatnonzero(v)}) for k, v in vistas.items()}
+    f = fusion(fuentes)
+    assert len(f) == sum(np.any(list(vistas.values()), axis=0))
+    lo, hi, ll = no_vistas(f, ("defensoria", "egpp", "acled"))
+    assert 70 < ll < 135 and lo <= ll <= hi
