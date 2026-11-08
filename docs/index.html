@@ -34,26 +34,46 @@
   .panel { overflow-y: auto; background: var(--papel); border-right: 1px solid var(--linea); display: flex; flex-direction: column; }
   .mapa { position: relative; }
   #mapa { position: absolute; inset: 0; }
-  .franja { position: absolute; left: 16px; right: 60px; bottom: 16px; z-index: 3; display: grid; grid-template-columns: 1.15fr 0.9fr 1.2fr 1.1fr; gap: 10px; align-items: stretch; }
-  .franja[hidden] { display: none; }
-  .cuadro { background: var(--papel); border: 1px solid var(--linea); border-radius: 10px; padding: 12px 14px; height: 270px; overflow-y: auto;
-            box-shadow: 0 10px 28px rgb(28 38 41 / .22); font-size: 15px; line-height: 1.4; color: var(--tinta-2); }
-  .cuadro h3 { font-size: 13px; font-weight: 650; color: var(--tinta-3); margin: 0 0 6px; letter-spacing: 0.01em; }
-  .cuadro h4 { font-size: 14px; font-weight: 650; color: var(--tinta); margin: 10px 0 2px; }
-  .cuadro ul { margin: 0; padding-left: 18px; }
-  .cuadro .grande { display: flex; align-items: baseline; gap: 8px; }
-  .cuadro .grande b { font-size: 42px; line-height: 1; font-weight: 750; font-variation-settings: var(--angosto); color: var(--tinta); }
-  .cuadro .grande span { font-size: 16px; font-weight: 650; color: var(--cobre); }
-  .cuadro .cuanto { font-size: 14px; margin: 6px 0 0; }
-  .cerrar-franja { position: absolute; right: -44px; bottom: 0; width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--linea); background: var(--papel);
-                   font-size: 20px; line-height: 1; cursor: pointer; color: var(--tinta-2); box-shadow: 0 6px 18px rgb(28 38 41 / .2); }
-  .cerrar-franja:active { transform: scale(0.97); }
+  .alertas { list-style: none; margin: 0; padding: 0; }
+  .alerta { display: grid; grid-template-columns: 10px 1fr auto; gap: 12px; align-items: start; padding: 12px 0; border-top: 1px solid var(--linea); }
+  .alerta:first-child { border-top: 0; padding-top: 4px; }
+  .sev { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; display: inline-block; }
+  .sev.alta { background: #b3261e; }
+  .sev.media { background: var(--cobre-2); }
+  .a-meta { display: flex; gap: 8px; font-size: 13px; color: var(--tinta-3); }
+  .a-meta b { color: var(--tinta-2); font-weight: 600; }
+  .a-tit { font-weight: 600; color: var(--tinta); line-height: 1.3; margin-top: 2px; }
+  .a-src { font-size: 13px; color: var(--tinta-3); margin-top: 2px; }
+  .a-src a { color: inherit; }
+  .prioridad { display: flex; gap: 14px; font-size: 13px; color: var(--tinta-3); margin: 0 0 8px; }
+  .prioridad .sev { width: 8px; height: 8px; margin: 0 5px 0 0; }
+  .btn { font: inherit; font-size: 14px; font-weight: 600; padding: 6px 11px; border-radius: 6px; border: 1px solid #b9c4c3; background: #fff; color: var(--tinta);
+         cursor: pointer; white-space: nowrap; box-shadow: 0 1px 2px rgb(28 38 41 / .08); transition: transform 140ms var(--ease-out), background-color 140ms ease; }
+  .btn:hover { background: var(--piedra); }
+  .btn:active { transform: scale(0.97); }
+  .panel.en-detalle #alertas-sec, .panel.en-detalle #bloque-ops, .panel.en-detalle #avisos-sec { display: none; }
+  .t-ops { margin: 0; padding: 18px 24px 0; font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho); border-top: 1px solid var(--linea); }
+  .detalle-op { padding: 6px 24px 22px; }
+  .detalle-op .volver { margin-bottom: 16px; }
+  .detalle-op h2 { margin: 0; font-size: 24px; font-weight: 720; font-variation-settings: var(--ancho); line-height: 1.15; }
+  .detalle-op .lugar-op { color: var(--tinta-3); margin: 2px 0 12px; font-size: 15px; }
+  .riesgo-op { display: flex; align-items: center; gap: 12px; }
+  .riesgo-op b { font-size: 48px; line-height: 1; font-weight: 750; font-variation-settings: var(--angosto); }
+  .nivel { font-size: 14px; font-weight: 650; padding: 3px 9px; border-radius: 4px; }
+  .nivel.n0 { background: #e3ebe7; color: #3c5a4c; }
+  .nivel.n1 { background: var(--cobre-1); color: var(--cobre-4); }
+  .nivel.n2 { background: #f2c9b0; color: #7a2a0e; }
+  .nivel.n3 { background: var(--cobre-4); color: #fff; }
+  .detalle-op h3 { font-size: 16px; font-weight: 650; color: var(--tinta); margin: 18px 0 8px; padding-top: 14px; border-top: 1px solid var(--linea); }
+  .detalle-op h4 { font-size: 15px; font-weight: 650; color: var(--tinta); margin: 12px 0 4px; }
+  .detalle-op p, .detalle-op li { font-size: 15px; color: var(--tinta-2); }
+  .detalle-op ul { margin: 0; padding-left: 18px; }
+  .detalle-op .cuanto { margin: 10px 0 0; }
   .agenda { list-style: none; padding: 0 !important; margin: 0; display: grid; gap: 8px; }
   .agenda li { display: grid; grid-template-columns: 50px 1fr; gap: 8px; }
   .agenda time { font-weight: 650; color: var(--tinta); font-size: 14px; }
   .agenda li.anun time { color: var(--patina); }
   .agenda small { display: block; color: var(--tinta-3); font-size: 13px; }
-  .mapa.con-franja .leyenda { top: 16px; bottom: auto; }
   .orden { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 4px 24px 0; font-size: 14px; color: var(--tinta-3); }
   .orden select { font: inherit; font-size: 14px; color: var(--tinta); border: 1px solid var(--linea); border-radius: 6px; padding: 4px 8px; background: #fff; }
   @media (max-width: 900px) {
@@ -62,10 +82,6 @@
     .panel { border-right: 0; }
     .leyenda { left: 8px; bottom: 8px; padding: 6px 8px; font-size: 12px; gap: 3px; }
     .leyenda b { font-size: 12px; }
-    .franja { left: 8px; right: 8px; bottom: 8px; grid-template-columns: repeat(4, 84%); overflow-x: auto; scroll-snap-type: x mandatory; }
-    .cuadro { scroll-snap-align: start; height: 36dvh; }
-    .cerrar-franja { right: 0; bottom: auto; top: -44px; }
-    .mapa { height: 70dvh; }
   }
 
   .cabeza { padding: 20px 24px 18px; border-bottom: 1px solid var(--linea); }
@@ -82,8 +98,8 @@
   .vistas button[aria-selected="true"] { background: #fff; color: var(--tinta); box-shadow: 0 1px 3px rgb(28 38 41 / .12); }
   .cuanto { margin: 0 0 4px; font-size: 16px; }
   .cuanto b { font-weight: 650; }
-  .franja ul.temas { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 6px 0 0; }
-  .franja ul.temas li { margin: 0; }
+  .detalle-op ul.temas { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 6px 0 0; }
+  .detalle-op ul.temas li { margin: 0; }
   .temas li { padding: 4px 9px; border-radius: 6px; background: rgb(180 84 42 / .09); font-size: 15px; }
   .temas li small { color: var(--tinta-3); font-size: 14px; }
   .sugerencias { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
@@ -114,20 +130,21 @@
   .op .dentro ul { margin: 0; padding-left: 18px; }
   .op .dentro li { margin: 2px 0; }
   .fondo { margin: 12px 0 0; }
-  .franja ul.casos { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 10px; }
-  .franja ul.casos { gap: 4px; }
-  .franja ul.casos li { border-left: 3px solid #ff7043; }
-  .franja ul.casos button { all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer; padding: 6px 10px; border-radius: 0 6px 6px 0; }
-  .franja ul.casos button:hover { background: rgb(255 112 67 / .08); }
-  .franja ul.casos button:focus-visible { outline: 2px solid #ff7043; }
-  .franja ul.casos li.elegida button { background: rgb(255 112 67 / .14); }
-  .franja ul.casos button span { display: block; font-size: 15px; }
-  .franja ul.casos p { display: none; margin: 0; padding: 0 10px 8px; }
-  .franja ul.casos li.elegida p { display: block; }
-  .franja ul.casos b { color: var(--tinta); font-weight: 650; }
-  .franja ul.casos span { color: var(--tinta-3); }
-  .franja ul.casos p { font-size: 15px; background: rgb(255 112 67 / .14); border-radius: 0 0 6px 0; }
-  .franja .fuente { font-size: 13px; color: var(--tinta-3); margin: 6px 0 0; }
+  .detalle-op ul.casos { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 10px; }
+  .detalle-op ul.casos { gap: 4px; }
+  .detalle-op ul.casos li { border: 1px solid var(--linea); border-left: 3px solid #ff7043; border-radius: 0 6px 6px 0; background: #fff; }
+  .detalle-op ul.casos button::after { content: "Ver en el mapa ›"; display: block; margin-top: 4px; font-size: 13px; font-weight: 600; color: #c2410c; }
+  .detalle-op ul.casos button { all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer; padding: 6px 10px; border-radius: 0 6px 6px 0; }
+  .detalle-op ul.casos button:hover { background: rgb(255 112 67 / .08); }
+  .detalle-op ul.casos button:focus-visible { outline: 2px solid #ff7043; }
+  .detalle-op ul.casos li.elegida button { background: rgb(255 112 67 / .14); }
+  .detalle-op ul.casos button span { display: block; font-size: 15px; }
+  .detalle-op ul.casos p { display: none; margin: 0; padding: 0 10px 8px; }
+  .detalle-op ul.casos li.elegida p { display: block; }
+  .detalle-op ul.casos b { color: var(--tinta); font-weight: 650; }
+  .detalle-op ul.casos span { color: var(--tinta-3); }
+  .detalle-op ul.casos p { font-size: 15px; background: rgb(255 112 67 / .14); border-radius: 0 0 6px 0; }
+  .detalle-op .fuente { font-size: 13px; color: var(--tinta-3); margin: 6px 0 0; }
   .op .prob .delta { display: block; font-size: 14px; font-weight: 600; }
   .sube { color: var(--cobre-4); }
   .baja { color: var(--patina); }
@@ -212,16 +229,20 @@
       <div class="sugerencias" id="sugerencias" hidden></div>
     </div>
     <div class="titular"><h1 id="h1">Cargando</h1><p id="bajada"></p></div>
+    <div class="seccion" id="alertas-sec" hidden><h2>Alertas</h2>
+      <div class="prioridad"><span><i class="sev alta"></i>Prioridad alta</span><span><i class="sev media"></i>Prioridad media</span></div>
+      <ul class="alertas" id="alertas"></ul></div>
+    <div class="detalle-op" id="detalle-op" hidden></div>
+    <div id="bloque-ops"><h2 class="t-ops" id="t-ops" hidden>Operaciones</h2>
     <div class="orden"><label for="ordenar">Ordenar por</label>
       <select id="ordenar"><option value="prob">Mayor probabilidad</option><option value="prob-asc">Menor probabilidad</option>
         <option value="nombre">Nombre</option><option value="region">Región</option></select></div>
-    <ol class="ops" id="ops"></ol>
-    <div class="seccion"><h2>Protestas y anuncios recientes</h2><p id="nota-avisos"></p><ul class="avisos" id="avisos"></ul></div>
+    <ol class="ops" id="ops"></ol></div>
+    <div class="seccion" id="avisos-sec"><h2>Protestas y anuncios recientes</h2><p id="nota-avisos"></p><ul class="avisos" id="avisos"></ul></div>
     <div class="pie" id="pie">Con datos de la Defensoría del Pueblo, la base de protestas de la PUCP y unas 60 variables por distrito. <a href="metodo.html">Cómo se calcula y qué tan bien avisa</a>.</div>
   </div>
   <div class="mapa">
     <div id="mapa"></div>
-    <div class="franja" id="franja" hidden></div>
     <div class="cargando" id="cargando">Cargando el mapa</div>
     <div class="leyenda" id="leyenda" hidden>
       <div class="riesgo"><b>Probabilidad de paro o bloqueo en la zona de influencia</b>
@@ -236,7 +257,7 @@
         <div class="linea"><i class="l-lazo"></i>Su conflicto es con esta unidad</div></div>
       <div class="punto"><i style="background:var(--patina)"></i>Protesta anunciada</div>
       <div class="punto"><i style="background:var(--tinta-3)"></i>Protesta reciente</div>
-      <div class="punto"><i style="background:#fff;border:2px solid var(--tinta)"></i>Operación</div>
+      <div class="punto"><i style="background:var(--cobre-3);border:2px solid #fff;box-shadow:0 0 0 1px var(--tinta-3)"></i>Operación, con el color de su riesgo</div>
     </div>
   </div>
 </div>
@@ -391,7 +412,11 @@ function iniciar(D, G, H, C) {
       "circle-radius": 6, "circle-stroke-width": 1.5, "circle-stroke-color": "#fff",
       "circle-color": ["match", ["get", "k"], "anunciada", css("--patina"), "via", css("--tinta"), css("--tinta-3")] } });
     map.addLayer({ id: "ops", type: "circle", source: "puntos", filter: ["==", ["get", "k"], "op"], paint: {
-      "circle-radius": 5, "circle-color": "#fff", "circle-stroke-width": 2.2, "circle-stroke-color": css("--tinta") } });
+      "circle-radius": ["case", ["==", ["get", "e"], 1], 9, 5],
+      "circle-color": ["case", ["==", ["get", "e"], 1], ["step", ["get", "p"], css("--cobre-1"), 0.1, css("--cobre-2"), 0.25, css("--cobre-3"), 0.5, css("--cobre-4")], "#fff"],
+      "circle-stroke-width": 2.2, "circle-stroke-color": ["case", ["==", ["get", "e"], 1], "#fff", css("--tinta")] } });
+    map.addLayer({ id: "ops-nombre", type: "symbol", source: "puntos", filter: ["all", ["==", ["get", "k"], "op"], ["==", ["get", "e"], 1]],
+      layout: { ...TEXTO, "text-field": ["get", "t"], "text-size": 13, "text-offset": [0, 1.3], "text-anchor": "top" }, paint: HALO });
     map.addLayer({ id: "eventos-nombre", type: "symbol", source: "puntos", minzoom: 7.5, filter: ["!=", ["get", "k"], "op"],
       layout: { ...TEXTO, "text-field": ["get", "t"], "text-size": 12, "text-offset": [0, 1.1], "text-anchor": "top" }, paint: HALO });
     for (const capa of ["eventos", "ops", "zonas", "com-fondo", "com-punto", "huella"]) {
@@ -453,7 +478,10 @@ function iniciar(D, G, H, C) {
       map.setFilter(c, suyas ? ["in", ["get", "empresa"], ["literal", empresas]] : ["==", ["get", "empresa"], ""])));
     marcar(null);
     const zonas = new Set(filas.map(f => f.u));
-    cerca(zonas, !suyas);
+    const r = cerca(zonas, !suyas);
+    document.getElementById("alertas-sec").hidden = document.getElementById("t-ops").hidden = !suyas;
+    document.getElementById("avisos-sec").hidden = !!suyas;
+    if (suyas) alertas(r.ev, r.vias);
     dibujar(zonas, !suyas);
   }
 
@@ -473,22 +501,20 @@ function iniciar(D, G, H, C) {
       .filter(r => r && !r.startsWith("cobre") && Math.abs(a.cambio_zona_1m) >= 0.015).map(oracion).slice(0, 3);  // el precio del cobre no es una señal local
     return porque.length ? `<h4>${sube ? "Factores que lo elevan" : "Factores que lo reducen"}</h4><ul>${porque.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : "";
   }
-  // La ficha de una operación: riesgo, temas, comunidades y agenda, a la vista a la vez
-  const franja = document.getElementById("franja"), mapaEl = document.querySelector(".mapa");
+  const panel = document.querySelector(".panel"), det = document.getElementById("detalle-op");
+  const nivelN = p => p == null ? 0 : p >= 0.5 ? 3 : p >= 0.25 ? 2 : p >= 0.1 ? 1 : 0;
+  // La ficha de una operación, en el panel: riesgo, fechas, comunidades, temas e historial, en ese orden
   function llenarFicha(f) {
     const a = f.a, p = mesP(a);
-    franja.innerHTML = `<button type="button" class="cerrar-franja" aria-label="Cerrar la ficha">×</button>
-      <section class="cuadro"><h3>Riesgo de paro o bloqueo, ${esc(enMes.replace(/^en /, ""))}</h3>
-        <div class="grande"><b>${pct(p)}</b><span>${banda(p)}</span></div>${cuanto(a)}${factores(a)}${linea(f.u)}</section>
-      <section class="cuadro">${vigilar(f.u) || `<h3>Temas por atender</h3><p style="margin:0">Los conflictos y protestas recientes de la zona no registran un tema predominante.</p>`}</section>
-      <section class="cuadro">${quienes(f.u)}</section>
-      <section class="cuadro">${agenda(f.u)}</section>`;
-    franja.hidden = false; mapaEl.classList.add("con-franja");
-    map.setPadding({ top: 0, left: 0, right: 0, bottom: innerWidth > 900 ? franja.offsetHeight + 16 : 0 });  // la operación queda a la vista, sobre la franja
-    franja.querySelector(".cerrar-franja").onclick = () => { const li = document.querySelector(".op.abierta"); if (li) abrir(+li.dataset.i, true); };
-    franja.querySelectorAll(".casos button").forEach(b => b.onclick = () => elegirCaso(b.parentNode, true));
+    det.innerHTML = `<button type="button" class="btn volver">← ${enPais ? "Volver a la lista" : "Alertas y operaciones"}</button>
+      <h2>${esc(titFila(f))}</h2><p class="lugar-op">${esc(lugar(f.u))}${enPais ? "" : `. ${esc(nombre(f.os[0].empresa))}`}</p>
+      <div class="riesgo-op"><b>${pct(p)}</b><span class="nivel n${nivelN(p)}">Riesgo ${banda(p).toLowerCase()}, ${esc(enMes.replace(/^en /, ""))}</span></div>
+      ${cuanto(a)}${factores(a)}${agenda(f.u)}${quienes(f.u)}${vigilar(f.u)}${linea(f.u)}`;
+    det.hidden = false; panel.classList.add("en-detalle"); panel.scrollTop = 0;
+    det.querySelector(".volver").onclick = () => { const li = document.querySelector(".op.abierta"); if (li) abrir(+li.dataset.i, true); };
+    det.querySelectorAll(".casos button").forEach(b => b.onclick = () => elegirCaso(b.parentNode, true));
   }
-  function cerrarFicha() { franja.hidden = true; franja.innerHTML = ""; mapaEl.classList.remove("con-franja"); map.setPadding({ top: 0, left: 0, right: 0, bottom: 0 }); }
+  function cerrarFicha() { det.hidden = true; det.innerHTML = ""; panel.classList.remove("en-detalle"); }
 
   // Deja solo las señales que van en la dirección del cambio y redondea lo habitual
   function coherente(s, r) {
@@ -568,7 +594,7 @@ function iniciar(D, G, H, C) {
     const paros = x.y.map((y, k) => y ? `<circle cx="${(k * w + w / 2).toFixed(1)}" cy="4" r="3" fill="var(--tinta)"/>` : "").join("");
     const anio = m => Math.floor(m / 12);
     const vistos = x.y.filter((y, k) => y && x.pct[k] <= 0.1).length, total = x.y.filter(Boolean).length;
-    return `<h4>Historial 2024–2026</h4>
+    return `<h3>Historial 2024–2026</h3>
       <svg viewBox="0 0 ${W} ${Hh + 14}" width="100%" role="img" aria-label="Riesgo mensual de la zona y meses con paro">${barras}${paros}
         <text x="0" y="${Hh + 12}" font-size="12" fill="var(--tinta-3)">${anio(x.m0 + 1)}</text>
         <text x="${W}" y="${Hh + 12}" font-size="12" fill="var(--tinta-3)" text-anchor="end">${anio(x.m0 + n - 1)}</text></svg>
@@ -653,7 +679,7 @@ function iniciar(D, G, H, C) {
   }
   function globoCom(nombreCom, lngLat, u) {
     const cs = abierta ? casosDe(abierta.u) : [], k = cs.findIndex(c => c.com && llano(c.com) === llano(nombreCom)), c = cs[k];
-    const li = document.querySelector(`#franja .casos li[data-k="${k}"]`);
+    const li = document.querySelector(`#detalle-op .casos li[data-k="${k}"]`);
     if (li && !li.classList.contains("elegida")) { elegirCaso(li, false); li.scrollIntoView({ block: "nearest", behavior: quieto ? "auto" : "smooth" }); }
     map.setFilter("com-sel", ["==", ["get", "n"], nombreCom]);
     const dist = lugar(String(c?.ubigeo || u || "")).split(", ")[0];
@@ -745,7 +771,7 @@ function iniciar(D, G, H, C) {
     const vias = D.sutran.filter(s => toca(s.ubigeo)).map(s => ({ f: String(s.fecha_evento || "").slice(0, 10), anun: false,
       t: `Vía bloqueada en ${nombre(s.distrito || "")}, ${s.via || ""} ${s.km || ""}`, src: "SUTRAN" }));
     const items = [...ev, ...vias].sort((x, y) => (y.anun - x.anun) || (x.anun ? x.f.localeCompare(y.f) : y.f.localeCompare(x.f))).slice(0, 6);
-    return `<h3>Agenda de la zona</h3>` + (items.length
+    return `<h3>Fechas en la zona</h3>` + (items.length
       ? `<ol class="agenda">${items.map(x => `<li class="${x.anun ? "anun" : ""}"><time>${dia(x.f)}</time><div>${esc(x.t)}<small>${x.src}</small></div></li>`).join("")}</ol>`
       : `<p style="margin:0">No se registran protestas ni anuncios en la zona en los últimos 45 días.</p>`) +
       `<p class="fuente">Prensa regional, radio local y SUTRAN. En verde, lo anunciado. Actualizado al ${dia(D.creado)}.</p>`;
@@ -817,6 +843,39 @@ function iniciar(D, G, H, C) {
     puntosEventos = [
       ...ev.map(e => ({ c: centroDe(e.ubigeo), k: e.estado, t: `${corta(e)}, ${fecha(e).replace(/ de /, " ")}`, h: `<b>${esc(e.titular)}</b><br>${e.estado === "anunciada" ? "Anunciada" : "Ocurrió"} en ${esc(lugar(e.ubigeo))}. <a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.medio)}</a>` })),
       ...vias.map(s => ({ c: centroDe(s.ubigeo), k: "via", t: "Vía cortada", h: `<b>Vía cortada por una protesta</b><br>${esc(s.via || "")} ${esc(s.km || "")}` }))];
+    return { ev, vias };
+  }
+  // La operación a la que toca un lugar: la de su zona, si no la de su provincia, si no la de su departamento
+  function opDe(u) {
+    u = String(u || ""); let i = filas.findIndex(f => zonaDe(f.u).includes(u));
+    if (i < 0 && u.length >= 4) i = filas.findIndex(f => f.u.startsWith(u.slice(0, 4)));
+    if (i < 0) i = filas.findIndex(f => f.u.startsWith(u.slice(0, 2)));
+    return i;
+  }
+  // Las alertas del cliente: protestas anunciadas, vías bloqueadas y operaciones en riesgo alto, por prioridad y fecha
+  function alertas(ev, vias) {
+    const fuerza = s => /paro|bloqueo|huelga|toma|paraliz/i.test(s);
+    const items = [
+      ...ev.map(e => ({ f: String(e.fecha_evento || e.fecha_anuncio || "").slice(0, 10), i: opDe(e.ubigeo),
+        s: e.estado === "anunciada" && fuerza(`${e.accion} ${e.titular}`) ? "alta" : "media",
+        t: `${corta(e)} ${e.estado === "anunciada" ? "anunciado" : "registrado"} en ${lugar(e.ubigeo).split(", ")[0]}`,
+        src: `<a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.medio)}</a>` })),
+      ...vias.map(s => ({ f: String(s.fecha_evento || "").slice(0, 10), i: opDe(s.ubigeo), s: "alta",
+        t: `Vía bloqueada por una protesta en ${nombre(s.distrito || "")}, ${s.via || ""}`, src: "SUTRAN" })),
+      ...filas.map((f, i) => { const p = mesP(f.a) ?? 0;
+        return { f: String(D.creado), i, s: p >= 0.5 ? "alta" : p >= 0.25 ? "media" : null,
+                 t: `Riesgo ${banda(p).toLowerCase()} para ${enMes.replace(/^en /, "")}: ${pct(p)} de probabilidad de paro o bloqueo`, src: "Modelo Tremor" }; })
+    ].filter(x => x.s).sort((a, b) => (a.s === "alta" ? 0 : 1) - (b.s === "alta" ? 0 : 1) || b.f.localeCompare(a.f));
+    document.getElementById("alertas").innerHTML = items.slice(0, 8).map(x => `<li class="alerta"><span class="sev ${x.s}"></span>
+        <div><div class="a-meta"><time>${dia(x.f)}</time>${x.i >= 0 ? `<b>${esc(titFila(filas[x.i]))}</b>` : ""}</div>
+          <div class="a-tit">${esc(x.t)}</div><div class="a-src">${x.src}</div></div>
+        ${x.i >= 0 ? `<button type="button" class="btn" data-i="${x.i}">Ver en el mapa</button>` : ""}</li>`).join("")
+      || `<li class="alerta"><span></span><div class="a-tit">Sin alertas en los últimos 45 días.</div></li>`;
+    document.querySelectorAll("#alertas .btn").forEach(b => b.onclick = () => abrir(+b.dataset.i, true));
+    const altos = filas.filter(f => (mesP(f.a) ?? 0) >= 0.25).length, nAl = items.filter(x => x.s === "alta").length;
+    const hoy = new Date(String(D.creado) + "T12:00").toLocaleDateString("es-PE", { day: "numeric", month: "long", year: "numeric" });
+    document.getElementById("bajada").textContent = `Al ${hoy}. ${filas.length} ${filas.length === 1 ? "operación" : "operaciones"}, ` +
+      `${altos} con riesgo alto o crítico. ` + (nAl ? `${nAl} ${nAl === 1 ? "alerta" : "alertas"} de prioridad alta.` : "Sin alertas de prioridad alta.");
   }
 
 
@@ -827,13 +886,15 @@ function iniciar(D, G, H, C) {
       return { type: "Feature", geometry: f.geometry, properties: { p: mesP(a) ?? 0,
         h: `<b>${esc(lugar(f.properties.u))}</b><br>${pct(mesP(a))} de que haya un paro o bloqueo en la zona ${enMes}` } }; });
     map.getSource("zonas").setData({ type: "FeatureCollection", features: feats });
-    const pts = [...filas.map((f, i) => ({ c: puntoOp(f), k: "op", i })), ...puntosEventos].filter(p => p.c)
-      .map(p => ({ type: "Feature", geometry: { type: "Point", coordinates: p.c }, properties: { k: p.k, h: p.h || "", t: p.t || "", i: p.i ?? -1 } }));
+    // En la vista de una empresa el color va en sus operaciones; la zona queda como un fondo tenue
+    map.setPaintProperty("zonas", "fill-opacity", ["interpolate", ["linear"], ["zoom"], 9, pais ? 0.8 : 0.22, 10.5, 0]);
+    const pts = [...filas.map((f, i) => ({ c: puntoOp(f), k: "op", i, p: mesP(f.a) ?? 0, e: !pais, t: `${titFila(f)}\n${pct(mesP(f.a))}` })), ...puntosEventos].filter(p => p.c)
+      .map(p => ({ type: "Feature", geometry: { type: "Point", coordinates: p.c }, properties: { k: p.k, h: p.h || "", t: p.t || "", i: p.i ?? -1, p: p.p ?? 0, e: p.e ? 1 : 0 } }));
     map.getSource("puntos").setData({ type: "FeatureCollection", features: pts });
     const cs = filas.map(f => centroDe(f.u)).filter(Boolean);
     if (cs.length && !pais) {
       const b = cs.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(cs[0], cs[0]));
-      const cam = map.cameraForBounds(b, { padding: 110, maxZoom: 9 });
+      const cam = map.cameraForBounds(b, { padding: 140, maxZoom: 10.2 });
       vista = { ...cam, pitch: 20, bearing: 0 };
       map.flyTo({ ...vista, duration: quieto ? 0 : 1600, essential: true });
     } else {
