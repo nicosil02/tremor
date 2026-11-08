@@ -58,8 +58,12 @@
   .pest > h3:first-child { display: none; }
   .pest h3 { border-top: 0; padding-top: 0; margin-top: 16px; }
   #tabs-cliente { margin: 4px 24px 0; }
-  .panel.cliente:not(.ver-ops) #bloque-ops, .panel.cliente.ver-ops #alertas-sec, .panel.en-detalle #tabs-cliente { display: none; }
-  .panel.cliente .orden { padding-top: 12px; }
+  .panel:not([data-ver="alertas"]) #alertas-sec, .panel:not([data-ver="ops"]) #bloque-ops, .panel:not([data-ver="avisos"]) #avisos-sec,
+  .panel.en-detalle #tabs-cliente, #avisos-sec > h2 { display: none; }
+  .panel .orden { padding-top: 12px; }
+  #avisos-sec { border-top: 0; padding-top: 10px; }
+  .ops.corta > li:nth-child(n+11) { display: none; }
+  .mas { margin: 4px 24px 18px; }
   .panel.en-detalle #alertas-sec, .panel.en-detalle #bloque-ops, .panel.en-detalle #avisos-sec { display: none; }
   .t-ops { margin: 0; padding: 18px 24px 0; font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho); border-top: 1px solid var(--linea); }
   .detalle-op { padding: 6px 24px 22px; }
@@ -130,14 +134,14 @@
   .titular p { margin: 10px 0 0; color: var(--tinta-2); font-size: 17px; max-width: 46ch; }
 
   .ops { list-style: none; margin: 0; padding: 8px 12px 4px; }
-  .op > button { width: 100%; text-align: left; display: grid; grid-template-columns: 1fr auto; gap: 2px 14px; align-items: center; padding: 12px;
+  .op > button { width: 100%; text-align: left; display: grid; grid-template-columns: 1fr auto; gap: 2px 14px; align-items: center; padding: 9px 12px;
                  border: 0; border-radius: 8px; background: transparent; cursor: pointer; transition: background-color 140ms ease; }
   @media (hover: hover) and (pointer: fine) { .op > button:hover { background: var(--piedra); } }
   .op.abierta > button { background: var(--piedra); }
-  .op .nombre { font-weight: 650; font-size: 18px; }
+  .op .nombre { font-weight: 650; font-size: 17px; }
   .op .lugar { font-size: 15px; color: var(--tinta-3); grid-column: 1; }
   .op .prob { grid-row: 1 / span 2; grid-column: 2; text-align: right; }
-  .op .prob b { display: block; font-size: 34px; line-height: 1; font-weight: 700; font-variation-settings: var(--angosto); }
+  .op .prob b { display: block; font-size: 28px; line-height: 1; font-weight: 700; font-variation-settings: var(--angosto); }
   .op .prob small { display: block; font-size: 14px; color: var(--tinta-3); }
   .op .detalle { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 240ms var(--ease-out); }
   .op.abierta .detalle { grid-template-rows: 1fr; }
@@ -161,7 +165,7 @@
   .detalle-op ul.casos li.elegida button { background: rgb(255 112 67 / .08); }
   .detalle-op ul.casos p { display: none; }
   .detalle-op .fuente { font-size: 13px; color: var(--tinta-3); margin: 6px 0 0; }
-  .op .prob .delta { display: block; font-size: 14px; font-weight: 600; }
+  .op .prob .delta { font-size: 14px; font-weight: 600; }
   .sube { color: var(--cobre-4); }
   .baja { color: var(--patina); }
   @media (prefers-reduced-motion: reduce) { .op .detalle { transition: none; } }
@@ -247,7 +251,8 @@
     <div class="titular"><h1 id="h1">Cargando</h1><p id="bajada"></p></div>
     <div class="vistas pestanas" id="tabs-cliente" role="tablist" hidden>
       <button type="button" role="tab" data-c="alertas" aria-selected="true">Alertas</button>
-      <button type="button" role="tab" data-c="ops" aria-selected="false">Operaciones</button></div>
+      <button type="button" role="tab" data-c="ops" aria-selected="false">Operaciones</button>
+      <button type="button" role="tab" data-c="avisos" aria-selected="false">Protestas recientes</button></div>
     <div class="seccion" id="alertas-sec" hidden>
       <div class="prioridad"><span><i class="sev alta"></i>Prioridad alta</span><span><i class="sev media"></i>Prioridad media</span></div>
       <ul class="alertas" id="alertas"></ul></div>
@@ -256,7 +261,7 @@
     <div class="orden"><label for="ordenar">Ordenar por</label>
       <select id="ordenar"><option value="prob">Mayor probabilidad</option><option value="prob-asc">Menor probabilidad</option>
         <option value="nombre">Nombre</option><option value="region">Región</option></select></div>
-    <ol class="ops" id="ops"></ol></div>
+    <ol class="ops" id="ops"></ol><button type="button" class="btn mas" id="mas-ops" hidden></button></div>
     <div class="seccion" id="avisos-sec"><h2>Protestas y anuncios recientes</h2><p id="nota-avisos"></p><ul class="avisos" id="avisos"></ul></div>
     <div class="pie" id="pie">Con datos de la Defensoría del Pueblo, la base de protestas de la PUCP y unas 60 variables por distrito. <a href="metodo.html">Cómo se calcula y qué tan bien avisa</a>.</div>
   </div>
@@ -502,19 +507,26 @@ function iniciar(D, G, H, C) {
     marcar(null);
     const zonas = new Set(filas.map(f => f.u));
     const r = cerca(zonas, !suyas);
-    document.getElementById("alertas-sec").hidden = document.getElementById("tabs-cliente").hidden = !suyas;
-    document.querySelector(".panel").classList.toggle("cliente", !!suyas); verCliente("alertas");
+    document.getElementById("tabs-cliente").hidden = false;
+    document.getElementById("alertas-sec").hidden = document.getElementById("tabs-cliente").querySelector('[data-c="alertas"]').hidden = !suyas;
+    document.getElementById("tabs-cliente").querySelector('[data-c="avisos"]').hidden = !!suyas;
+    document.getElementById("tabs-cliente").querySelector('[data-c="ops"]').textContent = suyas ? "Operaciones" : "Zonas con mayor riesgo";
+    verCliente(suyas ? "alertas" : "ops");
     document.getElementById("avisos-sec").hidden = !!suyas;
     if (suyas) alertas(r.ev, r.vias);
     dibujar(zonas, !suyas);
   }
 
+  document.getElementById("mas-ops").onclick = () => { document.getElementById("ops").classList.remove("corta"); mas.hidden = true; };
   function lista(pais) {
+    const mas = document.getElementById("mas-ops");
+    document.getElementById("ops").classList.add("corta");
+    mas.hidden = filas.length <= 10; mas.textContent = `Ver las ${filas.length}`;
     document.getElementById("ops").innerHTML = filas.map((f, i) => {
       const a = f.a, donde = pais ? lugar(f.u).split(", ").slice(1).join(", ") + ", " + nombre((a.lugar || "").split(" / ")[0]) : lugar(f.u);
       return `<li class="op" data-i="${i}"><button type="button" aria-expanded="false">
           <span class="nombre">${esc(titFila(f))}</span><span class="lugar">${esc(donde)}</span>
-          <span class="prob"><b>${pct(mesP(a))}</b><small>${banda(mesP(a))}</small>${delta(a)}</span></button></li>`; }).join("");
+          <span class="prob"><b>${pct(mesP(a))}</b><small>${banda(mesP(a))}${corto(a)}</small></span></button></li>`; }).join("");
     document.querySelectorAll(".op > button").forEach(b => b.onclick = () => abrir(+b.parentNode.dataset.i, true));
   }
   // Los factores del mes, en la dirección del cambio
@@ -549,12 +561,11 @@ function iniciar(D, G, H, C) {
     det.querySelectorAll(".pest").forEach(x => x.hidden = x.dataset.p !== p);
   }
   // En la vista de una empresa, alertas y operaciones van en dos pestañas: nada queda abajo
-  const tabsCli = document.getElementById("tabs-cliente");
   function verCliente(c) {
-    tabsCli.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", b.dataset.c === c));
-    document.querySelector(".panel").classList.toggle("ver-ops", c === "ops");
+    document.getElementById("tabs-cliente").querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", b.dataset.c === c));
+    document.querySelector(".panel").dataset.ver = c;
   }
-  tabsCli.onclick = e => { const b = e.target.closest("button"); if (b) verCliente(b.dataset.c); };
+  document.getElementById("tabs-cliente").onclick = e => { const b = e.target.closest("button"); if (b) verCliente(b.dataset.c); };
   function cerrarFicha() { det.hidden = true; det.innerHTML = ""; panel.classList.remove("en-detalle"); }
 
   // Deja solo las señales que van en la dirección del cambio y redondea lo habitual
@@ -619,6 +630,11 @@ function iniciar(D, G, H, C) {
     const cuenta = x => [x.c && `${x.c} ${x.c === 1 ? "conflicto" : "conflictos"}`, x.p && `${x.p} ${x.p === 1 ? "protesta" : "protestas"}`].filter(Boolean).join(", ");
     return `<h3>Temas por atender</h3><ul class="temas">${t.map(x => `<li><details><summary><span>${x.n}</span><small>${cuenta(x)}</small></summary>
       <ul>${x.d.slice(0, 4).map(s => `<li>${s}</li>`).join("")}</ul></details></li>`).join("")}</ul>`;
+  }
+  // En la lista, una sola línea bajo el porcentaje: el nivel y cuánto se aparta de lo normal de la zona
+  function corto(a) {
+    const d = hayMes && a.cambio_zona_1m != null ? Math.round(a.cambio_zona_1m * 100) : 0;
+    return Math.abs(d) < 2 ? "" : `, <span class="delta ${d > 0 ? "sube" : "baja"}">${d > 0 ? "+" : "−"}${Math.abs(d)} pts</span>`;
   }
   function delta(a) {
     if (!hayMes || a.cambio_zona_1m == null) return `<small>de paro o bloqueo</small>`;
@@ -935,11 +951,11 @@ function iniciar(D, G, H, C) {
     const pts = [...filas.map((f, i) => ({ c: puntoOp(f), k: "op", i, p: mesP(f.a) ?? 0, e: !pais, t: `${titFila(f)}\n${pct(mesP(f.a))}` })), ...puntosEventos].filter(p => p.c)
       .map(p => ({ type: "Feature", geometry: { type: "Point", coordinates: p.c }, properties: { k: p.k, h: p.h || "", t: p.t || "", i: p.i ?? -1, p: p.p ?? 0, e: p.e ? 1 : 0 } }));
     map.getSource("puntos").setData({ type: "FeatureCollection", features: pts });
-    const cs = filas.map(f => centroDe(f.u)).filter(Boolean);
+    const cs = filas.map(f => puntoOp(f) || centroDe(f.u)).filter(Boolean);
     if (cs.length && !pais) {
       const b = cs.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(cs[0], cs[0]));
-      const cam = map.cameraForBounds(b, { padding: 140, maxZoom: 10.2 });
-      vista = { ...cam, pitch: 20, bearing: 0 };
+      const cam = map.cameraForBounds(b, { padding: 160, maxZoom: 12 });
+      vista = { ...cam, zoom: cam.zoom - (cam.zoom > 8 ? 0.4 : 0), pitch: cam.zoom > 8 ? 55 : 0, bearing: cam.zoom > 8 ? -15 : 0 };
       map.flyTo({ ...vista, duration: quieto ? 0 : 1600, essential: true });
     } else {
       vista = { ...map.cameraForBounds(PERU, { padding: 30 }), pitch: 0, bearing: 0 };
