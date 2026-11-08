@@ -1,6 +1,7 @@
 medio,departamento,provincia,ubigeo_provincia,stream,fuente
 Radio Doble R 96.3,Amazonas,Chachapoyas,0101,https://sp.onliveperu.com:7067/stream,onlineradiobox.com
 Reina de la Selva,Amazonas,Chachapoyas,0101,https://servistream.info:8248/stream,onlineradiobox.com
+La Única Tropical Jumbilla,Amazonas,Bongara,0103,https://stream.zeno.fm/see4wpyr9bhvv,radio-browser.info
 Radio Calor Bagua Grande,Amazonas,Utcubamba,0107,https://stream.zeno.fm/jyistjns8kmtv,onlineradiobox.com
 Radio Mega Mix siempre va con tigo,Amazonas,Utcubamba,0107,https://sp.onliveperu.com/8120/stream,onlineradiobox.com
 Radio Milenium,Amazonas,Utcubamba,0107,https://sp.onliveperu.com/8102/stream,web de la radio / radio-browser.info
@@ -9,7 +10,8 @@ Alegria Radio,Ancash,Huaraz,0201,https://radio.sistemasandinos.org:10974/;stream
 Kusikuy Radio,Ancash,Huaraz,0201,https://stream.zeno.fm/kxvansry6bytv,onlineradiobox.com
 Radio Maria,Ancash,Huaraz,0201,http://dreamsiteradiocp4.com:8020/stream.mp3,onlineradiobox.com
 Radio Sotelo Llamellin 101.3FM,Ancash,Antonio Raymondi,0203,https://live.radiofolkperu.com/listen/radiosotelo/radio.mp3,onlineradiobox.com
-Radio Andina del Amor,Ancash,Carhuaz,0206,https://live.tecnohost.ec/8050/stream,onlineradiobox.com
+Radio Estrella de Chiquián,Ancash,Bolognesi,0205,https://panel.foxradios.com:8100/estrellachiquian,zeno.fm
+Radio Satélite Chiquián,Ancash,Bolognesi,0205,https://stream.zeno.fm/ztncqemextzuv,zeno.fm
 Radio Estación Andina,Ancash,Carhuaz,0206,https://mediastreamm.com/estacionandina/stream,onlineradiobox.com
 RADIO HUARI,Ancash,Huari,0210,https://stream.zeno.fm/3xwh9mnq6tzuv,zeno.fm
 Onda Folclórica,Ancash,Huaylas,0212,https://conectperu.com/8250/stream,onlineradiobox.com
@@ -24,14 +26,11 @@ Radio RSD,Ancash,Santa,0218,https://servistream.info:8236/;,onlineradiobox.com
 Radio Cordillera,Ancash,Yungay,0220,https://sonic.dattassd.com:2002/live,onlineradiobox.com
 Radio San Viator,Ancash,Yungay,0220,https://stream.zeno.fm/ddmknth5f3quv,onlineradiobox.com
 Diospi Suyana Radio,Apurimac,Abancay,0301,https://cast2.my-control-panel.com/proxy/diospis1/stream,onlineradiobox.com
-Radio Curahuasi 104.5 fm,Apurimac,Abancay,0301,https://radio.rtvstreaming.com/8028/stream,onlineradiobox.com
 Radio Sinchi,Apurimac,Abancay,0301,https://stream.zeno.fm/wvy7ygzvgxhvv,onlineradiobox.com
 Radio Titanka,Apurimac,Abancay,0301,http://servistream.info:8482/stream,web de la radio / radio-browser.info
 Radio Titanka,Apurimac,Abancay,0301,https://servistream.info:8482/;,onlineradiobox.com
-Radio Satelite Online,Apurimac,Andahuaylas,0302,https://radio.rtvstreaming.com/8026/stream,onlineradiobox.com
 Radio Super Stereo,Apurimac,Andahuaylas,0302,https://stream.zeno.fm/g6nexaf92d0uv,onlineradiobox.com
 Radio Titanka - Andahuaylas,Apurimac,Andahuaylas,0302,https://servistream.info:8926/;,onlineradiobox.com
-Radio Apurimeña - Apurímac,Apurimac,Antabamba,0303,https://radio.rtvstreaming.com/8014/live,onlineradiobox.com
 RADIO WAYRA 101.5 FM  COYLLURQUI APURÍMAC,Apurimac,Cotabambas,0305,https://stream.zeno.fm/gilpjmfclgfvv,zeno.fm
 Radio Phallcha Challhuahuacho,Apurimac,Cotabambas,0305,https://stream.zeno.fm/wh85xmwlgimvv,zeno.fm
 RADIO METROPOLITANA  AREQUIPA,Arequipa,Arequipa,0401,https://sp.wnetserver.com/8120/stream,onlineradiobox.com
@@ -50,7 +49,6 @@ Radio Rumba Mix Aplao,Arequipa,Castilla,0404,https://stream.zeno.fm/6nut7meey98u
 NOVA MIX RADIO MAJES PEDREGAL,Arequipa,Caylloma,0405,https://stream.zeno.fm/msymjjikau2vv,zeno.fm
 Radio Boreal Stereo Majes,Arequipa,Caylloma,0405,https://stream.zeno.fm/ahdlqezxukuvv,zeno.fm
 Radio Chivay FM,Arequipa,Caylloma,0405,https://stream.zeno.fm/wb5evjqg7m3uv,zeno.fm
-Radio La Unión Pedregal Majes,Arequipa,Caylloma,0405,https://stream.zeno.fm/yt5jm7mxlcbuv,zeno.fm
 Radio Onda Perú - Islay,Arequipa,Islay,0407,https://stream.zeno.fm/vscosinczejuv,onlineradiobox.com
 Radio Onda Popular,Arequipa,Islay,0407,https://stream.zeno.fm/qf948c2fmxhvv,onlineradiobox.com
 Radio SinPatrones (Valle de Tambo),Arequipa,Islay,0407,https://panelautodj.innovatestream.pe:10685/,zeno.fm
@@ -58,6 +56,9 @@ Radio Star Mollendo,Arequipa,Islay,0407,https://sp.wnetserver.com/8004/stream,on
 Radio Super Mix Tambo Arequipa,Arequipa,Islay,0407,https://stream.zeno.fm/x6k32zr4238uv,zeno.fm
 radiomegamixperufm,Arequipa,Islay,0407,https://mediastreamm.com:7100/stream,onlineradiobox.com
 VOZ DIVINA AYACUCHO,Ayacucho,Huamanga,0501,https://stream.zeno.fm/xyheu5zwueruv,zeno.fm
+Radio Cultural Amauta Huanta,Ayacucho,Huanta,0504,https://cast5.asurahosting.com/proxy/radioamuta/stream,radio-browser.info
+Radio Huanta 2000,Ayacucho,Huanta,0504,https://servistream.info:9152/;stream.mp3,radio-browser.info
+Radio Kebuena Huanta,Ayacucho,Huanta,0504,https://panel.innovatestream.pe:10970/stream,radio-browser.info
 Estación Libre - Tambo,Ayacucho,La Mar,0505,http://150.136.177.28:8000/radio.mp3,onlineradiobox.com
 Radio PODER Digital,Ayacucho,La Mar,0505,https://stream.zeno.fm/efhjb551vujtv,onlineradiobox.com
 RADIO LA VOZ DE OTOCA 97.3 fm,Ayacucho,Lucanas,0506,https://stream.zeno.fm/fafk6hyntfttv,zeno.fm
@@ -79,8 +80,11 @@ Radio Zona 5 Bambamarca,Cajamarca,Hualgayoc,0607,https://stream.zeno.fm/mmshpqrw
 Radio Zona Mix Bambamarca,Cajamarca,Hualgayoc,0607,https://stream.zeno.fm/4krsilwatcvuv,onlineradiobox.com
 Radio La Cheverísima,Cajamarca,Jaen,0608,https://sp.onliveperu.com/8114/stream/;type=mp3,onlineradiobox.com
 Radio Virus,Cajamarca,Jaen,0608,https://sp.onliveperu.com/8158/stream,onlineradiobox.com
+Radio La Miel San Ignacio,Cajamarca,San Ignacio,0609,http://uk7freenew.listen2myradio.com:9027/;,onlineradiobox.com
 Radio La Voz Adventista,Cajamarca,San Miguel,0611,https://radio.piuraserverslive.com/8162/stream/,onlineradiobox.com
 Radio Internacional del Perú,Cajamarca,San Pablo,0612,https://naxradiopanel.com/proxy/chuquili/stream,onlineradiobox.com
+Radio Mega Stelar Santa Cruz,Cajamarca,Santa Cruz,0613,https://sp.dattavolt.com:7080/;,radio-browser.info
+Radio Chalaca,Callao,Callao,0701,https://conectperu.com/8084/stream,onlineradiobox.com
 Radio Cusco Legal,Cusco,Cusco,0801,https://stream-144.zeno.fm/ryrhxgus0wzuv,web de la radio / radio-browser.info
 Radio Cusco Legal,Cusco,Cusco,0801,https://stream.zeno.fm/ryrhxgus0wzuv,onlineradiobox.com
 Radio Intiraymi,Cusco,Cusco,0801,https://streamhotsperu.purosurfm.com:8150/intiraymi,web de la radio / radio-browser.info
@@ -90,8 +94,6 @@ Radio Municipal de  Pisac,Cusco,Calca,0804,https://stream.zeno.fm/nat5nw1u68quv,
 Radio Municipal de Pisac,Cusco,Calca,0804,https://stream.zeno.fm/3k5w0x1u68quv,onlineradiobox.com
 Radio Portal Pisac,Cusco,Calca,0804,https://stream.zeno.fm/faolyvf0u79vv,onlineradiobox.com
 Radio Nueva Juventud,Cusco,Canchis,0806,https://server.streamingradios.net/8016/stream,onlineradiobox.com
-Radio Sinai Peru,Cusco,Canchis,0806,https://stream.zeno.fm/y7zsapadbshvv,onlineradiobox.com
-Radio Vilcanota,Cusco,Canchis,0806,https://sp.oyotunstream.com:8012/;,onlineradiobox.com
 Radio Colquemarca,Cusco,Chumbivilcas,0807,https://stream.zeno.fm/584n9vztzwzuv,onlineradiobox.com
 Radio Imperio Solar,Cusco,Chumbivilcas,0807,https://stream.zeno.fm/vq6u3x2qtbruv,onlineradiobox.com
 Radio Poder Inka,Cusco,Chumbivilcas,0807,https://stream.zeno.fm/0teuwrmgnxhvv,onlineradiobox.com
@@ -101,7 +103,9 @@ radio la unica quillabamba,Cusco,La Convencion,0809,https://stream.zeno.fm/sq7ht
 Radio La Verdad 97.7 Fm -tinke,Cusco,Quispicanchi,0812,https://stream.zeno.fm/0rqijxh5e8stv,onlineradiobox.com
 Radio Condor,Huancavelica,Huancavelica,0901,https://accplus.tecnohost.ec:8016/stream,onlineradiobox.com
 Radio Imperial TV,Huancavelica,Angaraes,0903,https://sechin.grupocentroserver.com/listen/imperial_angaraes/radio.mp3,onlineradiobox.com
+Radio Super Latina Castrovirreyna,Huancavelica,Castrovirreyna,0904,https://stream.zeno.fm/agna5kg24c9uv,zeno.fm
 Radio Tv Visión Cristiana 98.3 Fm Paucarbamba,Huancavelica,Churcampa,0905,https://stream.laut.fm/starprimerosur,onlineradiobox.com
+Radio Universo 88.3 FM,Huancavelica,Tayacaja,0907,https://panel.innovatestream.pe:10896/stream,onlineradiobox.com
 Radio Rumba,Huanuco,Huanuco,1001,https://radio.sistemasandinos.org/7504/stream,onlineradiobox.com
 Sonika Online,Huanuco,Huanuco,1001,https://sp01.servidor.stream/8086/stream,onlineradiobox.com
 Bethel Radio Tingo María,Huanuco,Leoncio Prado,1006,https://stm22.voxhd.com.br:10418/stream,onlineradiobox.com
@@ -109,6 +113,12 @@ Radio Adonai Canal de Salvación,Huanuco,Leoncio Prado,1006,https://app.sonicpan
 Radio Mass Ica,Ica,Ica,1101,https://sonic6.servidor.stream/8046/;,onlineradiobox.com
 Radio Maxima FM,Ica,Ica,1101,https://maxradio.azuracast.com.es/listen/radio_maxima/ica.mp3,onlineradiobox.com
 Radio WAU,Ica,Ica,1101,https://eu57-sonic.instainternet.com:7045/stream,onlineradiobox.com
+HTV Chincha,Ica,Chincha,1102,https://stream.zeno.fm/1hzyai1kpbkuv,zeno.fm
+Radio Kariño Chincha,Ica,Chincha,1102,https://stream.zeno.fm/8ppznyzcna0uv,zeno.fm
+Radio Nova Chincha,Ica,Chincha,1102,https://stream.zeno.fm/96namalbfbetv,zeno.fm
+Radio Nueva Mix Chincha,Ica,Chincha,1102,https://stream.zeno.fm/7kwmogfqioauv,zeno.fm
+Radio Super Star Chincha,Ica,Chincha,1102,https://stream.zeno.fm/asn3art4xaotv,zeno.fm
+Radio Doble X Nazca,Ica,Nazca,1103,https://stream.zeno.fm/p8tam16q1zhvv,onlineradiobox.com
 La Voz de Juan Pablo II,Ica,Pisco,1105,https://music.poprockenlinea.com/listen/lavozdejuanpablo/radio.mp3,onlineradiobox.com
 Radio Calor,Junin,Huancayo,1201,https://stream.zeno.fm/rl9v1zhlcs3vv,onlineradiobox.com
 Radio Scala de Oro,Junin,Huancayo,1201,https://stream.zeno.fm/1872fq9bytzuv,onlineradiobox.com
@@ -121,6 +131,9 @@ Radio Super Latina La Merced,Junin,Chanchamayo,1203,https://radiosuperlatina.com
 Radio Tropicana,Junin,Chanchamayo,1203,https://cloud9.ldwebstudios.net:7004/;,onlineradiobox.com
 Radio La Unica Jauja,Junin,Jauja,1204,https://server.streamingradios.net:8014/stream,onlineradiobox.com
 stereo 1 ¡al tope!,Junin,Jauja,1204,https://radio.andaina.net:8002/stream,onlineradiobox.com
+Radio Libertad de Junín,Junin,Junin,1205,https://radio.transmite.pe:7029/stream,onlineradiobox.com
+Radio Moderna Junín,Junin,Junin,1205,https://radio.transmite.pe/8020/stream/;type=mp3,onlineradiobox.com
+Radio Ondas del Chinchaycocha,Junin,Junin,1205,https://panel.innovatestream.pe/7438/stream,onlineradiobox.com
 Megasat,Junin,Satipo,1206,https://panelautodj.innovatestream.pe/8254/stream,onlineradiobox.com
 Radio Milenio,Junin,Satipo,1206,https://sonic.dattassd.com/9924/;,onlineradiobox.com
 Radio Imperial TV,Junin,Tarma,1207,https://sechin.grupocentroserver.com/listen/imperial_acobamba/radio.mp3,onlineradiobox.com
@@ -133,6 +146,8 @@ Peru Folk Radio,La Libertad,Trujillo,1301,https://raymistream.net/listen/perufol
 Radio Libertad Mundo,La Libertad,Trujillo,1301,https://stream.zeno.fm/ov7n7sqzmm9tv,onlineradiobox.com
 Radio Nova - Trujillo,La Libertad,Trujillo,1301,https://panel.innovatestream.pe:10989/;,onlineradiobox.com
 n2 Perú,La Libertad,Trujillo,1301,https://server01.heplayer.com/8116/stream,onlineradiobox.com
+Radio Capulí Julcán,La Libertad,Julcan,1305,https://dattavolt.com:7001/stream/;,zeno.fm
+Radio Nueva Onda Julcán,La Libertad,Julcan,1305,https://stream.zeno.fm/lrlbvwcldy6tv,zeno.fm
 Chami Radio 1140 - Oficial,La Libertad,Otuzco,1306,https://centova.heplayer.com/proxy/stereon1/stream,onlineradiobox.com
 Fuego - Usquil,La Libertad,Otuzco,1306,https://server01.heplayer.com/8112/stream,onlineradiobox.com
 Radio Nueva Star - Huaranchal,La Libertad,Otuzco,1306,https://stream.zeno.fm/j1vnbtp0dzbuv/;type=mp3,onlineradiobox.com
@@ -145,17 +160,20 @@ Radio Virú Star,La Libertad,Viru,1312,https://sp.oyotunstream.com:7004/;stream,
 Rumba - Viru,La Libertad,Viru,1312,https://stream.zeno.fm/shup27saavbtv,onlineradiobox.com
 Radio La Chiclayana,Lambayeque,Chiclayo,1401,https://sp.onliveperu.com/8228/stream,onlineradiobox.com
 Radio La Luz,Lambayeque,Chiclayo,1401,http://radio.transmite.pe:9310/stream,onlineradiobox.com
-Radio Nova - Chiclayo,Lambayeque,Chiclayo,1401,https://panel.innovatestream.pe:10991/;,onlineradiobox.com
 Radio La Voz Del Pueblo,Lambayeque,Ferreñafe,1402,https://maxradio.azuracast.com.es/listen/radio_la_voz/LAMBAYEQUE.mp3,onlineradiobox.com
 Rescate Rock and Pop,Lambayeque,Ferreñafe,1402,https://cloudstream2032.conectarhosting.com/9558/stream,onlineradiobox.com
 Ciclon RadioTV,Lambayeque,Lambayeque,1403,https://stream.zeno.fm/7p7qtrf8pzzuv,onlineradiobox.com
 Djs Radio,Lambayeque,Lambayeque,1403,https://stream.zeno.fm/k54gqekduuhvv,onlineradiobox.com
 Radio Hits,Lambayeque,Lambayeque,1403,https://dattavolt.com/8084/;,onlineradiobox.com
+RPP Noticias,Lima,Lima,1501,https://mdstrm.com/audio/5fab3416b5f9ef165cfab6e9/icecast.audio,onlineradiobox.com
+Radio Exitosa,Lima,Lima,1501,https://neptuno-2-audio.mediaserver.digital/79525baf-b0f5-4013-a8bd-3c5c293c6561,onlineradiobox.com
 Radio &amp; Tv Maxi Mix,Lima,Barranca,1502,https://stream.zeno.fm/5o4nsavwsuqtv,onlineradiobox.com
 Radio Nova Prime,Lima,Barranca,1502,https://stream.zeno.fm/dredth2tsqtuv,onlineradiobox.com
 Radio Nueve Mix,Lima,Barranca,1502,http://usa3.fastcast4u.com:1088/stream,onlineradiobox.com
 elbarranquino.com,Lima,Barranca,1502,https://panel.foxradios.com:8020/live,onlineradiobox.com
+Radio FMR 102.5 Cajatambo,Lima,Cajatambo,1503,https://stream.zeno.fm/senm62hf8f0uv,zeno.fm
 R700 La Grande,Lima,Canta,1504,https://conectperu.com/8382/stream,onlineradiobox.com
+Radio San Luis de Cañete,Lima,Cañete,1505,https://stream.zeno.fm/xadwb6y6f18uv,onlineradiobox.com
 Radio Emoción,Lima,Huaral,1506,https://panelautodj.innovatestream.pe/8060/stream,onlineradiobox.com
 Radio Latidos,Lima,Huaral,1506,https://radio.pjcks.com/7230/stream,onlineradiobox.com
 Teresita Producciones,Lima,Huaral,1506,https://radio.sistemasandinos.org:10993/stream,onlineradiobox.com
@@ -164,6 +182,8 @@ Radios Unidas - Oficial,Lima,Huarochiri,1507,https://stream.zeno.fm/az43ibqw6i7u
 Radio Futuro Huacho,Lima,Huaura,1508,https://stream.zeno.fm/dfy427qhsuhvv,onlineradiobox.com
 Radio Litoral,Lima,Huaura,1508,https://servistream.info:9104/stream,onlineradiobox.com
 Radio Melodia Andina,Lima,Huaura,1508,http://sonic.dattassd.com:8006/;,onlineradiobox.com
+Radio Líder Yauyos (zeno),Lima,Yauyos,1510,https://stream.zeno.fm/edqd64vgashvv,zeno.fm
+Radio Líder Yauyos 95.5 FM,Lima,Yauyos,1510,https://dattavolt.com:7104/stream,zeno.fm
 Clásicos del Techno,Loreto,Maynas,1601,https://stream.zeno.fm/maly3dozoulvv,onlineradiobox.com
 Radio Loreto,Loreto,Maynas,1601,https://sp.oyotunstream.com/8006/stream,web de la radio / radio-browser.info
 RetRock,Loreto,Maynas,1601,https://stream.zeno.fm/t4s9iembgkbvv,onlineradiobox.com
@@ -188,6 +208,7 @@ Radio Exótica 95.3 fm,Pasco,Oxapampa,1903,https://stream.zeno.fm/q97xphpy53duv,
 Radio Fantàstico Piura,Piura,Piura,2001,https://cast2.my-control-panel.com/proxy/radiofa1/stream,onlineradiobox.com
 Radio Nova - Piura,Piura,Piura,2001,https://panel.innovatestream.pe:10987/undefined,onlineradiobox.com
 Radio Lizi Montero,Piura,Ayabaca,2002,https://stream.zeno.fm/1q74v1n0kc9uv,zeno.fm
+Radio Nor Perú Regionalísima,Piura,Paita,2005,http://giss.tv:8001/radionorperufm.mp3,onlineradiobox.com
 Radio Capullana 95.7,Piura,Sullana,2006,https://radio.livestreamingmundial.com:7032/;,onlineradiobox.com
 Radio La Fuerte,Piura,Sullana,2006,https://panelautodj.innovatestream.pe:10986/stream,onlineradiobox.com
 Radio la Jefa,Piura,Sullana,2006,https://panelautodj.innovatestream.pe:10987/stream,onlineradiobox.com
@@ -203,6 +224,9 @@ La Generosa,Puno,Azangaro,2102,https://stream.zeno.fm/emlrkhiybgitv,onlineradiob
 Radio Delfos,Puno,Azangaro,2102,https://stream.zeno.fm/g4dht0cqz7zuv.acc,onlineradiobox.com
 Radio Fuerza Latina - Azangaro Puno,Puno,Azangaro,2102,https://stream.zeno.fm/tipkmg1nigdtv,onlineradiobox.com
 Radio Sureña - Azangaro,Puno,Azangaro,2102,https://sp.oyotunstream.com:8052/;,onlineradiobox.com
+Radio Acero Ayapata,Puno,Carabaya,2103,https://streaming.serviclictecnologia.com:8054/;,onlineradiobox.com
+Radio Limón Coasa,Puno,Carabaya,2103,https://sonic.globalstream.pro:10961/stream,onlineradiobox.com
+Radio Salvación Ilave,Puno,El Collao,2105,https://salvacion-stream.m1.net.pe/stream,zeno.fm
 Radio Sureña Perú - Cojata,Puno,Huancane,2106,https://stream-179.surfernetwork.com/l4kkx7qsvsbtv,onlineradiobox.com
 Radio TV Universal Pusi,Puno,Huancane,2106,https://stream.zeno.fm/l4kkx7qsvsbtv,onlineradiobox.com
 Radio RTV San Valentin,Puno,Lampa,2107,https://stream.zeno.fm/7uubvtvk1eavv,onlineradiobox.com

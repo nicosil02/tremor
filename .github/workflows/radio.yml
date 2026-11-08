@@ -5,10 +5,14 @@
 # shortcut: el cron de GitHub puede arrancar 10-30 min tarde; si hace falta puntualidad, dispararlo desde cron-job.org.
 name: radio
 
+# Franjas: los noticieros regionales van de 5 a 8, de 12 a 14 y de 18 a 19 (p. ej. Marañón de Jaén: 6-8 y 12-14;
+# Pachamama de Puno: 5:10 y 19:15 bilingüe). Lunes a sábado: el domingo es música y misa.
+# Graba 45 min a la vez y transcribe después: el reloj de la franja solo cuenta para la grabación.
 on:
   schedule:
-    - cron: "0 11 * * *"    # 6:00 Lima, noticieros de la mañana
-    - cron: "30 17 * * *"   # 12:30 Lima, noticieros del mediodía
+    - cron: "45 10 * * 1-6"   # 5:45 Lima (el cron de GitHub llega 10-30 min tarde): ~6:00-7:00
+    - cron: "45 16 * * 1-6"   # 11:45 Lima: ~12:00-13:00
+    - cron: "45 22 * * 1-6"   # 17:45 Lima: ~18:00-19:00
   workflow_dispatch:
     inputs:
       minutos:
@@ -22,11 +26,12 @@ permissions:
 jobs:
   escuchar:
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 330   # tope de GitHub: 360. Peor caso: 45 grabando + ~120 Whisper + ~110 MMS (15 min por radio)
     strategy:
       fail-fast: false
+      max-parallel: 18   # el plan gratis da 20 trabajos a la vez: quedan 2 para defensoria.yml y para publicar
       matrix:
-        grupo: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]   # cada máquina toma 1/15 de tremor/radios.csv (~15 radios)
+        grupo: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]   # 1/18 de tremor/radios.csv (~16 radios)
     steps:
       - uses: actions/checkout@v4
 
@@ -35,21 +40,22 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Caché del modelo Whisper
+      - name: Caché de los modelos (Whisper small, MMS-1b-all y NLLB-200 600M, ~7 GB)
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
-          key: whisper-small
+          key: radio-modelos-v2
 
       - run: |
-          pip install -r requirements.txt faster-whisper
+          pip install -r requirements.txt faster-whisper transformers sentencepiece
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
           sudo apt-get install -y -qq ffmpeg
 
       - name: Escuchar y transcribir
         run: |
           MIN="${{ github.event.inputs.minutos }}"
           if [ -z "$MIN" ]; then MIN=45; fi
-          python -m tremor.radio escuchar --minutos "$MIN" --grupo ${{ matrix.grupo }} --grupos 15 \
+          python -m tremor.radio escuchar --minutos "$MIN" --grupo ${{ matrix.grupo }} --grupos 18 --indigena \
             --salida notas_${{ matrix.grupo }}.jsonl || echo "[aviso] terminó con error; se sube lo que haya"
           touch notas_${{ matrix.grupo }}.jsonl
 
