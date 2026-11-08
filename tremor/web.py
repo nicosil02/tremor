@@ -59,8 +59,9 @@ def datos(con):
             "zonas": zonas,
             "eventos": registros(ev),
             "sutran": registros(tabla(con, "SELECT titulo, motivo, estado_via, region, provincia, distrito, ubigeo, via, "
-                                           "km, fecha_evento FROM sutran_alerta WHERE motivo = 'humano' AND (vigente_hasta IS NULL OR "
+                                           "km, fecha_evento, lat, lng, descripcion FROM sutran_alerta WHERE motivo = 'humano' AND (vigente_hasta IS NULL OR "
                                            "vigente_hasta >= date('now')) ORDER BY fecha_evento DESC")),
+            "rutas": rutas_distrito(con),
             "animo": registros(tabla(con, "SELECT proyecto, menciones_7d, base_7d, alza, pct_negativo, aviso, provincias "
                                           "FROM animo WHERE menciones_7d > 0 ORDER BY menciones_7d DESC")),
             "metricas": registros(met), "mejor": mejor,
@@ -68,6 +69,15 @@ def datos(con):
             "cobertura": cobertura(con),
             "vecinos": vecinos(con),
             "casos": casos_zona(con)}
+
+
+def rutas_distrito(con):
+    """Las rutas nacionales (código MTC) que cruzan cada distrito: por ahí sale y entra la carga de sus operaciones.
+    Con esto la página dice qué operaciones toca una vía bloqueada. El trazo va en docs/rutas.geojson."""
+    out = {}
+    for u, rs in con.execute("SELECT ubigeo, rutas FROM distrito_corredor"):
+        out.setdefault(u, set()).update(r.strip() for r in rs.split(","))
+    return {u: sorted(r) for u, r in out.items()}
 
 
 def casos_zona(con):
