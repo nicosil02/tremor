@@ -529,7 +529,7 @@ function iniciar(D, G, H, C) {
       ficha.remove();
       map.setFilter("com-sel", ["==", ["get", "n"], ""]);
       if (fila) map.once("idle", () => {
-        casosDe(fila.u).filter(c => c.com && !c.territorio && !PUNTOS[c.com]).forEach(c => { const p = buscarEnMapa(c.com); if (p) PUNTOS[c.com] = p; });
+        casosDe(fila.u).filter(c => c.com && !c.territorio && !PUNTOS[c.com]).forEach(c => { const p = buscarEnMapa(c.com, fila.u); if (p) PUNTOS[c.com] = p; });
         map.getSource("com-punto").setData({ type: "FeatureCollection", features: casosDe(fila.u).filter(c => PUNTOS[c.com] && !c.territorio)
           .map(c => ({ type: "Feature", geometry: { type: "Point", coordinates: PUNTOS[c.com] }, properties: { n: c.com, caso: c.nombre, nota: estadoCaso(c) } })) });
         // Un hilo de cada comunidad en conflicto a la operación que nombra su caso
@@ -543,7 +543,15 @@ function iniciar(D, G, H, C) {
   }
   const PUNTOS = {};  // comunidad → lugar hallado en el mapa base
   const primera = s => { s = String(s || "").split(/(?<=\.)\s/)[0]; return s.length > 200 ? s.slice(0, 200).replace(/[\s,;(]+\S*$/, "") + "…" : s; };
-  const contra = c => (c.nombre || c.caso || "").split(/\s+[-–]\s+|-(?=[A-ZÁÉÍÓÚ])/)[1]?.trim() || "";
+  // La contraparte solo si es una empresa: "Huarmey - contaminación por metales pesados" no es un conflicto "con" nadie
+  const EMPRESA = /miner|s\.\s?a\.?|\bsac\b|compa[nñ]|\bc[ií]a\b|empresa|mining|corporation|resources|petro|oil\b|energ|southern|antamina|bambas|anglo|quellaveco|buenaventura|nexa|minsur|yanacocha|chinalco|hudbay|volcan|glencore|shougang|marcobre|perenco|pluspetrol|cnpc|repsol|raura|brocal|poderosa|horizonte|gold|copper/i;
+  const contra = c => { const s = (c.nombre || c.caso || "").split(/\s+[-–]\s+|-(?=[A-ZÁÉÍÓÚ])/)[1]?.trim() || ""; return EMPRESA.test(s) ? s : ""; };
+  // "Tumilaca - Anglo American Quellaveco" → "Tumilaca" (la empresa va en el estado); "Huarmey - Contaminación metales
+  // pesados" → "Huarmey, contaminación metales pesados"; "Pumamarca - Asacasi" queda con mayúscula (es un nombre)
+  const tituloCaso = c => { if (c.com) return c.com;
+    const [a, ...r] = (c.nombre || "").split(/\s+[-–]\s+/);
+    if (contra(c)) return a;
+    return [a, ...r.map(x => /^\S+\s+[a-záéíóúñ]/.test(x) ? x.charAt(0).toLowerCase() + x.slice(1) : x)].join(", "); };
   let abierta = null;  // la operación abierta en el mapa
   // Una comunidad a la vez: se marca en el panel, en el mapa y se cuenta con quién es el conflicto
   function elegirCaso(li, volar) {
@@ -551,8 +559,15 @@ function iniciar(D, G, H, C) {
     document.querySelectorAll(".casos li").forEach(x => x.classList.toggle("elegida", x === li && !ya));
     if (ya) { listo.then(() => map.setFilter("com-sel", ["==", ["get", "n"], ""])); ficha.remove(); return; }
     const c = casosDe(li.dataset.u)[+li.dataset.k];
+    if (!c.com) {  // un conflicto sin comunidad: su tarjeta, en el centro de su distrito
+      const p = centroDe(String(c.ubigeo).length === 6 ? String(c.ubigeo) : abierta?.u);
+      if (p && !map.getBounds().contains(p)) map.easeTo({ center: p, duration: quieto ? 0 : 1200 });
+      if (p) mostrar(p, tarjeta({ titulo: tituloCaso(c), sub: lugar(String(c.ubigeo)), marca: estadoCaso(c), texto: primera(c.reclamo),
+                                   fuente: `Defensoría del Pueblo, reporte de ${MESES_TXT[c.mes - 1]} ${c.anio}` }));
+      return;
+    }
     if (volar) { verComunidad(c); map.once("moveend", () => { const k = c.territorio ? cajaDe([c.territorio]) : null;
-      const p = k ? [(k[0] + k[2]) / 2, (k[1] + k[3]) / 2] : PUNTOS[c.com]; if (p && c.com) globoCom(c.com, p); }); }
+      const p = k ? [(k[0] + k[2]) / 2, (k[1] + k[3]) / 2] : PUNTOS[c.com]; if (p) globoCom(c.com, p); }); }
   }
   function globoCom(nombreCom, lngLat, u) {
     const cs = abierta ? casosDe(abierta.u) : [], k = cs.findIndex(c => c.com && llano(c.com) === llano(nombreCom)), c = cs[k];
@@ -605,12 +620,23 @@ function iniciar(D, G, H, C) {
     }).sort((x, y) => peso(x) - peso(y));
   }
   // Las comunidades que no están en el registro de Cultura se buscan entre los nombres de poblados del mapa base
-  function buscarEnMapa(n) {
+  // Solo el nombre exacto y dentro de los distritos de la zona: hay muchos pueblos homónimos (Tumilaca salía en Arequipa)
+  function buscarEnMapa(n, u) {
+    const zona = G.features.filter(f => zonaDe(u).includes(f.properties.u));
     for (const s of Object.keys(map.getStyle().sources)) {
       let fs = []; try { fs = map.querySourceFeatures(s, { sourceLayer: "place" }); } catch (e) { continue; }
-      const f = fs.find(p => llano(p.properties.name || "").includes(llano(n)));
+      const f = fs.find(p => llano(p.properties["name:es"] || p.properties.name || "") === llano(n) && p.geometry.type === "Point"
+                              && zona.some(z => dentro(p.geometry.coordinates, z.geometry)));
       if (f) return f.geometry.coordinates; }
     return null;
+  }
+  // Punto en polígono (rayos), para Polygon y MultiPolygon
+  function dentro([x, y], g) {
+    const anillo = r => { let si = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+      const [xi, yi] = r[i], [xj, yj] = r[j];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) si = !si; } return si; };
+    const pol = p => anillo(p[0]) && !p.slice(1).some(anillo);
+    return g.type === "Polygon" ? pol(g.coordinates) : g.coordinates.some(pol);
   }
   // Con relieve, el punto pedido queda más arriba de la pantalla: al llegar, se lleva al centro
   const centrar = c => map.once("moveend", () => { const p = map.project(c), k = map.getContainer();
@@ -618,7 +644,7 @@ function iniciar(D, G, H, C) {
     if (Math.hypot(dx, dy) > 40) map.panBy([dx, dy], { duration: quieto ? 0 : 600 }); });
   function verComunidad(c) {
     listo.then(() => {
-      const k = c.territorio ? cajaDe([c.territorio]) : null, p = k ? null : PUNTOS[c.com] || buscarEnMapa(c.com || "");
+      const k = c.territorio ? cajaDe([c.territorio]) : null, p = k ? null : PUNTOS[c.com] || (abierta && buscarEnMapa(c.com || "", abierta.u));
       if (!k && !p) return;
       map.setFilter("com-sel", ["==", ["get", "n"], c.territorio ? c.territorio.properties.n : ""]);
       const cam = k ? map.cameraForBounds([[k[0], k[1]], [k[2], k[3]]], { padding: 120 }) : { center: p, zoom: 13 };
@@ -639,13 +665,15 @@ function iniciar(D, G, H, C) {
   // Dónde y quiénes: los distritos de la zona que más pesan y los conflictos que la Defensoría tiene abiertos en ella
   function quienes(u) {
     const cs = casosDe(u), n = comunidadesDe(new Set(zonaDe(u))).length;
-    const fila = (c, k) => `<li data-u="${u}" data-k="${k}"><button type="button"><b>${esc(c.com || c.nombre.split(" - ")[0])}</b>
-        <span>${esc(lugar(String(c.ubigeo)).split(", ")[0])}. ${esc(estadoCaso(c))}.</span></button>
-</li>`;
+    const coms = cs.filter(c => c.com), otros = cs.filter(c => !c.com);
+    const fila = c => `<li data-u="${u}" data-k="${cs.indexOf(c)}"><button type="button"><b>${esc(tituloCaso(c))}</b>
+        <span>${esc(lugar(String(c.ubigeo)).split(", ")[0])}. ${esc(estadoCaso(c))}.</span></button></li>`;
+    const fuente = cs.length ? `<p class="fuente">Defensoría del Pueblo, reporte de ${MESES_TXT[cs[0].mes - 1]} ${cs[0].anio}</p>` : "";
     return `<h3>Comunidades de la zona</h3>
-      <p class="fondo" style="margin-top:0">${n ? `${n} en el registro del Ministerio de Cultura, marcadas en el mapa. ` : ""}${cs.length ? "En naranja, las que tienen un conflicto abierto en la Defensoría. Elige una aquí o en el mapa para ver dónde está y qué pide." : "Ninguna tiene un conflicto abierto en la Defensoría."}</p>
-      ${cs.length ? `<ul class="casos">${cs.slice(0, 4).map(fila).join("")}</ul>
-      <p class="fuente">Defensoría del Pueblo, reporte de ${MESES_TXT[cs[0].mes - 1]} ${cs[0].anio}${cs.length > 4 ? `. ${cs.length - 4} casos más en la provincia` : ""}</p>` : ""}`;
+      <p class="fondo" style="margin-top:0">${n ? `${n} en el registro del Ministerio de Cultura, marcadas en el mapa. ` : ""}${coms.length ? "En naranja, las que tienen un conflicto abierto. Elige una aquí o en el mapa para ver dónde está y qué pide." : "Ninguna tiene un conflicto abierto en la Defensoría."}</p>
+      ${coms.length ? `<ul class="casos">${coms.slice(0, 4).map(fila).join("")}</ul>` : ""}
+      ${otros.length ? `<h3>Otros conflictos en la zona</h3><ul class="casos">${otros.slice(0, 3).map(fila).join("")}</ul>${otros.length > 3 ? `<p class="fuente">Y ${otros.length - 3} más en la provincia.</p>` : ""}` : ""}
+      ${fuente}`;
   }
   const MESES_TXT = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
   const corta = e => { const a = `${e.accion || ""}`.toLowerCase();

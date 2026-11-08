@@ -30,7 +30,7 @@ def cargar(con):
         huellas.append(g.assign(tipo=tipo, geometry=g.geometry.simplify(0.0005))[
             ["ADMINISTRADO", "UNIDAD_FISCALIZABLE", "tipo", "geometry"]])
         if tipo == "mineria":
-            g = g.set_geometry(g.to_crs(32718).geometry.centroid.to_crs(4326))
+            g = g.set_geometry(g.to_crs(32718).geometry.representative_point().to_crs(4326))  # el centroide de una unidad en varias partes puede caer fuera (Coriminas salía en Musga)
             cruce = gpd.sjoin(g, distritos, predicate="within")
         else:
             cruce = gpd.sjoin(g, distritos, predicate="intersects")

@@ -25,6 +25,17 @@ def comunidad_de_caso(nombre: str) -> str | None:
     return norm(re.split(r"\s+[-–]\s+|-", resto)[0]).strip() or None
 
 
+def caso_de(casos, nombre, ubigeo):
+    """El caso de la Defensoría de esta comunidad: mismo nombre y el lugar del caso contiene al territorio (distrito,
+    provincia o departamento, según lo que diga el caso). Si el caso solo da el departamento, exige el mismo
+    departamento; hay muchas comunidades homónimas (Huancuire en Coyllurqui y en Challhuahuacho)."""
+    for r in casos.itertuples():
+        u = str(r.ubigeo)
+        if r.com == nombre and ubigeo.startswith(u if len(u) in (2, 4) else u[:4]):
+            return r
+    return None
+
+
 def main():
     import geopandas as gpd
     import pandas as pd
@@ -43,10 +54,9 @@ def main():
     casos = pd.DataFrame(w["casos"])
     casos["com"] = casos.nombre.map(comunidad_de_caso)
     casos = casos.dropna(subset=["com"])
-    por = {(r.com, str(r.ubigeo)[:2]): r for r in casos.itertuples()}  # mismo nombre y departamento
     filas = []
     for r in g.itertuples():
-        c = por.get((norm(r.nombre).strip(), r.ubigeo[:2]))
+        c = caso_de(casos, norm(r.nombre).strip(), r.ubigeo)
         filas.append({"n": r.nombre.title(), "u": r.ubigeo, "caso": getattr(c, "nombre", None),
                       "estado": getattr(c, "estado", None), "dialogo": getattr(c, "dialogo", None)})
     s = gpd.GeoDataFrame(filas, geometry=g.geometry.simplify(0.0015).values, crs=4326)
