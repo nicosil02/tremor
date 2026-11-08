@@ -40,7 +40,8 @@ def buscar_lugar(texto: str, limite: int = 10) -> list[dict]:
 @mcp.tool()
 def perfil_distrito(ubigeo: str) -> dict:
     """Todo lo que Tremor sabe de un distrito: perfil histórico de la EGPP, últimas acciones de protesta de la
-    Defensoría y eventos de prensa en su provincia, alertas viales de la SUTRAN y canon municipal por año."""
+    Defensoría y eventos de prensa en su provincia, alertas viales de la SUTRAN, canon municipal por año, y las
+    variables distritales (IDH y pobreza, concesiones y pasivos mineros, unidades mineras y lotes de hidrocarburos)."""
     prov = ubigeo[:4]
     return {
         "lugar": " / ".join(x for x in (nombre(ubigeo[:2]), nombre(prov), nombre(ubigeo)) if x),
@@ -58,11 +59,38 @@ def perfil_distrito(ubigeo: str) -> dict:
         "enaho_pobreza_departamento": _sql("SELECT anio, pobreza, pobreza_extrema FROM enaho_departamento "
                                            "WHERE ccdd = ? ORDER BY anio", (ubigeo[:2],)),
         "bcrp_produccion_minera_departamento": _mineria(ubigeo[:2]),
+        "variables_distritales": _variables(ubigeo),
         "fuentes": "EGPP PUCP (Arce 2024; actualización dic. 2025); Defensoría del Pueblo, reportes mensuales; "
                    "prensa (enlaces en eventos_prensa.csv); SUTRAN alertasviales.sutran.gob.pe; MEF Consulta Amigable; "
                    "INEI ENAHO módulo 34 (pobreza monetaria, % de personas); BCRP series RD129xx (producción minera "
-                   "por departamento).",
+                   "por departamento); variables distritales con su fuente en variables_distritales.",
     }
+
+
+@mcp.tool()
+def ranking_variable(variable: str, anio: int | None = None, n: int = 15, mayor_primero: bool = True) -> dict:
+    """Distritos ordenados por una variable distrital. Variables: idh, esperanza_vida, secundaria_completa,
+    anios_educacion, ingreso_pc, poblacion (PNUD 2017-2024); pobreza_inf, pobreza_sup, pobreza_grupo (INEI 2018);
+    concesiones, concesiones_ha, concesiones_metalicas_ha y sus *_nuevas* (INGEMMET, por año); pasivos_mineros,
+    unidades_mineras, lote_explotacion, lote_exploracion, oleoducto_norperuano (año 0, foto actual).
+    Sin año usa el más reciente de esa variable."""
+    if anio is None:
+        anio = (_sql("SELECT MAX(anio) AS a FROM distrito_variable WHERE variable = ?", (variable,)) or [{}])[0].get("a")
+    filas = _sql(f"SELECT ubigeo, valor, fuente FROM distrito_variable WHERE variable = ? AND anio = ? "
+                 f"ORDER BY valor {'DESC' if mayor_primero else 'ASC'} LIMIT ?", (variable, anio, n))
+    return {"variable": variable, "anio": anio, "fuente": filas[0]["fuente"] if filas else None,
+            "distritos": [{"ubigeo": f["ubigeo"], "lugar": " / ".join(x for x in (nombre(f["ubigeo"][:2]),
+                          nombre(f["ubigeo"][:4]), nombre(f["ubigeo"])) if x), "valor": f["valor"]} for f in filas]}
+
+
+def _variables(ubigeo):
+    """distrito_variable → {variable: {"serie": {año: valor}, "fuente": url}}. Año 0 = foto actual, sin serie."""
+    salida = {}
+    for r in _sql("SELECT variable, anio, valor, fuente FROM distrito_variable WHERE ubigeo = ? ORDER BY variable, "
+                  "anio", (ubigeo,)):
+        v = salida.setdefault(r["variable"], {"serie": {}, "fuente": r["fuente"]})
+        v["serie"][r["anio"]] = r["valor"]
+    return salida
 
 
 def _mineria(ccdd):

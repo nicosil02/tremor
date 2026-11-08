@@ -79,8 +79,10 @@ carpeta, aprobar el servidor MCP `tremor` (`.mcp.json`).
 | `mef_municipal` | 28 091 (≈1 890 municipalidades × 2012–2026) | Consulta Amigable del MEF: presupuesto total y rubro 18 (canon, sobrecanon, regalías) | `python -m tremor.territorio mef` |
 | `bcrp_mensual` | 95 series, 25 516 filas, 2004-01 a 2026-10 | API del BCRP: cobre, oro y WTI (PN0165xXM) y producción minera por departamento (grupo RD129xx) | `python -m tremor.territorio bcrp` |
 | `enaho_departamento` | 26 × 2004–2025 (`ccdd` '00' = nacional) | ENAHO módulo 34: pobreza y pobreza extrema (factor07 × mieperho). Los 22 años cuadran con la serie oficial del INEI (±0.1) | `python -m tremor.territorio enaho` |
+| `distrito_variable` (larga: ubigeo, anio, variable, valor, fuente; anio 0 = foto) | ~330 000 | PNUD IDH 2017–2024 y componentes (1 874 distritos); INEI pobreza 2018 (1 873); INGEMMET catastro minero por año (1 719); MINEM pasivos ambientales (284); OEFA unidades mineras, lotes de hidrocarburos y Oleoducto Norperuano | `python -m tremor.distritos todo` |
 
 Archivos que acompañan a la base:
+- `datos/distritos.geojson`: límites INEI 2025 (capa del PNUD, simplificada a ~100 m), para mapas y cruces;
 - `tremor/fuentes_facebook.csv`: 158 páginas para vigilar a mano, por departamento;
 - `tremor/ubigeo.csv`: catálogo de los 1 892 distritos (INEI 2023);
 - `tremor/codigos_egpp.json`: listas cerradas de acción, actor, adversario y reclamo.
@@ -91,7 +93,8 @@ Archivos que acompañan a la base:
 - `ranking`;
 - `consulta_amigable`: el MEF libre, con la URL como fuente; el método viene del MCP de Noelia León
   (`NoeliaLRuiz/mcp-consulta-amigable`);
-- `serie_bcrp`: las series del BCRP guardadas (precios y producción minera por departamento).
+- `serie_bcrp`: las series del BCRP guardadas (precios y producción minera por departamento);
+- `ranking_variable`: distritos ordenados por cualquier variable de `distrito_variable`.
 - `perfil_distrito` también trae la pobreza (ENAHO) y la producción minera anual (BCRP) del departamento.
 
 **Workflow** `.github/workflows/defensoria.yml`:

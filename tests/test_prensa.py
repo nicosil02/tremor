@@ -99,3 +99,11 @@ def test_bcrp_y_pobreza_enaho():
     s = pd.DataFrame({"ubigeo": [10101, 10102, 80101], "factor07": [1.0, 3.0, 2.0], "mieperho": [2, 2, 1],
                       "pobreza": [1, 3, 2]})
     assert pobreza(s) == [("01", 25.0, 25.0, 2), ("08", 100.0, 0.0, 1), ("00", 40.0, 20.0, 3)]
+
+
+def test_stock_concesiones():
+    from tremor.distritos import stock_concesiones
+    s = stock_concesiones([(["010101"], 2020, 100, True), (["010101", "010102"], 2022, 50, False)], 2023)
+    assert s[("010101", 2020)]["concesiones"] == 1 and s[("010101", 2021)] == {"concesiones": 1, "concesiones_ha": 100,
+                                                                               "concesiones_metalicas_ha": 100}
+    assert s[("010101", 2023)]["concesiones_ha"] == 125 and s[("010102", 2022)]["concesiones_nuevas_ha"] == 25
