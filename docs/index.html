@@ -79,15 +79,17 @@
   .fondo { margin: 12px 0 0; }
   .op ul.casos { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 10px; }
   .op ul.casos { gap: 4px; }
-  .op ul.casos summary { cursor: pointer; list-style: none; }
-  .op ul.casos summary span { display: block; margin-left: 14px; font-size: 15px; }
-  .op ul.casos li { border-left: 3px solid #ff7043; padding-left: 8px; }
-  .op ul.casos summary::-webkit-details-marker { display: none; }
-  .op ul.casos summary::before { content: "+"; display: inline-block; width: 14px; color: var(--tinta-3); }
-  .op ul.casos details[open] summary::before { content: "−"; }
+  .op ul.casos li { border-left: 3px solid #ff7043; }
+  .op ul.casos button { all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer; padding: 6px 10px; border-radius: 0 6px 6px 0; }
+  .op ul.casos button:hover { background: rgb(255 112 67 / .08); }
+  .op ul.casos button:focus-visible { outline: 2px solid #ff7043; }
+  .op ul.casos li.elegida button { background: rgb(255 112 67 / .14); }
+  .op ul.casos button span { display: block; font-size: 15px; }
+  .op ul.casos p { display: none; margin: 0; padding: 0 10px 8px; }
+  .op ul.casos li.elegida p { display: block; }
   .op ul.casos b { color: var(--tinta); font-weight: 650; }
   .op ul.casos span { color: var(--tinta-3); }
-  .op ul.casos p { margin: 4px 0 6px 14px; font-size: 15px; }
+  .op ul.casos p { font-size: 15px; background: rgb(255 112 67 / .14); border-radius: 0 0 6px 0; }
   .op .fuente { font-size: 13px; color: var(--tinta-3); margin: 6px 0 0; }
   .op .prob .delta { display: block; font-size: 14px; font-weight: 600; }
   .sube { color: var(--cobre-4); }
@@ -132,6 +134,7 @@
   .leyenda .l-unidad::after { border-top: 2px solid #fff; }
   .leyenda .l-sel::after { border-top: 3px solid #fff; box-shadow: 0 0 4px #fff; }
   .leyenda .l-zona::after { border-top: 2px dashed #ffd28a; }
+  .leyenda .l-lazo::after { border-top: 2px dotted #ff7043; }
   .leyenda .l-com::after { inset: 2px; border: 1px solid rgb(255 255 255 / .8); }
   .leyenda .l-conf { background: rgb(255 112 67 / .55) !important; box-shadow: inset 0 0 0 2px #ff7043; }
   .leyenda .punto { display: flex; align-items: center; gap: 6px; }
@@ -180,7 +183,8 @@
         <div class="linea"><i class="l-unidad"></i>Otras unidades (OEFA)</div>
         <div class="linea"><i class="l-zona"></i>Zona de influencia</div>
         <div class="linea"><i class="l-conf"></i>Comunidad con conflicto</div>
-        <div class="linea"><i class="l-com"></i>Otras comunidades</div></div>
+        <div class="linea"><i class="l-com"></i>Otras comunidades</div>
+        <div class="linea"><i class="l-lazo"></i>Su conflicto es con esta unidad</div></div>
       <div class="punto"><i style="background:var(--patina)"></i>Protesta anunciada</div>
       <div class="punto"><i style="background:var(--tinta-3)"></i>Protesta reciente</div>
       <div class="punto"><i style="background:#fff;border:2px solid var(--tinta)"></i>Operación</div>
@@ -278,10 +282,14 @@ function iniciar(D, G, H, C) {
       paint: { "line-color": "#fff", "line-opacity": 0.85, "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.8, 13, 2] } });
     // La zona de influencia de la operación abierta: su distrito y los vecinos, con nombre
     map.addSource("zona-sel", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+    map.addLayer({ id: "zona-sel-fondo", type: "fill", source: "zona-sel", filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": "#000", "fill-opacity": 0 } });
     map.addLayer({ id: "zona-sel-borde", type: "line", source: "zona-sel", filter: ["==", ["geometry-type"], "Polygon"],
       paint: { "line-color": "#ffd28a", "line-width": 3, "line-dasharray": [2.5, 1.5] } });
     // Comunidades campesinas y nativas de la zona (Ministerio de Cultura); en naranja, las que tienen conflicto abierto
     const CONF = "#ff7043", conf = ["to-boolean", ["get", "caso"]];
+    map.addSource("lazos", { type: "geojson", data: VACIO() });
+    map.addLayer({ id: "lazos", type: "line", source: "lazos", layout: { "line-cap": "round" },
+      paint: { "line-color": CONF, "line-width": 2, "line-dasharray": [0.5, 2], "line-opacity": 0.9 } });
     map.addSource("com", { type: "geojson", data: VACIO() });
     map.addLayer({ id: "com-fondo", type: "fill", source: "com", paint: { "fill-color": CONF, "fill-opacity": ["case", conf, 0.28, 0] } });
     map.addLayer({ id: "com-borde", type: "line", source: "com", paint: { "line-color": ["case", conf, CONF, "#fff"],
@@ -319,14 +327,24 @@ function iniciar(D, G, H, C) {
       "circle-radius": 5, "circle-color": "#fff", "circle-stroke-width": 2.2, "circle-stroke-color": css("--tinta") } });
     map.addLayer({ id: "eventos-nombre", type: "symbol", source: "puntos", minzoom: 7.5, filter: ["!=", ["get", "k"], "op"],
       layout: { ...TEXTO, "text-field": ["get", "t"], "text-size": 12, "text-offset": [0, 1.1], "text-anchor": "top" }, paint: HALO });
-    for (const capa of ["eventos", "ops", "zonas"]) {
+    for (const capa of ["eventos", "ops", "zonas", "com-fondo", "com-punto", "huella"]) {
       map.on("mouseenter", capa, () => map.getCanvas().style.cursor = "pointer");
       map.on("mouseleave", capa, () => map.getCanvas().style.cursor = "");
     }
     map.on("click", e => {
-      const f = map.queryRenderedFeatures(e.point, { layers: ["eventos", "ops", "zonas"] })[0];
+      const f = map.queryRenderedFeatures(e.point, { layers: ["com-punto", "eventos", "ops", "com-fondo", "huella", "zona-sel-fondo", "zonas"] })[0];
       if (!f) return popup.remove();
       if (f.layer.id === "ops") return abrir(f.properties.i, false);
+      if (f.layer.id === "com-punto" || f.layer.id === "com-fondo") return globoCom(f.properties.n, e.lngLat);
+      if (f.layer.id === "huella") {  // tocar un área minera abre esa operación
+        const i = filas.findIndex(x => x.os.some(o => o.empresa === f.properties.empresa && o.unidad === f.properties.unidad));
+        if (i >= 0 && !document.querySelector(`.op[data-i="${i}"]`).classList.contains("abierta")) abrir(i, true);
+        return popup.setLngLat(e.lngLat).setHTML(`<b>${esc(f.properties.unidad)}</b><br>${esc(nombre(f.properties.empresa))}`).addTo(map);
+      }
+      if (f.layer.id === "zona-sel-fondo") {  // un distrito de la zona de influencia, con su propio riesgo
+        const u = f.properties.u, a = A.get(u);
+        return popup.setLngLat(e.lngLat).setHTML(`<b>${esc(lugar(u))}</b><br>${pct(a?.prob)} de probabilidad de paro o bloqueo en el distrito hasta ${hasta}.`).addTo(map);
+      }
       popup.setLngLat(e.lngLat).setHTML(f.properties.h).addTo(map);
     });
   });
@@ -389,7 +407,7 @@ function iniciar(D, G, H, C) {
           ${a.alerta_inmediata ? `<p class="fondo"><a href="${esc(a.enlace_prensa)}" target="_blank" rel="noopener">Ya hay una protesta anunciada cerca</a></p>` : ""}
         </div></div></div></li>`; }).join("");
     document.querySelectorAll(".op > button").forEach(b => b.onclick = () => abrir(+b.parentNode.dataset.i, true));
-    document.querySelectorAll(".casos details").forEach(d => d.ontoggle = () => d.open && verComunidad(casosDe(d.dataset.u)[+d.dataset.k]));
+    document.querySelectorAll(".casos button").forEach(b => b.onclick = () => elegirCaso(b.parentNode, true));
   }
 
   // Deja solo las señales que van en la dirección del cambio y redondea lo habitual
@@ -486,17 +504,47 @@ function iniciar(D, G, H, C) {
       map.getSource("zona-sel").setData({ type: "FeatureCollection", features: [...pol, ...nom] });
       map.getSource("com").setData({ type: "FeatureCollection", features: comunidadesDe(z).map(f => ({ ...f, properties: { ...f.properties, nota: estadoCaso(f.properties) } })) });
       map.getSource("com-punto").setData(VACIO());
+      map.getSource("lazos").setData(VACIO());
+      abierta = fila;
       map.setFilter("com-sel", ["==", ["get", "n"], ""]);
       if (fila) map.once("idle", () => {
         casosDe(fila.u).filter(c => c.com && !c.territorio && !PUNTOS[c.com]).forEach(c => { const p = buscarEnMapa(c.com); if (p) PUNTOS[c.com] = p; });
         map.getSource("com-punto").setData({ type: "FeatureCollection", features: casosDe(fila.u).filter(c => PUNTOS[c.com] && !c.territorio)
           .map(c => ({ type: "Feature", geometry: { type: "Point", coordinates: PUNTOS[c.com] }, properties: { n: c.com, caso: c.nombre, nota: estadoCaso(c) } })) });
+        // Un hilo de cada comunidad en conflicto a la operación que nombra su caso
+        const op = puntoOp(fila), suya = llano(fila.os.map(o => `${o.empresa} ${o.unidad}`).join(" "));
+        const nombra = c => llano(contra(c)).split(/\W+/).some(w => w.length > 4 && !/minera|empresa|compania|mining/.test(w) && suya.includes(w));
+        map.getSource("lazos").setData({ type: "FeatureCollection", features: casosDe(fila.u).filter(c => c.com && nombra(c)).map(c => {
+          const k = c.territorio ? cajaDe([c.territorio]) : null, p = k ? [(k[0] + k[2]) / 2, (k[1] + k[3]) / 2] : PUNTOS[c.com];
+          return p && { type: "Feature", geometry: { type: "LineString", coordinates: [p, op] }, properties: {} }; }).filter(Boolean) });
       });
     });
   }
   const PUNTOS = {};  // comunidad → lugar hallado en el mapa base
+  const primera = s => String(s || "").split(/(?<=\.)\s/)[0];
+  const contra = c => (c.nombre || c.caso || "").split(/\s+[-–]\s+|-(?=[A-ZÁÉÍÓÚ])/)[1]?.trim() || "";
+  let abierta = null;  // la operación abierta en el mapa
+  // Una comunidad a la vez: se marca en el panel, en el mapa y se cuenta con quién es el conflicto
+  function elegirCaso(li, volar) {
+    const ya = li.classList.contains("elegida");
+    document.querySelectorAll(".casos li").forEach(x => x.classList.toggle("elegida", x === li && !ya));
+    if (ya) { listo.then(() => map.setFilter("com-sel", ["==", ["get", "n"], ""])); popup.remove(); return; }
+    const c = casosDe(li.dataset.u)[+li.dataset.k];
+    if (volar) verComunidad(c);
+  }
+  function globoCom(nombreCom, lngLat) {
+    if (!abierta) return;
+    const cs = casosDe(abierta.u), k = cs.findIndex(c => c.com && llano(c.com) === llano(nombreCom)), c = cs[k];
+    const li = document.querySelector(`.op.abierta .casos li[data-k="${k}"]`);
+    if (li && !li.classList.contains("elegida")) { elegirCaso(li, false); li.scrollIntoView({ block: "nearest", behavior: quieto ? "auto" : "smooth" }); }
+    map.setFilter("com-sel", ["==", ["get", "n"], nombreCom]);
+    popup.setLngLat(lngLat).setHTML(c
+      ? `<b>${esc(nombreCom)}</b><br>${esc(estadoCaso(c))}.${c.reclamo ? `<br>${esc(primera(c.reclamo))}` : ""}`
+      : `<b>${esc(nombreCom)}</b><br>Comunidad campesina. Sin conflicto abierto en la Defensoría.`).addTo(map);
+  }
   const comunidadesDe = z => C.features.filter(f => z.has(f.properties.u));
-  const estadoCaso = c => c.caso || c.nombre ? `conflicto ${c.estado === "activo" ? "activo" : "latente"}${/NO HAY/i.test(c.dialogo || "") ? ", sin diálogo" : /HAY/i.test(c.dialogo || "") ? ", en diálogo" : ""}` : "";
+  // "Conflicto activo con Minera Las Bambas, en diálogo"
+  const estadoCaso = c => c.caso || c.nombre ? `Conflicto ${c.estado === "activo" ? "activo" : "latente"}${contra(c) ? ` con ${contra(c)}` : ""}${/NO HAY/i.test(c.dialogo || "") ? ", sin diálogo" : /HAY/i.test(c.dialogo || "") ? ", en diálogo" : ""}` : "";
   // El nombre de la comunidad en un caso de la Defensoría: "CC Chuicuni - Las Bambas" → "Chuicuni"
   const PREFIJO = /^(comunidad(es)? (campesinas?|nativas?)|comunidad(es)?|cc\.?|c\.c\.|cn|c\.n\.)\s+(de(l)?\s+)?/i;
   const comDe = n => PREFIJO.test(n) ? nombre(n.replace(PREFIJO, "").split(/\s+[-–]\s+|-/)[0].trim()) : null;
@@ -526,7 +574,7 @@ function iniciar(D, G, H, C) {
       if (!k && !p) return;
       map.setFilter("com-sel", ["==", ["get", "n"], c.territorio ? c.territorio.properties.n : ""]);
       const cam = k ? map.cameraForBounds([[k[0], k[1]], [k[2], k[3]]], { padding: 120 }) : { center: p, zoom: 13 };
-      map.flyTo({ center: cam.center, zoom: Math.min(cam.zoom, 13), pitch: 45, duration: quieto ? 0 : 1600 });
+      map.flyTo({ center: cam.center, zoom: Math.min(cam.zoom - 0.6, 12.3), pitch: 45, duration: quieto ? 0 : 1600 });
       centrar(cam.center);
     });
   }
@@ -543,11 +591,11 @@ function iniciar(D, G, H, C) {
   // Dónde y quiénes: los distritos de la zona que más pesan y los conflictos que la Defensoría tiene abiertos en ella
   function quienes(u) {
     const cs = casosDe(u), n = comunidadesDe(new Set(zonaDe(u))).length;
-    const fila = (c, k) => `<li><details data-u="${u}" data-k="${k}"><summary><b>${esc(c.com || c.nombre.split(" - ")[0])}</b>
-        <span>${esc(lugar(String(c.ubigeo)).split(", ")[0])}. ${esc(estadoCaso(c).replace(/^c/, "C"))}.</span></summary>
-        ${c.reclamo ? `<p>${esc(c.reclamo.split(/(?<=\.)\s/)[0])}</p>` : ""}</details></li>`;
+    const fila = (c, k) => `<li data-u="${u}" data-k="${k}"><button type="button"><b>${esc(c.com || c.nombre.split(" - ")[0])}</b>
+        <span>${esc(lugar(String(c.ubigeo)).split(", ")[0])}. ${esc(estadoCaso(c))}.</span></button>
+        ${c.reclamo ? `<p>${esc(primera(c.reclamo))}</p>` : ""}</li>`;
     return `<h3>Comunidades de la zona</h3>
-      <p class="fondo" style="margin-top:0">${n ? `${n} en el registro del Ministerio de Cultura, marcadas en el mapa. ` : ""}${cs.length ? "En naranja, las que tienen un conflicto abierto en la Defensoría. Toca una para verla." : "Ninguna tiene un conflicto abierto en la Defensoría."}</p>
+      <p class="fondo" style="margin-top:0">${n ? `${n} en el registro del Ministerio de Cultura, marcadas en el mapa. ` : ""}${cs.length ? "En naranja, las que tienen un conflicto abierto en la Defensoría. Elige una aquí o en el mapa para ver dónde está y qué pide." : "Ninguna tiene un conflicto abierto en la Defensoría."}</p>
       ${cs.length ? `<ul class="casos">${cs.slice(0, 4).map(fila).join("")}</ul>
       <p class="fuente">Defensoría del Pueblo, reporte de ${MESES_TXT[cs[0].mes - 1]} ${cs[0].anio}${cs.length > 4 ? `. ${cs.length - 4} casos más en la provincia` : ""}</p>` : ""}`;
   }
