@@ -232,12 +232,12 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
       ? `Riesgo ${altos.length === zonas.length ? "alto en todas" : `alto en ${num(altos.length)} de las ${num(zonas.length)}`} ${zonas.length === 1 ? "operación" : "operaciones"} de ${corto} en ${mesTxt}`
       : `Riesgo ${BANDAS[niv].toLowerCase()} en las operaciones de ${corto} en ${mesTxt}`;
     const bajada = (hechos ? `Esta semana hubo ${num(hechos, false) === "un" ? "un hecho" : `${num(hechos, false)} hechos`} de protesta en sus zonas o rutas.` : `Esta semana no hubo protestas ni bloqueos en sus zonas ni en ${corredor}.`) +
-      (motores[0] ? ` El riesgo sube por ${MOTOR_TXT[motores[0].corto].split(",")[0]}${motores[1] ? ` y ${MOTOR_TXT[motores[1].corto].split(",")[0]}` : ""}.` : "");
+      (motores[0] ? ` ${tendencia[0] === "sube" ? "El riesgo sube por" : "El riesgo se sostiene por"} ${MOTOR_TXT[motores[0].corto].split(",")[0]}${motores[1] ? ` y ${MOTOR_TXT[motores[1].corto].split(",")[0]}` : ""}.` : "");
 
     const conclusiones = [
       altos.length ? `${lista(altos.map(nombreZ))} ${altos.length === 1 ? "tiene" : "tienen"} ${rango(altos)} de probabilidad de un paro o bloqueo en su zona durante ${mesTxt}${subMedia > 1 ? `, unos ${subMedia} puntos más que su promedio del último año` : ""}.`
         : `Ninguna operación supera el 25% de probabilidad de paro o bloqueo en ${mesTxt}. La más expuesta es ${nombreZ(top)}, con ${pct(mesP(top.a))}.`,
-      motores.length ? `El alza se explica por ${MOTOR_TXT[motores[0].corto]}${motores[1] ? `, y por ${MOTOR_TXT[motores[1].corto].split(",")[0]}` : ""}.` : "El riesgo refleja la historia de conflicto de cada zona y no muestra cambios recientes.",
+      motores.length ? `${tendencia[0] === "sube" ? "El alza se explica por" : "Lo que lo sostiene es"} ${MOTOR_TXT[motores[0].corto]}${motores[1] ? `, y por ${MOTOR_TXT[motores[1].corto].split(",")[0]}` : ""}.` : "El riesgo refleja la historia de conflicto de cada zona y no muestra cambios recientes.",
       deEmpresa.length ? `${Num(deEmpresa.length, false)} ${deEmpresa.length === 1 ? "conflicto registrado" : "conflictos registrados"} por la Defensoría del Pueblo ${deEmpresa.length === 1 ? "nombra" : "nombran"} a la empresa. ${Num(activosE.length, false)} ${activosE.length === 1 ? "sigue activo" : "siguen activos"} y ${sinDialogoE.length ? `${num(sinDialogoE.length, false)} no ${sinDialogoE.length === 1 ? "tiene" : "tienen"} mesa de diálogo` : "ninguno figura sin mesa de diálogo"}.`
         : "Ningún conflicto vigente de la Defensoría del Pueblo nombra a la empresa.",
       hechos ? `Del ${periodo} se registraron ${hechos} protestas o bloqueos en sus provincias o rutas. El detalle está en la sección 2.`
