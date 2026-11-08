@@ -7,7 +7,7 @@ import sys
 
 import pandas as pd
 
-from tremor.db import conectar
+from tremor.db import RAIZ, conectar
 from tremor.distritos import GEOJSON, OEFA, arcgis
 from tremor.lugares import norm
 
@@ -20,13 +20,15 @@ def cargar(con):
     lotes en explotación: todos los distritos que tocan."""
     import geopandas as gpd
     distritos = gpd.read_file(GEOJSON)[["ubigeo", "geometry"]]
-    filas = []
+    filas, huellas = [], []
     for tipo, capa in CAPAS.items():
         g = gpd.GeoDataFrame.from_features(arcgis(capa, "OBJECTID,ADMINISTRADO,UNIDAD_FISCALIZABLE", geometria=True,
                                                   lote=200), crs=4326)
         g = g[g.geometry.notna() & ~g.geometry.is_empty]
         g["geometry"] = g.geometry.make_valid()
         g = g.dissolve(by=["ADMINISTRADO", "UNIDAD_FISCALIZABLE"]).reset_index()
+        huellas.append(g.assign(tipo=tipo, geometry=g.geometry.simplify(0.0005))[
+            ["ADMINISTRADO", "UNIDAD_FISCALIZABLE", "tipo", "geometry"]])
         if tipo == "mineria":
             g = g.set_geometry(g.to_crs(32718).geometry.centroid.to_crs(4326))
             cruce = gpd.sjoin(g, distritos, predicate="within")
@@ -38,6 +40,11 @@ def cargar(con):
     t.to_sql("operacion", con, if_exists="replace", index=False)
     con.commit()
     print(f"{len(t)} operaciones-distrito de {t.empresa.nunique()} empresas (OEFA)")
+    h = pd.concat(huellas).rename(columns={"ADMINISTRADO": "empresa", "UNIDAD_FISCALIZABLE": "unidad"})
+    h["empresa"], h["unidad"] = h.empresa.str.strip(), h.unidad.str.strip()
+    import re
+    texto = gpd.GeoDataFrame(h, crs=4326).to_json(drop_id=True)
+    (RAIZ / "docs" / "operaciones.json").write_text(re.sub(r"(\d+\.\d{4})\d+", r"\1", texto), encoding="utf-8")  # huella de cada unidad, para el mapa
 
 
 def vista(con, texto):

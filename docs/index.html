@@ -153,7 +153,7 @@
 const FUENTES = ["https://raw.githubusercontent.com/nicosil02/tremor/datos/web.json", "web.json"];
 const BASE = "https://tiles.openfreemap.org/styles/positron";
 const PERU = [[-81.4, -18.4], [-68.6, 0.1]];
-const pct = v => v == null || isNaN(v) ? "s/d" : `${Math.round(v * 100)}%`;
+const pct = v => v == null || isNaN(v) ? "s/d" : v > 0.95 ? ">95%" : `${Math.round(v * 100)}%`;
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const nombre = s => String(s ?? "").toLowerCase().replace(/(^|[\s(-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase())
   .replace(/ (De|Del|La|Las|Los|Y|El) /g, w => w.toLowerCase()).replace(/S\.(a|r)\.?(a|c|l)?\.?/gi, w => w.toUpperCase());
@@ -166,12 +166,13 @@ async function json(urls) {
   throw new Error("sin datos");
 }
 
-Promise.all([json(FUENTES), json(["distritos.json"])]).then(([D, G]) => iniciar(D, G)).catch(() => {
+Promise.all([json(FUENTES), json(["distritos.json"]), json(["operaciones.json"]).catch(() => ({ type: "FeatureCollection", features: [] }))])
+  .then(([D, G, H]) => iniciar(D, G, H)).catch(() => {
   document.getElementById("h1").textContent = "No se pudieron cargar los datos";
   document.getElementById("bajada").textContent = "Vuelve a cargar la página en unos minutos.";
 });
 
-function iniciar(D, G) {
+function iniciar(D, G, H) {
   const A = new Map(D.alerta.map(a => [a.ubigeo, a]));
   const lugar = u => { u = String(u || ""); const a = A.get(u) || [...A.values()].find(x => x.ubigeo.startsWith(u)); if (!a) return u;
     const [dep, prov, dist] = (a.lugar || "").split(" / ").map(nombre);
@@ -203,13 +204,33 @@ function iniciar(D, G) {
   const popup = new maplibregl.Popup({ closeButton: false, offset: 10 });
   listo.then(() => {
     document.getElementById("cargando").remove();
-    for (const c of map.getStyle().layers) if (c.type === "symbol" && c.layout?.["text-field"])  // nombres en castellano
+    for (const c of map.getStyle().layers) if (c.type === "symbol" && JSON.stringify(c.layout?.["text-field"] ?? "").includes("name"))  // nombres en castellano
       map.setLayoutProperty(c.id, "text-field", ["coalesce", ["get", "name:es"], ["get", "name"]]);
     document.getElementById("leyenda").hidden = false;
+    // Relieve de los Andes (Terrain Tiles abiertos de AWS) y satélite al acercarse, bajo los nombres
+    const bajoNombres = map.getStyle().layers.find(c => c.type === "symbol")?.id;
+    const DEM = { type: "raster-dem", encoding: "terrarium", tileSize: 256, maxzoom: 13, attribution: "Terrain Tiles (AWS, Mapzen)",
+                  tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"] };
+    map.addSource("dem", DEM);
+    map.addSource("dem-3d", DEM);
+    map.addLayer({ id: "sombra", type: "hillshade", source: "dem", paint: { "hillshade-exaggeration": 0.3,
+      "hillshade-shadow-color": "#56676c", "hillshade-highlight-color": "#ffffff", "hillshade-accent-color": "#56676c" } }, bajoNombres);
+    map.setTerrain({ source: "dem-3d", exaggeration: 1.3 });
+    map.addSource("sat", { type: "raster", tileSize: 256, maxzoom: 18, attribution: "Esri, Maxar",
+      tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"] });
+    map.addLayer({ id: "sat", type: "raster", source: "sat", minzoom: 10,
+      paint: { "raster-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0, 12, 1] } }, bajoNombres);
     const rampa = ["step", ["get", "p"], css("--cobre-1"), 0.1, css("--cobre-2"), 0.25, css("--cobre-3"), 0.5, css("--cobre-4")];
     map.addSource("zonas", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-    map.addLayer({ id: "zonas", type: "fill", source: "zonas", paint: { "fill-color": rampa, "fill-opacity": 0.8 } });
-    map.addLayer({ id: "zonas-borde", type: "line", source: "zonas", paint: { "line-color": "#fff", "line-width": 0.8 } });
+    // Sobre el satélite la zona se vuelve transparente: manda la huella de la operación
+    map.addLayer({ id: "zonas", type: "fill", source: "zonas", paint: { "fill-color": rampa,
+      "fill-opacity": ["interpolate", ["linear"], ["zoom"], 9, 0.8, 12, 0.18] } });
+    map.addLayer({ id: "zonas-borde", type: "line", source: "zonas", paint: { "line-color": "#fff", "line-width": 0.8, "line-dasharray": [2, 2] } });
+    map.addSource("huellas", { type: "geojson", data: H });
+    map.addLayer({ id: "huella", type: "fill", source: "huellas", filter: ["==", ["get", "empresa"], ""],
+      paint: { "fill-color": "#fff", "fill-opacity": ["interpolate", ["linear"], ["zoom"], 8, 0.35, 12, 0.06] } });
+    map.addLayer({ id: "huella-borde", type: "line", source: "huellas", filter: ["==", ["get", "empresa"], ""],
+      paint: { "line-color": "#fff", "line-width": ["interpolate", ["linear"], ["zoom"], 8, 1, 13, 2.5] } });
     map.addSource("puntos", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     map.addLayer({ id: "eventos", type: "circle", source: "puntos", filter: ["!=", ["get", "k"], "op"], paint: {
       "circle-radius": 6, "circle-stroke-width": 1.5, "circle-stroke-color": "#fff",
@@ -258,6 +279,8 @@ function iniciar(D, G) {
       ? `Probabilidad de un paro, un bloqueo o una toma en la zona de cada operación ${enMes}, y cuánto se aparta de lo normal en esa zona. Arriba, las que más suben.`
       : `Probabilidad de que haya un paro, un bloqueo o una toma en la zona de cada operación de aquí a ${hasta}. La zona es el distrito y los que lo rodean.`;
     lista(!suyas);
+    listo.then(() => ["huella", "huella-borde"].forEach(c =>
+      map.setFilter(c, suyas ? ["in", ["get", "empresa"], ["literal", empresas]] : ["==", ["get", "empresa"], ""])));
     const zonas = new Set(filas.map(f => f.u));
     cerca(zonas, !suyas);
     historial(zonas);
@@ -268,7 +291,8 @@ function iniciar(D, G) {
     document.getElementById("ops").innerHTML = filas.map((f, i) => {
       const a = f.a, raz = (a.razones_zona_extractivo || a.razones_zona || "").split(" · ").filter(Boolean).slice(0, 3);
       const cambios = (a.razones_cambio_1m || "").split(" · ").filter(Boolean)
-        .map(r => [r.startsWith("baja") ? "baja" : "sube", r.replace(/^(sube|baja): /, "").replace(/\(lo habitual(?: en el año)?, ([\d.]+)\)/g, (m, n) => `(lo habitual, ${Math.round(+n)})`)]);
+        .map(r => [r.startsWith("baja") ? "baja" : "sube", r.replace(/^(sube|baja): /, "")])
+        .map(([s, r]) => [s, coherente(s, r)]).filter(([, r]) => r && !r.startsWith("cobre"));  // el precio del cobre no es una señal local
       const titulo = pais ? f.os[0].unidad.split(",")[0] : f.os.map(o => o.unidad).join(", ");
       const donde = pais ? lugar(f.u).split(", ").slice(1).join(", ") + ", " + nombre((a.lugar || "").split(" / ")[0]) : lugar(f.u);
       return `<li class="op" data-i="${i}"><button type="button" aria-expanded="false">
@@ -276,7 +300,7 @@ function iniciar(D, G) {
           <span class="prob"><b>${pct(mesP(a))}</b>${delta(a)}</span></button>
         <div class="detalle"><div><div class="dentro">
           ${cambios.length ? `<h3>Qué cambió en la zona</h3><ul class="cambios">${cambios.map(([s, r]) => `<li><b class="${s}">${s === "sube" ? "Sube" : "Baja"}</b><span>${esc(r.charAt(0).toUpperCase() + r.slice(1))}</span></li>`).join("")}</ul>` : ""}
-          ${a.zona_tranquila && a.prob_brote != null ? `<p class="tranquila">La zona no tuvo paros ni bloqueos en los últimos 3 meses. Entre las zonas así, la probabilidad de que arranque uno ${enMes} es ${pct(a.prob_brote)}.</p>` : ""}
+          ${linea(f.u)}
           <h3>Riesgo de fondo, de aquí a ${hasta}</h3>
           <div class="dos"><div><b>${pct(a.prob_zona)}</b><small>de que haya un paro o bloqueo en la zona, por cualquier reclamo</small></div>
           <div class="ext"><b>${pct(a.prob_zona_extractivo)}</b><small>de que sea contra la minería, el petróleo o por el ambiente</small></div></div>
@@ -287,6 +311,19 @@ function iniciar(D, G) {
     document.querySelectorAll(".op > button").forEach(b => b.onclick = () => abrir(+b.parentNode.dataset.i, true));
   }
 
+  // Deja solo las señales que van en la dirección del cambio y redondea lo habitual
+  function coherente(s, r) {
+    const [cuerpo, cola = ""] = r.split(/(, en la zona en los últimos 3 meses)$/);
+    const partes = cuerpo.split("; ").map(p => {
+      const m = p.match(/:? (\d+) \(lo habitual(?: en el año)?, ([\d.]+)\)/);
+      if (!m) return p;
+      const hoy = +m[1], antes = Math.round(+m[2]);
+      if (hoy === antes || (s === "sube") !== (hoy > antes)) return null;
+      return p.replace(m[0], `: ${hoy} (lo habitual, ${antes})`).replace(/::/, ":");
+    }).filter(Boolean);
+    return partes.length ? partes.join("; ") + cola : "";
+  }
+
   function delta(a) {
     if (!hayMes || a.cambio_zona_1m == null) return `<small>de paro o bloqueo</small>`;
     const d = Math.round(a.cambio_zona_1m * 100);
@@ -294,12 +331,37 @@ function iniciar(D, G) {
     return `<span class="delta ${d > 0 ? "sube" : "baja"}">${d > 0 ? "+" : "−"}${Math.abs(d)} puntos</span><small>lo normal, ${pct(a.normal_zona_1m)}</small>`;
   }
 
+  // Lo que el modelo decía de esta zona cada mes desde 2024, con datos que no había visto, y cuándo hubo paro
+  function linea(u) {
+    const x = D.zonas?.[u]?.z1_fuerza || D.zonas?.[u]?.z_fuerza;
+    if (!x || !x.pct.length) return "";
+    const n = x.pct.length, W = 300, Hh = 46, w = W / n;
+    const barras = x.pct.map((p, k) => { const h = Math.max(2, (1 - p) * (Hh - 12));
+      return `<rect x="${(k * w + 1).toFixed(1)}" y="${(Hh - h).toFixed(1)}" width="${Math.max(w - 2, 1).toFixed(1)}" height="${h.toFixed(1)}" fill="${p <= 0.1 ? "var(--cobre)" : "var(--linea)"}"/>`; }).join("");
+    const paros = x.y.map((y, k) => y ? `<circle cx="${(k * w + w / 2).toFixed(1)}" cy="4" r="3" fill="var(--tinta)"/>` : "").join("");
+    const anio = m => Math.floor(m / 12);
+    const vistos = x.y.filter((y, k) => y && x.pct[k] <= 0.1).length, total = x.y.filter(Boolean).length;
+    return `<h3>Lo que decía el modelo aquí cada mes</h3>
+      <svg viewBox="0 0 ${W} ${Hh + 14}" width="100%" role="img" aria-label="Riesgo mensual de la zona y meses con paro">${barras}${paros}
+        <text x="0" y="${Hh + 12}" font-size="10" fill="var(--tinta-3)">${anio(x.m0 + 1)}</text>
+        <text x="${W}" y="${Hh + 12}" font-size="10" fill="var(--tinta-3)" text-anchor="end">${anio(x.m0 + n - 1)}</text></svg>
+      <p style="margin:2px 0 0;font-size:12px;color:var(--tinta-3)">Barras, el riesgo frente a las demás zonas; en cobre, los meses en alerta. Puntos, los meses con paro o bloqueo. ${total ? `Tenía en alerta ${vistos} de ${total}.` : ""}</p>`;
+  }
+
   function abrir(i, volar) {
     document.querySelectorAll(".op").forEach(li => { const si = +li.dataset.i === i && !li.classList.contains("abierta");
       li.classList.toggle("abierta", si); li.querySelector("button").setAttribute("aria-expanded", si);
       if (si && !volar) li.scrollIntoView({ block: "nearest", behavior: quieto ? "auto" : "smooth" }); });
+    if (!volar || !document.querySelector(`.op[data-i="${i}"]`).classList.contains("abierta")) return;
+    const unidades = new Set(filas[i].os.map(o => `${o.empresa}|${o.unidad}`));
+    const suyas = H.features.filter(f => unidades.has(`${f.properties.empresa}|${f.properties.unidad}`));
     const c = centroDe(filas[i].u);
-    if (volar && c) map.flyTo({ center: c, zoom: Math.max(map.getZoom(), 8.5), duration: quieto ? 0 : 900 });
+    if (suyas.length) {  // la huella de la mina, inclinada, para ver el tajo, la vía y quién vive al lado
+      const [[o, s], [e, n]] = d3.geoBounds({ type: "FeatureCollection", features: suyas });
+      const cam = map.cameraForBounds([[o, s], [e, n]], { padding: 90 });
+      map.flyTo({ center: cam.center, zoom: Math.min(cam.zoom, 13.5), pitch: 55, bearing: -15, curve: 1.4,
+                  duration: quieto ? 0 : 2400, essential: true });
+    } else if (c) map.flyTo({ center: c, zoom: 10.5, pitch: 45, bearing: -10, duration: quieto ? 0 : 2000, essential: true });
   }
 
   // Protestas y anuncios que tocan a estas operaciones. Cuentan las de sus provincias, y las de su departamento
@@ -353,8 +415,9 @@ function iniciar(D, G) {
     const cs = filas.map(f => centroDe(f.u)).filter(Boolean);
     if (cs.length && !pais) {
       const b = cs.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(cs[0], cs[0]));
-      map.fitBounds(b, { padding: 110, maxZoom: 9, duration: quieto ? 0 : 900 });
-    } else map.fitBounds(PERU, { padding: 30, duration: quieto ? 0 : 900 });
+      const cam = map.cameraForBounds(b, { padding: 110, maxZoom: 9 });
+      map.flyTo({ ...cam, pitch: 20, bearing: 0, duration: quieto ? 0 : 1600, essential: true });
+    } else map.flyTo({ ...map.cameraForBounds(PERU, { padding: 30 }), pitch: 0, bearing: 0, duration: quieto ? 0 : 1200 });
   }
 
   document.getElementById("pie").insertAdjacentHTML("beforeend", ` Datos al ${esc(D.creado)}.`);

@@ -14,7 +14,8 @@ from tremor.lugares import catalogo, nombre, norm
 # Defensoría publica con un mes de rezago: con horizonte 1 la alerta sería de un mes que ya pasó.
 HORIZONTE = 3
 OBJETIVOS = ("y_fuerza", "y_extractivo", "y_crisis", "z_fuerza", "z_extractivo", "z1_fuerza", "z1_brote")
-# z1_…: solo el mes siguiente al último reporte. z1_fuerza: medida de fuerza en la zona ese mes (la alerta del mes).
+# z1_…: un solo mes, el segundo después del último reporte (el primero que todavía se puede prevenir cuando sale el
+# reporte). z1_fuerza: medida de fuerza en la zona ese mes (la alerta del mes).
 # z1_brote: lo mismo pero solo en zonas sin medidas de fuerza en los 3 meses previos: el arranque, que no se adivina
 # repitiendo la historia. Es la prueba honesta de si el modelo anticipa algo.
 # Zonas de influencia (z_…): distrito con operación extractiva + los distritos que limitan con él. Se mide solo en
@@ -153,6 +154,21 @@ def ventana(x, k):
     return s[:, 1:] - s[:, np.maximum(np.arange(1, x.shape[1] + 1) - k, 0)]
 
 
+def anomalia(x, k=24):
+    """Cuánto se aparta el valor de hoy de los k meses anteriores del mismo distrito o zona, en desviaciones (z).
+    El +0.5 en el denominador evita que una zona siempre en cero salte a z enorme por un solo evento."""
+    previo = lambda y: np.concatenate([np.full((len(y), 1), np.nan), y[:, :-1]], axis=1)  # termina en t-1
+    media = previo(ventana(x, k)) / k
+    var = previo(ventana(x ** 2, k)) / k - media ** 2
+    return (x - media) / (np.sqrt(np.maximum(var, 0)) + 0.5)
+
+
+ANOMALIAS = {"zona_fuerza_3": "medidas de fuerza", "zona_protestas_sin_fuerza_3": "marchas o plantones sin paro",
+             "zona_casos_activos": "casos activos en la Defensoría", "zona_certificaciones_3": "certificaciones ambientales",
+             "zona_emergencias_3": "emergencias por lluvias, huaicos o sequía",
+             "fuerza_3_provincia": "medidas de fuerza en el resto de la provincia"}
+
+
 def futuro(x, h):
     """Suma de los h meses siguientes (t+1 … t+h); NaN donde todavía no hay datos."""
     s = np.concatenate([np.zeros((len(x), 1)), x.cumsum(axis=1)], axis=1)
@@ -221,8 +237,11 @@ def panel(con):
          "zona_dialogo_roto_3": zona(ventana(DR, 3)), "zona_certificaciones_3": zona(ventana(C, 3)),
          "zona_protestas_sin_fuerza_3": zona(ventana(P - F, 3)),  # marchas, plantones, pronunciamientos
          "zona_alza": zona(F3) - zona(ventana(F, 12)) / 4, "zona_emergencias_3": zona(EM),
-         "z1_fuerza": (futuro(zona(F + K), 1) > 0).astype(float)}
+         # El mes que importa es t+2: el reporte del mes t sale a mediados de t+1, y para entonces t+1 ya va por la mitad.
+         "z1_fuerza": (futuro(zona(F + K), 2) - futuro(zona(F + K), 1) > 0).astype(float)}
     v["z1_brote"] = np.where(zona(F3) > 0, np.nan, v["z1_fuerza"])
+    for c in ANOMALIAS:  # cada señal frente a la historia de su propia zona (no se reescala: es otra variable)
+        v["anom_" + c] = anomalia(v[c])
     for y in OBJETIVOS:
         v[y][np.isnan(futuro(F, HORIZONTE))] = np.nan
     for k, x in (("v_acled", AC), ("v_acled_extractivo", AX), ("vz_acled", zona(AC)),
@@ -354,6 +373,7 @@ GRUPOS = {
                 "zona_casos_activados_3", "zona_dialogo_roto_3", "zona_certificaciones_3",
                 "zona_protestas_sin_fuerza_3", "zona_alza", "zona_emergencias_3"],
     "calendario": ["mes_del_anio"],
+    "anomalias": ["anom_" + c for c in ANOMALIAS],
 }
 VARIABLES = [v for g in GRUPOS.values() for v in g]
 # Fuera del modelo por fuga: las denuncias OEFA (2018-2024) y los conflictos ANA (sin fecha) se solapan con la prueba.
@@ -693,7 +713,7 @@ def frase(g, r):
         partes.append("sin oficina ambiental" if r.oficina_ambiental == 0 else "con oficina ambiental")
         partes.append(f"{r.participacion_formas:.0f} formas de participación ciudadana (RENAMU 2023)")
         return "; ".join(partes)
-    if g in ("cambios", "calendario"):
+    if g in ("cambios", "calendario", "anomalias"):
         return frase_cambio(g, r, r, True).removeprefix("sube: ")
     if g == "vias":
         tramo = "en el Corredor Minero del Sur; " if r.corredor_minero_sur else ""
@@ -720,7 +740,7 @@ def este_mes(mdl, p, x, calibrador, meses=12):
                           index=x.index)
     salida["razones_cambio_1m"] = [
         " · ".join(frase_cambio(g, x.loc[u], habitual.loc[u], caida.loc[u, g] > 0)
-                   for g in caida.loc[u].abs().nlargest(3).index if abs(caida.loc[u, g]) >= 0.005)
+                   for g in caida.loc[u].drop("economia").abs().nlargest(3).index if abs(caida.loc[u, g]) >= 0.005)
         for u in x.index]
     return salida
 
@@ -749,6 +769,11 @@ def frase_cambio(g, r, n, sube):
             ("zona_emergencias_3", "emergencias por lluvias, huaicos o sequía")) if distinto(c)]
         return f"{signo}: " + ("; ".join(partes) + ", en la zona en los últimos 3 meses" if partes
                                else "sin casos nuevos, activados ni diálogos rotos en la zona en 3 meses")
+    if g == "anomalias":
+        nivel = lambda z: "muy por encima" if z >= 2 else "por encima" if z >= 1 else "muy por debajo" if z <= -2 else "por debajo"
+        partes = [f"{texto} {nivel(r['anom_' + c])} de lo habitual en la zona" for c, texto in ANOMALIAS.items()
+                  if pd.notna(r["anom_" + c]) and abs(r["anom_" + c]) >= 1 and (r["anom_" + c] > 0) == sube]
+        return f"{signo}: " + ("; ".join(partes) or "señales cerca de lo habitual en la zona")
     if g == "contagio":
         return f"{signo}: " + vs(r.fuerza_3_provincia, n.fuerza_3_provincia, "medidas de fuerza en el resto de la provincia en 3 meses")
     if g == "vias":
@@ -831,7 +856,7 @@ def alerta(con, p, mejor):
     salida["alerta_inmediata"] = salida.alerta_inmediata.fillna(0).astype(int)
     salida["mes_base"] = texto_mes(ultimo)
     salida["ventana"] = f"{texto_mes(ultimo + 1)} a {texto_mes(ultimo + HORIZONTE)}"
-    salida["ventana_1m"] = texto_mes(ultimo + 1)
+    salida["ventana_1m"] = texto_mes(ultimo + 2)
     salida["zona_tranquila"] = (x.zona_fuerza_3 == 0).astype(int)  # prob_brote solo tiene sentido en estas
     salida.loc[salida.zona_tranquila == 0, ["prob_brote", "razones_brote"]] = np.nan
     salida["modelo"], salida["modelo_extractivo"] = mejor["y_fuerza"], mejor["y_extractivo"]
