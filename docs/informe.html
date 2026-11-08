@@ -99,6 +99,16 @@
   .fuente { font-size: 14px; color: var(--tinta-3); margin: 10px 0 0; }
   .seguir { margin: 0; padding-left: 20px; display: grid; gap: 10px; font-family: var(--serif); font-size: 17px; }
   .telefono .noti + .noti { margin-top: 10px; }
+  button.noti { display: block; width: 100%; text-align: left; font: inherit; border: 0; cursor: pointer; transition: transform 140ms var(--ease-out); }
+  button.noti:active { transform: scale(0.98); }
+  .noti .de b { font-weight: 650; }
+  .noti .t { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 2px 0 0; font-size: 15px; }
+  .noti .prev { font-size: 14px; color: var(--tinta-2); display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .noti .full { display: none; margin-top: 6px; }
+  .noti.abierta .t, .noti.abierta .prev { -webkit-line-clamp: unset; }
+  .noti.abierta .prev { display: none; }
+  .noti.abierta .full { display: block; }
+  .toca { color: #b9c4cb; text-align: center; font-size: 13px; margin: 14px 0 0; }
   .noti .afecta { margin-top: 6px; font-size: 14px; color: var(--tinta); font-weight: 600; }
   .explica table { margin: 16px 0 6px; }
   h2 { font-size: 19px; font-weight: 720; color: var(--marino); margin: 0 0 8px; }
@@ -297,19 +307,20 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
     const enProv = p => zonas.filter(z => prov(z) === p).map(nombreZ);
     const via = corredor === "el Corredor Minero del Sur" ? "la vía PE-3SG (Corredor Minero del Sur)" : corredor;
     const masDias = n => dia(new Date(new Date(hoy + "T12:00").getTime() + n * 864e5).toISOString().slice(0, 10));
+    const diaC = s => s.replace(/ de (\p{L}{3})\p{L}*$/u, " $1");
     const otra = zonas.find(z => prov(z) !== prov(top)) || zonas[1] || top;
     const alertas = [
-      { sev: "alta", hora: "6:58",
+      { sev: "alta", hora: "6:58", c: `Paro de 48 h en ${prov(top)} el ${diaC(masDias(4))}`, pv: `Afecta ${num(enProv(prov(top)).length)} operaciones y ${via.split(" (")[0]}`,
         t: `Paro de 48 horas anunciado en ${prov(top)} desde el ${masDias(4)}`,
         p: `Dirigentes de ${dist(top)} lo anunciaron en el noticiero de ${radioCorto}. Incluye bloqueo de ${via}.`,
         a: `${lista(enProv(prov(top)))} y el transporte de carga por ${via}.`,
         f: `${radioCorto}, noticiero de las 6:40` },
-      { sev: "media", hora: "9:15",
+      { sev: "media", hora: "9:15", c: `${prov(otra)}: comunidades dan plazo de 15 días`, pv: `Evalúan un paro. Afecta ${lista(enProv(prov(otra)))}`,
         t: `Posible paro en ${prov(otra)}: comunidades dan plazo de 15 días a ${corto}`,
         p: `En asamblea, comunidades de ${dist(otra)} acordaron evaluar medidas de lucha si no hay respuesta a sus reclamos por ${temas[0] ? temas[0][0] : "compromisos"}.`,
         a: `${lista(enProv(prov(otra)))}.`,
         f: `${radioCorto} y prensa regional` },
-      ...(sub ? [{ sev: "media", hora: "7:42",
+      ...(sub ? [{ sev: "media", hora: "7:42", c: `${nombreZ(sub)}: riesgo de paro sube a ${pct(mesP(sub.a))}`, pv: `${Math.round(sub.a.cambio_zona_1m * 100)} puntos sobre lo normal para ${mesTxt}`,
         t: `Riesgo de paro en ${nombreZ(sub)} sube a ${pct(mesP(sub.a))} en ${mesTxt}`,
         p: `Pasa a nivel ${BANDAS[nivel(mesP(sub.a))].toLowerCase()}, ${Math.round(sub.a.cambio_zona_1m * 100)} puntos sobre su promedio del último año. ${motores[0] ? `Lo empuja ${MOTOR_TXT[motores[0].corto].split(",")[0]}.` : ""}`,
         a: `${nombreZ(sub)} y los distritos vecinos de ${dist(sub)}.`,
@@ -317,8 +328,10 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
     const sevTxt = s => s === "alta" ? "Prioridad alta" : s === "media" ? "Prioridad media" : "Para seguimiento";
     document.getElementById("alerta").innerHTML = `
       <div class="telefono"><div class="hora">12:16</div><div class="fecha">${new Date(hoy + "T12:00").toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}</div>
-        ${alertas.slice().sort((x, y) => y.hora.padStart(5, "0").localeCompare(x.hora.padStart(5, "0"))).map(a => `<div class="noti"><div class="de"><b>Tremor</b><span>${a.hora}</span></div>
-          <div class="t"><span class="sev ${a.sev}">${sevTxt(a.sev)}</span> ${esc(a.t)}</div><p>${esc(a.p)}</p><p class="afecta">Puede afectar: ${esc(a.a)}</p></div>`).join("")}</div>
+        ${alertas.slice().sort((x, y) => y.hora.padStart(5, "0").localeCompare(x.hora.padStart(5, "0"))).map(a => `<button type="button" class="noti"><div class="de"><b>Tremor · ${a.sev === "alta" ? "Prioridad alta" : "Prioridad media"}</b><span>${a.hora}</span></div>
+          <div class="t">${esc(a.c)}</div><div class="prev">${esc(a.pv)}</div>
+          <div class="full"><p>${esc(a.p)}</p><p class="afecta">Puede afectar: ${esc(a.a)}</p></div></button>`).join("")}
+      <p class="toca">Toque una notificación para abrirla</p></div>
       <div class="explica"><h3>Alertas inmediatas</h3>
         <p>Tremor avisa en minutos cuando aparece algo nuevo que toca las operaciones de ${esc(corto)}. Llegan por correo, WhatsApp o Teams, con la fuente y el enlace al mapa.</p>
         <table><thead><tr><th>Tipo</th><th>Cuándo se envía</th><th>Este ejemplo</th></tr></thead><tbody>
@@ -330,6 +343,7 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
         <div class="correo"><div class="asunto">[Tremor] ${sevTxt(alertas[0].sev)}. ${esc(alertas[0].t)}</div>
           <div class="meta">Para: relaciones comunitarias y seguridad de ${esc(corto)}</div>
           <p style="margin:0 0 8px">${esc(alertas[0].p)}</p><p style="margin:0 0 8px"><b>Puede afectar:</b> ${esc(alertas[0].a)}</p><p style="margin:0;font-size:14px;color:var(--tinta-3)">Fuente: ${esc(alertas[0].f)}. Escuchar el fragmento y ver en el mapa.</p></div></div>`;
+    document.getElementById("alerta").onclick = e => { const n = e.target.closest(".noti"); if (n) n.classList.toggle("abierta"); };
   }
 })();
 </script>
