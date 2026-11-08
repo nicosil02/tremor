@@ -97,14 +97,13 @@ def eventos(con) -> pd.DataFrame:
         b = s.iloc[:0]
     for t in (e, p, s, b):
         t["m"] = t["fecha"].map(mes)
-    # ACLED (desde 2018, solo el mes): disturbios cuentan como medida de fuerza (en el Perú suelen ser bloqueos con
-    # piedras), la represión con víctimas como crisis y lo pacífico como protesta.
+    # ACLED (desde 2018, solo el mes): cuenta como medida de fuerza solo si su nota describe un paro, bloqueo o toma
+    # (`fuerza`, ver distritos.acled); la violencia de turba (linchamientos, ajustes) no es protesta y queda fuera.
     # Su uso comercial pide licencia; la tabla no se publica en `datos`.
     try:
-        a = q("SELECT ubigeo, anio * 12 + mes - 1 AS m, CASE WHEN subtipo IN ('Violent demonstration', 'Mob violence') "
-              "THEN 'bloqueo' WHEN subtipo = 'Excessive force against protesters' THEN 'represion' ELSE 'marcha' END "
-              "AS accion, (subtipo = 'Excessive force against protesters') AS victimas, extractivo FROM acled_evento "
-              "WHERE tipo IN ('Protests', 'Riots') AND length(ubigeo) = 6")
+        a = q("SELECT ubigeo, anio * 12 + mes - 1 AS m, CASE WHEN fuerza THEN 'bloqueo' ELSE 'marcha' END AS accion, "
+              "(subtipo = 'Excessive force against protesters') AS victimas, extractivo FROM acled_evento "
+              "WHERE tipo IN ('Protests', 'Riots') AND (subtipo <> 'Mob violence' OR fuerza) AND length(ubigeo) = 6")
     except Exception:
         a = d.iloc[:0]
     t = pd.concat([d, e, p, s, b, a], ignore_index=True)
@@ -761,7 +760,7 @@ def frase(g, r):
                 f"en el mismo corredor en 3 meses")
     # Las capitales de provincia no tienen elección distrital (las gobierna el alcalde provincial): sin margen.
     margen = "" if pd.isna(r.margen_victoria) else f"; la última se ganó por {pct(r.margen_victoria)}"
-    return f"{r.meses_a_eleccion:.0f} meses a la elección municipal{margen}"
+    return f"{eleccion(r)}{margen}"
 
 
 def este_mes(mdl, p, x, calibrador, meses=12):
@@ -787,6 +786,17 @@ def este_mes(mdl, p, x, calibrador, meses=12):
 
 MESES = ("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre",
          "noviembre", "diciembre")
+
+
+def eleccion(r, adelanto=2):
+    """La elección municipal vista desde el mes de la alerta (t+2), no desde el último dato: en noviembre de 2026
+    no "falta 1 mes", la elección ya fue (4 de octubre) y las nuevas autoridades asumen en enero."""
+    k = int(r.meses_a_eleccion) - adelanto
+    if k > 0:
+        return f"{'falta 1 mes' if k == 1 else f'faltan {k} meses'} para la elección municipal"
+    if k == 0:
+        return "es el mes de la elección municipal"
+    return "la elección municipal ya pasó y las nuevas autoridades asumen en enero"
 
 
 def frase_cambio(g, r, n, sube):
@@ -830,8 +840,7 @@ def frase_cambio(g, r, n, sube):
     if g == "economia":
         return f"{signo}: cobre {r.cobre_12m:+.0%} en 12 meses"
     if g == "politica":
-        k = int(r.meses_a_eleccion)
-        return f"{signo}: {k} {'mes' if k == 1 else 'meses'} a la elección municipal"
+        return f"{signo}: {eleccion(r)}"
     return f"{signo}: " + frase(g, r)
 
 

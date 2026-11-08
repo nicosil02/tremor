@@ -419,9 +419,14 @@ ACLED_EXTRACTIVO = re.compile(r"\bmin(?:e|es|ing|ers?)\b|\boil\b|petro|hydrocarb
 ACLED_NO = re.compile(r"informal|artisanal (?!fish)|reinfo|formali[sz]ation|small-scale|wages?|unions?|labou?r", re.I)
 
 
+ACLED_FUERZA = re.compile(r"block|strike|paro|shut down|occup|took over|seiz|halt|paraly|closed (?:the )?(?:road|highway|access)", re.I)
+
+
 def acled(con):
     """Eventos de ACLED en el Perú 2018-2025 (protestas, disturbios y violencia), con fecha y punto → tabla
-    acled_evento(ubigeo, anio, mes, tipo, subtipo, extractivo). Sirve para validar la alerta con una fuente
+    acled_evento(ubigeo, anio, mes, tipo, subtipo, extractivo, fuerza). `fuerza`: la nota describe un paro, bloqueo,
+    toma o cierre de vía (el subtipo no basta: solo la mitad de las "Violent demonstration" lo son, y un tercio de
+    las "Peaceful protest" sí). Sirve para validar la alerta con una fuente
     independiente. El CSV se baja a mano del Data Export Tool (requiere cuenta). No se guardan las notas ni los
     actores (pueden nombrar personas)."""
     import geopandas as gpd
@@ -430,10 +435,11 @@ def acled(con):
     fecha = pd.to_datetime(d.event_date)
     texto = d.notes.fillna("") + " " + d.actor1.fillna("") + " " + d.assoc_actor_1.fillna("")
     d = d.assign(anio=fecha.dt.year, mes=fecha.dt.month, tipo=d.event_type, subtipo=d.sub_event_type,
-                 extractivo=texto.str.contains(ACLED_EXTRACTIVO) & ~texto.str.contains(ACLED_NO))
+                 extractivo=texto.str.contains(ACLED_EXTRACTIVO) & ~texto.str.contains(ACLED_NO),
+                 fuerza=d.notes.fillna("").str.contains(ACLED_FUERZA))
     g = gpd.GeoDataFrame(d, geometry=gpd.points_from_xy(d.longitude, d.latitude), crs=4326)
     g = gpd.sjoin(g, gpd.read_file(GEOJSON)[["ubigeo", "geometry"]], predicate="within")
-    g[["ubigeo", "anio", "mes", "tipo", "subtipo", "extractivo"]].to_sql("acled_evento", con, if_exists="replace",
+    g[["ubigeo", "anio", "mes", "tipo", "subtipo", "extractivo", "fuerza"]].to_sql("acled_evento", con, if_exists="replace",
                                                                         index=False)
     con.commit()
     print(f"  {len(g)} de {len(d)} eventos en {g.ubigeo.nunique()} distritos, {g.extractivo.sum()} extractivos, "
