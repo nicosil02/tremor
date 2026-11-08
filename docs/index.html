@@ -375,16 +375,24 @@ function iniciar(D, G, H) {
       <p style="margin:4px 0 0;font-size:14px;color:var(--tinta-3)">En cobre, los meses en alerta. Los puntos son meses con paro. ${total ? `Avisó ${vistos} de ${total}.` : ""}</p>`;
   }
 
+  let vista = null;  // la cámara de la empresa elegida, para volver al cerrar una operación
   function abrir(i, volar) {
     document.querySelectorAll(".op").forEach(li => { const si = +li.dataset.i === i && !li.classList.contains("abierta");
       li.classList.toggle("abierta", si); li.querySelector("button").setAttribute("aria-expanded", si);
       if (si && !volar) li.scrollIntoView({ block: "nearest", behavior: quieto ? "auto" : "smooth" }); });
-    if (!volar || !document.querySelector(`.op[data-i="${i}"]`).classList.contains("abierta")) return;
+    if (!volar) return;
+    if (!document.querySelector(`.op[data-i="${i}"]`).classList.contains("abierta")) {  // al cerrar, de vuelta a la empresa
+      if (vista) map.flyTo({ ...vista, duration: quieto ? 0 : 1400, essential: true });
+      return;
+    }
     const unidades = new Set(filas[i].os.map(o => `${o.empresa}|${o.unidad}`));
     const suyas = H.features.filter(f => unidades.has(`${f.properties.empresa}|${f.properties.unidad}`));
     const c = centroDe(filas[i].u);
     if (suyas.length) {  // la huella de la mina, inclinada, para ver el tajo, la vía y quién vive al lado
-      const [[o, s], [e, n]] = d3.geoBounds({ type: "FeatureCollection", features: suyas });
+      // Caja a mano: d3.geoBounds lee los anillos antihorarios del GeoJSON como "todo el mundo menos la mina"
+      let o = 180, s = 90, e = -180, n = -90;
+      const recorrer = x => typeof x[0] === "number" ? (o = Math.min(o, x[0]), e = Math.max(e, x[0]), s = Math.min(s, x[1]), n = Math.max(n, x[1])) : x.forEach(recorrer);
+      suyas.forEach(f => recorrer(f.geometry.coordinates));
       const cam = map.cameraForBounds([[o, s], [e, n]], { padding: 90 });
       map.flyTo({ center: cam.center, zoom: Math.min(cam.zoom, 13.5), pitch: 55, bearing: -15, curve: 1.4,
                   duration: quieto ? 0 : 2400, essential: true });
@@ -432,8 +440,12 @@ function iniciar(D, G, H) {
     if (cs.length && !pais) {
       const b = cs.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(cs[0], cs[0]));
       const cam = map.cameraForBounds(b, { padding: 110, maxZoom: 9 });
-      map.flyTo({ ...cam, pitch: 20, bearing: 0, duration: quieto ? 0 : 1600, essential: true });
-    } else map.flyTo({ ...map.cameraForBounds(PERU, { padding: 30 }), pitch: 0, bearing: 0, duration: quieto ? 0 : 1200 });
+      vista = { ...cam, pitch: 20, bearing: 0 };
+      map.flyTo({ ...vista, duration: quieto ? 0 : 1600, essential: true });
+    } else {
+      vista = { ...map.cameraForBounds(PERU, { padding: 30 }), pitch: 0, bearing: 0 };
+      map.flyTo({ ...vista, duration: quieto ? 0 : 1200 });
+    }
   }
 
   document.getElementById("pie").insertAdjacentHTML("beforeend", ` Datos al ${esc(D.creado)}.`);
