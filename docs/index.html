@@ -49,6 +49,17 @@
   .elegir input { width: 100%; font: inherit; font-size: 17px; font-weight: 600; padding: 11px 14px; border: 1px solid var(--linea); border-radius: 8px;
                   background: #fff; color: var(--tinta); }
   .elegir input::placeholder { color: var(--tinta-3); font-weight: 400; }
+  .vistas { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: var(--vacio); border-radius: 9px; margin-bottom: 12px; }
+  .vistas button { border: 0; background: transparent; padding: 8px 10px; border-radius: 6px; font-size: 15px; font-weight: 600; color: var(--tinta-2); cursor: pointer;
+                   transition: background-color 140ms ease, transform 140ms var(--ease-out); }
+  .vistas button:active { transform: scale(0.97); }
+  .vistas button[aria-selected="true"] { background: #fff; color: var(--tinta); box-shadow: 0 1px 3px rgb(28 38 41 / .12); }
+  .cuanto { margin: 0 0 4px; font-size: 16px; }
+  .cuanto b { font-weight: 650; }
+  .op ul.temas { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 6px 0 0; }
+  .op ul.temas li { margin: 0; }
+  .temas li { padding: 4px 9px; border-radius: 6px; background: rgb(180 84 42 / .09); font-size: 15px; }
+  .temas li small { color: var(--tinta-3); font-size: 14px; }
   .sugerencias { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
   .sugerencias button { font-size: 15px; padding: 5px 11px; border-radius: 6px; border: 1px solid var(--linea); background: transparent; cursor: pointer;
                         color: var(--tinta-2); transition: transform 140ms var(--ease-out), border-color 140ms ease; }
@@ -163,27 +174,21 @@
   <div class="panel">
     <div class="cabeza">
       <div class="marca"><b>Tremor</b><span>alerta temprana de paros y bloqueos</span></div>
-      <div class="elegir">
+      <div class="vistas" role="tablist">
+        <button type="button" role="tab" data-v="pais" aria-selected="true">Todo el país</button>
+        <button type="button" role="tab" data-v="empresa" aria-selected="false">Por empresa</button>
+      </div>
+      <div class="elegir" hidden>
         <label for="empresa" class="oculto">Empresa o mina</label>
         <input id="empresa" list="empresas" placeholder="Busca una empresa o una mina" autocomplete="off">
         <datalist id="empresas"></datalist>
       </div>
-      <div class="sugerencias" id="sugerencias"></div>
+      <div class="sugerencias" id="sugerencias" hidden></div>
     </div>
     <div class="titular"><h1 id="h1">Cargando</h1><p id="bajada"></p></div>
     <ol class="ops" id="ops"></ol>
     <div class="seccion"><h2>Protestas cercanas</h2><p id="nota-avisos"></p><ul class="avisos" id="avisos"></ul></div>
-    <div class="seccion" id="oculto" hidden><h2>Lo que nadie registra</h2><p id="oculto-texto"></p><div id="oculto-barras"></div></div>
-    <details class="seccion metodo">
-      <summary><h2>Cómo se calcula</h2></summary>
-      <p><b>Qué mide.</b> La probabilidad de que ocurra al menos un paro, bloqueo o toma en la zona de influencia de la operación durante el mes indicado. La zona es el distrito donde está la operación y los distritos que limitan con él.</p>
-      <p><b>Con qué datos.</b> Las acciones de protesta que reporta la Defensoría del Pueblo desde 2004, la base de protestas de la Escuela de Gobierno de la PUCP, las unidades que fiscaliza el OEFA y unas 60 variables por distrito. Entre ellas, conflictos activos y su mesa de diálogo, estudios ambientales aprobados por SENACE, canon, pobreza, comunidades campesinas, emergencias y calendario electoral.</p>
-      <p><b>Cómo se validó.</b> <span id="validacion">El modelo se entrenó con datos hasta 2023 y se evaluó en 2024 a 2026, meses que no había visto.</span></p>
-      <p><b>Qué es lo normal.</b> El promedio de la probabilidad de esa misma zona en los últimos doce meses. Cada razón de "por qué sube" compara el dato de hoy con su promedio en la zona.</p>
-      <p><b>Para qué sirve.</b> Para anticipar con uno a tres meses dónde conviene reforzar la relación con la comunidad, la seguridad y la logística. Un bloqueo cuesta caro. En un proyecto grande se estima en unos US$20 millones por semana de retraso (Davis y Franks, Harvard Kennedy School). No reemplaza la gestión social ni las encuestas de percepción. Es una señal externa que las complementa, y es una probabilidad, no una certeza.</p>
-      <p><b>Límites.</b> La Defensoría publica con un mes de rezago, por eso la alerta se calcula para el segundo mes después del último reporte. En zonas que llevaban meses sin protestas, el modelo no anticipa el inicio mejor que el historial reciente. Las protestas de prensa y radio se muestran como referencia y no entran al cálculo. La base de la PUCP es de uso académico.</p>
-    </details>
-    <div class="pie" id="pie">Con datos de la Defensoría del Pueblo, la base de protestas de la PUCP y unas 60 variables por distrito. Código y método en <a href="https://github.com/nicosil02/tremor">github.com/nicosil02/tremor</a>.</div>
+    <div class="pie" id="pie">Con datos de la Defensoría del Pueblo, la base de protestas de la PUCP y unas 60 variables por distrito. <a href="metodo.html">Cómo se calcula y qué tan bien avisa</a>.</div>
   </div>
   <div class="mapa">
     <div id="mapa"></div>
@@ -249,12 +254,20 @@ function iniciar(D, G, H, C) {
   const ops = d3.groups(D.operaciones, o => o.empresa).sort((a, b) => b[1].length - a[1].length);
   document.getElementById("empresas").innerHTML = ops.map(([e]) => `<option value="${esc(nombre(e))}">`).join("");
   const ejemplos = [["Las Bambas", "minera las bambas"], ["Southern", "southern peru"], ["Antamina", "antamina"], ["Yanacocha", "yanacocha"],
-                    ["Todo el país", ""]].filter(([, t]) => !t || ops.some(([e]) => llano(e).includes(t)));
+                    ].filter(([, t]) => ops.some(([e]) => llano(e).includes(t)));
   const sug = document.getElementById("sugerencias");
   const input = document.getElementById("empresa");
   sug.innerHTML = ejemplos.map(([n, t]) => `<button type="button" data-t="${t}" aria-pressed="false">${n}</button>`).join("");
   sug.onclick = e => { const b = e.target.closest("button"); if (b) { input.value = b.dataset.t ? b.textContent : ""; elegir(b.dataset.t); } };
   input.addEventListener("change", () => elegir(llano(input.value)));
+  const vistas = document.querySelector(".vistas");
+  function verVista(v) {
+    vistas.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", b.dataset.v === v));
+    document.querySelector(".elegir").hidden = sug.hidden = v === "pais";
+    if (v === "pais") { input.value = ""; elegir(""); }
+    else { input.value = ejemplos[0][0]; elegir(ejemplos[0][1]); }
+  }
+  vistas.onclick = e => { const b = e.target.closest("button"); if (b) verVista(b.dataset.v); };
 
   // ---------- Mapa ----------
   const map = new maplibregl.Map({ container: "mapa", style: BASE, bounds: PERU, fitBoundsOptions: { padding: 30 }, attributionControl: { compact: true } });
@@ -419,11 +432,12 @@ function iniciar(D, G, H, C) {
           <span class="nombre">${esc(titulo)}</span><span class="lugar">${esc(donde)}</span>
           <span class="prob"><b>${pct(mesP(a))}</b><small>${banda(mesP(a))}</small>${delta(a)}</span></button>
         <div class="detalle"><div><div class="dentro">
+          ${cuanto(a)}
+          ${vigilar(f.u)}
           ${porque.length ? `<h3>${sube ? "Qué cambió este mes" : "Qué bajó este mes"}</h3><ul>${porque.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
           ${quienes(f.u)}
           ${enZona(f.u)}
           ${linea(f.u)}
-          <p class="fondo">${pct(a.prob_zona)} de probabilidad de paro o bloqueo en la zona hasta ${hasta}.</p>
           ${a.alerta_inmediata ? `<p class="fondo"><a href="${esc(a.enlace_prensa)}" target="_blank" rel="noopener">Ya hay una protesta anunciada cerca</a></p>` : ""}
         </div></div></div></li>`; }).join("");
     document.querySelectorAll(".op > button").forEach(b => b.onclick = () => abrir(+b.parentNode.dataset.i, true));
@@ -469,6 +483,29 @@ function iniciar(D, G, H, C) {
 
   const banda = p => p == null ? "" : p >= 0.5 ? "Crítico" : p >= 0.25 ? "Alto" : p >= 0.1 ? "Medio" : "Bajo";  // los cortes de la leyenda
 
+  // El porcentaje en palabras: cuántos de cada 100 meses así tuvieron un paro, y frente a qué
+  function cuanto(a) {
+    const p = mesP(a); if (p == null) return "";
+    const n = Math.round(p * 100), d = Math.round((a.cambio_zona_1m ?? 0) * 100);
+    return `<p class="cuanto"><b>${n}%, riesgo ${banda(p).toLowerCase()}.</b> En meses parecidos, ${n} de cada 100 tuvieron un paro o bloqueo en la zona. ` +
+      (a.normal_zona_1m != null ? `Lo normal aquí es ${pct(a.normal_zona_1m)}${Math.abs(d) >= 2 ? `, así que este mes está ${Math.abs(d)} puntos ${d > 0 ? "por encima" : "por debajo"}` : ""}.` : "") + `</p>`;
+  }
+  // Qué reclaman en la zona: los temas de los conflictos abiertos y de las protestas recientes
+  const TEMAS = [["Agua", /agua|h[ií]dric|r[ií]o\b|laguna|riego|cuenca|manantial/i], ["Contaminación", /contamina|metales|ars[eé]nico|relave|derrame|ambiental|plomo/i],
+    ["Empleo y proveedores", /emple|trabajo|laboral|contrata|proveedor|mano de obra/i], ["Canon y obras", /canon|regal[ií]a|presupuesto|obra|inversi[oó]n|fondo social/i],
+    ["Tierras y reasentamiento", /tierra|terreno|predio|reasenta|servidumbre|territorio|compra de/i], ["Acuerdos incumplidos", /compromis|acuerdo|acta|incumpl/i],
+    ["Vías y transporte", /carretera|v[ií]a|corredor|transporte|camion|tr[aá]nsito|polvo/i], ["Minería informal o ilegal", /informal|ilegal|reinfo|formaliza/i],
+    ["Consulta previa", /consulta previa|consulta/i]];
+  function vigilar(u) {
+    const z = new Set(zonaDe(u)), prov = u.slice(0, 4), toca = x => { const v = String(x || ""); return z.has(v) || v === prov; };
+    const textos = [...casosDe(u).map(c => ["c", `${c.nombre} ${c.reclamo || ""}`]),
+                    ...D.eventos.filter(e => toca(e.ubigeo)).map(e => ["p", `${e.reclamo || ""} ${e.titular || ""}`])];
+    const t = TEMAS.map(([n, re]) => ({ n, c: textos.filter(([k, s]) => k === "c" && re.test(s)).length, p: textos.filter(([k, s]) => k === "p" && re.test(s)).length }))
+      .filter(x => x.c + x.p).sort((a, b) => b.c + b.p - a.c - a.p).slice(0, 4);
+    if (!t.length) return "";
+    const cuenta = x => [x.c && `${x.c} ${x.c === 1 ? "conflicto" : "conflictos"}`, x.p && `${x.p} ${x.p === 1 ? "protesta" : "protestas"}`].filter(Boolean).join(", ");
+    return `<h3>Qué vigilar</h3><ul class="temas">${t.map(x => `<li>${x.n} <small>${cuenta(x)}</small></li>`).join("")}</ul>`;
+  }
   function delta(a) {
     if (!hayMes || a.cambio_zona_1m == null) return `<small>de paro o bloqueo</small>`;
     const d = Math.round(a.cambio_zona_1m * 100);
@@ -754,27 +791,7 @@ function iniciar(D, G, H, C) {
   document.getElementById("pie").insertAdjacentHTML("beforeend", ` Datos al ${esc(D.creado)}.`);
   // Cobertura: qué parte de las protestas reales ve la Defensoría y qué parte se le escapa a todas las fuentes
   const cob = (D.cobertura || []).filter(c => c.anio >= 2019);
-  if (cob.length) {
-    const real = c => c.vistas + c.no_vistas, def = c => c.defensoria * c.vistas / real(c);
-    const prom = cob.reduce((s, c) => s + def(c), 0) / cob.length;
-    document.getElementById("oculto").hidden = false;
-    document.getElementById("oculto-texto").textContent = `Entre ${cob[0].anio} y ${cob.at(-1).anio} la Defensoría registró cerca de ${pct(prom)} de las protestas. Tremor suma prensa regional, radio local y reportes de las empresas.`;
-    const W = 300, h = 14;
-    document.getElementById("oculto-barras").innerHTML = `<svg viewBox="0 0 ${W} ${cob.length * (h + 6)}" width="100%" role="img" aria-label="Cobertura por año">${cob.map((c, k) => {
-      const y = k * (h + 6), a = def(c) * (W - 40), b = (c.vistas / real(c)) * (W - 40);
-      return `<text x="0" y="${y + 11}" font-size="11" fill="var(--tinta-3)">${c.anio}</text>
-        <rect x="40" y="${y}" width="${W - 40}" height="${h}" fill="var(--linea)"/>
-        <rect x="40" y="${y}" width="${b.toFixed(1)}" height="${h}" fill="var(--cobre-2)"/>
-        <rect x="40" y="${y}" width="${a.toFixed(1)}" height="${h}" fill="var(--tinta)"/>`; }).join("")}</svg>
-      <p style="margin:6px 0 0;font-size:14px;color:var(--tinta-3)">Negro, Defensoría. Cobre, otras fuentes. Gris, estimado sin registro.</p>`;
-  }
-  // Cifras de la prueba 2024-2026, tal como salieron del modelo
-  const cifra = (o, m, k) => D.metricas.find(x => x.objetivo === o && x.modelo === m && x.metrica === k)?.valor;
-  const prueba = o => [cifra(o, D.mejor?.[o], "precision_top20"), cifra(o, "ingenuo", "precision_top20"), cifra(o, "ingenuo", "tasa_base")];
-  const [m1, i1, b1] = prueba("z1_fuerza"), [m3, i3, b3] = prueba("z_fuerza");
-  if (m1 != null && m3 != null) document.getElementById("validacion").textContent += ` Cada mes se tomaron las 20 zonas que marcaba como más riesgosas. En el mes indicado, ${pct(m1)} tuvo un paro o bloqueo, frente a ${pct(i1)} con la regla de mirar solo el historial reciente y ${pct(b1)} al azar. En una ventana de tres meses, ${pct(m3)} frente a ${pct(i3)} y ${pct(b3)}.`;
-  input.value = ejemplos[0][0];
-  elegir(ejemplos[0][1]);
+  verVista("pais");
 }
 </script>
 </body>

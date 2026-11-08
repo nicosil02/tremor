@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tremor. Cómo se calcula</title>
+<meta name="description" content="Qué mide Tremor, con qué datos, cómo se validó y sus límites.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='%23b4542a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<style>
+  :root { --piedra: #e8ecec; --papel: #f8faf9; --linea: #d3dad9; --tinta: #1c2629; --tinta-2: #4f5d61; --tinta-3: #77868a;
+          --cobre: #b4542a; --cobre-2: #e3a67c; --ancho: "wdth" 118; color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--papel); color: var(--tinta); font: 17px/1.55 "Archivo", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  main { max-width: 680px; margin: 0 auto; padding: 32px 20px 64px; }
+  a { color: inherit; }
+  .volver { font-size: 15px; color: var(--tinta-3); text-decoration: none; }
+  .volver:hover { color: var(--tinta); }
+  h1 { font-size: 32px; line-height: 1.1; font-weight: 750; font-variation-settings: var(--ancho); margin: 18px 0 8px; }
+  h2 { font-size: 19px; font-weight: 700; margin: 32px 0 6px; }
+  p { margin: 6px 0 0; color: var(--tinta-2); }
+  ul { margin: 6px 0 0; padding-left: 20px; color: var(--tinta-2); }
+  li { margin: 4px 0; }
+  .cifras { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+  .cifras div { background: #fff; border: 1px solid var(--linea); border-radius: 8px; padding: 12px 14px; }
+  .cifras b { display: block; font-size: 28px; font-weight: 750; font-variant-numeric: tabular-nums; }
+  .cifras span { font-size: 14px; color: var(--tinta-3); line-height: 1.3; display: block; }
+  .cifras .tremor { border-color: var(--cobre); }
+  .nota { font-size: 14px; color: var(--tinta-3); }
+  @media (max-width: 560px) { .cifras { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <a class="volver" href="./">← Volver al mapa</a>
+  <h1>Cómo se calcula</h1>
+  <p>Tremor estima, para cada operación minera o petrolera, la probabilidad de que haya al menos un paro, bloqueo o toma en su zona de influencia el mes que viene. La zona es el distrito de la operación y los que limitan con él.</p>
+
+  <h2>Cómo leer el porcentaje</h2>
+  <p>Un 28% quiere decir que, en meses con una situación parecida, hubo un paro o bloqueo en la zona en 28 de cada 100. "Normal" es el promedio de esa misma zona en el último año. Lo que importa para actuar es cuánto sube sobre lo normal.</p>
+  <ul>
+    <li>Bajo, menos de 10%</li>
+    <li>Medio, de 10% a 25%</li>
+    <li>Alto, de 25% a 50%</li>
+    <li>Crítico, 50% o más</li>
+  </ul>
+
+  <h2>Qué tan bien avisa</h2>
+  <p id="validacion">Se entrenó con datos hasta 2023 y se probó en 2024 a 2026, meses que no había visto. Cada mes se tomaron las 20 zonas que marcaba como más riesgosas.</p>
+  <div class="cifras" id="cifras"></div>
+
+  <h2>Datos</h2>
+  <ul>
+    <li>Acciones de protesta y conflictos de la Defensoría del Pueblo, desde 2004</li>
+    <li>Base de protestas de la Escuela de Gobierno de la PUCP, de uso académico</li>
+    <li>Unidades mineras y lotes que fiscaliza el OEFA</li>
+    <li>Unas 60 variables por distrito: canon, pobreza, comunidades campesinas, estudios ambientales, emergencias, elecciones y gestión municipal</li>
+    <li>Prensa regional, radios locales y alertas de vías de la SUTRAN, como señal en vivo</li>
+  </ul>
+
+  <h2 id="t-oculto" hidden>Lo que nadie registra</h2>
+  <p id="oculto"></p>
+
+  <h2>Límites</h2>
+  <ul>
+    <li>La Defensoría publica con un mes de rezago. Por eso la alerta mira al segundo mes después de su último reporte.</li>
+    <li>Donde no hubo protestas en mucho tiempo, el modelo no anticipa el primer paro mejor que el historial.</li>
+    <li>Es una probabilidad, no una certeza. Complementa la gestión social, no la reemplaza.</li>
+  </ul>
+  <p class="nota" style="margin-top:32px">Código y datos en <a href="https://github.com/nicosil02/tremor">github.com/nicosil02/tremor</a>.</p>
+</main>
+<script>
+const pct = v => v == null || isNaN(v) ? "s/d" : `${Math.round(v * 100)}%`;
+(async () => {
+  let D = null;
+  for (const u of ["https://raw.githubusercontent.com/nicosil02/tremor/datos/web.json", "web.json"]) {
+    try { const r = await fetch(u, { cache: "no-cache" }); if (r.ok) { D = await r.json(); break; } } catch (e) {}
+  }
+  if (!D) return;
+  const cifra = (o, m, k) => D.metricas?.find(x => x.objetivo === o && x.modelo === m && x.metrica === k)?.valor;
+  const o = "z1_fuerza", m = cifra(o, D.mejor?.[o], "precision_top20"), i = cifra(o, "ingenuo", "precision_top20"), b = cifra(o, "ingenuo", "tasa_base");
+  if (m != null) document.getElementById("cifras").innerHTML =
+    `<div class="tremor"><b>${pct(m)}</b><span>de las 20 zonas que marcó Tremor tuvo un paro o bloqueo ese mes</span></div>
+     <div><b>${pct(i)}</b><span>con la regla de mirar solo el historial reciente</span></div>
+     <div><b>${pct(b)}</b><span>al azar, entre todas las zonas con operación</span></div>`;
+  const cob = D.cobertura || [];
+  if (cob.length) {
+    const real = c => c.vistas + c.no_vistas, def = c => c.defensoria * c.vistas / real(c);
+    const prom = cob.reduce((s, c) => s + def(c), 0) / cob.length;
+    document.getElementById("t-oculto").hidden = false;
+    document.getElementById("oculto").textContent = `Entre ${cob[0].anio} y ${cob.at(-1).anio}, la Defensoría registró cerca de ${pct(prom)} de los meses con protesta en un distrito. La cifra sale de cruzar sus registros con la prensa, la PUCP y ACLED y estimar lo que ninguna vio. Por eso Tremor suma prensa regional y radio local.`;
+  }
+})();
+</script>
+</body>
+</html>
