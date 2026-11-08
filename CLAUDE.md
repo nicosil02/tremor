@@ -82,6 +82,9 @@ git clone https://github.com/nicosil02/tremor && cd tremor && git checkout 002-p
 pip install -r requirements.txt
 cp .env.example .env        # y pegar LLM_API_KEY=gsk_... (la misma clave de Groq; no está en el repo)
 mkdir -p datos && git fetch origin datos && git show origin/datos:tremor.db.gz | gunzip > datos/tremor.db
+git show origin/datos:distritos.geojson > datos/distritos.geojson   # límites distritales: los piden acled y el modelo
+mkdir -p datos/crudos/acled && cp <ruta>/acled_peru.csv datos/crudos/acled/   # ACLED no se redistribuye: va a mano
+python -m tremor.distritos acled   # antes del modelo; sin acled_evento no arranca
 python -m pytest -q         # 81 pasan
 ```
 
