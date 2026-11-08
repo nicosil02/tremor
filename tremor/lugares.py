@@ -10,7 +10,7 @@ from pathlib import Path
 
 ALIAS = {  # nombres comunes en prensa que no son el nombre oficial
     "lima metropolitana": ("provincia", "1501"), "lima provincias": ("region", "15"),
-    "cuzco": ("region", "08"), "ancash": ("region", "02"), "region lima": ("region", "15"),
+    "cuzco": ("region", "08"), "nasca": ("provincia", "1103"), "ancash": ("region", "02"), "region lima": ("region", "15"),
 }
 
 

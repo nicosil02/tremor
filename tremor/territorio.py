@@ -40,26 +40,28 @@ def filas_mef(pagina: str) -> list[dict]:
     filas = []
     for tr in re.findall(r'<tr[^>]*id="tr\d+".*?</tr>', pagina, re.S):
         c = [_texto(td) for td in re.findall(r"<td[^>]*>(.*?)</td>", tr, re.S)]
-        if len(c) > 7:  # columnas: -, nombre, PIA, PIM, certificación, compromiso, atención, devengado, girado, avance
-            codigo = re.search(r'name="grp1" value="([^"/]*)', tr)
-            filas.append({"codigo": codigo[1].strip() if codigo else None, "nombre": c[1], "pia": n(c[2]), "pim": n(c[3]), "devengado": n(c[7]),
-                          "avance_pct": float(c[9]) if len(c) > 9 and c[9] else None})
+        if len(c) > 7:  # -, nombre, PIA, PIM, [certificación, compromiso, atención | compromiso], devengado, girado, avance
+            codigo = re.search(r'name="grp1" value="([^"/]*)', tr)  # hasta 2011 la ejecución trae 3 fases, no 5
+            filas.append({"codigo": codigo[1].strip() if codigo else None, "nombre": c[1], "pia": n(c[2]), "pim": n(c[3]), "devengado": n(c[-3]),
+                          "avance_pct": float(c[-1]) if c[-1] else None})
     return filas
 
 
 def por_municipalidad(filas: list[dict]) -> dict:
-    """Filas por municipalidad → {ubigeo: (nombre, pim, devengado)}. La fila dice '010101-300001: MUNICIPALIDAD…'."""
+    """Filas por municipalidad → {ubigeo: (nombre, pim, devengado)}. La fila dice '010101-300001: MUNICIPALIDAD…'.
+    Las mancomunidades comparten ubigeo con una municipalidad: se dejan fuera para no pisarla."""
     salida = {}
     for f in filas:
-        if m := re.match(r"(\d{6})-\d+: (.*)", f["nombre"]):
+        if m := re.match(r"(\d{6})-\d+: (MUNICIPALIDAD.*)", f["nombre"]):
             salida[m[1]] = (m[2], f["pim"], f["devengado"])
     return salida
 
 
-def consulta(desglose: str, filtros: dict | None, anio: int) -> tuple[str, list[dict]]:
-    """Consulta Amigable libre: desglose y filtros por nombre de dimensión. Devuelve (url, filas)."""
+def consulta(desglose: str, filtros: dict | None, anio: int, ap="ActProy") -> tuple[str, list[dict]]:
+    """Consulta Amigable libre: desglose y filtros por nombre de dimensión. Devuelve (url, filas).
+    ap: ActProy (todo), Proyecto (solo proyectos de inversión) o Actividad. Antes de 2012 va al navegador viejo."""
     ruta = "".join(f"{DIMENSIONES[k]}={v}&" for k, v in (filtros or {}).items()) + f"{DIMENSIONES[desglose]}="
-    url = f"{MEF}?_uhc=yes&0=&{ruta}&y={anio}&ap=ActProy"
+    url = f"{MEF if anio >= 2012 else MEF.replace('_7', '_3')}?_uhc=yes&0=&{ruta}&y={anio}&ap={ap}"
     for espera in (0, 5, 20):
         time.sleep(espera)
         try:

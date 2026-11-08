@@ -83,7 +83,7 @@ def test_sutran_fila():
 def test_parsear_mef():
     from tremor.territorio import filas_mef, por_municipalidad
     fila = ('<tr id="tr1"><td><input name="grp1" value="010101"></td><td>010101-300001: MUNICIPALIDAD PROVINCIAL DE '
-            'CHACHAPOYAS</td><td>1,000</td><td>4,242,072</td><td></td><td></td><td></td><td>2,110,431</td></tr>')
+            'CHACHAPOYAS</td><td>1,000</td><td>4,242,072</td><td></td><td></td><td></td><td>2,110,431</td><td>2,000,000</td><td>49.7</td></tr>')  # como la página: girado y avance al final
     assert por_municipalidad(filas_mef(fila)) == {"010101": ("MUNICIPALIDAD PROVINCIAL DE CHACHAPOYAS", 4242072, 2110431)}
 
 
@@ -286,3 +286,62 @@ def test_bitacora_guarda_una_vez_por_mes():
                       "prob_zona_1m": [0.2, None], "creado": "x"})
     assert bitacora(con, a) == 1 and bitacora(con, a) == 0  # la de septiembre no se reescribe
     assert bitacora(con, a.assign(mes_base="2026-10")) == 1
+
+
+def test_bolsa_fusiona_repeticiones_y_cita():
+    import pandas as pd
+    from tremor.bolsa import fusionar, plano
+    base = dict(tipo="bloqueo", lugar="", causa="", efecto="", fuente="SEC", documento="d", url="u", cita="c",
+                fecha_fin="", dias_afectados="")
+    df = pd.DataFrame([
+        {**base, "empresa": "MMG", "unidad": "Las Bambas", "fecha_inicio": "2023-01", "fecha_fin": "2023-03-11",
+         "fecha_documento": "2023-04-26"},
+        {**base, "empresa": "MMG", "unidad": "Las Bambas mine", "fecha_inicio": "2023-02", "fecha_documento": "2023-02-10",
+         "dias_afectados": "40"},
+        {**base, "empresa": "MMG", "unidad": "Las Bambas", "fecha_inicio": "", "fecha_documento": "2023-05-15"},
+        {**base, "empresa": "MMG", "unidad": "Las Bambas", "fecha_inicio": "2023", "fecha_documento": "2026-01-01"},
+        {**base, "empresa": "MMG", "unidad": "Las Bambas", "fecha_inicio": "2023-09-01", "fecha_documento": "2023-10-25"},
+        {**base, "empresa": "Freeport", "unidad": "Cerro Verde", "fecha_inicio": "2023-01", "fecha_documento": "2023-04-21"},
+        {**base, "empresa": "Buenaventura", "unidad": "Cerro Verde", "fecha_inicio": "2023-01-15",
+         "fecha_documento": "2023-05-01"},
+        {**base, "empresa": "Hudbay", "unidad": "Constancia", "fecha_inicio": "2022-11", "fecha_fin": "2022-12",
+         "fecha_documento": "2023-03-31"},
+    ])
+    f = fusionar(df).set_index("unidad")
+    assert len(f) == 3 and "Constancia" not in f.index  # 2022: fuera de rango; año suelto: sin ubicar
+    bambas = f[f["fecha_inicio"] == "2023-01"].iloc[0]  # la de 2023-09 queda aparte
+    assert bambas["fecha_documento"] == "2023-02-10" and bambas["fecha_fin"] == "2023-03-11"
+    assert bambas["dias_afectados"] == "40"
+    cv = f.loc["Cerro Verde"]
+    assert cv["empresa"] == "Freeport" and cv["fecha_inicio"] == "2023-01-15"
+    assert plano("road  blockade\nin Chumbivilcas") in plano("A ROAD BLOCKADE in Chumbivilcas started")
+
+
+def test_anomalia_frente_a_su_historia():
+    import numpy as np
+    from tremor.modelo import anomalia
+    x = np.array([[0, 0, 0, 0, 3], [2, 2, 2, 2, 2]], float)
+    z = anomalia(x, k=4)
+    assert np.isnan(z[0, 0]) and z[0, 4] == 6.0  # siempre en cero y de pronto 3: (3 - 0) / (0 + 0.5)
+    assert z[1, 4] == 0.0  # igual que siempre
+
+
+def test_gobierno_titulos_jne_y_revocatoria():
+    from tremor.gobierno import clases, municipio, resultado_revocatoria
+    t = "Convocan a ciudadana para que asuma, de manera provisional, el cargo de regidora del Concejo Distrital de Sachaca, provincia y departamento de Arequipa"
+    assert municipio(t) == ("040117", False) and clases(t) == ["jne_convoca_provisional"]
+    t = "Declaran infundado recurso sobre vacancia de alcalde de la Municipalidad Provincial de Espinar, departamento de Cusco"
+    assert municipio(t) == ("080801", True) and clases(t) == ["jne_vacancia"]  # provincial → capital (..01)
+    assert municipio("Declaran nulo procedimiento de vacancia contra regidor de la Municipalidad Distrital de Carmen de la Legua Reynoso, Provincia Constitucional del Callao") == ("070103", False)
+    assert municipio("Convocan a ciudadano para que asuma el cargo de consejero del Consejo Regional de Cajamarca") is None
+    csv = ("UBIGEO;DEPARTAMENTO;PROVINCIA;DISTRITO;UBICACION_EN_CEDULA;VOTOS_SI;VOTOS_NO\n"
+           "030317;APURIMAC;ANDAHUAYLAS;HUAYANA;1;55;67\n030317;APURIMAC;ANDAHUAYLAS;HUAYANA;1;45;33\n"
+           "030317;APURIMAC;ANDAHUAYLAS;HUAYANA;2;99;0\n")  # la posición 2 (regidor) no cuenta
+    assert resultado_revocatoria(csv, False) == {"030206": 50.0}  # ubigeo RENIEC 030317 → INEI 030206
+
+
+def test_mef_mancomunidad_no_pisa_a_la_municipalidad():
+    from tremor.territorio import por_municipalidad
+    filas = [{"nombre": "050101-300507: MUNICIPALIDAD PROVINCIAL DE HUAMANGA", "pim": 9, "devengado": 7},
+             {"nombre": "050101-301999: MANCOMUNIDAD MUNICIPAL LOS WARI- MANWARI", "pim": 1, "devengado": 1}]
+    assert por_municipalidad(filas) == {"050101": ("MUNICIPALIDAD PROVINCIAL DE HUAMANGA", 9, 7)}
