@@ -35,6 +35,7 @@ jobs:
           mkdir -p datos
           git fetch --depth 1 origin datos
           git show origin/datos:tremor.db.gz | gunzip > datos/tremor.db
+          git show origin/datos:distritos.geojson > datos/distritos.geojson || true  # límites (tremor.distritos pnud)
 
       - name: Defensoría
         run: python -m tremor.defensoria todo
@@ -53,12 +54,13 @@ jobs:
       - name: Publicar en la rama datos
         run: |
           mkdir -p /tmp/datos && gzip -9 -c datos/tremor.db > /tmp/datos/tremor.db.gz && cp datos/exportes/*.csv /tmp/datos/
+          cp datos/distritos.geojson /tmp/datos/ || true
           git config user.name "tremor-bot"
           git config user.email "tremor-bot@users.noreply.github.com"
           git checkout --orphan datos-nueva
           git rm -rq --cached . && git clean -fdq -e datos
           cp /tmp/datos/* .
-          git add tremor.db.gz *.csv
+          git add tremor.db.gz *.csv *.geojson
           if git fetch --depth 1 origin datos && git diff --quiet origin/datos -- *.csv; then
             echo "Sin datos nuevos: no se publica."
             exit 0

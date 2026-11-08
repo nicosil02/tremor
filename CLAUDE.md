@@ -79,7 +79,7 @@ carpeta, aprobar el servidor MCP `tremor` (`.mcp.json`).
 | `mef_municipal` | 28 091 (≈1 890 municipalidades × 2012–2026) | Consulta Amigable del MEF: presupuesto total y rubro 18 (canon, sobrecanon, regalías) | `python -m tremor.territorio mef` |
 | `bcrp_mensual` | 95 series, 25 516 filas, 2004-01 a 2026-10 | API del BCRP: cobre, oro y WTI (PN0165xXM) y producción minera por departamento (grupo RD129xx) | `python -m tremor.territorio bcrp` |
 | `enaho_departamento` | 26 × 2004–2025 (`ccdd` '00' = nacional) | ENAHO módulo 34: pobreza y pobreza extrema (factor07 × mieperho). Los 22 años cuadran con la serie oficial del INEI (±0.1) | `python -m tremor.territorio enaho` |
-| `distrito_variable` (larga: ubigeo, anio, variable, valor, fuente; anio 0 = foto) | ~330 000 | PNUD IDH 2017–2024 y componentes (1 874 distritos); INEI pobreza 2018 (1 873); INGEMMET catastro minero por año (1 719); MINEM pasivos ambientales (284); OEFA unidades mineras, lotes de hidrocarburos y Oleoducto Norperuano | `python -m tremor.distritos todo` |
+| `distrito_variable` (larga: ubigeo, anio, variable, valor, fuente; anio 0 = foto) | ~370 000 | PNUD IDH 2017–2024 y componentes (1 874 distritos); INEI pobreza 2018 (1 873); INGEMMET catastro minero por año (1 719); MINEM pasivos ambientales (284); OEFA unidades mineras, lotes de hidrocarburos y Oleoducto Norperuano; ONPE elecciones municipales distritales 2006-2022 (margen, listas, número efectivo de listas, participación; ubigeo RENIEC traducido por nombre) | `python -m tremor.distritos todo` (exporta `distrito_variable.csv`) |
 
 Archivos que acompañan a la base:
 - `datos/distritos.geojson`: límites INEI 2025 (capa del PNUD, simplificada a ~100 m), para mapas y cruces;

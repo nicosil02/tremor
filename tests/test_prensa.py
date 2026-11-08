@@ -107,3 +107,14 @@ def test_stock_concesiones():
     assert s[("010101", 2020)]["concesiones"] == 1 and s[("010101", 2021)] == {"concesiones": 1, "concesiones_ha": 100,
                                                                                "concesiones_metalicas_ha": 100}
     assert s[("010101", 2023)]["concesiones_ha"] == 125 and s[("010102", 2022)]["concesiones_nuevas_ha"] == 25
+
+
+def test_resultados_electorales():
+    import pandas as pd
+    from tremor.distritos import resultados_electorales
+    t = pd.DataFrame({"UBIGEO": ["010101"] * 4, "MESA": [1, 1, 2, 2], "TIPO_ELECCION": ["MUNICIPAL DISTRITAL"] * 4,
+                      "AGRUPACION_POLITICA": ["A", "B", "A", "B"], "VOTOS_OBTENIDOS": [30, 10, 30, 30],
+                      "ELECTORES_HABILES": [50, 50, 100, 100], "otros": [5, 5, 10, 10]})
+    r = resultados_electorales(t)["010101"]
+    assert r["voto_ganador"] == 0.6 and r["margen_victoria"] == 0.2 and r["listas"] == 2
+    assert r["participacion"] == round(115 / 150, 4) and r["nep_listas"] == round(1 / (0.36 + 0.16), 3)

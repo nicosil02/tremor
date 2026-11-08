@@ -41,7 +41,8 @@ def buscar_lugar(texto: str, limite: int = 10) -> list[dict]:
 def perfil_distrito(ubigeo: str) -> dict:
     """Todo lo que Tremor sabe de un distrito: perfil histórico de la EGPP, últimas acciones de protesta de la
     Defensoría y eventos de prensa en su provincia, alertas viales de la SUTRAN, canon municipal por año, y las
-    variables distritales (IDH y pobreza, concesiones y pasivos mineros, unidades mineras y lotes de hidrocarburos)."""
+    variables distritales (IDH y pobreza, concesiones y pasivos mineros, unidades mineras y lotes de hidrocarburos,
+    resultados de las elecciones municipales)."""
     prov = ubigeo[:4]
     return {
         "lugar": " / ".join(x for x in (nombre(ubigeo[:2]), nombre(prov), nombre(ubigeo)) if x),
@@ -72,7 +73,9 @@ def ranking_variable(variable: str, anio: int | None = None, n: int = 15, mayor_
     """Distritos ordenados por una variable distrital. Variables: idh, esperanza_vida, secundaria_completa,
     anios_educacion, ingreso_pc, poblacion (PNUD 2017-2024); pobreza_inf, pobreza_sup, pobreza_grupo (INEI 2018);
     concesiones, concesiones_ha, concesiones_metalicas_ha y sus *_nuevas* (INGEMMET, por año); pasivos_mineros,
-    unidades_mineras, lote_explotacion, lote_exploracion, oleoducto_norperuano (año 0, foto actual).
+    unidades_mineras, lote_explotacion, lote_exploracion, oleoducto_norperuano (año 0, foto actual);
+    margen_victoria, listas, nep_listas, voto_ganador, participacion (ONPE, elecciones municipales distritales
+    2006, 2010, 2014, 2018, 2022).
     Sin año usa el más reciente de esa variable."""
     if anio is None:
         anio = (_sql("SELECT MAX(anio) AS a FROM distrito_variable WHERE variable = ?", (variable,)) or [{}])[0].get("a")

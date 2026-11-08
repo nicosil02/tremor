@@ -6,20 +6,22 @@ una foto sin serie (p. ej. dónde hay una operación hoy). Fuentes verificadas e
 - INEI: mapa de pobreza distrital 2018 (intervalo de confianza al 95 %).
 - INGEMMET (GEOCATMIN): catastro minero (concesiones con fecha de petitorio) y pasivos ambientales mineros.
 - OEFA (PIFA): unidades mineras fiscalizadas, lotes de hidrocarburos y el Oleoducto Norperuano.
+- ONPE (datos abiertos): resultados mesa por mesa de las elecciones municipales distritales 2006-2022.
 
-`python -m tremor.distritos {pnud,pobreza,catastro,pasivos,oefa,todo}`
+`python -m tremor.distritos {pnud,pobreza,catastro,pasivos,oefa,onpe,todo}`
 """
 import argparse
 import io
 import re
 import sys
+import zipfile
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 
 import requests
 
 from tremor.db import DATOS, ahora, conectar
-from tremor.lugares import resolver
+from tremor.lugares import catalogo, norm, resolver
 from tremor.territorio import UA
 
 PNUD = "https://geosmarthosting.undp.org/arcgis/rest/services/Hosted/Distritos_INEI_2025_IDH_2017_2024/FeatureServer/0"
@@ -31,6 +33,9 @@ CATASTRO = "https://geocatmin.ingemmet.gob.pe/arcgis/rest/services/SERV_CATASTRO
 PASIVOS = f"{GEOCATMIN}/SERV_PASIVO_AMBIENTAL/MapServer/0"
 OEFA = "https://pifa.oefa.gob.pe/ags_server/rest/services/PORTAL"
 GEOJSON = DATOS / "distritos.geojson"
+ONPE = "https://www.datosabiertos.gob.pe/sites/default/files/ERM{anio}_Municipal_Distrital{sufijo}"
+# El archivo "ERM2002_Municipal_Distrital" de la ONPE trae en realidad la elección regional: 2002 queda fuera.
+ELECCIONES = {2006: ".zip", 2010: ".zip", 2014: ".zip", 2018: "_total.zip", 2022: ".zip"}
 EPOCA = datetime(1970, 1, 1, tzinfo=timezone.utc)
 ESQUEMA = """CREATE TABLE IF NOT EXISTS distrito_variable (
     ubigeo TEXT NOT NULL, anio INTEGER NOT NULL, variable TEXT NOT NULL, valor REAL, fuente TEXT,
@@ -171,7 +176,72 @@ def oefa(con):
         guardar(con, [(u, 0, var, float(x)) for u, x in cruce.items()], f"{capa} (OEFA, {len(g)} elementos)")
 
 
-PASOS = {"pnud": pnud, "pobreza": pobreza, "catastro": catastro, "pasivos": pasivos, "oefa": oefa}
+def resultados_electorales(t):
+    """Mesas de la ONPE (una fila por mesa y lista) → {ubigeo: {variable: valor}} de la elección distrital.
+
+    margen_victoria: (1.º - 2.º) / votos válidos; listas: con al menos un voto; nep_listas: número efectivo de
+    listas (1 / Σ participación²); voto_ganador: participación del ganador; participacion: emitidos / electores."""
+    t = t[t["TIPO_ELECCION"].str.contains("DISTRITAL", na=False)]
+    mesa = t.groupby(["UBIGEO", "MESA"]).agg(electores=("ELECTORES_HABILES", "max"), validos=("VOTOS_OBTENIDOS", "sum"),
+                                             otros=("otros", "max"))  # max: hay filas partidas en 0
+    mesa["emitidos"] = mesa["validos"] + mesa["otros"]
+    part = mesa.groupby("UBIGEO")[["electores", "emitidos"]].sum()
+    votos = t.groupby(["UBIGEO", "AGRUPACION_POLITICA"])["VOTOS_OBTENIDOS"].sum()
+    salida = {}
+    for u, v in votos[votos > 0].groupby(level=0):
+        s = v.sort_values(ascending=False).to_numpy() / v.sum()
+        salida[u] = {"margen_victoria": round(s[0] - (s[1] if len(s) > 1 else 0), 4), "listas": float(len(s)),
+                     "nep_listas": round(1 / (s ** 2).sum(), 3), "voto_ganador": round(s[0], 4),
+                     "participacion": round(part.emitidos[u] / part.electores[u], 4) if part.electores[u] else None}
+    return salida
+
+
+def ubigeo_inei(departamento, provincia, distrito):
+    """La ONPE usa el ubigeo de RENIEC: se traduce por nombre. Si el nombre no calza tal cual (guiones, nombres
+    truncados, otra grafía) se toma el distrito más parecido de la misma provincia. shortcut: 5-7 distritos por
+    elección quedan fuera (renombrados, p. ej. Mariscal Gamarra, Hualla, o que cambiaron de provincia, como Putumayo);
+    agregar un alias en lugares.ALIAS si alguno importa para el modelo."""
+    import difflib
+    u, prec = resolver(region=departamento, provincia=provincia, distrito=distrito, pista=departamento)
+    if prec != "provincia":
+        return u if prec == "distrito" else None
+    nombres = {norm(n).replace(" ", ""): c for c, n in catalogo()[3].items() if len(c) == 6 and c.startswith(u)}
+    cerca = difflib.get_close_matches(norm(distrito).replace(" ", ""), nombres, n=1, cutoff=0.8)
+    return nombres[cerca[0]] if cerca else None
+
+
+def onpe(con):
+    """Política local por distrito en cada elección municipal (año de la elección, en octubre/noviembre)."""
+    import pandas as pd
+    filas = []
+    for anio, sufijo in ELECCIONES.items():
+        url = ONPE.format(anio=anio, sufijo=sufijo)
+        crudo = requests.get(url, headers=UA, timeout=600).content
+        if sufijo.endswith("zip"):
+            with zipfile.ZipFile(io.BytesIO(crudo)) as z:
+                crudo = z.read(z.namelist()[0])
+        utf8 = crudo.count(b"\xc3") > crudo.count(b"\xd1")  # 2022 viene en UTF-8; los demás en Latin-1
+        t = pd.read_csv(io.BytesIO(crudo), sep=";", quoting=3, dtype={0: str},  # hay comillas sueltas
+                        encoding="utf-8" if utf8 else "latin-1", encoding_errors="replace",
+                        on_bad_lines="skip")  # 2022 trae 6 líneas cortadas de 542 813
+        t = t.rename(columns={t.columns[0]: "UBIGEO", "VOTOS_IMPUGNADOS": "VOTOS_IMPUG"})  # el 1.º trae BOM
+        lugares = t.drop_duplicates("UBIGEO")
+        mapa = {r: ubigeo_inei(d, p, x) for r, d, p, x in
+                zip(lugares.UBIGEO, lugares.DEPARTAMENTO, lugares.PROVINCIA, lugares.DISTRITO)}
+        t["UBIGEO"] = t["UBIGEO"].map(mapa)
+        for c in ("VOTOS_OBTENIDOS", "ELECTORES_HABILES", "VOTOS_BLANCOS", "VOTOS_NULOS", "VOTOS_IMPUG"):
+            t[c] = pd.to_numeric(t[c], errors="coerce").fillna(0)
+        t["otros"] = t[["VOTOS_BLANCOS", "VOTOS_NULOS", "VOTOS_IMPUG"]].sum(axis=1)
+        res = resultados_electorales(t[t["UBIGEO"].notna()])
+        sin = sorted(f"{d}/{p}/{x}" for (r, u), d, p, x in zip(mapa.items(), lugares.DEPARTAMENTO, lugares.PROVINCIA,
+                                                                 lugares.DISTRITO) if u is None)
+        print(f"  {anio}: {len(res)} distritos; sin traducir {len(sin)}: {sin[:6]}")
+        filas += [(u, anio, k, x) for u, d in res.items() for k, x in d.items()]
+    guardar(con, filas, "https://www.datosabiertos.gob.pe (ONPE, resultados por mesa ERM municipal distrital "
+                        "2006-2022)")
+
+
+PASOS = {"pnud": pnud, "pobreza": pobreza, "catastro": catastro, "pasivos": pasivos, "oefa": oefa, "onpe": onpe}
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(prog="python -m tremor.distritos")
@@ -183,3 +253,8 @@ if __name__ == "__main__":
         if a.paso in (nombre, "todo"):
             print(nombre)
             paso(con)
+    (DATOS / "exportes").mkdir(parents=True, exist_ok=True)
+    con.execute("SELECT 1 FROM distrito_variable LIMIT 1")  # falla si nunca se cargó nada
+    import pandas as pd
+    pd.read_sql("SELECT ubigeo, anio, variable, valor, fuente FROM distrito_variable ORDER BY ubigeo, variable, anio",
+                con).to_csv(DATOS / "exportes" / "distrito_variable.csv", index=False)
