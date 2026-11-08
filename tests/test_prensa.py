@@ -192,3 +192,14 @@ def test_lead_de_la_nota():
 def test_mcp_pobreza_enaho_departamento_desconocido():
     from tremor.mcp_server import pobreza_enaho
     assert "error" in pobreza_enaho("Narnia")
+
+
+def test_cadena_llm_salta_proveedores_sin_clave(monkeypatch):
+    from tremor import llm
+    monkeypatch.setattr(llm, "_env", lambda: None)
+    monkeypatch.setenv("LLM_MODEL", "a,gemini:b,c")
+    monkeypatch.setenv("LLM_API_KEY", "x")
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    assert [m for m, _, _ in llm.cadena()] == ["a", "c"]
+    monkeypatch.setenv("GEMINI_API_KEY", "y")
+    assert [m for m, _, _ in llm.cadena()] == ["a", "b", "c"]

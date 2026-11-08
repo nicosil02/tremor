@@ -13,6 +13,7 @@ import argparse
 import csv
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -35,7 +36,10 @@ def radios(grupo=None, grupos=1):
 
 
 def grabar(url, segundos, ruta):
-    ffmpeg = os.environ.get("FFMPEG_BIN", "ffmpeg")
+    ffmpeg = os.environ.get("FFMPEG_BIN") or shutil.which("ffmpeg")
+    if not ffmpeg:  # Windows sin ffmpeg instalado: el binario que trae imageio-ffmpeg
+        import imageio_ffmpeg
+        ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
     try:
         subprocess.run([ffmpeg, "-loglevel", "error", "-y", "-reconnect", "1", "-reconnect_streamed", "1",
                         "-i", url, "-t", str(segundos), "-vn", "-ac", "1", "-ar", str(SR), ruta],

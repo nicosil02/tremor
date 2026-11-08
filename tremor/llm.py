@@ -1,7 +1,9 @@
-"""LLM por endpoint compatible con OpenAI (constitución III): LLM_BASE_URL, LLM_MODEL, LLM_API_KEY.
+"""LLM por endpoints compatibles con OpenAI (constitución III).
 
+LLM_MODEL es una cadena separada por comas; cada modelo usa la clave de su proveedor y, si agota su cupo diario,
+sigue el siguiente (cada modelo tiene su propio cupo). Prefijos: `gemini:` (GEMINI_API_KEY); sin prefijo,
+LLM_BASE_URL + LLM_API_KEY (Groq). Un proveedor sin clave se salta.
 Cada respuesta se guarda en llm_cache por contenido: volver a correr no gasta cuota.
-LLM_MODEL puede ser una lista separada por comas: si un modelo agota su cupo diario, sigue con el siguiente.
 """
 import hashlib
 import json
@@ -12,6 +14,9 @@ import requests
 
 from tremor.db import RAIZ, ahora
 
+CADENA = "openai/gpt-oss-120b,gemini:gemini-3.5-flash-lite,openai/gpt-oss-20b"
+GEMINI = "https://generativelanguage.googleapis.com/v1beta/openai"
+
 
 def _env():
     """Lee .env sin dependencias; las variables ya definidas en el entorno mandan (GitHub Actions)."""
@@ -21,8 +26,20 @@ def _env():
             k, _, v = linea.partition("=")
             if k.strip() and not k.startswith("#") and v.strip():
                 os.environ.setdefault(k.strip(), v.strip())
-    return (os.environ.get("LLM_BASE_URL", "https://api.groq.com/openai/v1").rstrip("/"),
-            os.environ.get("LLM_MODEL", "openai/gpt-oss-120b,openai/gpt-oss-20b"), os.environ.get("LLM_API_KEY", ""))
+
+
+def cadena() -> list[tuple[str, str, str]]:
+    """[(modelo, url, clave)] en orden, solo los que tienen clave."""
+    _env()
+    salida = []
+    for m in os.environ.get("LLM_MODEL", CADENA).split(","):
+        m = m.strip()
+        if m.startswith("gemini:"):
+            salida.append((m[7:], GEMINI, os.environ.get("GEMINI_API_KEY", "")))
+        elif m:
+            salida.append((m, os.environ.get("LLM_BASE_URL", "https://api.groq.com/openai/v1").rstrip("/"),
+                           os.environ.get("LLM_API_KEY", "")))
+    return [x for x in salida if x[2]]
 
 
 class SinCuota(Exception):
@@ -30,23 +47,22 @@ class SinCuota(Exception):
 
 
 class RespuestaInvalida(Exception):
-    """400 de Groq: casi siempre JSON mal formado por el modelo (json_validate_failed)."""
+    """400: casi siempre JSON mal formado por el modelo (json_validate_failed)."""
 
 
 AGOTADOS = set()  # modelos sin cupo diario en esta corrida
 
 
 def chat_json(con, sistema: str, usuario: str, version: str) -> dict:
-    url, modelos, clave = _env()
-    modelos = [m.strip() for m in modelos.split(",") if m.strip()]
+    modelos = cadena()
     clave_de = lambda m: hashlib.sha256(f"{m}\n{version}\n{sistema}\n{usuario}".encode()).hexdigest()
-    for m in modelos:
+    for m, _, _ in modelos:
         fila = con.execute("SELECT respuesta FROM llm_cache WHERE clave = ?", (clave_de(m),)).fetchone()
         if fila:
             return json.loads(fila[0])
-    if not clave:
-        raise SinCuota("Falta LLM_API_KEY en .env")
-    for m in modelos:
+    if not modelos:
+        raise SinCuota("Falta LLM_API_KEY (o GEMINI_API_KEY) en .env")
+    for m, url, clave in modelos:
         if m in AGOTADOS:
             continue
         try:
@@ -65,7 +81,7 @@ def _llamar(con, url, clave, modelo, k, sistema, usuario) -> dict:
                           headers={"Authorization": f"Bearer {clave}"})
         if r.status_code == 429:
             espera = float(r.headers.get("retry-after", 20 * (intento + 1)))
-            if espera > 120:  # límite diario: pasa al siguiente modelo
+            if espera > 120 or "per day" in r.text.lower() or "PerDay" in r.text:  # cupo diario: siguiente modelo
                 raise SinCuota(r.text[:200])
             time.sleep(espera)
             continue
@@ -73,6 +89,7 @@ def _llamar(con, url, clave, modelo, k, sistema, usuario) -> dict:
             raise RespuestaInvalida(r.text[:300])
         r.raise_for_status()
         texto = r.json()["choices"][0]["message"]["content"]
+        texto = texto.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
         datos = json.loads(texto)
         con.execute("INSERT OR REPLACE INTO llm_cache VALUES (?, ?, ?, ?)", (k, texto, modelo, ahora()))
         con.commit()
