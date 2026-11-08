@@ -64,7 +64,15 @@ def datos(con):
             "animo": registros(tabla(con, "SELECT proyecto, menciones_7d, base_7d, alza, pct_negativo, aviso, provincias "
                                           "FROM animo WHERE menciones_7d > 0 ORDER BY menciones_7d DESC")),
             "metricas": registros(met), "mejor": mejor,
-            "respaldo": registros(tabla(con, "SELECT * FROM modelo_respaldo"))}
+            "respaldo": registros(tabla(con, "SELECT * FROM modelo_respaldo")),
+            "cobertura": cobertura(con)}
+
+
+def cobertura(con):
+    """Por año, qué parte de las protestas ve cada fuente y cuántas no vio ninguna (solo agregados)."""
+    from tremor.fusion import cobertura as c
+    f = tabla(con, "SELECT * FROM protesta_fusion")
+    return registros(c(f)) if len(f) else []
 
 
 def geo():

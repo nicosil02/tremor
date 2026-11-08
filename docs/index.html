@@ -129,6 +129,7 @@
     <div class="titular"><h1 id="h1">Cargando</h1><p id="bajada"></p></div>
     <ol class="ops" id="ops"></ol>
     <div class="seccion"><h2>Protestas cercanas</h2><p id="nota-avisos"></p><ul class="avisos" id="avisos"></ul></div>
+    <div class="seccion" id="oculto" hidden><h2>Lo que nadie registra</h2><p id="oculto-texto"></p><div id="oculto-barras"></div></div>
     <details class="seccion metodo">
       <summary><h2>Cómo se calcula</h2></summary>
       <p><b>Qué mide.</b> La probabilidad de que ocurra al menos un paro, bloqueo o toma en la zona de influencia de la operación durante el mes indicado. La zona es el distrito donde está la operación y los distritos que limitan con él.</p>
@@ -436,6 +437,22 @@ function iniciar(D, G, H) {
   }
 
   document.getElementById("pie").insertAdjacentHTML("beforeend", ` Datos al ${esc(D.creado)}.`);
+  // Cobertura: qué parte de las protestas reales ve la Defensoría y qué parte se le escapa a todas las fuentes
+  const cob = (D.cobertura || []).filter(c => c.anio >= 2019);
+  if (cob.length) {
+    const real = c => c.vistas + c.no_vistas, def = c => c.defensoria * c.vistas / real(c);
+    const prom = cob.reduce((s, c) => s + def(c), 0) / cob.length;
+    document.getElementById("oculto").hidden = false;
+    document.getElementById("oculto-texto").textContent = `De ${cob[0].anio} a ${cob.at(-1).anio}, la Defensoría registró cerca de ${pct(prom)} de los meses con protesta en un distrito. Al cruzar todas las fuentes se estima cuánto no vio ninguna. Tremor suma prensa regional, radio local y los reportes de las empresas para cerrar esa brecha.`;
+    const W = 300, h = 14;
+    document.getElementById("oculto-barras").innerHTML = `<svg viewBox="0 0 ${W} ${cob.length * (h + 6)}" width="100%" role="img" aria-label="Cobertura por año">${cob.map((c, k) => {
+      const y = k * (h + 6), a = def(c) * (W - 40), b = (c.vistas / real(c)) * (W - 40);
+      return `<text x="0" y="${y + 11}" font-size="11" fill="var(--tinta-3)">${c.anio}</text>
+        <rect x="40" y="${y}" width="${W - 40}" height="${h}" fill="var(--linea)"/>
+        <rect x="40" y="${y}" width="${b.toFixed(1)}" height="${h}" fill="var(--cobre-2)"/>
+        <rect x="40" y="${y}" width="${a.toFixed(1)}" height="${h}" fill="var(--tinta)"/>`; }).join("")}</svg>
+      <p style="margin:6px 0 0;font-size:14px;color:var(--tinta-3)">En negro, lo que vio la Defensoría. En cobre, lo que agregan las demás fuentes. En gris, lo que se estima que nadie vio.</p>`;
+  }
   // Cifras de la prueba 2024-2026, tal como salieron del modelo
   const cifra = (o, m, k) => D.metricas.find(x => x.objetivo === o && x.modelo === m && x.metrica === k)?.valor;
   const prueba = o => [cifra(o, D.mejor?.[o], "precision_top20"), cifra(o, "ingenuo", "precision_top20"), cifra(o, "ingenuo", "tasa_base")];

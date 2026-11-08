@@ -74,7 +74,8 @@ def nivel_accion(accion) -> int:
 
 
 def eventos(con) -> pd.DataFrame:
-    """Protestas de todas las fuentes → (ubigeo, m, nivel 2-4). Solo las que llegan a distrito."""
+    """Protestas de todas las fuentes propias (Defensoría, EGPP, prensa y radio, SUTRAN, bolsa) → (ubigeo, m, nivel
+    2-4). Solo las que llegan a distrito. ACLED queda fuera: solo valida (su uso comercial pide licencia)."""
     q = lambda s: pd.read_sql(s, con)
     d = q("SELECT a.ubigeo, r.anio * 12 + r.mes - 1 AS m, a.medida AS accion, 0 AS victimas, "
           "COALESCE(a.actores, '') AS actores, COALESCE(a.demanda, '') AS texto FROM accion_protesta a "
@@ -86,9 +87,17 @@ def eventos(con) -> pd.DataFrame:
           "tipo_conflicto <> 'otro' AS extractivo FROM egpp_evento WHERE duplicado_de IS NULL AND capital_por_defecto = 0 AND length(ubigeo) = 6")
     p = q("SELECT ubigeo, COALESCE(fecha_evento, fecha_anuncio) AS fecha, accion, estado, 0 AS victimas, "
           "COALESCE(tipo_conflicto, 'otro') <> 'otro' AS extractivo FROM evento_prensa WHERE length(ubigeo) = 6")
-    for t in (e, p):
+    # Lo que la Defensoría no ve: vías cortadas por protesta (SUTRAN) y paralizaciones que las empresas reportan a la bolsa
+    s = q("SELECT ubigeo, COALESCE(fecha_evento, visto_primero) AS fecha, 'bloqueo' AS accion, 0 AS victimas, "
+          "0 AS extractivo FROM sutran_alerta WHERE length(ubigeo) = 6")
+    try:
+        from tremor.bolsa import ubigeos_incidentes
+        b = ubigeos_incidentes(con).assign(accion="bloqueo", victimas=0, extractivo=1)
+    except FileNotFoundError:  # el registro de bolsa vive en datos/crudos (no se publica)
+        b = s.iloc[:0]
+    for t in (e, p, s, b):
         t["m"] = t["fecha"].map(mes)
-    t = pd.concat([d, e, p], ignore_index=True)
+    t = pd.concat([d, e, p, s, b], ignore_index=True)
     t["nivel"] = [4 if v > 0 else nivel_accion(a) for a, v in zip(t.accion, t.victimas)]
     t.loc[t.get("estado").eq("anunciada").fillna(False).to_numpy(), "nivel"] = 2  # anunciada: tensión, aún no ocurre
     t["extractivo"] = t.extractivo.astype(bool)
