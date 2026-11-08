@@ -789,17 +789,18 @@ MESES = ("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto
 
 
 def eleccion(r, adelanto=2):
-    """La elección municipal vista desde el mes de la alerta (t+2), no desde el último dato: en noviembre de 2026
-    no "falta 1 mes", la elección ya fue (4 de octubre) y las nuevas autoridades asumen en enero."""
-    k = int(r.meses_a_eleccion) - adelanto
-    if k > 0:
-        return f"{'falta 1 mes' if k == 1 else f'faltan {k} meses'} para la elección municipal"
-    if k == 0:
+    """La elección municipal vista desde el mes de la alerta (t+2), no desde el último dato. Después de la elección
+    el riesgo sube: de diciembre a febrero de los años electorales hubo el doble de paros que en otros años
+    (disputas de resultados, transferencia, nuevas autoridades desde enero)."""
+    m = int(r.m) + adelanto
+    desde = m - max(e * 12 + 9 for e in ELECCIONES if e * 12 + 9 <= m)
+    hasta = min(e * 12 + 9 for e in ELECCIONES if e * 12 + 9 >= m) - m
+    if desde == 0:
         return "es el mes de la elección municipal"
-    if k >= -5:  # de noviembre a marzo: disputas de resultados, transferencia y nuevas autoridades
+    if desde <= 5:
         return ("la elección municipal acaba de pasar y entre diciembre y febrero de los años electorales hubo el "
                 "doble de paros que en otros años")
-    return "lejos de la elección municipal"
+    return f"{'falta 1 mes' if hasta == 1 else f'faltan {hasta} meses'} para la elección municipal"
 
 
 def frase_cambio(g, r, n, sube):
