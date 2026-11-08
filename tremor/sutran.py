@@ -50,9 +50,72 @@ def recolectar(con) -> tuple[int, int]:
     return len(alertas), nuevas
 
 
+CONTEXTO = ("Te doy una alerta de la SUTRAN sobre una vía bloqueada por una protesta en el Perú y notas de prensa "
+            "numeradas de esos días. Usa las notas que probablemente hablan de esta protesta: misma ciudad o provincia, "
+            "fechas cercanas y un motivo compatible con la alerta (no hace falta que nombren la vía). Con ellas y la "
+            "alerta, di en UNA oración formal de máximo 16 palabras quiénes protestan (por rol, nunca nombres de "
+            "personas), por qué y contra quién. Si ninguna nota sirve, resume solo lo que dice la alerta. "
+            'Responde JSON {"contexto": "<oración>", "notas": [<números de las notas usadas>]}.')
+
+
+def contexto(con, pausa=1.0) -> int:
+    """Para cada bloqueo vigente, busca qué dicen los medios (Google News del lugar en esos días y las notas ya
+    guardadas: feeds regionales y radio) y resume quién protesta y por qué, aunque no sea contra una operación."""
+    import json
+    import time
+    from datetime import date, timedelta
+    from urllib.parse import quote
+    from tremor.llm import chat_json, SinCuota, RespuestaInvalida
+    from tremor.prensa.recolectar import GNEWS, UA, PALABRAS, parsear, _guardar
+    con.execute("""CREATE TABLE IF NOT EXISTS sutran_contexto (id TEXT PRIMARY KEY, contexto TEXT, fuentes TEXT,
+                   actualizado TEXT NOT NULL)""")
+    vivas = con.execute("""SELECT id, titulo, descripcion, distrito, provincia, region, via, km, fecha_evento
+                           FROM sutran_alerta WHERE motivo = 'humano' AND (vigente_hasta IS NULL OR vigente_hasta >= date('now'))
+                           AND id NOT IN (SELECT id FROM sutran_contexto WHERE contexto IS NOT NULL)""").fetchall()
+    hechos = 0
+    for id_, tit, desc, dist, prov, reg, via, km, f in vivas:
+        f0 = date.fromisoformat(f or date.today().isoformat())
+        lugares = [x.title() for x in {dist, prov} if x]
+        q = f'{PALABRAS} ({" OR ".join(f'"{x}"' for x in lugares)}) after:{f0 - timedelta(3)} before:{f0 + timedelta(4)}'
+        try:
+            r = requests.get(GNEWS.format(q=quote(q)), timeout=30, headers=UA); r.raise_for_status()
+            _guardar(con, list(parsear(r.text)), f"sutran:{id_}", reg)
+        except requests.RequestException as e:
+            print(f"  {dist}: {e.__class__.__name__}")
+        time.sleep(pausa)
+        # las notas del lugar en esos días, también las de feeds y radio guardadas antes
+        from tremor.lugares import norm
+        claves = [norm(x) for x in lugares]
+        notas = [n for n in con.execute("""SELECT medio, titular, resumen, enlace FROM nota
+                                           WHERE substr(publicado, 1, 10) BETWEEN ? AND ? ORDER BY publicado""",
+                                        (str(f0 - timedelta(3)), str(f0 + timedelta(4))))
+                 if any(k in norm(f"{n[1]} {n[2] or ''}") for k in claves)]
+        from tremor.prensa.recolectar import ACCION  # primero las que hablan de una protesta
+        notas = sorted(notas, key=lambda n: not ACCION.search(f"{n[1]} {n[2] or ''}"))[:12]
+        if not notas:
+            con.execute("INSERT OR REPLACE INTO sutran_contexto VALUES (?, NULL, '[]', datetime('now'))", (id_,))
+            continue
+        texto = f"SUTRAN: {tit}. {desc}. Vía {via} {km}, {dist}, {prov}, {reg}, {f}.\n\n" + "\n".join(
+            f"[{i}] {m}: {t}. {(r or '')[:300]}" for i, (m, t, r, _) in enumerate(notas))
+        try:
+            out = chat_json(con, CONTEXTO, texto, "sutran-contexto-3")
+        except SinCuota:
+            break
+        except RespuestaInvalida:
+            continue
+        usadas = [notas[i] for i in out.get("notas") or [] if isinstance(i, int) and 0 <= i < len(notas)]
+        fuentes = [{"medio": m, "titular": t, "enlace": e} for m, t, _, e in usadas[:3]]
+        con.execute("INSERT OR REPLACE INTO sutran_contexto VALUES (?, ?, ?, datetime('now'))",
+                    (id_, out.get("contexto"), json.dumps(fuentes, ensure_ascii=False)))
+        hechos += bool(out.get("contexto"))
+    con.commit()
+    return hechos
+
+
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
     con = conectar()
     vistas, nuevas = recolectar(con)
     protestas = con.execute("SELECT count(*) FROM sutran_alerta WHERE motivo = 'humano'").fetchone()[0]
     print(f"SUTRAN: {vistas} alertas vigentes, {nuevas} nuevas; {protestas} por causas humanas (protestas) acumuladas.")
+    print(f"  contexto de prensa para {contexto(con)} bloqueos vigentes.")

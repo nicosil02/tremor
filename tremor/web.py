@@ -58,10 +58,9 @@ def datos(con):
             "operaciones": registros(tabla(con, "SELECT empresa, unidad, tipo, ubigeo FROM operacion")),
             "zonas": zonas,
             "eventos": registros(ev),
-            "sutran": registros(tabla(con, "SELECT titulo, motivo, estado_via, region, provincia, distrito, ubigeo, via, "
-                                           "km, fecha_evento, lat, lng, descripcion FROM sutran_alerta WHERE motivo = 'humano' AND (vigente_hasta IS NULL OR "
-                                           "vigente_hasta >= date('now')) ORDER BY fecha_evento DESC")),
+            "sutran": sutran(con),
             "rutas": rutas_distrito(con),
+            "radios": radios_provincia(),
             "animo": registros(tabla(con, "SELECT proyecto, menciones_7d, base_7d, alza, pct_negativo, aviso, provincias "
                                           "FROM animo WHERE menciones_7d > 0 ORDER BY menciones_7d DESC")),
             "metricas": registros(met), "mejor": mejor,
@@ -69,6 +68,30 @@ def datos(con):
             "cobertura": cobertura(con),
             "vecinos": vecinos(con),
             "casos": casos_zona(con)}
+
+
+def sutran(con):
+    """Bloqueos vigentes por protesta, con lo que dicen los medios de cada uno (tremor.sutran.contexto)."""
+    con.execute("CREATE TABLE IF NOT EXISTS sutran_contexto (id TEXT PRIMARY KEY, contexto TEXT, fuentes TEXT, actualizado TEXT NOT NULL)")
+    s = registros(tabla(con, """SELECT s.titulo, s.motivo, s.estado_via, s.region, s.provincia, s.distrito, s.ubigeo, s.via, s.km,
+                                       s.fecha_evento, s.lat, s.lng, c.contexto, c.fuentes
+                                FROM sutran_alerta s LEFT JOIN sutran_contexto c USING (id)
+                                WHERE s.motivo = 'humano' AND (s.vigente_hasta IS NULL OR s.vigente_hasta >= date('now'))
+                                ORDER BY s.fecha_evento DESC"""))
+    for x in s:
+        x["fuentes"] = json.loads(x["fuentes"] or "[]")
+    return s
+
+
+def radios_provincia():
+    """Las radios que Tremor escucha en cada provincia (tremor/radios.csv), para nombrarlas en las alertas."""
+    import csv
+    from pathlib import Path
+    out = {}
+    with open(Path(__file__).with_name("radios.csv"), encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            out.setdefault(r["ubigeo_provincia"], []).append(" ".join(r["medio"].split()))
+    return out
 
 
 def rutas_distrito(con):
@@ -90,6 +113,16 @@ def casos_zona(con):
                       WHERE cm.reporte_num = (SELECT MAX(num) FROM reporte) AND cm.estado IN ('activo', 'latente')""")
     c["reclamo"] = [None if not isinstance(x, str) or x.strip() == n.strip() else x for x, n in zip(c.reclamo, c.nombre)]
     c["resumen"] = resumir(con, c)
+    # con quién es (tremor.contexto): empresa y unidad enlazadas a la base, quién reclama, tema; y lo de prensa
+    for t_, cols in [("caso_vinculo", "caso_id, quien_reclama, contra_empresa, unidad, tema, empresa_op, unidad_op, ubigeo_op"),
+                     ("caso_contexto", "caso_id, resumen AS resumen_prensa, fuentes")]:
+        try:
+            c = c.merge(tabla(con, f"SELECT {cols} FROM {t_}").rename(columns={"caso_id": "id"}), on="id", how="left")
+        except Exception:  # tabla aún no creada
+            pass
+    if "resumen_prensa" in c:
+        c["resumen"] = c.resumen.fillna(c.pop("resumen_prensa"))
+        c["fuentes"] = [json.loads(x) if isinstance(x, str) else [] for x in c.fuentes]
     return registros(c.drop(columns="id"))
 
 

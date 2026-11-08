@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tremor. Informe semanal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Source+Serif+4:opsz,wght@8..60,400..700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --tinta: #14212b; --tinta-2: #3e4c56; --tinta-3: #66737c; --linea: #d5dbdf; --fondo: #e9ecee; --papel: #f6f7f8;
+    --marino: #13304a; --cobre-1: #f3e1d3; --cobre-2: #e3a67c; --cobre-3: #c96a3a; --cobre-4: #8a3213; --rojo: #a4231b;
+    --serif: "Source Serif 4", Georgia, serif; --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--tinta); font-family: Archivo, system-ui, sans-serif; font-size: 16px; line-height: 1.55; }
+  .barra { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 24px; background: var(--marino); color: #fff; }
+  .barra b { font-size: 19px; font-weight: 750; letter-spacing: .02em; margin-right: 6px; }
+  .barra .grupo { display: flex; gap: 6px; flex-wrap: wrap; }
+  .barra .der { margin-left: auto; }
+  .barra button { font: inherit; font-size: 15px; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer; border: 1px solid #3b5874;
+                  background: transparent; color: #fff; transition: background-color 140ms ease, transform 140ms var(--ease-out); }
+  .barra button:hover { background: #1d4061; }
+  .barra button:active { transform: scale(0.97); }
+  .barra button[aria-pressed="true"] { background: #fff; color: var(--marino); border-color: #fff; }
+  .hoja { max-width: 900px; margin: 28px auto 60px; background: #fff; box-shadow: 0 2px 12px rgb(20 33 43 / .10); padding: 44px 64px 40px; }
+  /* Membrete */
+  .membrete { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; border-bottom: 3px solid var(--marino); padding-bottom: 10px; }
+  .membrete .marca { font-weight: 780; font-size: 18px; letter-spacing: .04em; color: var(--marino); }
+  .membrete .marca span { font-weight: 500; letter-spacing: 0; color: var(--tinta-2); margin-left: 8px; }
+  .membrete .num { font-size: 14px; color: var(--tinta-2); text-align: right; }
+  .para { margin: 8px 0 26px; font-size: 14px; color: var(--tinta-3); }
+  h1 { font-family: var(--serif); font-size: 34px; line-height: 1.18; font-weight: 650; margin: 0 0 22px; color: var(--tinta); text-wrap: balance; }
+  /* Conclusión y calificación */
+  .arranque { display: grid; grid-template-columns: 1fr 240px; gap: 30px; margin-bottom: 30px; }
+  .resumen { border-left: 4px solid var(--marino); padding: 2px 0 2px 20px; }
+  .resumen h2 { margin: 0 0 10px; }
+  .resumen ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+  .resumen li { font-family: var(--serif); font-size: 18px; line-height: 1.45; }
+  .resumen li b { font-family: Archivo, sans-serif; font-weight: 700; font-size: 16px; display: block; color: var(--marino); }
+  .califica { background: var(--papel); border-top: 4px solid var(--c, var(--cobre-3)); padding: 16px 18px; align-self: start; }
+  .califica .r { font-size: 13px; font-weight: 650; color: var(--tinta-3); }
+  .califica .v { font-size: 30px; font-weight: 780; line-height: 1.1; color: var(--c, var(--cobre-3)); margin: 4px 0 2px; }
+  .califica .t { font-size: 15px; color: var(--tinta-2); }
+  .califica hr { border: 0; border-top: 1px solid var(--linea); margin: 12px 0; }
+  .califica dl { margin: 0; display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 15px; }
+  .califica dt { color: var(--tinta-2); }
+  .califica dd { margin: 0; font-weight: 700; text-align: right; }
+  /* Secciones */
+  section { margin-top: 30px; padding-top: 22px; border-top: 1px solid var(--linea); }
+  section > h3 { font-family: var(--serif); font-size: 23px; font-weight: 650; margin: 0 0 6px; line-height: 1.25; }
+  .lead { font-family: var(--serif); font-size: 17px; color: var(--tinta-2); margin: 0 0 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th { text-align: left; font-size: 13px; font-weight: 700; color: var(--tinta-3); padding: 0 10px 8px 0; border-bottom: 2px solid var(--tinta); }
+  td { padding: 11px 10px 11px 0; border-bottom: 1px solid var(--linea); vertical-align: top; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td b { font-weight: 680; }
+  td small { display: block; color: var(--tinta-3); font-size: 14px; }
+  .barrita { display: inline-block; width: 90px; height: 10px; background: var(--fondo); position: relative; vertical-align: middle; margin-right: 8px; }
+  .barrita i { position: absolute; inset: 0 auto 0 0; }
+  .barrita u { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--tinta); }
+  .nivel { display: inline-block; font-size: 13px; font-weight: 700; padding: 2px 8px; border-radius: 3px; }
+  .n0 { background: #e3ebe7; color: #3c5a4c; } .n1 { background: var(--cobre-1); color: var(--cobre-4); }
+  .n2 { background: #f2c9b0; color: #7a2a0e; } .n3 { background: var(--cobre-4); color: #fff; }
+  .flecha { font-weight: 700; }
+  .sube { color: var(--rojo); } .baja { color: #2f6b4f; } .igual { color: var(--tinta-3); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+  .cols h4 { font-size: 16px; font-weight: 700; margin: 0 0 8px; }
+  .cols ul { margin: 0; padding-left: 18px; }
+  .cols li { margin-bottom: 8px; font-size: 15px; color: var(--tinta-2); }
+  .cols li b { color: var(--tinta); }
+  .ok { background: var(--papel); padding: 14px 16px; font-size: 15px; color: var(--tinta-2); }
+  .puntos { counter-reset: p; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+  .puntos li { counter-increment: p; display: grid; grid-template-columns: 30px 1fr; font-size: 16px; }
+  .puntos li::before { content: counter(p); font-weight: 780; color: var(--marino); font-size: 18px; }
+  .anexo { margin-top: 34px; padding-top: 14px; border-top: 2px solid var(--tinta); font-size: 13px; color: var(--tinta-3); }
+  .anexo a { color: inherit; }
+  /* La alerta inmediata */
+  .vista-alerta { max-width: 900px; margin: 28px auto 60px; display: grid; grid-template-columns: 360px 1fr; gap: 40px; align-items: start; }
+  .telefono { background: #0e1a24; border-radius: 34px; padding: 18px 14px 26px; box-shadow: 0 10px 30px rgb(20 33 43 / .25); }
+  .telefono .hora { color: #fff; text-align: center; font-size: 44px; font-weight: 300; margin: 18px 0 2px; }
+  .telefono .fecha { color: #b9c4cb; text-align: center; font-size: 15px; margin-bottom: 22px; }
+  .noti { background: rgb(255 255 255 / .94); border-radius: 16px; padding: 12px 14px; }
+  .noti .de { display: flex; justify-content: space-between; font-size: 13px; color: var(--tinta-3); }
+  .noti .de b { color: var(--tinta); }
+  .noti .t { font-weight: 700; font-size: 16px; line-height: 1.3; margin: 4px 0 2px; }
+  .noti p { margin: 0; font-size: 15px; color: var(--tinta-2); line-height: 1.4; }
+  .explica h3 { font-family: var(--serif); font-size: 26px; margin: 0 0 10px; }
+  .explica p, .explica li { font-size: 16px; color: var(--tinta-2); }
+  .correo { background: #fff; box-shadow: 0 2px 12px rgb(20 33 43 / .10); padding: 22px 24px; margin-top: 18px; }
+  .correo .asunto { font-weight: 700; font-size: 17px; }
+  .correo .meta { font-size: 13px; color: var(--tinta-3); margin-bottom: 12px; }
+  .sev { display: inline-block; font-size: 12px; font-weight: 700; color: #fff; padding: 1px 7px; border-radius: 3px; background: var(--rojo); vertical-align: 2px; }
+  .sev.media { background: var(--cobre-3); }
+  .bajada { font-family: var(--serif); font-size: 19px; line-height: 1.45; color: var(--tinta-2); margin: -10px 0 26px; max-width: 62ch; }
+  .resumen ol { margin: 0; padding-left: 22px; display: grid; gap: 12px; }
+  .resumen ol li { font-family: var(--serif); font-size: 17px; line-height: 1.5; padding-left: 4px; }
+  .resumen ol li::marker { font-family: Archivo, sans-serif; font-weight: 700; color: var(--marino); }
+  .fuente { font-size: 14px; color: var(--tinta-3); margin: 10px 0 0; }
+  .seguir { margin: 0; padding-left: 20px; display: grid; gap: 10px; font-family: var(--serif); font-size: 17px; }
+  .telefono .noti + .noti { margin-top: 10px; }
+  .explica table { margin: 16px 0 6px; }
+  h2 { font-size: 19px; font-weight: 720; color: var(--marino); margin: 0 0 8px; }
+  [hidden] { display: none !important; }
+  @media (max-width: 760px) {
+    .hoja { padding: 24px 16px; margin: 0; }
+    h1 { font-size: 26px; }
+    .arranque, .cols, .vista-alerta { grid-template-columns: 1fr; }
+    .vista-alerta { padding: 16px; }
+    table { font-size: 14px; }
+    .barrita { display: none; }
+  }
+  @media print {
+    body { background: #fff; font-size: 13px; }
+    .barra { display: none; }
+    .hoja { margin: 0; box-shadow: none; max-width: none; padding: 0; }
+    section, tr { break-inside: avoid; }
+    .vista-alerta { display: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="barra">
+  <b>TREMOR</b>
+  <div class="grupo" id="vistas"><button type="button" data-v="informe" aria-pressed="true">Informe semanal</button><button type="button" data-v="alerta" aria-pressed="false">Alerta inmediata</button></div>
+  <div class="grupo der" id="chips"></div>
+  <button type="button" onclick="print()">Guardar en PDF</button>
+</div>
+<main class="hoja" id="hoja"><p>Cargando…</p></main>
+<div class="vista-alerta" id="alerta" hidden></div>
+
+<script>
+const EMPRESAS = [["Las Bambas", "bambas"], ["Southern", "southern"], ["Antamina", "antamina"], ["Yanacocha", "yanacocha"]];
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const llano = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const nombre = s => String(s ?? "").toLowerCase().replace(/(^|[\s(-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase())
+  .replace(/ (De|Del|Y|La|Los) /g, w => w.toLowerCase()).replace(/S\.(a|r)\.?(a|c|l)?\.?/gi, w => w.toUpperCase());
+const pct = v => v == null ? "s/d" : `${Math.round(v * 100)}%`;
+const BANDAS = ["Bajo", "Medio", "Alto", "Crítico"], COLOR = ["#5b8a73", "var(--cobre-2)", "var(--cobre-3)", "var(--cobre-4)"];
+const nivel = p => p == null ? 0 : p >= 0.5 ? 3 : p >= 0.25 ? 2 : p >= 0.1 ? 1 : 0;
+const dia = f => f ? new Date(String(f).slice(0, 10) + "T12:00").toLocaleDateString("es-PE", { day: "numeric", month: "long" }) : "";
+const largo = f => new Date(f + "T12:00").toLocaleDateString("es-PE", { day: "numeric", month: "long", year: "numeric" });
+const TEMAS = [["agua", /agua|h[ií]dric|r[ií]o\b|laguna|riego|cuenca|manantial/i], ["contaminación", /contamina|metales|ars[eé]nico|relave|derrame|ambiental|plomo/i],
+  ["empleo y proveedores", /emple|trabajo|laboral|contrata|proveedor|mano de obra/i], ["canon y obras", /canon|regal[ií]a|presupuesto|obra|inversi[oó]n|fondo social/i],
+  ["tierras", /tierra|terreno|predio|reasenta|servidumbre|territorio/i], ["acuerdos incumplidos", /compromis|acuerdo|acta|incumpl|convenio/i],
+  ["vías y transporte", /carretera|v[ií]a|corredor|transporte|camion|tr[aá]nsito|polvo|convoy/i], ["consulta previa", /consulta previa/i]];
+// Los motores del modelo, dichos como en un informe
+const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "Tras las elecciones municipales, los paros suelen duplicarse en los meses siguientes."],
+  [/cobre|oro|precio/i, "el alza de los precios de los metales", "Los precios del cobre y del oro subieron en los últimos 12 meses, lo que suele reactivar reclamos por canon y empleo."],
+  [/mesa de di[aá]logo/i, "la pérdida de mesas de diálogo", "Al menos un conflicto de la zona perdió su mesa de diálogo en los últimos tres meses."],
+  [/SENACE|certificaci/i, "nuevas aprobaciones ambientales", "El SENACE aprobó estudios ambientales en la zona en los últimos tres meses."],
+  [/marchas|plantones/i, "movilizaciones recientes sin paro", "Hubo marchas o plantones recientes que no llegaron a paro."]];
+
+(async () => {
+  let D;
+  for (const u of ["https://raw.githubusercontent.com/nicosil02/tremor/datos/web.json", "web.json"]) {
+    try { const r = await fetch(u, { cache: "no-cache" }); if (r.ok) { D = await r.json(); break; } } catch (e) {}
+  }
+  const A = new Map(D.alerta.map(a => [String(a.ubigeo), a]));
+  const mesP = a => a?.prob_zona_1m ?? a?.prob_zona;
+  const zonaDe = u => [u, ...((D.vecinos || {})[u] || [])];
+  const lugar = u => { const a = A.get(String(u)); const [, prov, dist] = (a?.lugar || "").split(" / ").map(nombre); return dist ? `${dist}, ${prov}` : ""; };
+  const hoy = String(D.creado).slice(0, 10), desde = new Date(new Date(hoy + "T12:00") - 6 * 864e5).toISOString().slice(0, 10);
+  const semana = Math.ceil(((new Date(hoy) - new Date(hoy.slice(0, 4) + "-01-01")) / 864e5 + 1) / 7);
+  const mesTxt = new Date((D.alerta.find(a => a.ventana_1m)?.ventana_1m || hoy.slice(0, 7)) + "-15").toLocaleDateString("es-PE", { month: "long" }).toLowerCase();
+  const subidas = a => String(a?.razones_cambio_1m || "").split(" · ").filter(s => s.startsWith("sube")).map(s => s.replace(/^sube:\s*/, ""));
+
+  const chips = document.getElementById("chips"), vistas = document.getElementById("vistas");
+  chips.innerHTML = EMPRESAS.map(([n, k]) => `<button type="button" data-k="${k}">${n}</button>`).join("");
+  chips.onclick = e => { const b = e.target.closest("button"); if (b) { history.replaceState(null, "", `?e=${b.dataset.k}`); pintar(b.dataset.k); } };
+  vistas.onclick = e => { const b = e.target.closest("button"); if (!b) return;
+    vistas.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    document.getElementById("hoja").hidden = b.dataset.v !== "informe"; document.getElementById("alerta").hidden = b.dataset.v !== "alerta"; };
+  pintar(new URLSearchParams(location.search).get("e") || "bambas");
+
+  function pintar(k) {
+    chips.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.k === k));
+    const ops = D.operaciones.filter(o => llano(`${o.empresa} ${o.unidad}`).includes(k));
+    const empresas = [...new Set(ops.map(o => o.empresa))], emp = nombre(empresas[0] || "");
+    const corto = emp.replace(/^(Minera|Compañia Minera|Compania Minera|Sociedad Minera)\s+/i, "").replace(/\s+S\.A\.?.*$/i, "").replace(/ Corporation.*| Copper.*| Sucursal.*/i, "");
+    const zonas = [...new Set(ops.map(o => String(o.ubigeo)))].map(u => ({ u, a: A.get(u), os: ops.filter(o => String(o.ubigeo) === u) }))
+      .filter(z => z.a).sort((x, y) => (mesP(y.a) ?? 0) - (mesP(x.a) ?? 0));
+    const nombreZ = z => z.os.map(o => o.unidad.split(",")[0]).slice(0, 2).join(" / ");
+    const enZona = new Set(zonas.flatMap(z => zonaDe(z.u))), provs = new Set([...enZona].map(u => u.slice(0, 4)));
+    const rutas = new Set([...enZona].flatMap(u => (D.rutas || {})[u] || []));
+    const ev = D.eventos.filter(e => provs.has(String(e.ubigeo || "").slice(0, 4)) && /paro|bloqueo|huelga|toma|marcha|plant|moviliz|protesta/i.test(e.accion || "")
+      && (e.estado === "anunciada" || String(e.fecha_evento || "") >= desde));
+    const vias = (D.sutran || []).filter(s => rutas.has(s.via) && provs.has(String(s.ubigeo || "").slice(0, 4)) || provs.has(String(s.ubigeo || "").slice(0, 4)));
+    const raiz = llano(corto).split(" ").find(w => w.length > 3) || "@";
+    const suya = c => empresas.includes(c.empresa_op) || llano(`${c.contra_empresa || ""} ${c.nombre}`).includes(raiz);
+    const casos = (D.casos || []).filter(c => suya(c) || enZona.has(String(c.ubigeo)))
+      .sort((x, y) => suya(y) - suya(x) || (x.estado === "activo" ? 0 : 1) - (y.estado === "activo" ? 0 : 1));
+    const activos = casos.filter(c => c.estado === "activo"), sinDialogo = casos.filter(c => /NO HAY/i.test(c.dialogo || ""));
+    const altos = zonas.filter(z => nivel(mesP(z.a)) >= 2), top = zonas[0];
+    const niv = Math.max(0, ...zonas.map(z => nivel(mesP(z.a))));
+    const media = zonas.reduce((s, z) => s + (z.a?.cambio_zona_1m ?? 0), 0) / Math.max(1, zonas.length);
+    const tendencia = media > 0.02 ? ["sube", "En alza frente a su promedio de 12 meses"] : media < -0.02 ? ["baja", "A la baja frente a su promedio de 12 meses"] : ["igual", "Estable frente a su promedio de 12 meses"];
+    // Motores: las razones que más se repiten entre sus operaciones
+    const motores = MOTOR.map(([re, corto_, largo_]) => ({ corto: corto_, largo: largo_, n: zonas.filter(z => subidas(z.a).some(s => re.test(s))).length })).filter(m => m.n).sort((a, b) => b.n - a.n);
+    const temas = TEMAS.map(([n, re]) => [n, casos.filter(c => re.test(`${c.nombre} ${c.reclamo || ""} ${c.resumen || ""}`)).length]).filter(x => x[1]).sort((a, b) => b[1] - a[1]);
+    const hechos = ev.length + vias.length;
+
+    // ---- Redacción: oraciones completas, cifras concretas, sin jerga del modelo
+    const N = ["ninguna", "una", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez"];
+    const num = (n, fem = true) => n <= 10 ? (fem ? N[n] : ["ningún", "un", ...N.slice(2)][n]) : String(n);
+    const Num = (n, fem) => { const s = num(n, fem); return s.charAt(0).toUpperCase() + s.slice(1); };
+    const lista = xs => xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} y ${xs.at(-1)}`;
+    const rango = zs => { const ps = zs.map(z => Math.round(mesP(z.a) * 100)); const a = Math.min(...ps), b = Math.max(...ps); return a === b ? `${a}%` : `entre ${a}% y ${b}%`; };
+    const subMedia = Math.round(media * 100);
+    const periodo = desde.slice(0, 7) === hoy.slice(0, 7) ? `${+desde.slice(8)} al ${largo(hoy)}` : `${dia(desde)} al ${largo(hoy)}`;
+    const deEmpresa = casos.filter(suya), activosE = deEmpresa.filter(c => c.estado === "activo"), sinDialogoE = deEmpresa.filter(c => /NO HAY/i.test(c.dialogo || ""));
+    const corredor = [...rutas].includes("PE-3SG") ? "el Corredor Minero del Sur" : rutas.size ? `las vías ${lista([...rutas].slice(0, 3))}` : "sus vías de acceso";
+    const anunciadas = ev.filter(e => e.estado === "anunciada");
+    const MOTOR_TXT = { "el ciclo poselectoral municipal": "el cambio de autoridades municipales, que históricamente duplica los paros en los meses siguientes a la elección",
+      "el alza de los precios de los metales": "el alza del precio del cobre y del oro en el último año, que suele reactivar los reclamos por canon y empleo",
+      "la pérdida de mesas de diálogo": "la pérdida de mesas de diálogo en conflictos de la zona",
+      "nuevas aprobaciones ambientales": "la aprobación reciente de estudios ambientales en la zona",
+      "movilizaciones recientes sin paro": "marchas y plantones recientes que aún no llegan a paro" };
+
+    const titular = altos.length
+      ? `Riesgo ${altos.length === zonas.length ? "alto en todas" : `alto en ${num(altos.length)} de las ${num(zonas.length)}`} ${zonas.length === 1 ? "operación" : "operaciones"} de ${corto} en ${mesTxt}`
+      : `Riesgo ${BANDAS[niv].toLowerCase()} en las operaciones de ${corto} en ${mesTxt}`;
+    const bajada = (hechos ? `Esta semana hubo ${num(hechos, false) === "un" ? "un hecho" : `${num(hechos, false)} hechos`} de protesta en sus zonas o rutas.` : `Esta semana no hubo protestas ni bloqueos en sus zonas ni en ${corredor}.`) +
+      (motores[0] ? ` El riesgo sube por ${MOTOR_TXT[motores[0].corto].split(",")[0]}${motores[1] ? ` y ${MOTOR_TXT[motores[1].corto].split(",")[0]}` : ""}.` : "");
+
+    const conclusiones = [
+      altos.length ? `${lista(altos.map(nombreZ))} ${altos.length === 1 ? "tiene" : "tienen"} ${rango(altos)} de probabilidad de un paro o bloqueo en su zona durante ${mesTxt}${subMedia > 1 ? `, unos ${subMedia} puntos más que su promedio del último año` : ""}.`
+        : `Ninguna operación supera el 25% de probabilidad de paro o bloqueo en ${mesTxt}. La más expuesta es ${nombreZ(top)}, con ${pct(mesP(top.a))}.`,
+      motores.length ? `El alza se explica por ${MOTOR_TXT[motores[0].corto]}${motores[1] ? `, y por ${MOTOR_TXT[motores[1].corto].split(",")[0]}` : ""}.` : "El riesgo refleja la historia de conflicto de cada zona y no muestra cambios recientes.",
+      deEmpresa.length ? `${Num(deEmpresa.length, false)} ${deEmpresa.length === 1 ? "conflicto registrado" : "conflictos registrados"} por la Defensoría del Pueblo ${deEmpresa.length === 1 ? "nombra" : "nombran"} a la empresa. ${Num(activosE.length, false)} ${activosE.length === 1 ? "sigue activo" : "siguen activos"} y ${sinDialogoE.length ? `${num(sinDialogoE.length, false)} no ${sinDialogoE.length === 1 ? "tiene" : "tienen"} mesa de diálogo` : "ninguno figura sin mesa de diálogo"}.`
+        : "Ningún conflicto vigente de la Defensoría del Pueblo nombra a la empresa.",
+      hechos ? `Del ${periodo} se registraron ${hechos} protestas o bloqueos en sus provincias o rutas. El detalle está en la sección 2.`
+        : `Del ${periodo} no se registraron protestas, anuncios de protesta ni bloqueos en sus provincias ni en ${corredor}.`];
+
+    const vigilar = [
+      ...anunciadas.map(e => `${e.titular}. Anunciada para el ${dia(e.fecha_evento)} en ${lugar(e.ubigeo)}.`),
+      ...sinDialogoE.slice(0, 2).map(c => `El conflicto ${c.nombre} no tiene mesa de diálogo. ${c.resumen || ""}`),
+      ...(motores.some(m => /poselectoral/.test(m.corto)) ? ["La instalación de las nuevas autoridades municipales en enero. Las nuevas gestiones suelen revisar los acuerdos vigentes con la empresa."] : []),
+      ...(temas[0] ? [`Los reclamos por ${temas[0][0]}, presentes en ${num(temas[0][1], false)} de los ${casos.length} conflictos de sus zonas.`] : [])].slice(0, 4);
+
+    document.title = `Tremor. Informe semanal, ${emp}`;
+    document.getElementById("hoja").innerHTML = `
+      <div class="membrete"><div class="marca">TREMOR<span>Riesgo social en operaciones</span></div>
+        <div class="num">Informe semanal n.º ${semana}<br>${largo(hoy)}</div></div>
+      <p class="para">Preparado para ${esc(emp.replace(/\.$/, ""))}. Cubre ${periodo}. Uso interno.</p>
+      <h1>${esc(titular)}</h1>
+      <p class="bajada">${esc(bajada)}</p>
+      <div class="arranque">
+        <div class="resumen"><h2>Conclusiones</h2><ol>${conclusiones.map(t => `<li>${esc(t)}</li>`).join("")}</ol></div>
+        <aside class="califica" style="--c:${COLOR[niv]}"><div class="r">Nivel de riesgo</div><div class="v">${BANDAS[niv]}</div>
+          <div class="t"><span class="flecha ${tendencia[0]}">${tendencia[0] === "sube" ? "▲" : tendencia[0] === "baja" ? "▼" : "▶"}</span> ${tendencia[0] === "sube" ? "Al alza" : tendencia[0] === "baja" ? "A la baja" : "Estable"} frente al último año</div><hr>
+          <dl><dt>Operaciones</dt><dd>${zonas.length}</dd><dt>Con riesgo alto</dt><dd>${altos.length}</dd>
+            <dt>Conflictos con la empresa</dt><dd>${deEmpresa.length}</dd><dt>Protestas en la semana</dt><dd>${hechos}</dd></dl></aside>
+      </div>
+
+      <section><h2>1. Riesgo por operación</h2>
+        <p class="lead">Probabilidad de que ocurra un paro o un bloqueo en la zona de influencia de cada operación durante ${mesTxt}. La zona es el distrito de la operación y los que lo rodean.</p>
+        <table><thead><tr><th>Operación</th><th>Probabilidad en ${mesTxt}</th><th class="num">Promedio del último año</th><th class="num">Diferencia</th><th>Nivel</th></tr></thead><tbody>
+        ${zonas.map(z => { const p = mesP(z.a), n = z.a.normal_zona_1m, d = Math.round((z.a.cambio_zona_1m ?? 0) * 100);
+          return `<tr><td><b>${esc(nombreZ(z))}</b><small>${esc(lugar(z.u))}</small></td>
+            <td><span class="barrita"><i style="width:${Math.min(100, (p ?? 0) * 100)}%;background:${COLOR[nivel(p)]}"></i>${n != null ? `<u style="left:${n * 100}%"></u>` : ""}</span><b>${pct(p)}</b></td>
+            <td class="num">${pct(n)}</td><td class="num ${d > 1 ? "sube" : d < -1 ? "baja" : "igual"}">${d > 0 ? "+" : ""}${d} puntos</td>
+            <td><span class="nivel n${nivel(p)}">${BANDAS[nivel(p)]}</span></td></tr>`; }).join("")}</tbody></table>
+        <p class="fuente">Niveles: bajo, menos de 10%. Medio, de 10% a 25%. Alto, de 25% a 50%. Crítico, más de 50%.</p>
+      </section>
+
+      <section><h2>2. Protestas y bloqueos de la semana</h2>
+        ${hechos ? `<table><thead><tr><th>Fecha</th><th>Hecho</th><th>Lugar</th><th>Fuente</th></tr></thead><tbody>
+          ${vias.map(s => `<tr><td>${dia(s.fecha_evento)}</td><td><b>Vía ${esc(s.via)} bloqueada, sigue vigente.</b><small>${esc(s.contexto || "")}</small></td><td>${esc(nombre(s.distrito))}</td><td>SUTRAN</td></tr>`).join("")}
+          ${ev.map(e => `<tr><td>${dia(e.fecha_evento || e.fecha_anuncio)}</td><td><b>${esc(e.titular)}</b>${e.estado === "anunciada" ? "<small>Anunciada, aún no ocurre.</small>" : ""}</td><td>${esc(lugar(e.ubigeo))}</td><td><a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.medio)}</a></td></tr>`).join("")}
+          </tbody></table>`
+        : `<p class="lead">No se registraron protestas, anuncios de protesta ni bloqueos en las provincias de sus operaciones ni en ${corredor}. Se revisaron la prensa nacional y regional, las alertas de la SUTRAN y los reportes de la Defensoría del Pueblo.</p>`}
+      </section>
+
+      <section><h2>3. Conflictos que nombran a la empresa</h2>
+        <p class="lead">Casos vigentes en el último reporte de la Defensoría del Pueblo, con el reclamo de cada uno.</p>
+        <table><thead><tr><th>Caso</th><th>Qué se reclama</th><th>Estado</th></tr></thead><tbody>
+        ${(deEmpresa.length ? deEmpresa : casos).slice(0, 7).map(c => `<tr><td style="width:30%"><b>${esc(c.nombre)}</b><small>${esc(lugar(c.ubigeo))}</small></td>
+          <td>${esc(c.resumen || "La Defensoría no describe el reclamo en su reporte.")}</td>
+          <td style="width:16%">${c.estado === "activo" ? "Activo" : "Latente"}<small>${/NO HAY/i.test(c.dialogo || "") ? "Sin diálogo" : /HAY/i.test(c.dialogo || "") ? "Con mesa de diálogo" : ""}</small></td></tr>`).join("")}
+        </tbody></table>
+        ${casos.length > 7 ? `<p class="fuente">Hay ${casos.length} conflictos vigentes en sus zonas. Todos se pueden ver en el mapa de Tremor.</p>` : ""}
+      </section>
+
+      ${vigilar.length ? `<section><h2>4. Qué seguir en las próximas semanas</h2><ul class="seguir">${vigilar.map(v => `<li>${esc(v)}</li>`).join("")}</ul></section>` : ""}
+
+      <div class="anexo">Cómo se calcula. La probabilidad sale de un modelo entrenado con 22 años de conflictos registrados por la Defensoría del Pueblo y la base de protestas de la PUCP, más unas 60 variables por distrito. En la prueba con datos de 2024 a 2026, la frecuencia real de paros coincidió con la probabilidad prevista en cada tramo. Los hechos de la semana vienen de la prensa nacional y regional, radios locales y la SUTRAN.
+        <a href="metodo.html">Método completo</a>. <a href="index.html">Mapa</a>.</div>`;
+
+    // ---- Alertas inmediatas: tres tipos, con datos reales donde ya los hay
+    const radiosZona = [...provs].flatMap(p => (D.radios || {})[p] || []);
+    const radio = radiosZona.find(r => /radio/i.test(r)) || radiosZona[0] || "una radio local";
+    const radioCorto = nombre(radio.replace(/\s+\d{2,3}([.,]\d)?\s*(fm|am)?.*$/i, "")).replace(/^Radio Radio/, "Radio");
+    const animo = (D.animo || []).find(x => llano(x.proyecto).includes(raiz));
+    const sub = zonas.filter(z => z.a.cambio_zona_1m != null).sort((x, y) => y.a.cambio_zona_1m - x.a.cambio_zona_1m)[0];
+    const provTop = top ? lugar(top.u).split(", ")[1] : "";
+    const alertas = [
+      { tipo: "Paro convocado", sev: "alta", real: false, hora: "6:58",
+        t: `${radioCorto} informa la convocatoria a un paro en ${provTop}`,
+        p: `Dirigentes anunciaron en el noticiero de la mañana un paro de 48 horas con bloqueo de ${corredor === "el Corredor Minero del Sur" ? "la vía PE-3SG" : "vías"}. Afecta a ${nombreZ(top)}.`,
+        f: `Transcripción de ${radioCorto}, noticiero de las 6:40` },
+      { tipo: "Sube el riesgo", sev: "media", real: true, hora: "7:42",
+        t: sub ? `${nombreZ(sub)} pasa a riesgo ${BANDAS[nivel(mesP(sub.a))].toLowerCase()}` : "",
+        p: sub ? `Probabilidad de paro o bloqueo de ${pct(mesP(sub.a))} en ${mesTxt}, ${Math.round(sub.a.cambio_zona_1m * 100)} puntos más que su promedio del último año.` : "",
+        f: "Modelo Tremor" },
+      { tipo: "Tono en radios", sev: animo && animo.pct_negativo >= 0.5 ? "media" : "baja", real: !!animo, hora: "12:15",
+        t: animo ? `Las radios de la zona hablan más de ${corto}, en tono negativo` : `Las radios de la zona hablan más de ${corto}`,
+        p: animo ? `${Num(animo.menciones_7d)} ${animo.menciones_7d === 1 ? "mención" : "menciones"} en los últimos siete días, ${animo.base_7d < 1 ? "cuando en los dos meses previos casi no se la mencionaba" : `frente a ${Math.round(animo.base_7d)} por semana en los dos meses previos`}. ${Math.round(animo.pct_negativo * 100)}% en tono negativo.`
+          : `Las menciones a la empresa se duplicaron frente a las ocho semanas previas, la mayoría en tono negativo.`,
+        f: "Radios locales transcritas por Tremor" }].filter(a => a.t);
+    const sevTxt = s => s === "alta" ? "Prioridad alta" : s === "media" ? "Prioridad media" : "Para seguimiento";
+    document.getElementById("alerta").innerHTML = `
+      <div class="telefono"><div class="hora">12:16</div><div class="fecha">${new Date(hoy + "T12:00").toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}</div>
+        ${alertas.slice().reverse().map(a => `<div class="noti"><div class="de"><b>Tremor</b><span>${a.hora}</span></div>
+          <div class="t"><span class="sev ${a.sev}">${sevTxt(a.sev)}</span> ${esc(a.t)}</div><p>${esc(a.p)}</p></div>`).join("")}</div>
+      <div class="explica"><h3>Alertas inmediatas</h3>
+        <p>Tremor avisa en minutos cuando aparece algo nuevo que toca las operaciones de ${esc(corto)}. Llegan por correo, WhatsApp o Teams, con la fuente y el enlace al mapa.</p>
+        <table><thead><tr><th>Tipo</th><th>Cuándo se envía</th><th>Este ejemplo</th></tr></thead><tbody>
+          <tr><td><b>Paro convocado</b></td><td>Una radio local, la prensa o la SUTRAN informan un paro, un bloqueo o una toma anunciados en la zona o en sus rutas.</td><td>Ilustrativo. La escucha de radios en vivo entra en operación con el piloto.</td></tr>
+          <tr><td><b>Sube el riesgo</b></td><td>La probabilidad de una operación cambia de nivel o supera en 5 puntos su promedio del último año.</td><td>Datos reales de hoy.</td></tr>
+          <tr><td><b>Tono en radios</b></td><td>Las menciones a la empresa o a sus proyectos en radios de la zona suben con respecto a las ocho semanas previas y predominan las negativas.</td><td>${animo ? "Datos reales de esta semana." : "Ilustrativo."}</td></tr>
+        </tbody></table>
+        <div class="correo"><div class="asunto">[Tremor] ${sevTxt(alertas[0].sev)}. ${esc(alertas[0].t)}</div>
+          <div class="meta">Para: relaciones comunitarias y seguridad de ${esc(corto)}</div>
+          <p style="margin:0 0 8px">${esc(alertas[0].p)}</p><p style="margin:0;font-size:14px;color:var(--tinta-3)">Fuente: ${esc(alertas[0].f)}. Escuchar el fragmento y ver en el mapa.</p></div></div>`;
+  }
+})();
+</script>
+</body>
+</html>
