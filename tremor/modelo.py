@@ -13,7 +13,11 @@ from tremor.lugares import catalogo, nombre, norm
 
 # Defensoría publica con un mes de rezago: con horizonte 1 la alerta sería de un mes que ya pasó.
 HORIZONTE = 3
-OBJETIVOS = ("y_fuerza", "y_extractivo", "y_crisis")
+OBJETIVOS = ("y_fuerza", "y_extractivo", "y_crisis", "z_fuerza", "z_extractivo")
+# Zonas de influencia (z_…): distrito con operación extractiva + los distritos que limitan con él. Se mide solo en
+# esos distritos: es lo que le importa a una empresa (un bloqueo en su zona, sea cual sea el reclamo, o uno contra ella).
+OPERACION = ("unidades_mineras", "lote_explotacion", "oleoducto_norperuano", "minas_tajo_abierto",
+             "minas_subterraneas", "proyectos_cartera")
 INICIO = 2010 * 12  # primer mes del panel (enero 2010); la historia previa solo alimenta los rezagos
 PRUEBA = 2024 * 12  # meses objetivo desde enero 2024 son prueba
 CENSO = ("rural", "lengua_indigena", "autoidentificacion_indigena", "sin_agua_red", "sin_electricidad")
@@ -172,6 +176,9 @@ def panel(con):
     sin_acled = (np.array(meses) < 2018 * 12) | (np.array(meses) + HORIZONTE >= ac.m.max())  # último mes: parcial
     nivel = np.select([K > 0, F > 0, (P > 0) | (A > 0), L > 0], [4, 3, 2, 1], 0)
     F3 = ventana(F, 3)
+    W = vecinos(distritos)
+    VECINDAD.update(idx={u: k for k, u in enumerate(distritos)}, W=W > 0)
+    zona = lambda x: W @ x  # suma en el distrito y sus vecinos
     idx = np.where(F > 0, np.arange(len(meses)), -10 ** 6)
     v = {"fuerza_1": F, "fuerza_3": F3, "fuerza_12": ventana(F, 12), "fuerza_36": ventana(F, 36),
          "protestas_12": ventana(P, 12), "crisis_36": ventana(K, 36),
@@ -184,17 +191,45 @@ def panel(con):
          "fuerza_3_corredor": por_corredor(con, F3, distritos),
          "nivel": nivel, "y_fuerza": (futuro(F + K, HORIZONTE) > 0).astype(float),
          "y_crisis": (futuro(K, HORIZONTE) > 0).astype(float),
-         "y_extractivo": (futuro(FX, HORIZONTE) > 0).astype(float)}
+         "y_extractivo": (futuro(FX, HORIZONTE) > 0).astype(float),
+         "zona_fuerza_1": zona(F), "zona_fuerza_3": zona(F3), "zona_fuerza_12": zona(ventana(F, 12)),
+         "zona_fuerza_36": zona(ventana(F, 36)), "zona_fuerza_extractiva_12": zona(ventana(FX, 12)),
+         "zona_fuerza_extractiva_36": zona(ventana(FX, 36)), "zona_protestas_12": zona(ventana(P, 12)),
+         "zona_casos_activos": zona(A), "zona_casos_dialogo": zona(D),
+         "z_fuerza": (futuro(zona(F + K), HORIZONTE) > 0).astype(float),
+         "z_extractivo": (futuro(zona(FX), HORIZONTE) > 0).astype(float)}
     for y in OBJETIVOS:
         v[y][np.isnan(futuro(F, HORIZONTE))] = np.nan
-    for k, x in (("v_acled", AC), ("v_acled_extractivo", AX)):  # validación externa, no entra al modelo
+    for k, x in (("v_acled", AC), ("v_acled_extractivo", AX), ("vz_acled", zona(AC)),
+                 ("vz_acled_extractivo", zona(AX))):  # validación externa, no entra al modelo
         v[k] = (futuro(x, HORIZONTE) > 0).astype(float)
         v[k][:, sin_acled] = np.nan
     desde = meses.index(INICIO)
     p = pd.DataFrame({k: x[:, desde:].ravel() for k, x in v.items()})
     p.insert(0, "m", np.tile(meses[desde:], len(distritos)))
     p.insert(0, "ubigeo", np.repeat(distritos, len(meses) - desde))
-    return contexto(con, p), nivel_mes(distritos, meses, nivel)
+    p = contexto(con, p)
+    p["operacion"] = (p[list(OPERACION)].sum(axis=1) > 0).astype(float)
+    p.loc[p.operacion == 0, ["z_fuerza", "z_extractivo"]] = np.nan
+    return p, nivel_mes(distritos, meses, nivel)
+
+
+VECINDAD = {}
+
+
+def vecinos(distritos):
+    """Matriz distrito × distrito con 1 en el propio distrito y en los que limitan con él (límites INEI simplificados
+    a ~100 m: se tocan con un margen de 300 m)."""
+    import geopandas as gpd
+    g = gpd.read_file(DATOS / "distritos.geojson")[["ubigeo", "geometry"]].to_crs(32718)
+    g["geometry"] = g.buffer(300)
+    par = gpd.sjoin(g, g, predicate="intersects")
+    i = {u: k for k, u in enumerate(distritos)}
+    W = np.eye(len(distritos))
+    for a, b in zip(par.ubigeo_left, par.ubigeo_right):
+        if a in i and b in i:
+            W[i[a], i[b]] = 1
+    return W
 
 
 def por_corredor(con, x, distritos):
@@ -278,17 +313,24 @@ GRUPOS = {
     "vias": ["via_nacional_km", "fuerza_3_corredor", "corredor_minero_sur"],
     "extraccion": ["unidades_mineras", "pasivos_mineros", "lote_explotacion", "lote_exploracion",
                    "oleoducto_norperuano", "concesiones_ha", "concesiones_metalicas_nuevas_ha", "proyectos_cartera",
-                   "certificaciones_12", "eia_36", "denuncias_oefa_extractivas",
+                   "certificaciones_12", "eia_36",
                    "minas_tajo_abierto", "minas_subterraneas"],
     "territorio": ["comunidades", "comunidades_pct_territorio", "reserva_indigena_pct_territorio",
                    "lengua_indigena", "autoidentificacion_indigena", "rural", "anp_pct_territorio",
-                   "amortiguamiento_pct_territorio", "conflictos_hidricos_ana", "estres_hidrico", "emergencias_3", "perdida_bosque_ha", "ronda_campesina"],
+                   "amortiguamiento_pct_territorio", "estres_hidrico", "emergencias_3", "perdida_bosque_ha", "ronda_campesina"],
     "economia": ["cobre_12m", "oro_12m", "canon_pc", "ejecucion_canon"],
     "desarrollo": ["idh", "pobreza_sup", "pobreza_departamento", "sin_agua_red", "sin_electricidad"],
     "gobernanza": ["oficina_ambiental", "atiende_denuncias_ambientales", "participacion_formas", "personal_municipal"],
     "politica": ["meses_a_eleccion", "margen_victoria", "nep_listas", "participacion"],
+    "zona": ["zona_fuerza_1", "zona_fuerza_3", "zona_fuerza_12", "zona_fuerza_36", "zona_fuerza_extractiva_12",
+             "zona_fuerza_extractiva_36", "zona_protestas_12", "zona_casos_activos", "zona_casos_dialogo"],
 }
 VARIABLES = [v for g in GRUPOS.values() for v in g]
+# Fuera del modelo por fuga: las denuncias OEFA (2018-2024) y los conflictos ANA (sin fecha) se solapan con la prueba.
+# Fotos recientes que sí entran (anteriores a la prueba, pero posteriores a casi todo el entrenamiento); el chequeo
+# "sin_fotos" mide cuánto dependen de ellas los aciertos.
+FOTOS = ["oficina_ambiental", "atiende_denuncias_ambientales", "participacion_formas", "personal_municipal",
+         "ronda_campesina", "proyectos_cartera"]
 
 
 MIEMBROS = ("lasso", "bosque", "gradient_boosting")  # el ensamble los promedia (como en 14.388, ML for wage prediction)
@@ -309,7 +351,7 @@ def modelos():
     return {"logistica": lineal(),
             "lasso": lineal(l1_ratio=1.0, C=0.05, solver="saga"),
             "arbol": DecisionTreeClassifier(max_depth=4, min_samples_leaf=500, random_state=0),
-            "bosque": RandomForestClassifier(n_estimators=200, min_samples_leaf=50, max_features=0.3, n_jobs=-1,
+            "bosque": RandomForestClassifier(n_estimators=200, min_samples_leaf=50, max_features=0.3, n_jobs=2,  # -1 copia el panel por núcleo: sin memoria en la laptop
                                              random_state=0),
             "gradient_boosting": HistGradientBoostingClassifier(max_iter=300, learning_rate=0.05, min_samples_leaf=200,
                                                                 l2_regularization=1.0, random_state=0)}
@@ -317,7 +359,7 @@ def modelos():
 
 # Punto 6: cada modelo prueba 3 valores de su parámetro principal; gana el de mejor precisión en el top 20 de un
 # bloque de validación (objetivos 2021-2023) que no toca la prueba (2024+).
-GRILLA = {"lasso": [{"logisticregression__C": c} for c in (0.01, 0.05, 0.2)],
+GRILLA = {"logistica": [{}], "lasso": [{"logisticregression__C": c} for c in (0.01, 0.05, 0.2)],
           "arbol": [{"max_depth": d} for d in (3, 4, 6)],
           "bosque": [{"min_samples_leaf": h} for h in (20, 50, 150)],
           "gradient_boosting": [{"learning_rate": a} for a in (0.02, 0.05, 0.1)]}
@@ -330,13 +372,20 @@ def modelo(nombre, objetivo):
 
 
 def afinar(entrena, objetivo):
-    """Elige los parámetros de GRILLA con validación temporal dentro del entrenamiento."""
+    """Elige los parámetros de GRILLA con validación temporal dentro del entrenamiento (objetivos 2021-2023) y
+    devuelve (bloque de validación, {modelo: predicciones}) para elegir el ganador y calibrar sin tocar la prueba."""
     a, b = entrena[entrena.m + HORIZONTE < VALIDA], entrena[entrena.m >= VALIDA - 1]
+    yb, disj = b[objetivo].to_numpy(), objetivo.startswith("z_")
+    pred = {}
     for nombre, opciones in GRILLA.items():
-        nota = [precision_top(b, modelos()[nombre].set_params(**o).fit(a[VARIABLES], a[objetivo])
-                              .predict_proba(b[VARIABLES])[:, 1], b[objetivo].to_numpy()) for o in opciones]
-        AFINADO[objetivo, nombre] = opciones[int(np.argmax(nota))]
-        print(f"  {objetivo}: {nombre} {AFINADO[objetivo, nombre]} (validación {max(nota):.3f})", flush=True)
+        ps = [modelos()[nombre].set_params(**o).fit(a[VARIABLES], a[objetivo]).predict_proba(b[VARIABLES])[:, 1]
+              for o in opciones]
+        nota = [precision_top(b, s, yb, disjuntas=disj) for s in ps]
+        k = int(np.argmax(nota))
+        AFINADO[objetivo, nombre], pred[nombre] = opciones[k], ps[k]
+        print(f"  {objetivo}: {nombre} {AFINADO[objetivo, nombre]} (validación {nota[k]:.3f})", flush=True)
+    pred["ensamble"] = np.mean([pred[n] for n in MIEMBROS], axis=0)
+    return b, pred
 
 
 class Ensamble:
@@ -356,17 +405,57 @@ def ajustar(nombre, objetivo, x, y):
     return (Ensamble(objetivo) if nombre == "ensamble" else modelo(nombre, objetivo)).fit(x, y)
 
 
-def ingenuo(p):
-    """La regla a vencer: hubo medida de fuerza el último mes; desempata la historia de 12 meses."""
-    return (p.fuerza_1 > 0) * 1000 + p.fuerza_12
+def ingenuo(p, objetivo="y_fuerza"):
+    """La regla a vencer: hubo medida de fuerza el último mes (en la zona, si el objetivo es de zona); desempata la
+    historia de 12 meses."""
+    z = "zona_" if objetivo.startswith("z_") else ""
+    return (p[z + "fuerza_1"] > 0) * 1000 + p[z + "fuerza_12"]
 
 
-def precision_top(p, score, y, k=20, solo_nuevos=False):
-    """Promedio por mes de la fracción de aciertos entre los k distritos con mayor score."""
-    t = p.assign(s=score, y=y)
+def por_mes(p, score, y, k=20, solo_nuevos=False, historia="fuerza_12", disjuntas=False, sin_capitales=False):
+    """Fracción de aciertos entre los k distritos con mayor score, mes a mes. Con `disjuntas`, el top k solo admite
+    zonas que no comparten distritos con otra ya elegida: un mismo bloqueo no se cuenta como varios aciertos."""
+    t = p[["ubigeo", "m"] + ([historia] if solo_nuevos else [])].assign(s=score, y=y)
     if solo_nuevos:
-        t = t[t.fuerza_12 == 0]
-    return float(t.groupby("m").apply(lambda g: g.nlargest(k, "s").y.mean(), include_groups=False).mean())
+        t = t[t[historia] == 0]
+    if sin_capitales:
+        t = t[~t.ubigeo.str.endswith("01")]  # la EGPP pone la capital cuando no sabe el distrito
+
+    def top(g):
+        g = g.nlargest(len(g) if disjuntas else k, "s")
+        if not disjuntas:
+            return g.y.mean()
+        W, idx, cubierto, elegidos = VECINDAD["W"], VECINDAD["idx"], np.zeros(len(VECINDAD["idx"]), bool), []
+        for u, yy in zip(g.ubigeo, g.y):
+            zona = W[idx[u]]
+            if not (zona & cubierto).any():
+                cubierto |= zona
+                elegidos.append(yy)
+                if len(elegidos) == k:
+                    break
+        return np.mean(elegidos)
+    return t.groupby("m").apply(top, include_groups=False)
+
+
+def precision_top(p, score, y, k=20, **kw):
+    """Promedio por mes de `por_mes`."""
+    return float(por_mes(p, score, y, k, **kw).mean())
+
+
+def intervalo(serie, n=1000, semilla=0):
+    """Intervalo del 90% del promedio mensual, remuestreando meses (bootstrap)."""
+    r = np.random.default_rng(semilla)
+    x = serie.to_numpy()
+    medias = x[r.integers(0, len(x), (n, len(x)))].mean(axis=1)
+    return float(np.quantile(medias, 0.05)), float(np.quantile(medias, 0.95))
+
+
+def captura(p, score, y, q=0.10):
+    """Fracción de los eventos que caen en el 10% de filas con mayor score de cada mes (lo que ve quien revisa solo
+    ese 10%)."""
+    t = p[["m"]].assign(s=score, y=y)
+    t["arriba"] = t.groupby("m").s.rank(ascending=False, pct=True, method="first") <= q
+    return float(t[t.arriba].y.sum() / max(t.y.sum(), 1))
 
 
 def evaluar(p, objetivo):
@@ -376,28 +465,40 @@ def evaluar(p, objetivo):
     p = p[p[objetivo].notna()]
     entrena, prueba = p[p.m + HORIZONTE < PRUEBA], p[p.m >= PRUEBA - 1]  # objetivo de prueba: desde enero 2024
     y = prueba[objetivo].to_numpy()
-    externa = "v_acled_extractivo" if objetivo == "y_extractivo" else "v_acled"  # ACLED: otra fuente, 2018-2025
-    filas, puntajes, ajustados = [], {"ingenuo": ingenuo(prueba).to_numpy(float)}, {}
-    afinar(entrena, objetivo)
+    z = objetivo.startswith("z_")
+    externa = ("vz_acled" if z else "v_acled") + ("_extractivo" if objetivo.endswith("extractivo") else "")  # ACLED
+    historia = "zona_fuerza_12" if z else "fuerza_12"
+    filas, puntajes, ajustados = [], {"ingenuo": ingenuo(prueba, objetivo).to_numpy(float)}, {}
+    bloque, validacion = afinar(entrena, objetivo)
     for n in modelos():
         ajustados[n] = modelo(n, objetivo).fit(entrena[VARIABLES], entrena[objetivo])
         puntajes[n] = ajustados[n].predict_proba(prueba[VARIABLES])[:, 1]
         print(f"  {objetivo}: {n} listo", flush=True)
     puntajes["ensamble"] = np.mean([puntajes[n] for n in MIEMBROS], axis=0)
+    nota_val = {n: precision_top(bloque, s, bloque[objetivo].to_numpy(), disjuntas=z) for n, s in validacion.items()}
+    mejor = max(nota_val, key=nota_val.get)  # se elige con la validación 2021-2023, no con la prueba
+    calibrar(objetivo, validacion[mejor], bloque[objetivo].to_numpy())
     for n, s in puntajes.items():
-        m = {"pr_auc": average_precision_score(y, s), "precision_top20": precision_top(prueba, s, y),
-             "precision_top20_nuevos": precision_top(prueba, s, y, solo_nuevos=True),
+        mensual = por_mes(prueba, s, y, disjuntas=z)
+        li, ls = intervalo(mensual)
+        m = {"pr_auc": average_precision_score(y, s), "precision_top20": float(mensual.mean()),
+             "precision_top20_li": li, "precision_top20_ls": ls, "validacion_top20": nota_val.get(n, np.nan),
+             "precision_top20_nuevos": precision_top(prueba, s, y, solo_nuevos=True, historia=historia, disjuntas=z),
+             "precision_top20_sin_capitales": precision_top(prueba, s, y, disjuntas=z, sin_capitales=True),
+             "captura_top10pct": captura(prueba, s, y),
              "brier": brier_score_loss(y, s) if n != "ingenuo" else np.nan,
              "tasa_base": y.mean(), "filas_prueba": len(y), "filas_entrena": len(entrena)}
         ok = prueba[externa].notna().to_numpy()
         ya = prueba[externa].to_numpy()[ok]
         m |= {"pr_auc_acled": average_precision_score(ya, s[ok]), "tasa_base_acled": ya.mean(),
-              "precision_top20_acled": precision_top(prueba[ok], s[ok], ya)}
+              "precision_top20_acled": precision_top(prueba[ok], s[ok], ya, disjuntas=z),
+              "captura_top10pct_acled": captura(prueba[ok], s[ok], ya)}
         filas += [(n, objetivo, k, float(v)) for k, v in m.items()]
     metricas = pd.DataFrame(filas, columns=["modelo", "objetivo", "metrica", "valor"])
-    top = metricas[metricas.metrica == "precision_top20"].set_index("modelo").valor.drop("ingenuo")
-    mejor = top.idxmax()
-    calibrar(objetivo, puntajes[mejor], y)
+    # shortcut: el calibrador se ajusta con un modelo entrenado hasta 2020 y se aplica a uno entrenado hasta 2023; si la
+    # tabla de deciles muestra desvío en la prueba, recalibrar con validación cruzada temporal.
+    CALIBRACION.append(deciles(objetivo, puntajes[mejor], y))  # medida en la prueba, ajustada en validación
+    respaldo(p, objetivo, mejor, metricas)
     return metricas, mejor, interpretar(ajustados.get(mejor, ajustados["gradient_boosting"]), prueba,
                                         puntajes[mejor], objetivo)
 
@@ -406,15 +507,47 @@ CALIBRADOR, CALIBRACION = {}, []
 
 
 def calibrar(objetivo, s, y):
-    """Los bosques encogen las probabilidades: una regresión isotónica sobre la prueba 2024+ las lleva a frecuencias
-    observadas (la alerta las usa así). Guarda la tabla por decil para mostrarla.
-    shortcut: se calibra con el mismo bloque con que se mide; con más años, separar un bloque solo para calibrar."""
+    """Los bosques encogen las probabilidades: una regresión isotónica ajustada en la validación (2021-2023) las lleva
+    a frecuencias observadas; la alerta las usa así y la tabla por decil se mide en la prueba (2024+)."""
     from sklearn.isotonic import IsotonicRegression
     CALIBRADOR[objetivo] = IsotonicRegression(out_of_bounds="clip", y_min=0, y_max=1).fit(s, y)
+
+
+def deciles(objetivo, s, y):
     d = pd.DataFrame({"s": s, "y": y, "c": CALIBRADOR[objetivo].predict(s)})
     d["decil"] = pd.qcut(d.s.rank(method="first"), 10, labels=False) + 1
-    CALIBRACION.append(d.groupby("decil").agg(predicha=("s", "mean"), calibrada=("c", "mean"), observada=("y", "mean"),
-                                              filas=("y", "size")).reset_index().assign(objetivo=objetivo))
+    return d.groupby("decil").agg(predicha=("s", "mean"), calibrada=("c", "mean"), observada=("y", "mean"),
+                                  filas=("y", "size")).reset_index().assign(objetivo=objetivo)
+
+
+VENTANAS = ((2016, 2018), (2018, 2020), (2020, 2022))  # además de la prueba principal (2024+)
+RESPALDO = []
+
+
+def respaldo(p, objetivo, mejor, metricas):
+    """Robustez: el ganador (con sus parámetros) contra el ingenuo en ventanas anteriores, cada una entrenada solo con
+    lo previo; y en la prueba principal, el mismo modelo sin las fotos recientes (FOTOS)."""
+    z = objetivo.startswith("z_")
+    for a0, a1 in VENTANAS:
+        ent, pru = p[p.m + HORIZONTE < a0 * 12], p[(p.m >= a0 * 12 - 1) & (p.m < a1 * 12 - 1)]
+        y = pru[objetivo].to_numpy()
+        for n, s in (("ingenuo", ingenuo(pru, objetivo).to_numpy(float)),
+                     (mejor, ajustar(mejor, objetivo, ent[VARIABLES], ent[objetivo]).predict_proba(pru[VARIABLES])[:, 1])):
+            mensual = por_mes(pru, s, y, disjuntas=z)
+            RESPALDO.append((objetivo, f"{a0}-{a1 - 1}", n, float(mensual.mean()), *intervalo(mensual),
+                             captura(pru, s, y), float(y.mean())))
+        print(f"  {objetivo}: ventana {a0}-{a1 - 1} lista", flush=True)
+    v = metricas.pivot_table(index="modelo", columns="metrica", values="valor")
+    for n in ("ingenuo", mejor):
+        RESPALDO.append((objetivo, "2024-2026", n, v.loc[n, "precision_top20"], v.loc[n, "precision_top20_li"],
+                         v.loc[n, "precision_top20_ls"], v.loc[n, "captura_top10pct"], v.loc[n, "tasa_base"]))
+    sin = [c for c in VARIABLES if c not in FOTOS]
+    ent, pru = p[p.m + HORIZONTE < PRUEBA], p[p.m >= PRUEBA - 1]
+    y = pru[objetivo].to_numpy()
+    s = ajustar(mejor, objetivo, ent[sin], ent[objetivo]).predict_proba(pru[sin])[:, 1]
+    mensual = por_mes(pru, s, y, disjuntas=z)
+    RESPALDO.append((objetivo, "2024-2026 sin fotos", mejor, float(mensual.mean()), *intervalo(mensual),
+                     captura(pru, s, y), float(y.mean())))
 
 
 def interpretar(mdl, prueba, s, objetivo):
@@ -452,6 +585,10 @@ def frase(g, r):
         return f"{r.fuerza_12:.0f} medidas de fuerza en 12 meses ({r.fuerza_36:.0f} en 3 años{x})"
     if g == "casos":
         return f"{r.casos_activos:.0f} casos activos en la Defensoría ({r.casos_dialogo:.0f} con diálogo)"
+    if g == "zona":
+        x = f", {r.zona_fuerza_extractiva_36:.0f} por minería, hidrocarburos o ambiente" if r.zona_fuerza_extractiva_36 else ""
+        return (f"en la zona (distrito y vecinos): {r.zona_fuerza_12:.0f} medidas de fuerza en 12 meses "
+                f"({r.zona_fuerza_36:.0f} en 3 años{x}); {r.zona_casos_activos:.0f} casos activos")
     if g == "contagio":
         return f"{r.fuerza_3_provincia:.0f} medidas de fuerza en el resto de la provincia en 3 meses"
     if g == "extraccion":
@@ -462,8 +599,6 @@ def frase(g, r):
         partes += [t for c, t in (("lote_explotacion", "lote petrolero en explotación"),
                                   ("lote_exploracion", "lote en exploración"),
                                   ("oleoducto_norperuano", "Oleoducto Norperuano")) if r[c] > 0]
-        if r.denuncias_oefa_extractivas > 0:
-            partes.append(f"{r.denuncias_oefa_extractivas:.0f} denuncias ambientales ante el OEFA")
         if r.eia_36 > 0:
             partes.append(f"{r.eia_36:.0f} EIA aprobados en 3 años (SENACE)")
         elif r.certificaciones_12 > 0:
@@ -488,8 +623,6 @@ def frase(g, r):
         if r.anp_pct_territorio or r.amortiguamiento_pct_territorio:
             partes.append(f"{pct(r.anp_pct_territorio + r.amortiguamiento_pct_territorio)} en área natural protegida "
                           "o su zona de amortiguamiento")
-        if r.conflictos_hidricos_ana:
-            partes.append(f"{r.conflictos_hidricos_ana:.0f} conflicto(s) por agua seguidos por la ANA")
         if r.ronda_campesina == 1:
             partes.append("rondas campesinas")
         if r.perdida_bosque_ha >= 100:
@@ -549,7 +682,8 @@ def alerta(con, p, mejor):
     ultimo = p.m.max()
     x = p[p.m == ultimo].set_index("ubigeo")
     salida = pd.DataFrame(index=x.index)
-    for objetivo, col in (("y_fuerza", "prob"), ("y_extractivo", "prob_extractivo"), ("y_crisis", "prob_crisis")):
+    for objetivo, col in (("y_fuerza", "prob"), ("y_extractivo", "prob_extractivo"), ("y_crisis", "prob_crisis"),
+                          ("z_fuerza", "prob_zona"), ("z_extractivo", "prob_zona_extractivo")):
         t = p[p[objetivo].notna()]
         mdl = ajustar(mejor[objetivo], objetivo, t[VARIABLES], t[objetivo])
         prob, caida = razones(mdl, x, t[VARIABLES].median())
@@ -559,6 +693,11 @@ def alerta(con, p, mejor):
             salida[col.replace("prob", "razones")] = [
                 " · ".join(frase(g, x.loc[u]) for g in caida.loc[u].nlargest(3).index if caida.loc[u, g] > 0)
                 for u in x.index]
+    for c in ("prob_zona", "puntaje_zona", "razones_zona", "prob_zona_extractivo", "puntaje_zona_extractivo",
+              "razones_zona_extractivo"):
+        salida.loc[x.operacion == 0, c] = np.nan  # la alerta de zona es solo para distritos con operación
+    salida["puesto_zona"] = salida.puntaje_zona.rank(ascending=False, method="first")
+    salida["puesto_zona_extractivo"] = salida.puntaje_zona_extractivo.rank(ascending=False, method="first")
     salida["puesto"] = salida.puntaje.rank(ascending=False, method="first").astype(int)
     salida["puesto_extractivo"] = salida.puntaje_extractivo.rank(ascending=False, method="first").astype(int)
     salida["nivel_actual"] = x.nivel.astype(int)
@@ -590,19 +729,23 @@ def main():
         metricas.append(m), importancia.append(imp), perfil.append(per)
     metricas = pd.concat(metricas)
     tabla = metricas.pivot_table(index=["objetivo", "modelo"], columns="metrica", values="valor")
-    print(tabla[["pr_auc", "precision_top20", "precision_top20_nuevos", "brier", "tasa_base", "precision_top20_acled",
-                 "tasa_base_acled"]].round(3).to_string())
+    print(tabla[["validacion_top20", "precision_top20", "precision_top20_li", "precision_top20_ls",
+                 "precision_top20_nuevos", "precision_top20_sin_capitales", "captura_top10pct", "tasa_base",
+                 "precision_top20_acled", "tasa_base_acled"]].round(3).to_string())
     print("mejor:", mejor)
     a = alerta(con, p, mejor)
     metricas["horizonte"], metricas["creado"] = HORIZONTE, ahora()
     salidas = {"nivel_mes": niveles, "modelo_metrica": metricas, "modelo_importancia": pd.concat(importancia),
                "modelo_perfil": pd.concat(perfil), "alerta": a, "modelo_calibracion": pd.concat(CALIBRACION),
+               "modelo_respaldo": pd.DataFrame(RESPALDO, columns=["objetivo", "ventana", "modelo", "precision_top20",
+                                                                  "li_90", "ls_90", "captura_top10pct", "tasa_base"]),
                "modelo_parametros": pd.DataFrame([(o, n, str(v)) for (o, n), v in AFINADO.items()],
                                                  columns=["objetivo", "modelo", "parametros"])}
     (DATOS / "exportes").mkdir(parents=True, exist_ok=True)
     for tabla_nombre, df in salidas.items():
         df.to_sql(tabla_nombre, con, if_exists="replace", index=False)
         df.to_csv(DATOS / "exportes" / f"{tabla_nombre}.csv", index=False)
+    print(salidas["modelo_respaldo"].round(3).to_string(index=False))
     print(salidas["modelo_importancia"].groupby("objetivo").head(6).to_string(index=False))
     print(f"\nalerta extractiva {a.ventana.iloc[0]} (base {a.mes_base.iloc[0]}, modelo {mejor['y_extractivo']}):")
     print(a.head(15)[["puesto_extractivo", "lugar", "prob_extractivo", "prob", "nivel_actual",

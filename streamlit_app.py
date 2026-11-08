@@ -14,7 +14,9 @@ import streamlit as st
 RAMA = "https://raw.githubusercontent.com/nicosil02/tremor/datos/"
 LOCAL = Path(__file__).parent / "datos"
 AZUL = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]  # secuencial de un tono
-OBJETIVOS = {"Medida de fuerza en zona extractiva": ("y_extractivo", "prob_extractivo", "puesto_extractivo",
+OBJETIVOS = {"Zona de influencia de una operación: cualquier medida de fuerza": ("z_fuerza", "prob_zona", "puesto_zona", "razones_zona"),
+             "Zona de influencia: medida de fuerza contra la operación": ("z_extractivo", "prob_zona_extractivo", "puesto_zona_extractivo", "razones_zona_extractivo"),
+             "Medida de fuerza en zona extractiva": ("y_extractivo", "prob_extractivo", "puesto_extractivo",
                                                      "razones_extractivo"),
              "Cualquier medida de fuerza (paro, bloqueo, toma)": ("y_fuerza", "prob", "puesto", "razones"),
              "Crisis (violencia, heridos o muertos)": ("y_crisis", "prob_crisis", None, "razones")}
@@ -51,9 +53,12 @@ st.markdown("**Alerta temprana de conflicto social cerca de operaciones extracti
             f"Probabilidad de protesta por distrito para **{alerta.ventana.iloc[0]}**, con datos hasta "
             f"{alerta.mes_base.iloc[0]} y las razones de cada alerta.")
 
-eleccion = st.radio("¿Qué quieres anticipar?", list(OBJETIVOS), horizontal=True)
+eleccion = st.radio("¿Qué quieres anticipar?", list(OBJETIVOS))
 objetivo, col_prob, col_puesto, col_razon = OBJETIVOS[eleccion]
-a = alerta.sort_values(col_prob, ascending=False).reset_index(drop=True)
+if col_prob not in alerta:
+    st.info("Esta alerta se publica con la próxima corrida del modelo.")
+    st.stop()
+a = alerta.dropna(subset=[col_prob]).sort_values(col_prob, ascending=False).reset_index(drop=True)
 a["puesto_vista"] = a.index + 1
 
 

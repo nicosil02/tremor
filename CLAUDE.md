@@ -1,6 +1,30 @@
 # Tremor: memoria del proyecto
 
-Léelo entero antes de trabajar. Es el estado al **7 nov 2026, noche**. Lo actualiza quien avance.
+Léelo entero antes de trabajar. Es el estado al **8 nov 2026**. Lo actualiza quien avance.
+
+## 0. Dónde quedamos (8 nov, para seguir en otra PC)
+
+- **Rama `002-prensa-egpp`, PR #46**, todo subido. La rama `datos` tiene la base al 8 nov **sin `acled_evento`**
+  (las condiciones de ACLED no permiten redistribuirla). En la otra PC: copiar `datos/crudos/acled/acled_peru.csv`
+  a mano (USB/Drive, o bajarlo otra vez del Data Export Tool de ACLED) y correr `python -m tremor.distritos acled`
+  **antes** de `python -m tremor.modelo`; sin esa tabla el modelo no arranca.
+- **Hecho en esta sesión:** RENAMU y ACLED en la base; radio en vivo (225 radios, `radio.yml`); ánimo hacia
+  proyectos (`tremor/animo.py`); página `streamlit_app.py` (probada en local, sin desplegar).
+- **El autor pidió afinar para clientes** (empresas con operaciones): dos objetivos nuevos de **zona de
+  influencia** = distrito con operación extractiva + sus vecinos (`vecinos()`, buffer 300 m):
+  `z_fuerza` (cualquier medida de fuerza en la zona, 20,6% de los meses) y `z_extractivo` (contra la operación,
+  7,4%). Universo: toda operación del país (unidades mineras, lotes, oleoducto, minas, cartera).
+- **Evaluación robusta (en `tremor/modelo.py`, sin resultados todavía):**
+  1. fuera del modelo por fuga: denuncias OEFA 2018-2024 y conflictos ANA (sin fecha);
+  2. el ganador y la calibración se eligen con la validación 2021-2023, no con la prueba;
+  3. ventanas de respaldo 2016-17, 2018-19, 2020-21 + prueba 2024-26, con intervalo del 90% (bootstrap de meses);
+  4. en zonas, el top 20 solo admite zonas que no comparten distritos (`disjuntas`);
+  5. sensibilidad: sin capitales y sin las fotos recientes (`FOTOS`). Todo va a la tabla `modelo_respaldo`.
+- **Lo siguiente:** correr `python -m tremor.modelo` (≈2 h; en la laptop se cayó por memoria, por eso el bosque
+  usa `n_jobs=2`), leer `modelo_respaldo` y contarle al autor qué tan robusto es; luego commit y republicar `datos`
+  (sin `acled_evento`). Pendiente decidido por el autor: desplegar en Streamlit Cloud, PR que cierra #46.
+- Cifras previas (modelo anterior, antes de la corrección, probablemente optimistas): top 20 acierta 84% en medida de
+  fuerza (ingenuo 59%), 15% en extractiva (ingenuo 7%); crisis casi igual al ingenuo.
 
 ## 1. Qué queremos
 
@@ -34,7 +58,7 @@ hidrocarburos, energía, concesiones) en el Perú, días antes, con razones expl
 - **Sin atribución a Claude:** nada de "Generated with Claude Code" ni co-autor en commits ni PRs.
 - **Código mínimo** (estilo "ponytail"):
   - reglas antes que LLM;
-  - una prueba pequeña por cada lógica que no sea trivial (`python -m pytest -q`, hoy 79 pruebas);
+  - una prueba pequeña por cada lógica que no sea trivial (`python -m pytest -q`, hoy 81 pruebas);
   - mejor borrar que agregar.
 - **Una sola base:** `datos/tremor.db` (SQLite). Se publica comprimida en la rama **`datos`**
   (`tremor.db.gz` + CSV); `datos/` no va en `main`.
@@ -58,7 +82,7 @@ git clone https://github.com/nicosil02/tremor && cd tremor && git checkout 002-p
 pip install -r requirements.txt
 cp .env.example .env        # y pegar LLM_API_KEY=gsk_... (la misma clave de Groq; no está en el repo)
 mkdir -p datos && git fetch origin datos && git show origin/datos:tremor.db.gz | gunzip > datos/tremor.db
-python -m pytest -q         # 79 pasan
+python -m pytest -q         # 81 pasan
 ```
 
 En Windows sin `gunzip`:
