@@ -118,7 +118,7 @@
 <div class="app">
   <div class="panel">
     <div class="cabeza">
-      <div class="marca"><b>Tremor</b><span>riesgo de paros y bloqueos</span></div>
+      <div class="marca"><b>Tremor</b><span>alerta temprana de paros y bloqueos</span></div>
       <div class="elegir">
         <label for="empresa" class="oculto">Empresa o mina</label>
         <input id="empresa" list="empresas" placeholder="Busca una empresa o una mina" autocomplete="off">
@@ -128,13 +128,14 @@
     </div>
     <div class="titular"><h1 id="h1">Cargando</h1><p id="bajada"></p></div>
     <ol class="ops" id="ops"></ol>
-    <div class="seccion"><h2>Lo que ya se mueve cerca</h2><p id="nota-avisos"></p><ul class="avisos" id="avisos"></ul></div>
+    <div class="seccion"><h2>Protestas cercanas</h2><p id="nota-avisos"></p><ul class="avisos" id="avisos"></ul></div>
     <details class="seccion metodo">
       <summary><h2>Cómo se calcula</h2></summary>
       <p><b>Qué mide.</b> La probabilidad de que ocurra al menos un paro, bloqueo o toma en la zona de influencia de la operación durante el mes indicado. La zona es el distrito donde está la operación y los distritos que limitan con él.</p>
       <p><b>Con qué datos.</b> Las acciones de protesta que reporta la Defensoría del Pueblo desde 2004, la base de protestas de la Escuela de Gobierno de la PUCP, las unidades que fiscaliza el OEFA y unas 60 variables por distrito. Entre ellas, conflictos activos y su mesa de diálogo, estudios ambientales aprobados por SENACE, canon, pobreza, comunidades campesinas, emergencias y calendario electoral.</p>
       <p><b>Cómo se validó.</b> <span id="validacion">El modelo se entrenó con datos hasta 2023 y se evaluó en 2024 a 2026, meses que no había visto.</span></p>
       <p><b>Qué es lo normal.</b> El promedio de la probabilidad de esa misma zona en los últimos doce meses. Cada razón de "por qué sube" compara el dato de hoy con su promedio en la zona.</p>
+      <p><b>Para qué sirve.</b> Para anticipar con uno a tres meses dónde conviene reforzar la relación con la comunidad, la seguridad y la logística. Un bloqueo cuesta caro. En un proyecto grande se estima en unos US$20 millones por semana de retraso (Davis y Franks, Harvard Kennedy School). No reemplaza la gestión social ni las encuestas de percepción. Es una señal externa que las complementa, y es una probabilidad, no una certeza.</p>
       <p><b>Límites.</b> La Defensoría publica con un mes de rezago, por eso la alerta se calcula para el segundo mes después del último reporte. En zonas que llevaban meses sin protestas, el modelo no anticipa el inicio mejor que el historial reciente. Las protestas de prensa y radio se muestran como referencia y no entran al cálculo. La base de la PUCP es de uso académico.</p>
     </details>
     <div class="pie" id="pie">Con datos de la Defensoría del Pueblo, la base de protestas de la PUCP y unas 60 variables por distrito. Código y método en <a href="https://github.com/nicosil02/tremor">github.com/nicosil02/tremor</a>.</div>
@@ -280,7 +281,7 @@ function iniciar(D, G, H) {
       : empresas.length === 1 ? nombre(empresas[0]) : `${empresas.length} empresas`;
     h1.style.fontSize = h1.textContent.length > 28 ? "24px" : "";
     document.getElementById("bajada").textContent = hayMes
-      ? `Probabilidad de un paro o bloqueo en la zona de cada operación ${enMes}. Arriba, las que más suben.`
+      ? `Probabilidad de un paro o bloqueo en la zona de influencia de cada operación ${enMes}. Arriba, las que más se apartan de lo normal.`
       : `Probabilidad de que haya un paro, un bloqueo o una toma en la zona de cada operación de aquí a ${hasta}. La zona es el distrito y los que lo rodean.`;
     lista(!suyas);
     listo.then(() => ["huella", "huella-borde"].forEach(c =>
@@ -300,9 +301,9 @@ function iniciar(D, G, H) {
       const donde = pais ? lugar(f.u).split(", ").slice(1).join(", ") + ", " + nombre((a.lugar || "").split(" / ")[0]) : lugar(f.u);
       return `<li class="op" data-i="${i}"><button type="button" aria-expanded="false">
           <span class="nombre">${esc(titulo)}</span><span class="lugar">${esc(donde)}</span>
-          <span class="prob"><b>${pct(mesP(a))}</b>${delta(a)}</span></button>
+          <span class="prob"><b>${pct(mesP(a))}</b><small>${banda(mesP(a))}</small>${delta(a)}</span></button>
         <div class="detalle"><div><div class="dentro">
-          ${porque.length ? `<h3>${sube ? "Por qué sube" : "Por qué baja"}</h3><ul>${porque.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
+          ${porque.length ? `<h3>${sube ? "Qué cambió este mes" : "Qué bajó este mes"}</h3><ul>${porque.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
           ${linea(f.u)}
           <p class="fondo">Hasta ${hasta}, ${pct(a.prob_zona)} de que haya un paro o bloqueo en la zona.</p>
           ${a.alerta_inmediata ? `<p class="fondo"><a href="${esc(a.enlace_prensa)}" target="_blank" rel="noopener">Ya hay una protesta anunciada cerca</a></p>` : ""}
@@ -346,6 +347,8 @@ function iniciar(D, G, H) {
     if (e) return `${+e[1] === 1 ? "Falta 1 mes" : `Faltan ${e[1]} meses`} para la elección municipal.`;
     return r.charAt(0).toUpperCase() + r.slice(1) + ".";
   }
+
+  const banda = p => p == null ? "" : p >= 0.5 ? "Crítico" : p >= 0.25 ? "Alto" : p >= 0.1 ? "Medio" : "Bajo";  // los cortes de la leyenda
 
   function delta(a) {
     if (!hayMes || a.cambio_zona_1m == null) return `<small>de paro o bloqueo</small>`;
