@@ -118,3 +118,46 @@ def test_resultados_electorales():
     r = resultados_electorales(t)["010101"]
     assert r["voto_ganador"] == 0.6 and r["margen_victoria"] == 0.2 and r["listas"] == 2
     assert r["participacion"] == round(115 / 150, 4) and r["nep_listas"] == round(1 / (0.36 + 0.16), 3)
+
+
+def test_niveles_y_rezagos():
+    import numpy as np
+    from tremor.modelo import futuro, nivel_accion, resto, ventana
+    assert [nivel_accion(a) for a in ("Plantón", "Paro de 48 horas", "Bloqueo de vías", "Huelga de hambre",
+                                      "Enfrentamiento entre sectores de la sociedad y la PNP")] == [2, 3, 3, 2, 4]
+    x = np.array([[1, 0, 2, 0, 3.0]])
+    assert ventana(x, 2).tolist() == [[1, 1, 2, 2, 3]]  # incluye el mes t, nunca t+1
+    f = futuro(x, 2)  # t+1 … t+2; sin datos suficientes = NaN
+    assert f[0, :3].tolist() == [2, 2, 3] and np.isnan(f[0, 3:]).all()
+    assert resto(np.array([[1.0], [2.0], [5.0]]), ["a", "a", "b"]).ravel().tolist() == [2, 1, 0]
+
+
+def test_extractivo():
+    from tremor.modelo import extractivo
+    for a, d in [("Comunidad campesina de Fuerabamba", "Exigen a Las Bambas cumplir el convenio marco"),
+                 ("Pobladores", "Rechazan la contaminación del río por relaves"),
+                 ("Comunidades nativas de Andoas", "Exigen remediación del Lote 192")]:
+        assert extractivo(a, d), d
+    for a, d in [("Trabajadores de la empresa Chinalco", "Exigen el aumento de sus remuneraciones"),
+                 ("Población", "En rechazo a las represalias del alcalde"),
+                 ("Federación de taxistas", "Rechazan el alza del precio del gas"),
+                 ("Padres de familia de la I.E. La Inmaculada", "Exigen el inicio del año escolar")]:
+        assert not extractivo(a, d), d
+
+
+def test_afinar_lugar():
+    from tremor.prensa.eventos import afinar_lugar
+    assert afinar_lugar("09", "Huancavelica . Población del distrito de Lircay . Exigen") == "090301"
+    assert afinar_lugar("0807", "Chumbivilcas . Comuneros de Velille . Exigen a la minera") == "080708"
+    assert afinar_lugar("09", "Huancavelica . Población . Exigen el asfaltado") is None
+
+
+def test_acled_extractivo():
+    from tremor.distritos import ACLED_EXTRACTIVO as E, ACLED_NO as N
+    def etiqueta(t):
+        return bool(E.search(t)) and not N.search(t)
+    assert etiqueta("protesters blocked the entrance to the Inmaculada mine")
+    assert etiqueta("Awajun residents took station 5 of the Nor Peruvian Oil pipeline")
+    assert not etiqueta("artisanal miners blocked the Panamericana demanding REINFO extension")
+    assert etiqueta("artisan fishers marched against the oil spill")
+    assert not etiqueta("teachers protested in Lima demanding higher wages")

@@ -148,11 +148,41 @@ def ubicar_caso(departamento, textos):
     return mejor if mejor[0] else resolver(region=departamento)
 
 
+QUIEN = re.compile(r"\b(?:distritos? de|comunidad(?:es)? (?:campesinas? |nativas? )?(?:de )?|centro poblado (?:de )?|"
+                   r"poblacion de|pobladores de|vecinos de)\s+([a-z ]+)")
+
+
+def afinar_lugar(prefijo, texto):
+    """Distrito dentro de `prefijo` (departamento o provincia ya conocidos) nombrado en el texto de la acción:
+    'Población del distrito de Kimbiri'. Con la provincia conocida vale cualquier nombre de distrito de 5+ letras.
+    Solo si el candidato es único."""
+    distritos, t = catalogo()[2], norm(texto)
+    hall = set()
+    for m in QUIEN.finditer(t):
+        w = m[1].split()
+        for k in range(min(4, len(w)), 0, -1):
+            cand = {u for u in distritos.get(" ".join(w[:k]), ()) if u.startswith(prefijo)}
+            if cand:
+                hall |= cand
+                break
+    if len(prefijo) == 4 and not hall:
+        hall = {u for nom, us in distritos.items() if len(nom) >= 5 and re.search(rf"\b{nom}\b", t)
+                for u in us if u.startswith(prefijo)}
+    return hall.pop() if len(hall) == 1 else None
+
+
 def ubicar_defensoria(con) -> int:
     filas = con.execute("SELECT reporte_num, n, lugar, actores FROM accion_protesta WHERE ubigeo IS NULL").fetchall()
     n = 0
     for num, i, lugar, actores in filas:
         u, _ = ubicar_texto(lugar)
+        if u:
+            con.execute("UPDATE accion_protesta SET ubigeo = ?, departamento = ? WHERE reporte_num = ? AND n = ?",
+                        (u, catalogo()[3].get(u[:2]), num, i)); n += 1
+    for num, i, pre, texto in con.execute(
+            "SELECT reporte_num, n, COALESCE(ubigeo, ''), COALESCE(lugar, '') || ' . ' || COALESCE(actores, '') || "
+            "' . ' || COALESCE(demanda, '') FROM accion_protesta WHERE length(COALESCE(ubigeo, '')) < 6").fetchall():
+        u = afinar_lugar(pre, texto)
         if u:
             con.execute("UPDATE accion_protesta SET ubigeo = ?, departamento = ? WHERE reporte_num = ? AND n = ?",
                         (u, catalogo()[3].get(u[:2]), num, i)); n += 1

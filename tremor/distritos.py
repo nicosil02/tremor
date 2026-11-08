@@ -7,8 +7,11 @@ una foto sin serie (p. ej. dónde hay una operación hoy). Fuentes verificadas e
 - INGEMMET (GEOCATMIN): catastro minero (concesiones con fecha de petitorio) y pasivos ambientales mineros.
 - OEFA (PIFA): unidades mineras fiscalizadas, lotes de hidrocarburos y el Oleoducto Norperuano.
 - ONPE (datos abiertos): resultados mesa por mesa de las elecciones municipales distritales 2006-2022.
+- Ministerio de Cultura (BDPI): territorios de comunidades campesinas y nativas, reservas indígenas.
+- MTC (red vial nacional, en GEOCATMIN): km de vía nacional y corredores logísticos por distrito.
+- INEI (Censo 2017, REDATAM): ruralidad, lengua materna e identidad indígena, agua y electricidad.
 
-`python -m tremor.distritos {pnud,pobreza,catastro,pasivos,oefa,onpe,todo}`
+`python -m tremor.distritos {pnud,pobreza,catastro,pasivos,oefa,onpe,comunidades,vias,censo,ambiente,senace,ana,oefa_denuncias,emergencias,geobosques,renamu,acled,todo}`
 """
 import argparse
 import io
@@ -33,6 +36,10 @@ CATASTRO = "https://geocatmin.ingemmet.gob.pe/arcgis/rest/services/SERV_CATASTRO
 PASIVOS = f"{GEOCATMIN}/SERV_PASIVO_AMBIENTAL/MapServer/0"
 OEFA = "https://pifa.oefa.gob.pe/ags_server/rest/services/PORTAL"
 GEOJSON = DATOS / "distritos.geojson"
+BDPI = "https://geoportal.cultura.gob.pe/mapa_bdpi/layer/listarCapaDgpiInfo"
+VIA_NACIONAL = f"{GEOCATMIN}/SERV_CARTOGRAFIA_BASE_WGS84/MapServer/4"
+# Corredor Minero del Sur: la PE-3SG (Challhuahuacho - Espinar), por donde sale el concentrado de Las Bambas.
+CORREDORES = {"Corredor Minero del Sur": {"PE-3SG"}}
 ONPE = "https://www.datosabiertos.gob.pe/sites/default/files/ERM{anio}_Municipal_Distrital{sufijo}"
 # El archivo "ERM2002_Municipal_Distrital" de la ONPE trae en realidad la elección regional: 2002 queda fuera.
 ELECCIONES = {2006: ".zip", 2010: ".zip", 2014: ".zip", 2018: "_total.zip", 2022: ".zip"}
@@ -42,16 +49,27 @@ ESQUEMA = """CREATE TABLE IF NOT EXISTS distrito_variable (
     consultado TEXT NOT NULL, PRIMARY KEY (ubigeo, anio, variable))"""
 
 
+def _post(url, data, intentos=6):
+    """POST con reintentos: el servidor del SENACE corta conexiones a menudo."""
+    import time
+    for i in range(intentos):
+        try:
+            return requests.post(url, data=data, headers=UA, timeout=300).json()
+        except requests.RequestException:
+            if i == intentos - 1:
+                raise
+            time.sleep(5 * (i + 1))
+
+
 def arcgis(capa, campos="*", geometria=False, lote=500):
     """Todas las filas de una capa ArcGIS REST: primero los ids y luego lotes por objectIds (GEOCATMIN no pagina
     con resultOffset). Con geometría devuelve GeoJSON en WGS84."""
-    ids = requests.post(f"{capa}/query", data=dict(where="1=1", returnIdsOnly="true", f="json"), headers=UA,
-                        timeout=300).json()["objectIds"] or []
+    ids = _post(f"{capa}/query", dict(where="1=1", returnIdsOnly="true", f="json"))["objectIds"] or []
     salida = []
     for i in range(0, len(ids), lote):
-        r = requests.post(f"{capa}/query", headers=UA, timeout=300, data=dict(
+        r = _post(f"{capa}/query", data=dict(
             objectIds=",".join(map(str, sorted(ids)[i:i + lote])), outFields=campos, outSR=4326,
-            returnGeometry=str(geometria).lower(), f="geojson" if geometria else "json")).json()
+            returnGeometry=str(geometria).lower(), f="geojson" if geometria else "json"))
         salida += r["features"] if geometria else [f["attributes"] for f in r["features"]]
     return salida
 
@@ -241,7 +259,312 @@ def onpe(con):
                         "2006-2022)")
 
 
-PASOS = {"pnud": pnud, "pobreza": pobreza, "catastro": catastro, "pasivos": pasivos, "oefa": oefa, "onpe": onpe}
+def porcentaje_cubierto(distritos, capa):
+    """Fracción del área de cada distrito cubierta por la capa (polígonos), en una proyección de áreas iguales."""
+    import geopandas as gpd
+    d = distritos.to_crs("ESRI:102033")
+    c = gpd.GeoDataFrame(geometry=[capa.to_crs("ESRI:102033").union_all()], crs="ESRI:102033")
+    inter = gpd.overlay(d, c, how="intersection")
+    return (inter.set_index("ubigeo").area / d.set_index("ubigeo").area).dropna().clip(upper=1)
+
+
+def comunidades(con):
+    """Comunidades campesinas y nativas (territorios) y reservas para pueblos en aislamiento, de la Base de Datos de
+    Pueblos Indígenas (BDPI) del Ministerio de Cultura. Foto: anio 0."""
+    import json
+    import geopandas as gpd
+    distritos = gpd.read_file(GEOJSON)[["ubigeo", "geometry"]]
+    filas = []
+    for capa, nombre_capa in ((2, "comunidades"), (5, "reserva_indigena")):
+        r = requests.get(BDPI, params={"ipInput": json.dumps({"id_capa": capa, "codubigeo": ""})}, headers=UA,
+                         timeout=600).json()
+        g = gpd.GeoDataFrame.from_features(r["mensaje"], crs=4326)
+        g = g[g.geometry.notna()]
+        g["geometry"] = g.geometry.make_valid()  # ~140 territorios vienen con geometría mal formada
+        cubierto = porcentaje_cubierto(distritos, g)
+        filas += [(u, 0, f"{nombre_capa}_pct_territorio", round(float(x), 4)) for u, x in cubierto.items() if x > 0]
+        if capa == 2:  # cuántas comunidades: por el centro del territorio
+            centro = g.set_geometry(g.to_crs(32718).geometry.centroid.to_crs(4326))
+            n = gpd.sjoin(centro, distritos, predicate="within").groupby("ubigeo").size()
+            filas += [(u, 0, "comunidades", float(x)) for u, x in n.items()]
+        print(f"  BDPI capa {capa}: {len(g)} polígonos")
+    guardar(con, filas, f"{BDPI} (Ministerio de Cultura, BDPI: capa 2 comunidades campesinas y nativas, capa 5 "
+                        "reservas indígenas)")
+
+
+RESERVADA = f"{GEOCATMIN}/SERV_AREA_RESERVADA/MapServer"
+CARTERA = f"{GEOCATMIN}/SERV_CARTERA_PROYECTOS_MINEROS/MapServer"
+
+
+def ambiente(con):
+    """Áreas naturales protegidas y sus zonas de amortiguamiento (SERNANP, en GEOCATMIN), cartera de proyectos
+    mineros 2023 y método de las minas en operación (MINEM). Foto: anio 0.
+    shortcut: la cartera es la de 2023 y se usa para todos los años; los EIA/DIA de GEOCATMIN acaban en 2016
+    (luego pasaron al SENACE) y no se usan. Si el SENACE publica su registro con fechas, entra como serie."""
+    import geopandas as gpd
+    distritos = gpd.read_file(GEOJSON)[["ubigeo", "geometry"]]
+    filas = []
+    for capa, var in ((13, "anp_pct_territorio"), (12, "amortiguamiento_pct_territorio")):
+        g = gpd.GeoDataFrame.from_features(arcgis(f"{RESERVADA}/{capa}", "nombre", geometria=True, lote=50), crs=4326)
+        g["geometry"] = g.geometry.make_valid()
+        filas += [(u, 0, var, round(float(x), 4)) for u, x in porcentaje_cubierto(distritos, g[g.geometry.notna()]).items()
+                  if x > 0]
+        print(f"  {var}: {len(g)} polígonos")
+    puntos = lambda capa, campos: gpd.sjoin(gpd.GeoDataFrame.from_features(
+        arcgis(f"{CARTERA}/{capa}", campos, geometria=True), crs=4326), distritos, predicate="within")
+    p = puntos(1, "nom_proy,est_proy")
+    filas += [(u, 0, "proyectos_cartera", float(n)) for u, n in p.groupby("ubigeo").size().items()]
+    m = puntos(0, "proyecto,metodo_de")
+    for metodo, var in (("SUPERFICIAL", "minas_tajo_abierto"), ("SUBTERR", "minas_subterraneas")):
+        n = m[m.metodo_de.fillna("").str.upper().str.contains(metodo)].groupby("ubigeo").size()
+        filas += [(u, 0, var, float(x)) for u, x in n.items()]
+    guardar(con, filas, f"{RESERVADA} capas 12-13 (SERNANP); {CARTERA} capas 0-1 (MINEM, cartera 2023 y minas)")
+
+
+SENACE = ("https://geosenace.senace.gob.pe/arcgis/rest/services/INTEROPERABILIDAD/"
+          "peru_senace_007_certificaciones_ambientales/MapServer/0")
+
+
+def senace(con):
+    """Certificaciones ambientales aprobadas (SENACE y las que heredó de los sectores, 1995-2026) de minería,
+    hidrocarburos y electricidad, ubicadas en su distrito por coordenadas → tabla senace_certificacion. El modelo
+    cuenta las aprobadas por año: un EIA nuevo es el gatillo clásico de conflicto."""
+    import geopandas as gpd
+    import pandas as pd
+    d = pd.DataFrame(arcgis(SENACE, "EXPEDIENTE,ACTIVIDAD,NOM_PROY,IGA_TIPO,TIT_PROY,FECHA_RD,LONGITUD,LATITUD"))
+    d = d[d.ACTIVIDAD.isin(["Minería", "Hidrocarburos", "Electricidad"]) & d.LONGITUD.notna() & d.FECHA_RD.notna()]
+    fecha = pd.to_datetime(d.FECHA_RD, unit="ms")
+    g = gpd.GeoDataFrame(d.assign(anio=fecha.dt.year, mes=fecha.dt.month),
+                         geometry=gpd.points_from_xy(d.LONGITUD, d.LATITUD), crs=4326)
+    g = gpd.sjoin(g, gpd.read_file(GEOJSON)[["ubigeo", "geometry"]], predicate="within")
+    g = g.rename(columns={"EXPEDIENTE": "expediente", "ACTIVIDAD": "actividad", "NOM_PROY": "proyecto",
+                          "IGA_TIPO": "tipo", "TIT_PROY": "titular"})
+    g[["ubigeo", "anio", "mes", "expediente", "actividad", "tipo", "proyecto", "titular"]].to_sql(
+        "senace_certificacion", con, if_exists="replace", index=False)
+    con.commit()
+    print(f"  {len(g)} certificaciones extractivas en {g.ubigeo.nunique()} distritos ({SENACE})")
+
+
+ANA = "https://geosnirh.ana.gob.pe/server/rest/services/ONRH"
+ESTRES = {"Sin presión": 0, "Estrés hídrico ocasional": 1, "Estrés hídrico medio": 2, "Escasez de agua crónica": 3,
+          "Escasez hídrica absoluta": 4}
+
+
+def ana(con):
+    """Autoridad Nacional del Agua (SNIRH): conflictos hídricos que sigue la ANA (zona de conflicto, zona crítica y
+    conflicto potencial) por distrito, y estrés hídrico (0-4, disponibilidad per cápita) de la unidad hidrográfica
+    del centro del distrito. Foto: anio 0.
+    shortcut: las capas de la ANA son la situación actual, sin fechas; se usan para todos los años."""
+    import geopandas as gpd
+    import pandas as pd
+    distritos = gpd.read_file(GEOJSON)[["ubigeo", "geometry"]]
+    puntos = pd.concat([gpd.GeoDataFrame.from_features(arcgis(f"{ANA}/{s}/MapServer/0", "OBJECTID", geometria=True),
+                                                       crs=4326) for s in ("Zona_de_Conflicto", "Zona_Critica",
+                                                                           "Conflicto_Potencial")])
+    n = gpd.sjoin(puntos, distritos, predicate="within").groupby("ubigeo").size()
+    filas = [(u, 0, "conflictos_hidricos_ana", float(x)) for u, x in n.items()]
+    uh = gpd.GeoDataFrame.from_features(arcgis(f"{ANA}/Disponibilidad_Per_Capita_por_Unidad_Hidrografica/MapServer/0",
+                                               "DESCRIPCION", geometria=True, lote=20), crs=4326)
+    centro = distritos.set_geometry(distritos.to_crs(32718).geometry.centroid.to_crs(4326))
+    j = gpd.sjoin(centro, uh[uh.DESCRIPCION.isin(ESTRES)], predicate="within").drop_duplicates("ubigeo")
+    filas += [(u, 0, "estres_hidrico", float(ESTRES[d])) for u, d in zip(j.ubigeo, j.DESCRIPCION)]
+    print(f"  {len(puntos)} conflictos hídricos en {len(n)} distritos; estrés hídrico en {len(j)} distritos")
+    guardar(con, filas, f"{ANA} (ANA, SNIRH: Zona_de_Conflicto, Zona_Critica, Conflicto_Potencial, "
+                        "Disponibilidad_Per_Capita_por_Unidad_Hidrografica)")
+
+
+OEFA_DENUNCIAS = "https://pifa.oefa.gob.pe/server_gis/rest/services/Metadatos/Denuncias_Ambientales/MapServer/0"
+EMERGENCIAS = "https://geosnirh.ana.gob.pe/server/rest/services/P%C3%BAblico/EventosEmergenciasHidricas/MapServer/107"
+
+
+def oefa_denuncias(con):
+    """Denuncias ambientales ante el OEFA contra minería, hidrocarburos y electricidad, total por distrito. Solo se
+    guarda el conteo: el texto de la denuncia nombra a personas.
+    shortcut: el OEFA publica 2018-2024; como serie caería a cero en 2025-2026, así que entra como foto (anio 0).
+    Pasar a serie mensual cuando publique los años que faltan."""
+    import geopandas as gpd
+    import pandas as pd
+    d = pd.DataFrame(arcgis(OEFA_DENUNCIAS, "NOM_ACTIVIDAD,COOR_X,COOR_Y"))
+    d = d[d.NOM_ACTIVIDAD.isin(["Minería", "Hidrocarburos", "Electricidad"])]
+    # COOR_X trae la latitud y COOR_Y la longitud (vienen cruzadas).
+    lat, lon = pd.to_numeric(d.COOR_X, errors="coerce"), pd.to_numeric(d.COOR_Y, errors="coerce")
+    g = gpd.GeoDataFrame(d, geometry=gpd.points_from_xy(lon, lat), crs=4326)
+    n = gpd.sjoin(g[lat.notna().to_numpy()], gpd.read_file(GEOJSON)[["ubigeo", "geometry"]],
+                  predicate="within").groupby("ubigeo").size()
+    print(f"  {len(d)} denuncias extractivas, {n.sum()} ubicadas en {len(n)} distritos")
+    guardar(con, [(u, 0, "denuncias_oefa_extractivas", float(x)) for u, x in n.items()],
+            f"{OEFA_DENUNCIAS} (OEFA, denuncias ambientales 2018-2024: minería, hidrocarburos, electricidad)")
+
+
+def emergencias(con):
+    """Emergencias por lluvias, huaicos, inundaciones, sequías y heladas (reportes del INDECI recogidos por la ANA en
+    su visor de emergencias hídricas), con fecha y punto → tabla emergencia(ubigeo, anio, mes, tipo)."""
+    import geopandas as gpd
+    import pandas as pd
+    g = gpd.GeoDataFrame.from_features(arcgis(EMERGENCIAS, "TipoEvento,FechaHora", geometria=True), crs=4326)
+    fecha = pd.to_datetime(g.FechaHora, format="%d/%m/%Y %H:%M", errors="coerce")
+    g = g.assign(anio=fecha.dt.year, mes=fecha.dt.month, tipo=g.TipoEvento)[fecha.notna() & g.geometry.notna()]
+    g = gpd.sjoin(g, gpd.read_file(GEOJSON)[["ubigeo", "geometry"]], predicate="within")
+    g[["ubigeo", "anio", "mes", "tipo"]].to_sql("emergencia", con, if_exists="replace", index=False)
+    con.commit()
+    print(f"  {len(g)} emergencias en {g.ubigeo.nunique()} distritos, {int(g.anio.min())}-{int(g.anio.max())} "
+          f"({EMERGENCIAS})")
+
+
+ACLED = DATOS / "crudos" / "acled" / "acled_peru.csv"
+# las notas de ACLED están en inglés; se excluyen los reclamos de mineros informales y los laborales (como en modelo.py)
+ACLED_EXTRACTIVO = re.compile(r"\bmin(?:e|es|ing|ers?)\b|\boil\b|petro|hydrocarbon|\bgas (?:field|pipeline)|camisea|"
+                              r"pipeline|las bambas|tia maria|antamina|conga|yanacocha|quellaveco|\bdams?\b|"
+                              r"hydroelectric|\bcanon\b|royalt", re.I)
+ACLED_NO = re.compile(r"informal|artisanal (?!fish)|reinfo|formali[sz]ation|small-scale|wages?|unions?|labou?r", re.I)
+
+
+def acled(con):
+    """Eventos de ACLED en el Perú 2018-2025 (protestas, disturbios y violencia), con fecha y punto → tabla
+    acled_evento(ubigeo, anio, mes, tipo, subtipo, extractivo). Sirve para validar la alerta con una fuente
+    independiente. El CSV se baja a mano del Data Export Tool (requiere cuenta). No se guardan las notas ni los
+    actores (pueden nombrar personas)."""
+    import geopandas as gpd
+    import pandas as pd
+    d = pd.read_csv(ACLED)
+    fecha = pd.to_datetime(d.event_date)
+    texto = d.notes.fillna("") + " " + d.actor1.fillna("") + " " + d.assoc_actor_1.fillna("")
+    d = d.assign(anio=fecha.dt.year, mes=fecha.dt.month, tipo=d.event_type, subtipo=d.sub_event_type,
+                 extractivo=texto.str.contains(ACLED_EXTRACTIVO) & ~texto.str.contains(ACLED_NO))
+    g = gpd.GeoDataFrame(d, geometry=gpd.points_from_xy(d.longitude, d.latitude), crs=4326)
+    g = gpd.sjoin(g, gpd.read_file(GEOJSON)[["ubigeo", "geometry"]], predicate="within")
+    g[["ubigeo", "anio", "mes", "tipo", "subtipo", "extractivo"]].to_sql("acled_evento", con, if_exists="replace",
+                                                                        index=False)
+    con.commit()
+    print(f"  {len(g)} de {len(d)} eventos en {g.ubigeo.nunique()} distritos, {g.extractivo.sum()} extractivos, "
+          f"{int(g.anio.min())}-{int(g.anio.max())} (ACLED, acleddata.com)")
+
+
+GEOBOSQUES = DATOS / "crudos" / "geobosques" / "Bosque_y_perdida_de_bosques_por_Distrito_al_2025.xlsx"
+
+
+def geobosques(con):
+    """Pérdida de bosque húmedo amazónico por distrito y año 2001-2025 (MINAM, GEOBOSQUES). El Excel se baja a mano
+    de geobosques.minam.gob.pe/geobosque/view/descargas.php ("... por distritos (Excel)"): el sitio bloquea las
+    descargas automáticas."""
+    import pandas as pd
+    x = pd.read_excel(GEOBOSQUES, header=None, skiprows=8, dtype={3: str})
+    x = x[x[3].str.fullmatch(r"\d{6}", na=False)]
+    anios = {**{c: 2001 + c - 5 for c in range(5, 29)}, 32: 2025}  # columnas 5-28: 2001-2024; 32: total 2025
+    filas = [(u, a, "perdida_bosque_ha", round(float(v), 2)) for _, r in x.iterrows() for c, a in anios.items()
+             for u, v in [(r[3], r[c])] if pd.notna(v)]
+    filas += [(r[3], 0, "bosque_2025_ha", round(float(r[34]), 2)) for _, r in x.iterrows() if pd.notna(r[34])]
+    guardar(con, filas, "https://geobosques.minam.gob.pe/geobosque/view/descargas.php (MINAM, GEOBOSQUES: bosque y "
+                        "pérdida de bosque 2001-2025 por distritos)")
+
+
+RENAMU = "https://proyectos.inei.gob.pe/iinei/srienaho/descarga/STATA/902-Modulo1814.zip"  # RENAMU 2023
+
+
+def renamu(con):
+    """Registro Nacional de Municipalidades 2023 (INEI): rondas campesinas, oficina ambiental, atención de denuncias
+    ambientales, formas de participación ciudadana y personal municipal. Foto: anio 0.
+    shortcut: un solo año (2023) para todos los meses; cada año tiene otro código de encuesta en el INEI."""
+    import pandas as pd
+    carpeta = DATOS / "crudos" / "renamu"
+    carpeta.mkdir(parents=True, exist_ok=True)
+    zipf = carpeta / "902-Modulo1814-STATA.zip"
+    if not zipf.exists():
+        zipf.write_bytes(requests.get(RENAMU, headers=UA, timeout=600).content)
+    with zipfile.ZipFile(zipf) as z:
+        dta = next(n for n in z.namelist() if n.endswith(".dta"))
+        participa = [f"P100_{i}" for i in range(1, 11)]
+        d = pd.read_stata(io.BytesIO(z.read(dta)), columns=["Ubigeo", "P79_2", "P96", "P99_8", "P19D_T", *participa],
+                          convert_categoricals=False)
+    d = d.assign(ronda_campesina=d.P79_2.eq(1), oficina_ambiental=d.P96.eq(1), atiende_denuncias_ambientales=d.P99_8 > 0,
+                 participacion_formas=(d[participa].fillna(0) > 0).sum(axis=1), personal_municipal=d.P19D_T)
+    filas = [(str(r.Ubigeo), 0, v, float(getattr(r, v))) for r in d.itertuples() for v in
+             ("ronda_campesina", "oficina_ambiental", "atiende_denuncias_ambientales", "participacion_formas",
+              "personal_municipal") if pd.notna(getattr(r, v))]
+    guardar(con, filas, f"{RENAMU} (INEI, RENAMU 2023: P79_2, P96, P99_8, P100_1-10, P19D_T)")
+
+
+def vias(con):
+    """Red vial nacional (MTC, en GEOCATMIN): km de vía nacional por distrito y los corredores logísticos que lo
+    atraviesan (tabla distrito_corredor, para la alerta por corredor)."""
+    import geopandas as gpd
+    import pandas as pd
+    distritos = gpd.read_file(GEOJSON)[["ubigeo", "geometry"]]
+    g = gpd.GeoDataFrame.from_features(arcgis(VIA_NACIONAL, "ccodruta_4,ccodcorlog", geometria=True, lote=500), crs=4326)
+    tramos = gpd.overlay(g[g.geometry.notna()], distritos, how="intersection", keep_geom_type=True)
+    tramos["km"] = tramos.to_crs("ESRI:102033").length / 1000
+    km = tramos.groupby("ubigeo").km.sum()
+    guardar(con, [(u, 0, "via_nacional_km", round(float(x), 2)) for u, x in km.items()],
+            f"{VIA_NACIONAL} (MTC, red vial nacional; {len(g)} tramos)")
+    # Código del MTC: C01…C20 corredores logísticos, AL… vías alimentadoras. Los corredores con nombre propio que
+    # importan para la minería se definen por su ruta (el MTC los cuenta como alimentadores).
+    tramos["corredor"] = tramos.ccodcorlog.str.strip()
+    propios = pd.concat([tramos[tramos.ccodruta_4.isin(rutas)].assign(corredor=n) for n, rutas in CORREDORES.items()])
+    corr = (pd.concat([tramos[tramos.corredor.str.match(r"^(C|AL)\d+$")], propios])
+            .groupby(["ubigeo", "corredor"]).agg(rutas=("ccodruta_4", lambda s: ", ".join(sorted(set(s)))),
+                                                 km=("km", "sum")).reset_index())
+    corr.to_sql("distrito_corredor", con, if_exists="replace", index=False)
+    con.commit()
+    print(f"  corredores logísticos: {corr.corredor.nunique()} en {corr.ubigeo.nunique()} distritos")
+
+
+REDATAM = "https://censos2017.inei.gob.pe/bininei/RpWebStats.exe/AreaList?"
+NO_INDIGENA = {"Castellano", "Portugués", "Otra lengua extranjera", "Lengua de señas peruanas", "No escucha, ni habla",
+               "No sabe / No responde"}
+CENSO = {  # variable: (ITEM, VARIABLE de REDATAM, categorías del numerador según las columnas)
+    # PENCARE (concepto encuesta) reproduce el 20,7 % rural oficial; PAREA (censal) da 17,6 %.
+    "rural": ("AREAPOB", "Poblacio.PENCARE", lambda c: ["Rural encuesta"]),
+    "lengua_indigena": ("AREAPOB", "Poblacio.C5P11", lambda c: [x for x in c if x not in NO_INDIGENA]),
+    "autoidentificacion_indigena": ("AREAPOB", "Poblacio.C5P25", lambda c: [
+        "Quechua", "Aimara", "Nativo o indígena de la amazonía", "Parte de otro pueblo indígena u originario"]),
+    "sin_agua_red": ("AREAVIV", "Vivienda.C2P6", lambda c: [x for x in c if not x.startswith("Red pública")]),
+    "sin_electricidad": ("AREAVIV", "Vivienda.C2P11", lambda c: ["No tiene alumbrado eléctrico"]),
+}
+
+
+def redatam(sesion, item, variable):
+    """Una tabla 'Lista de áreas' del REDATAM del Censo 2017 por distrito: filas = ubigeo, columnas = categorías.
+    Es un POST que devuelve un iframe con el archivo temporal del resultado, que se baja aparte."""
+    import time
+    import lxml.html
+    import pandas as pd
+    form = dict(MAIN="WebServerMain.inl", BASE="CPV2017DI", LANG="esp", CODIGO="XXUSUARIOXX", ITEM=item, MODE="RUN",
+                inputTitle="", VARIABLE=variable, OUTPUT="Distrito", WEIGHT="", SELECTION="ALL", INLINESELECTION="",
+                FORMAT="HTML", TOTCOL="on", UNIVERSE="", FILTER="", TEXT_FILTER="", Submit="Ejecutar")
+    r = sesion.post(REDATAM, data=form, timeout=600)
+    r.raise_for_status()
+    url = re.search(r'src="([^"]*~tmp[^"]*\.htm[^"]*)"', r.text).group(1).replace("&amp;", "&")
+    time.sleep(2)
+    r = sesion.get(url, timeout=600)
+    r.raise_for_status()
+    filas = [[td.text_content().strip() for td in tr.findall("td")]
+             for tr in lxml.html.fromstring(r.content.decode("utf-8")).iter("tr")]
+    cab = next(i for i, f in enumerate(filas) if "Código" in f)
+    j = filas[cab].index("Código")
+    cats = [c for c in filas[cab][j + 2:] if c]
+    datos = {f[j]: [int(re.sub(r"\D", "", v) or 0) for v in f[j + 2:j + 2 + len(cats)]]
+             for f in filas[cab + 1:] if len(f) > j and re.fullmatch(r"\d{6}", f[j])}
+    return pd.DataFrame.from_dict(datos, orient="index", columns=cats)
+
+
+def censo(con):
+    """Censo 2017 (INEI, REDATAM): ruralidad, lengua materna e identidad indígena, servicios. Año 2017."""
+    import time
+    sesion, filas = requests.Session(), []
+    sesion.headers.update(UA)
+    for var, (item, variable, numerador) in CENSO.items():
+        t = redatam(sesion, item, variable)
+        n, d = t[numerador(t.columns)].sum(axis=1), t.sum(axis=1)
+        filas += [(u, 2017, var, round(float(x), 4)) for u, x in (n / d).items()]
+        if var == "rural":
+            filas += [(u, 2017, "poblacion_censada", float(x)) for u, x in d.items()]
+        print(f"  {var}: {len(t)} distritos, nacional {n.sum() / d.sum():.1%}")
+        time.sleep(5)
+    guardar(con, filas, f"{REDATAM} (INEI, Censos Nacionales 2017, REDATAM CPV2017DI)")
+
+
+PASOS = {"pnud": pnud, "pobreza": pobreza, "catastro": catastro, "pasivos": pasivos, "oefa": oefa, "onpe": onpe,
+         "comunidades": comunidades, "vias": vias, "censo": censo, "ambiente": ambiente, "senace": senace, "ana": ana, "oefa_denuncias": oefa_denuncias, "emergencias": emergencias, "geobosques": geobosques, "renamu": renamu, "acled": acled}
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(prog="python -m tremor.distritos")
