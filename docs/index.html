@@ -34,6 +34,7 @@
   .panel { overflow-y: auto; background: var(--papel); border-right: 1px solid var(--linea); display: flex; flex-direction: column; }
   .mapa { position: relative; }
   #mapa { position: absolute; inset: 0; }
+  [hidden] { display: none !important; }
   .alertas { list-style: none; margin: 0; padding: 0; }
   .alerta { display: grid; grid-template-columns: 10px 1fr auto; gap: 12px; align-items: start; padding: 12px 0; border-top: 1px solid var(--linea); }
   .alerta:first-child { border-top: 0; padding-top: 4px; }
@@ -56,6 +57,9 @@
   .vistas.pestanas button { font-size: 14px; }
   .pest > h3:first-child { display: none; }
   .pest h3 { border-top: 0; padding-top: 0; margin-top: 16px; }
+  #tabs-cliente { margin: 4px 24px 0; }
+  .panel.cliente:not(.ver-ops) #bloque-ops, .panel.cliente.ver-ops #alertas-sec, .panel.en-detalle #tabs-cliente { display: none; }
+  .panel.cliente .orden { padding-top: 12px; }
   .panel.en-detalle #alertas-sec, .panel.en-detalle #bloque-ops, .panel.en-detalle #avisos-sec { display: none; }
   .t-ops { margin: 0; padding: 18px 24px 0; font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho); border-top: 1px solid var(--linea); }
   .detalle-op { padding: 6px 24px 22px; }
@@ -104,7 +108,16 @@
   .cuanto { margin: 0 0 4px; font-size: 16px; }
   .cuanto b { font-weight: 650; }
   .detalle-op ul.temas { list-style: none; padding: 0 !important; margin: 4px 0 0; display: grid; gap: 4px; }
-  .detalle-op ul.temas li { margin: 0; display: flex; justify-content: space-between; gap: 12px; color: var(--tinta); }
+  .detalle-op ul.temas > li { margin: 0; border-top: 1px solid var(--linea); }
+  .detalle-op ul.temas > li:first-child { border-top: 0; }
+  .temas summary { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; cursor: pointer; list-style: none; color: var(--tinta); }
+  .temas summary::-webkit-details-marker { display: none; }
+  .temas summary span::before { content: "›"; display: inline-block; width: 14px; color: var(--tinta-3); transition: transform 140ms ease; }
+  .temas details[open] summary span::before { transform: rotate(90deg); }
+  .temas summary:hover span { text-decoration: underline; text-underline-offset: 3px; }
+  .detalle-op .temas details ul { padding: 0 0 8px 14px; list-style: none; }
+  .detalle-op .temas details li { font-size: 14px; color: var(--tinta-2); margin: 0 0 6px; }
+  .detalle-op .temas details b { color: var(--tinta); font-weight: 600; }
   .temas li small { color: var(--tinta-3); font-size: 14px; }
   .sugerencias { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
   .sugerencias button { font-size: 15px; padding: 5px 11px; border-radius: 6px; border: 1px solid var(--linea); background: transparent; cursor: pointer;
@@ -232,7 +245,10 @@
       <div class="sugerencias" id="sugerencias" hidden></div>
     </div>
     <div class="titular"><h1 id="h1">Cargando</h1><p id="bajada"></p></div>
-    <div class="seccion" id="alertas-sec" hidden><h2>Alertas</h2>
+    <div class="vistas pestanas" id="tabs-cliente" role="tablist" hidden>
+      <button type="button" role="tab" data-c="alertas" aria-selected="true">Alertas</button>
+      <button type="button" role="tab" data-c="ops" aria-selected="false">Operaciones</button></div>
+    <div class="seccion" id="alertas-sec" hidden>
       <div class="prioridad"><span><i class="sev alta"></i>Prioridad alta</span><span><i class="sev media"></i>Prioridad media</span></div>
       <ul class="alertas" id="alertas"></ul></div>
     <div class="detalle-op" id="detalle-op" hidden></div>
@@ -486,7 +502,8 @@ function iniciar(D, G, H, C) {
     marcar(null);
     const zonas = new Set(filas.map(f => f.u));
     const r = cerca(zonas, !suyas);
-    document.getElementById("alertas-sec").hidden = document.getElementById("t-ops").hidden = !suyas;
+    document.getElementById("alertas-sec").hidden = document.getElementById("tabs-cliente").hidden = !suyas;
+    document.querySelector(".panel").classList.toggle("cliente", !!suyas); verCliente("alertas");
     document.getElementById("avisos-sec").hidden = !!suyas;
     if (suyas) alertas(r.ev, r.vias);
     dibujar(zonas, !suyas);
@@ -531,6 +548,13 @@ function iniciar(D, G, H, C) {
     det.querySelectorAll(".pestanas button").forEach(b => b.setAttribute("aria-selected", b.dataset.p === p));
     det.querySelectorAll(".pest").forEach(x => x.hidden = x.dataset.p !== p);
   }
+  // En la vista de una empresa, alertas y operaciones van en dos pestañas: nada queda abajo
+  const tabsCli = document.getElementById("tabs-cliente");
+  function verCliente(c) {
+    tabsCli.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", b.dataset.c === c));
+    document.querySelector(".panel").classList.toggle("ver-ops", c === "ops");
+  }
+  tabsCli.onclick = e => { const b = e.target.closest("button"); if (b) verCliente(b.dataset.c); };
   function cerrarFicha() { det.hidden = true; det.innerHTML = ""; panel.classList.remove("en-detalle"); }
 
   // Deja solo las señales que van en la dirección del cambio y redondea lo habitual
@@ -586,13 +610,15 @@ function iniciar(D, G, H, C) {
     ["Consulta previa", /consulta previa|consulta/i]];
   function vigilar(u) {
     const z = new Set(zonaDe(u)), prov = u.slice(0, 4), toca = x => { const v = String(x || ""); return z.has(v) || v === prov; };
-    const textos = [...casosDe(u).map(c => ["c", `${c.nombre} ${c.reclamo || ""}`]),
-                    ...D.eventos.filter(e => toca(e.ubigeo)).map(e => ["p", `${e.reclamo || ""} ${e.titular || ""}`])];
-    const t = TEMAS.map(([n, re]) => ({ n, c: textos.filter(([k, s]) => k === "c" && re.test(s)).length, p: textos.filter(([k, s]) => k === "p" && re.test(s)).length }))
+    const textos = [...casosDe(u).map(c => ["c", `${c.nombre} ${c.reclamo || ""}`, `<b>${esc(tituloCaso(c))}</b>. ${esc(c.resumen || primera(c.reclamo) || estadoCaso(c))}`]),
+                    ...D.eventos.filter(e => toca(e.ubigeo)).map(e => ["p", `${e.reclamo || ""} ${e.titular || ""}`, `<b>${esc(fecha(e))}</b>. ${esc(e.titular || corta(e))}`])];
+    const t = TEMAS.map(([n, re]) => { const m = textos.filter(([, s]) => re.test(s));
+        return { n, c: m.filter(([k]) => k === "c").length, p: m.filter(([k]) => k === "p").length, d: m.map(x => x[2]) }; })
       .filter(x => x.c + x.p).sort((a, b) => b.c + b.p - a.c - a.p).slice(0, 4);
     if (!t.length) return "";
     const cuenta = x => [x.c && `${x.c} ${x.c === 1 ? "conflicto" : "conflictos"}`, x.p && `${x.p} ${x.p === 1 ? "protesta" : "protestas"}`].filter(Boolean).join(", ");
-    return `<h3>Temas por atender</h3><ul class="temas">${t.map(x => `<li>${x.n} <small>${cuenta(x)}</small></li>`).join("")}</ul>`;
+    return `<h3>Temas por atender</h3><ul class="temas">${t.map(x => `<li><details><summary><span>${x.n}</span><small>${cuenta(x)}</small></summary>
+      <ul>${x.d.slice(0, 4).map(s => `<li>${s}</li>`).join("")}</ul></details></li>`).join("")}</ul>`;
   }
   function delta(a) {
     if (!hayMes || a.cambio_zona_1m == null) return `<small>de paro o bloqueo</small>`;
@@ -667,7 +693,7 @@ function iniciar(D, G, H, C) {
     });
   }
   const PUNTOS = {};  // comunidad → lugar hallado en el mapa base
-  const primera = s => { s = String(s || "").split(/(?<=\.)\s/)[0]; return s.length > 200 ? s.slice(0, 200).replace(/[\s,;(]+\S*$/, "") + "…" : s; };
+  const primera = s => String(s || "").split(/(?<=\.)\s/)[0];  // sin resumen todavía: la primera oración entera, sin cortar
   // La contraparte solo si es una empresa: "Huarmey - contaminación por metales pesados" no es un conflicto "con" nadie
   const EMPRESA = /miner|s\.\s?a\.?|\bsac\b|compa[nñ]|\bc[ií]a\b|empresa|mining|corporation|resources|petro|oil\b|energ|southern|antamina|bambas|anglo|quellaveco|buenaventura|nexa|minsur|yanacocha|chinalco|hudbay|volcan|glencore|shougang|marcobre|perenco|pluspetrol|cnpc|repsol|raura|brocal|poderosa|horizonte|gold|copper/i;
   const contra = c => { const s = (c.nombre || c.caso || "").split(/\s+[-–]\s+|-(?=[A-ZÁÉÍÓÚ])/)[1]?.trim() || ""; return EMPRESA.test(s) ? s : ""; };
@@ -687,7 +713,7 @@ function iniciar(D, G, H, C) {
     if (!c.com) {  // un conflicto sin comunidad: su tarjeta, en el centro de su distrito
       const p = centroDe(String(c.ubigeo).length === 6 ? String(c.ubigeo) : abierta?.u);
       if (p && !map.getBounds().contains(p)) map.easeTo({ center: p, duration: quieto ? 0 : 1200 });
-      if (p) mostrar(p, tarjeta({ titulo: tituloCaso(c), sub: lugar(String(c.ubigeo)), marca: estadoCaso(c), texto: primera(c.reclamo),
+      if (p) mostrar(p, tarjeta({ titulo: tituloCaso(c), sub: lugar(String(c.ubigeo)), marca: estadoCaso(c), texto: c.resumen || primera(c.reclamo),
                                    fuente: `Defensoría del Pueblo, reporte de ${MESES_TXT[c.mes - 1]} ${c.anio}` }));
       return;
     }
@@ -702,7 +728,7 @@ function iniciar(D, G, H, C) {
     map.setFilter("com-sel", ["==", ["get", "n"], nombreCom]);
     const dist = lugar(String(c?.ubigeo || u || "")).split(", ")[0];
     mostrar(lngLat, tarjeta(c
-      ? { titulo: nombreCom, sub: `Comunidad campesina en ${dist}`, marca: estadoCaso(c), texto: primera(c.reclamo),
+      ? { titulo: nombreCom, sub: `Comunidad campesina en ${dist}`, marca: estadoCaso(c), texto: c.resumen || primera(c.reclamo),
           fuente: `Defensoría del Pueblo, reporte de ${MESES_TXT[c.mes - 1]} ${c.anio}` }
       : { titulo: nombreCom, sub: `Comunidad campesina en ${dist}`, marca: "Sin conflicto vigente ante la Defensoría", calma: true,
           fuente: "Territorio según el Ministerio de Cultura" }));

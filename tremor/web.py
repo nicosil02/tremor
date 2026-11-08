@@ -79,7 +79,32 @@ def casos_zona(con):
                       FROM caso c JOIN caso_mes cm ON cm.caso_id = c.id JOIN reporte r ON r.num = cm.reporte_num
                       WHERE cm.reporte_num = (SELECT MAX(num) FROM reporte) AND cm.estado IN ('activo', 'latente')""")
     c["reclamo"] = [None if not isinstance(x, str) or x.strip() == n.strip() else x for x, n in zip(c.reclamo, c.nombre)]
+    c["resumen"] = resumir(con, c)
     return registros(c.drop(columns="id"))
+
+
+RESUMIR = ("Resume cada conflicto social en UNA oración de máximo 22 palabras, en castellano formal: quién reclama "
+           "(por rol o comunidad, nunca nombres de personas) y qué pide. Sin fechas ni siglas sin explicar. "
+           'Responde JSON {"r": [{"i": <id>, "s": "<oración>"}]}.')
+
+
+def resumir(con, c):
+    """Una oración por caso, del texto completo de la Defensoría (no del recorte). Caché en llm_cache; sin cupo, None."""
+    from tremor.llm import chat_json, SinCuota, RespuestaInvalida
+    desc = dict(con.execute("""SELECT c.id, COALESCE(cm.descripcion, c.descripcion) FROM caso c JOIN caso_mes cm ON cm.caso_id = c.id
+                               WHERE cm.reporte_num = (SELECT MAX(num) FROM reporte)""").fetchall())
+    ids = [i for i in c.id if desc.get(i)]
+    out = {}
+    for k in range(0, len(ids), 3):
+        lote = "\n".join(f"[{i}] {desc[i][:900]}" for i in ids[k:k + 3])
+        try:
+            out |= {int(x["i"]): x["s"] for x in chat_json(con, RESUMIR, lote, "resumen-caso-1").get("r", []) if x.get("s")}
+        except SinCuota as e:
+            print("  resumen de casos sin cupo:", str(e)[:90])
+            break
+        except (RespuestaInvalida, ValueError, KeyError, TypeError) as e:  # un lote mal formado: se queda sin resumen
+            print("  resumen de casos, lote omitido:", str(e)[:90])
+    return [out.get(i) for i in c.id]
 
 
 def vecinos(con):
