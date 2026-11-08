@@ -13,7 +13,7 @@ from tremor.db import DATOS, RAIZ, conectar
 
 DOCS = RAIZ / "docs"
 ALERTA = ["ubigeo", "lugar", "prob", "prob_extractivo", "prob_crisis", "prob_zona", "prob_zona_extractivo", "prob_1m",
-          "prob_extractivo_1m", "puesto", "puesto_extractivo", "puesto_zona_extractivo", "razones", "razones_extractivo",
+          "prob_extractivo_1m", "puesto", "puesto_extractivo", "puesto_zona", "puesto_zona_extractivo", "razones", "razones_extractivo",
           "razones_zona", "razones_zona_extractivo", "nivel_actual", "operacion_extractiva", "corredores",
           "alerta_inmediata", "senal_prensa", "enlace_prensa", "animo_proyectos"]
 
