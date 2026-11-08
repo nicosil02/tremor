@@ -235,3 +235,18 @@ def test_avisos_de_animo():
     a = avisos(r, r.iloc[:0])
     assert "pico negativo el 2026-11-01" in a["Tía María"] and "racha" in a["Tía María"]
     assert "Conga" not in a
+
+
+def test_historial_empresa():
+    import sqlite3
+    import pandas as pd
+    from tremor.empresas import historial
+    con = sqlite3.connect(":memory:")
+    pd.DataFrame({"empresa": ["MINERA X"], "unidad": ["Mina"], "tipo": ["mineria"], "ubigeo": ["030101"]}).to_sql("operacion", con)
+    pd.DataFrame({"ubigeo": ["030101"], "lugar": ["x"]}).reindex(columns=[
+        "ubigeo", "lugar", "prob_zona", "prob_zona_extractivo", "razones_zona_extractivo", "puesto_zona",
+        "puesto_zona_extractivo", "alerta_inmediata", "senal_prensa", "animo_proyectos", "ventana"]).to_sql("alerta", con)
+    pd.DataFrame({"ubigeo": ["030101"] * 4 + ["990101"], "m": [1, 2, 3, 4, 1], "objetivo": "z_fuerza", "modelo": "lasso",
+                  "puntaje": 0.5, "y": [1, 1, 0, 0, 1], "pct": [0.05, 0.5, 0.05, 0.9, 0.01]}).to_sql("modelo_prediccion", con)
+    h = historial(con, "minera x").iloc[0]
+    assert (h.eventos, h.vistos, h.alertas) == (2, 1, 2)

@@ -7,7 +7,7 @@ import sqlite3
 from mcp.server.mcpserver import MCPServer
 
 from tremor import territorio
-from tremor.db import RUTA_DB
+from tremor.db import RUTA_DB, conectar
 from tremor.lugares import catalogo, nombre, norm
 
 mcp = MCPServer("tremor", instructions=(
@@ -136,6 +136,25 @@ def pobreza_enaho(departamento: str | None = None, anio: int | None = None, desd
         f["departamento"] = nombre(f["ccdd"])
     filas.sort(key=lambda f: (f["anio"], -f["pobreza"]) if anio else (f["ccdd"], f["anio"]))
     return {"filas": filas, "fuente": "INEI, ENAHO módulo 34 (sumaria), srienaho; cálculo de Tremor"}
+
+
+@mcp.tool()
+def empresa(nombre: str) -> dict:
+    """Vista de una empresa extractiva ("Southern", "Las Bambas", "Antamina"): cada operación suya (unidades
+    fiscalizables de OEFA), la probabilidad de una medida de fuerza en su zona (distrito y vecinos) en los 3 meses
+    siguientes, sus razones y señales en vivo; y cómo le habría ido en 2024+ (de sus meses con medida de fuerza en
+    la zona, cuántos tuvo en alerta antes, frente a la regla ingenua)."""
+    from tremor.empresas import historial, vista
+    con = conectar()
+    v = vista(con, nombre)
+    if v.empty:
+        return {"error": f"No hay operaciones de OEFA que coincidan con {nombre!r}."}
+    h = historial(con, nombre) if con.execute("SELECT 1 FROM sqlite_master WHERE name = 'modelo_prediccion'").fetchone() else None
+    return {"operaciones": v.where(v.notna(), None).to_dict("records"),
+            "como_le_habria_ido_2024": None if h is None else h.to_dict("records"),
+            "como_leer": "alerta = la zona está en el 10% de zonas con operación más riesgosas ese mes; pct_vistos = de "
+                         "los meses con medida de fuerza en la zona, cuántos tuvo en alerta; acierto_alertas = de sus "
+                         "alertas, cuántas acertaron."}
 
 
 @mcp.tool()

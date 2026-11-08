@@ -519,12 +519,17 @@ def evaluar(p, objetivo):
     # shortcut: el calibrador se ajusta con un modelo entrenado hasta 2020 y se aplica a uno entrenado hasta 2023; si la
     # tabla de deciles muestra desvío en la prueba, recalibrar con validación cruzada temporal.
     CALIBRACION.append(deciles(objetivo, puntajes[mejor], y))  # medida en la prueba, ajustada en validación
+    if z:  # puntajes de prueba por zona: la vista por empresa (tremor.empresas) reconstruye cómo le habría ido
+        for n in (mejor, "ingenuo"):
+            t = prueba[["ubigeo", "m"]].assign(objetivo=objetivo, modelo=n, puntaje=puntajes[n], y=y)
+            t["pct"] = t.groupby("m").puntaje.rank(ascending=False, pct=True, method="first")
+            PREDICCION.append(t)
     respaldo(p, objetivo, mejor, metricas)
     return metricas, mejor, interpretar(ajustados.get(mejor, ajustados["gradient_boosting"]), prueba,
                                         puntajes[mejor], objetivo)
 
 
-CALIBRADOR, CALIBRACION = {}, []
+CALIBRADOR, CALIBRACION, PREDICCION = {}, [], []
 
 
 def calibrar(objetivo, s, y):
@@ -762,6 +767,7 @@ def main():
                "modelo_perfil": pd.concat(perfil), "alerta": a, "modelo_calibracion": pd.concat(CALIBRACION),
                "modelo_respaldo": pd.DataFrame(RESPALDO, columns=["objetivo", "ventana", "modelo", "precision_top20",
                                                                   "li_90", "ls_90", "captura_top10pct", "tasa_base"]),
+               "modelo_prediccion": pd.concat(PREDICCION),
                "modelo_parametros": pd.DataFrame([(o, n, str(v)) for (o, n), v in AFINADO.items()],
                                                  columns=["objetivo", "modelo", "parametros"])}
     (DATOS / "exportes").mkdir(parents=True, exist_ok=True)
