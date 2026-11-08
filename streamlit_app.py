@@ -104,7 +104,7 @@ with t_ranking:
     columnas = {"puesto_vista": "Puesto", "lugar": "Distrito", "probabilidad": "Prob. (%)",
                 "nivel_actual": "Situación del último mes", col_razon: "Por qué", "senal_prensa": "Prensa y radio (30 días)"}
     if "animo_proyectos" in vista:
-        columnas["animo_proyectos"] = "Ánimo hacia proyectos (14 días)"
+        columnas["animo_proyectos"] = "Ánimo hacia proyectos (7 días)"
     st.dataframe(vista[list(columnas)].rename(columns=columnas), hide_index=True, use_container_width=True,
                  column_config={"Prob. (%)": st.column_config.ProgressColumn(min_value=0, max_value=float(a[col_prob].max() * 100), format="%.1f")})
     st.download_button("Descargar la alerta completa (CSV)", alerta.to_csv(index=False).encode("utf-8"), "alerta.csv")
@@ -141,12 +141,12 @@ with t_animo:
     animo = leer("animo.csv")
     st.markdown("Antes de un conflicto suelen subir las menciones a la empresa o al proyecto y el tono se vuelve "
                 "negativo. Tremor escucha **225 radios de 96 provincias** con operaciones extractivas y lee la prensa "
-                "regional; mide cuántas veces se nombra cada proyecto en 14 días frente a lo normal y con qué tono.")
+                "regional; mide cuántas veces se nombra cada proyecto en 7 días frente a lo normal y con qué tono.")
     if len(animo):
-        v = animo.sort_values(["menciones_14d", "alza"], ascending=False)
-        st.dataframe(v[["proyecto", "menciones_14d", "base_14d", "alza", "pct_negativo", "tono_14d"]].rename(columns={
-            "proyecto": "Proyecto", "menciones_14d": "Menciones (14 días)", "base_14d": "Lo normal (14 días)",
-            "alza": "Alza (×)", "pct_negativo": "Negativas", "tono_14d": "Tono (-1 a 1)"}), hide_index=True,
+        v = animo.sort_values(["menciones_7d", "alza"], ascending=False)
+        st.dataframe(v[["proyecto", "menciones_7d", "base_7d", "alza", "pct_negativo", "tono_7d", "aviso"]].rename(columns={
+            "proyecto": "Proyecto", "menciones_7d": "Menciones (7 días)", "base_7d": "Lo normal (7 días)",
+            "alza": "Alza (×)", "aviso": "Aviso", "pct_negativo": "Negativas", "tono_7d": "Tono (-1 a 1)"}), hide_index=True,
             use_container_width=True, column_config={"Negativas": st.column_config.NumberColumn(format="percent")})
     else:
         st.info("El índice de ánimo se publica con la primera corrida de radio.")

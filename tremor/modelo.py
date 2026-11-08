@@ -13,7 +13,8 @@ from tremor.lugares import catalogo, nombre, norm
 
 # Defensoría publica con un mes de rezago: con horizonte 1 la alerta sería de un mes que ya pasó.
 HORIZONTE = 3
-OBJETIVOS = ("y_fuerza", "y_extractivo", "y_crisis", "z_fuerza", "z_extractivo")
+OBJETIVOS = ("y_fuerza", "y_extractivo", "y_crisis", "z_fuerza", "z_extractivo", "y1_fuerza", "y1_extractivo")
+# y1_…: solo el mes siguiente al último reporte (más corto, más raro: acierta menos; se compara con el de 3 meses)
 # Zonas de influencia (z_…): distrito con operación extractiva + los distritos que limitan con él. Se mide solo en
 # esos distritos: es lo que le importa a una empresa (un bloqueo en su zona, sea cual sea el reclamo, o uno contra ella).
 OPERACION = ("unidades_mineras", "lote_explotacion", "oleoducto_norperuano", "minas_tajo_abierto",
@@ -197,7 +198,8 @@ def panel(con):
          "zona_fuerza_extractiva_36": zona(ventana(FX, 36)), "zona_protestas_12": zona(ventana(P, 12)),
          "zona_casos_activos": zona(A), "zona_casos_dialogo": zona(D),
          "z_fuerza": (futuro(zona(F + K), HORIZONTE) > 0).astype(float),
-         "z_extractivo": (futuro(zona(FX), HORIZONTE) > 0).astype(float)}
+         "z_extractivo": (futuro(zona(FX), HORIZONTE) > 0).astype(float),
+         "y1_fuerza": (futuro(F + K, 1) > 0).astype(float), "y1_extractivo": (futuro(FX, 1) > 0).astype(float)}
     for y in OBJETIVOS:
         v[y][np.isnan(futuro(F, HORIZONTE))] = np.nan
     for k, x in (("v_acled", AC), ("v_acled_extractivo", AX), ("vz_acled", zona(AC)),
@@ -702,7 +704,8 @@ def alerta(con, p, mejor):
     x = p[p.m == ultimo].set_index("ubigeo")
     salida = pd.DataFrame(index=x.index)
     for objetivo, col in (("y_fuerza", "prob"), ("y_extractivo", "prob_extractivo"), ("y_crisis", "prob_crisis"),
-                          ("z_fuerza", "prob_zona"), ("z_extractivo", "prob_zona_extractivo")):
+                          ("z_fuerza", "prob_zona"), ("z_extractivo", "prob_zona_extractivo"),
+                          ("y1_fuerza", "prob_1m"), ("y1_extractivo", "prob_extractivo_1m")):
         t = p[p[objetivo].notna()]
         mdl = ajustar(mejor[objetivo], objetivo, t[VARIABLES], t[objetivo])
         prob, caida = razones(mdl, x, t[VARIABLES].median())
@@ -727,10 +730,11 @@ def alerta(con, p, mejor):
     salida["corredores"] = corr.groupby("ubigeo").corredor.agg(lambda s: ", ".join(sorted(s))).reindex(salida.index)
     salida = salida.join(prensa_en_vivo(con, list(salida.index)))
     from tremor.animo import senal
-    salida["animo_proyectos"] = [senal(con).get(u[:4]) for u in salida.index]  # radio y prensa, 14 días
+    salida["animo_proyectos"] = [senal(con).get(u[:4]) for u in salida.index]  # radio y prensa, 7 días
     salida["alerta_inmediata"] = salida.alerta_inmediata.fillna(0).astype(int)
     salida["mes_base"] = texto_mes(ultimo)
     salida["ventana"] = f"{texto_mes(ultimo + 1)} a {texto_mes(ultimo + HORIZONTE)}"
+    salida["ventana_1m"] = texto_mes(ultimo + 1)
     salida["modelo"], salida["modelo_extractivo"] = mejor["y_fuerza"], mejor["y_extractivo"]
     salida["creado"] = ahora()
     return salida.reset_index().sort_values("puesto_extractivo")

@@ -2,7 +2,7 @@
 las semanas previas. Hipótesis de diseño: antes de un conflicto suben las menciones del proyecto y el tono se vuelve
 negativo. Por reglas (léxico del dominio), no por LLM: cada tono se puede explicar con las palabras que lo dieron.
 
-    python -m tremor.animo        # tablas mencion y animo (foto de los últimos 14 días frente a las 8 semanas previas)
+    python -m tremor.animo        # tablas mencion y animo (foto de los últimos 7 días frente a las 8 semanas previas; avisa picos y rachas negativas)
 
 shortcut: diccionario curado de los proyectos más conflictivos; ampliarlo con SENACE/OEFA cuando haya alias limpios."""
 import re
@@ -92,13 +92,14 @@ def actualizar(con, hoy=None):
     m.to_sql("mencion", con, if_exists="replace", index=False)
     hoy = hoy or date.today()
     m["dias"] = (pd.Timestamp(hoy) - pd.to_datetime(m.fecha)).dt.days
-    reciente, previo = m[m.dias.between(0, 13)], m[m.dias.between(14, 14 + 56 - 1)]
-    a = pd.DataFrame({"menciones_14d": reciente.groupby("proyecto").size(),
-                      "negativas_14d": reciente[reciente.tono < 0].groupby("proyecto").size(),
-                      "tono_14d": reciente.groupby("proyecto").tono.mean(),
-                      "base_14d": previo.groupby("proyecto").size() / 4}).reindex(list(PROYECTOS)).fillna(0)
-    a["alza"] = (a.menciones_14d / a.base_14d.clip(lower=1)).round(2)  # ×veces lo normal (mínimo 1 de base)
-    a["pct_negativo"] = (a.negativas_14d / a.menciones_14d.clip(lower=1)).round(2)
+    reciente, previo = m[m.dias.between(0, 6)], m[m.dias.between(7, 7 + 56 - 1)]
+    a = pd.DataFrame({"menciones_7d": reciente.groupby("proyecto").size(),
+                      "negativas_7d": reciente[reciente.tono < 0].groupby("proyecto").size(),
+                      "tono_7d": reciente.groupby("proyecto").tono.mean(),
+                      "base_7d": previo.groupby("proyecto").size() / 8}).reindex(list(PROYECTOS)).fillna(0)
+    a["alza"] = (a.menciones_7d / a.base_7d.clip(lower=1)).round(2)  # ×veces lo normal (mínimo 1 de base)
+    a["pct_negativo"] = (a.negativas_7d / a.menciones_7d.clip(lower=1)).round(2)
+    a["aviso"] = pd.Series(avisos(reciente, previo)).reindex(a.index)
     prov = provincias()
     a = a.reset_index(names="proyecto").assign(provincias=lambda d: d.proyecto.map(lambda n: " ".join(prov[n])),
                                                hasta=str(hoy), creado=ahora())
@@ -108,15 +109,33 @@ def actualizar(con, hoy=None):
     return m, a
 
 
+def avisos(reciente, previo):
+    """Proyecto → aviso de ánimo negativo: un pico (un día con ≥3 menciones negativas y ≥3× su día normal) o una
+    racha (menciones negativas en ≥3 de los últimos 7 días). ponytail: umbrales a ojo, calibrar con los eventos."""
+    neg = reciente[reciente.tono < 0].groupby(["proyecto", "fecha"]).size()
+    normal = previo[previo.tono < 0].groupby("proyecto").size() / 56
+    salida = {}
+    for proyecto, dias in neg.groupby(level=0):
+        dias = dias.droplevel(0)
+        pico = dias[(dias >= 3) & (dias >= 3 * normal.get(proyecto, 0))]
+        texto = [f"pico negativo el {d} ({n} menciones)" for d, n in pico.items()]
+        if len(dias) >= 3:
+            texto.append(f"racha negativa: {len(dias)} de los últimos 7 días")
+        if texto:
+            salida[proyecto] = "; ".join(texto)
+    return salida
+
+
 def senal(con):
     """Provincia (4 dígitos) → frase de ánimo para la alerta, solo de proyectos con menciones recientes."""
     try:
-        a = pd.read_sql("SELECT * FROM animo WHERE menciones_14d > 0", con)
+        a = pd.read_sql("SELECT * FROM animo WHERE menciones_7d > 0", con)
     except (sqlite3.OperationalError, pd.errors.DatabaseError):
         return {}
     salida = {}
-    for r in a.sort_values("menciones_14d", ascending=False).itertuples():
-        texto = f"{r.proyecto}: {r.menciones_14d:.0f} menciones en 14 días (×{r.alza:g}), {r.pct_negativo:.0%} negativas"
+    for r in a.sort_values("menciones_7d", ascending=False).itertuples():
+        texto = (f"{r.proyecto}: {r.menciones_7d:.0f} menciones en 7 días (×{r.alza:g}), {r.pct_negativo:.0%} negativas"
+                 + (f" — AVISO: {r.aviso}" if isinstance(r.aviso, str) else ""))
         for p in r.provincias.split():
             salida.setdefault(p, []).append(texto)
     return {p: "; ".join(v) for p, v in salida.items()}
@@ -126,8 +145,8 @@ def main():
     sys.stdout.reconfigure(encoding="utf-8")
     m, a = actualizar(conectar())
     print(f"{len(m)} menciones en {m.nota_id.nunique()} notas ({(m.origen == 'radio').sum()} de radio)")
-    print(a[a.menciones_14d > 0][["proyecto", "menciones_14d", "base_14d", "alza", "pct_negativo", "tono_14d"]]
-          .sort_values("menciones_14d", ascending=False).to_string(index=False))
+    print(a[a.menciones_7d > 0][["proyecto", "menciones_7d", "base_7d", "alza", "pct_negativo", "tono_7d"]]
+          .sort_values("menciones_7d", ascending=False).to_string(index=False))
 
 
 if __name__ == "__main__":

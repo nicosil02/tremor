@@ -4,7 +4,7 @@ name: defensoria
 
 on:
   schedule:
-    - cron: "0 */4 * * *"   # cada 4 horas (los feeds de los medios traen solo lo reciente)
+    - cron: "0 * * * *"     # cada hora: una protesta anunciada debe aparecer pronto (el LLM codifica lo que su cupo alcance)
   workflow_dispatch:
 
 permissions:

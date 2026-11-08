@@ -224,3 +224,14 @@ def test_boosting_con_variable_vacia():
     x = np.random.default_rng(0).random((400, 3)); x[:, 1] = np.nan
     m = modelos()["gradient_boosting"].fit(x, (x[:, 0] > .5).astype(int))
     assert m.predict_proba(x[:5]).shape == (5, 2)
+
+
+def test_avisos_de_animo():
+    import pandas as pd
+    from tremor.animo import avisos
+    r = pd.DataFrame({"proyecto": ["Tía María"] * 5 + ["Conga"],
+                      "fecha": ["2026-11-01"] * 3 + ["2026-11-03", "2026-11-05", "2026-11-02"],
+                      "tono": [-1, -1, -1, -1, -1, 1]})
+    a = avisos(r, r.iloc[:0])
+    assert "pico negativo el 2026-11-01" in a["Tía María"] and "racha" in a["Tía María"]
+    assert "Conga" not in a
