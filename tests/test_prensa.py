@@ -187,3 +187,8 @@ def test_lead_de_la_nota():
          '<p>Menú</p><p>Los comuneros del distrito de Chamaca, provincia de Chumbivilcas, iniciaron un paro indefinido.</p>')
     t = lead(p)
     assert t.startswith("Comuneros de Chamaca") and "Chumbivilcas" in t and "Menú" not in t
+
+
+def test_mcp_pobreza_enaho_departamento_desconocido():
+    from tremor.mcp_server import pobreza_enaho
+    assert "error" in pobreza_enaho("Narnia")

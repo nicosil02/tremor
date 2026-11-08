@@ -128,6 +128,7 @@ Archivos que acompañan a la base:
 - `consulta_amigable`: el MEF libre, con la URL como fuente; el método viene del MCP de Noelia León
   (`NoeliaLRuiz/mcp-consulta-amigable`);
 - `serie_bcrp`: las series del BCRP guardadas (precios y producción minera por departamento);
+- `pobreza_enaho`: pobreza y pobreza extrema por departamento 2004–2025 (serie de uno o ranking de un año);
 - `ranking_variable`: distritos ordenados por cualquier variable de `distrito_variable`;
 - `alerta`: la alerta del modelo con razones, capa de prensa en vivo y el desempeño en 2024+.
 - `perfil_distrito` también trae la pobreza (ENAHO) y la producción minera anual (BCRP) del departamento.
@@ -170,7 +171,8 @@ Archivos que acompañan a la base:
 ## 6. Pasos que siguen (en este orden)
 
 **A. Cerrar 002, rama `002-prensa-egpp`, issue #46**
-1. Terminar de codificar las 92 notas pendientes cuando se renueve el cupo de Groq:
+1. Terminar de codificar las notas pendientes cuando se renueve el cupo de Groq (y `python -m tremor.prensa ampliar`:
+   lead del medio para las protestas de Google News sin lugar; Google corta con captcha a las ~15, va con pausas):
    `python -m tremor.prensa codificar --max-solicitudes 400`, luego `agrupar` y `validar --mes 2025-12`.
 2. Exportar la muestra de 100 notas para revisión a mano (`datos/exportes/muestra_revision.csv`, T025). La revisa
    el autor.

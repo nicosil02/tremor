@@ -119,6 +119,26 @@ def serie_bcrp(texto: str, desde: str = "2020-01", hasta: str = "2100-12") -> li
 
 
 @mcp.tool()
+def pobreza_enaho(departamento: str | None = None, anio: int | None = None, desde: int = 2004,
+                  hasta: int = 2100) -> dict:
+    """Pobreza monetaria y extrema (% de personas) por departamento, ENAHO del INEI 2004-2025 (módulo 34, factor07 ×
+    mieperho, el método oficial). departamento: nombre ("Apurímac") → su serie; anio solo → los 25 ordenados de mayor
+    a menor. La ENAHO es representativa por departamento, no por distrito: para el distrito usa ranking_variable
+    con "pobreza_inf"/"pobreza_sup" (mapa de pobreza INEI 2018)."""
+    sql = "SELECT ccdd, anio, pobreza, pobreza_extrema, hogares, fuente FROM enaho_departamento WHERE anio BETWEEN ? AND ?"
+    filas = _sql(sql, (anio or desde, anio or hasta))
+    if departamento:
+        ccdd = next((u for u, n in catalogo()[3].items() if len(u) == 2 and norm(n) == norm(departamento)), None)
+        if not ccdd:
+            return {"error": f"No conozco el departamento {departamento!r}; usa buscar_lugar."}
+        filas = [f for f in filas if f["ccdd"] == ccdd]
+    for f in filas:
+        f["departamento"] = nombre(f["ccdd"])
+    filas.sort(key=lambda f: (f["anio"], -f["pobreza"]) if anio else (f["ccdd"], f["anio"]))
+    return {"filas": filas, "fuente": "INEI, ENAHO módulo 34 (sumaria), srienaho; cálculo de Tremor"}
+
+
+@mcp.tool()
 def alerta(n: int = 20, extractiva: bool = True, ubigeo: str | None = None) -> dict:
     """Alerta del modelo (specs/005-modelo): probabilidad de una medida de fuerza (paro, bloqueo, toma...) en los
     3 meses siguientes al último reporte, por distrito, con sus razones. extractiva=True ordena por la de tema
