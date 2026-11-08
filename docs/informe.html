@@ -99,6 +99,7 @@
   .fuente { font-size: 14px; color: var(--tinta-3); margin: 10px 0 0; }
   .seguir { margin: 0; padding-left: 20px; display: grid; gap: 10px; font-family: var(--serif); font-size: 17px; }
   .telefono .noti + .noti { margin-top: 10px; }
+  .noti .afecta { margin-top: 6px; font-size: 14px; color: var(--tinta); font-weight: 600; }
   .explica table { margin: 16px 0 6px; }
   h2 { font-size: 19px; font-weight: 720; color: var(--marino); margin: 0 0 8px; }
   [hidden] { display: none !important; }
@@ -291,38 +292,44 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
     const radiosZona = [...provs].flatMap(p => (D.radios || {})[p] || []);
     const radio = radiosZona.find(r => /radio/i.test(r)) || radiosZona[0] || "una radio local";
     const radioCorto = nombre(radio.replace(/\s+\d{2,3}([.,]\d)?\s*(fm|am)?.*$/i, "")).replace(/^Radio Radio/, "Radio");
-    const animo = (D.animo || []).find(x => llano(x.proyecto).includes(raiz));
     const sub = zonas.filter(z => z.a.cambio_zona_1m != null).sort((x, y) => y.a.cambio_zona_1m - x.a.cambio_zona_1m)[0];
-    const provTop = top ? lugar(top.u).split(", ")[1] : "";
+    const prov = z => lugar(z.u).split(", ")[1], dist = z => lugar(z.u).split(", ")[0];
+    const enProv = p => zonas.filter(z => prov(z) === p).map(nombreZ);
+    const via = corredor === "el Corredor Minero del Sur" ? "la vía PE-3SG (Corredor Minero del Sur)" : corredor;
+    const masDias = n => dia(new Date(new Date(hoy + "T12:00").getTime() + n * 864e5).toISOString().slice(0, 10));
+    const otra = zonas.find(z => prov(z) !== prov(top)) || zonas[1] || top;
     const alertas = [
-      { tipo: "Paro convocado", sev: "alta", real: false, hora: "6:58",
-        t: `${radioCorto} informa la convocatoria a un paro en ${provTop}`,
-        p: `Dirigentes anunciaron en el noticiero de la mañana un paro de 48 horas con bloqueo de ${corredor === "el Corredor Minero del Sur" ? "la vía PE-3SG" : "vías"}. Afecta a ${nombreZ(top)}.`,
-        f: `Transcripción de ${radioCorto}, noticiero de las 6:40` },
-      { tipo: "Sube el riesgo", sev: "media", real: true, hora: "7:42",
-        t: sub ? `${nombreZ(sub)} pasa a riesgo ${BANDAS[nivel(mesP(sub.a))].toLowerCase()}` : "",
-        p: sub ? `Probabilidad de paro o bloqueo de ${pct(mesP(sub.a))} en ${mesTxt}, ${Math.round(sub.a.cambio_zona_1m * 100)} puntos más que su promedio del último año.` : "",
-        f: "Modelo Tremor" },
-      { tipo: "Tono en radios", sev: animo && animo.pct_negativo >= 0.5 ? "media" : "baja", real: !!animo, hora: "12:15",
-        t: animo ? `Las radios de la zona hablan más de ${corto}, en tono negativo` : `Las radios de la zona hablan más de ${corto}`,
-        p: animo ? `${Num(animo.menciones_7d)} ${animo.menciones_7d === 1 ? "mención" : "menciones"} en los últimos siete días, ${animo.base_7d < 1 ? "cuando en los dos meses previos casi no se la mencionaba" : `frente a ${Math.round(animo.base_7d)} por semana en los dos meses previos`}. ${Math.round(animo.pct_negativo * 100)}% en tono negativo.`
-          : `Las menciones a la empresa se duplicaron frente a las ocho semanas previas, la mayoría en tono negativo.`,
-        f: "Radios locales transcritas por Tremor" }].filter(a => a.t);
+      { sev: "alta", hora: "6:58",
+        t: `Paro de 48 horas anunciado en ${prov(top)} desde el ${masDias(4)}`,
+        p: `Dirigentes de ${dist(top)} lo anunciaron en el noticiero de ${radioCorto}. Incluye bloqueo de ${via}.`,
+        a: `${lista(enProv(prov(top)))} y el transporte de carga por ${via}.`,
+        f: `${radioCorto}, noticiero de las 6:40` },
+      { sev: "media", hora: "9:15",
+        t: `Posible paro en ${prov(otra)}: comunidades dan plazo de 15 días a ${corto}`,
+        p: `En asamblea, comunidades de ${dist(otra)} acordaron evaluar medidas de lucha si no hay respuesta a sus reclamos por ${temas[0] ? temas[0][0] : "compromisos"}.`,
+        a: `${lista(enProv(prov(otra)))}.`,
+        f: `${radioCorto} y prensa regional` },
+      ...(sub ? [{ sev: "media", hora: "7:42",
+        t: `Riesgo de paro en ${nombreZ(sub)} sube a ${pct(mesP(sub.a))} en ${mesTxt}`,
+        p: `Pasa a nivel ${BANDAS[nivel(mesP(sub.a))].toLowerCase()}, ${Math.round(sub.a.cambio_zona_1m * 100)} puntos sobre su promedio del último año. ${motores[0] ? `Lo empuja ${MOTOR_TXT[motores[0].corto].split(",")[0]}.` : ""}`,
+        a: `${nombreZ(sub)} y los distritos vecinos de ${dist(sub)}.`,
+        f: "Modelo Tremor" }] : [])];
     const sevTxt = s => s === "alta" ? "Prioridad alta" : s === "media" ? "Prioridad media" : "Para seguimiento";
     document.getElementById("alerta").innerHTML = `
       <div class="telefono"><div class="hora">12:16</div><div class="fecha">${new Date(hoy + "T12:00").toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}</div>
-        ${alertas.slice().reverse().map(a => `<div class="noti"><div class="de"><b>Tremor</b><span>${a.hora}</span></div>
-          <div class="t"><span class="sev ${a.sev}">${sevTxt(a.sev)}</span> ${esc(a.t)}</div><p>${esc(a.p)}</p></div>`).join("")}</div>
+        ${alertas.slice().sort((x, y) => y.hora.padStart(5, "0").localeCompare(x.hora.padStart(5, "0"))).map(a => `<div class="noti"><div class="de"><b>Tremor</b><span>${a.hora}</span></div>
+          <div class="t"><span class="sev ${a.sev}">${sevTxt(a.sev)}</span> ${esc(a.t)}</div><p>${esc(a.p)}</p><p class="afecta">Puede afectar: ${esc(a.a)}</p></div>`).join("")}</div>
       <div class="explica"><h3>Alertas inmediatas</h3>
         <p>Tremor avisa en minutos cuando aparece algo nuevo que toca las operaciones de ${esc(corto)}. Llegan por correo, WhatsApp o Teams, con la fuente y el enlace al mapa.</p>
         <table><thead><tr><th>Tipo</th><th>Cuándo se envía</th><th>Este ejemplo</th></tr></thead><tbody>
-          <tr><td><b>Paro convocado</b></td><td>Una radio local, la prensa o la SUTRAN informan un paro, un bloqueo o una toma anunciados en la zona o en sus rutas.</td><td>Ilustrativo. La escucha de radios en vivo entra en operación con el piloto.</td></tr>
+          <tr><td><b>Paro anunciado</b></td><td>Una radio local, la prensa o la SUTRAN informan un paro, bloqueo o toma con fecha en la zona o en sus rutas.</td><td>Ilustrativo. La escucha de radios en vivo entra con el piloto.</td></tr>
+          <tr><td><b>Posible movilización</b></td><td>Asambleas que evalúan medidas de lucha, plazos o ultimátums a la empresa o al Estado. Da tiempo para dialogar antes del paro.</td><td>Ilustrativo.</td></tr>
           <tr><td><b>Sube el riesgo</b></td><td>La probabilidad de una operación cambia de nivel o supera en 5 puntos su promedio del último año.</td><td>Datos reales de hoy.</td></tr>
-          <tr><td><b>Tono en radios</b></td><td>Las menciones a la empresa o a sus proyectos en radios de la zona suben con respecto a las ocho semanas previas y predominan las negativas.</td><td>${animo ? "Datos reales de esta semana." : "Ilustrativo."}</td></tr>
         </tbody></table>
+        <p class="fuente">El tono de las radios hacia la empresa no genera alertas: se ve en el mapa como contexto de cada zona.</p>
         <div class="correo"><div class="asunto">[Tremor] ${sevTxt(alertas[0].sev)}. ${esc(alertas[0].t)}</div>
           <div class="meta">Para: relaciones comunitarias y seguridad de ${esc(corto)}</div>
-          <p style="margin:0 0 8px">${esc(alertas[0].p)}</p><p style="margin:0;font-size:14px;color:var(--tinta-3)">Fuente: ${esc(alertas[0].f)}. Escuchar el fragmento y ver en el mapa.</p></div></div>`;
+          <p style="margin:0 0 8px">${esc(alertas[0].p)}</p><p style="margin:0 0 8px"><b>Puede afectar:</b> ${esc(alertas[0].a)}</p><p style="margin:0;font-size:14px;color:var(--tinta-3)">Fuente: ${esc(alertas[0].f)}. Escuchar el fragmento y ver en el mapa.</p></div></div>`;
   }
 })();
 </script>
