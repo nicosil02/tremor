@@ -839,6 +839,25 @@ def alerta(con, p, mejor):
     return salida.reset_index().sort_values("puesto_extractivo")
 
 
+BITACORA = ["mes_base", "ventana_1m", "ubigeo", "prob_zona_1m", "normal_zona_1m", "cambio_zona_1m", "prob_brote",
+            "zona_tranquila", "razones_cambio_1m", "creado"]
+
+
+def bitacora(con, a):
+    """Guarda la alerta del mes tal como salió (una vez por mes base), para medir después, con datos que el modelo no
+    vio, si lo que avisó pasó. Es el registro que no se puede retocar: lo que se le mostraría a un cliente."""
+    a = a[a.prob_zona_1m.notna()][[c for c in BITACORA if c in a.columns]]
+    try:
+        hechos = set(pd.read_sql("SELECT DISTINCT mes_base FROM alerta_bitacora", con).mes_base)
+    except Exception:
+        hechos = set()
+    a = a[~a.mes_base.isin(hechos)]
+    if len(a):
+        a.to_sql("alerta_bitacora", con, if_exists="append", index=False)
+        con.commit()
+    return len(a)
+
+
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
     con = conectar()
@@ -856,6 +875,7 @@ def main():
                  "precision_top20_acled", "tasa_base_acled"]].round(3).to_string())
     print("mejor:", mejor)
     a = alerta(con, p, mejor)
+    print(f"bitácora: {bitacora(con, a)} zonas guardadas")
     metricas["horizonte"], metricas["creado"] = HORIZONTE, ahora()
     salidas = {"nivel_mes": niveles, "modelo_metrica": metricas, "modelo_importancia": pd.concat(importancia),
                "modelo_perfil": pd.concat(perfil), "alerta": a, "modelo_calibracion": pd.concat(CALIBRACION),

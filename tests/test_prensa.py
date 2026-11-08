@@ -275,3 +275,14 @@ def test_cambios_de_caso():
     assert not r.loc[(1, 10), "nuevos"] and r.loc[(2, 11), "nuevos"]  # el primer mes de la serie no cuenta
     assert r.loc[(1, 11), "activados"] and not r.loc[(1, 12), "activados"]
     assert r.loc[(1, 12), "dialogo_roto"] and r[["dialogo_roto"]].sum().item() == 1
+
+
+def test_bitacora_guarda_una_vez_por_mes():
+    import sqlite3
+    import pandas as pd
+    from tremor.modelo import bitacora
+    con = sqlite3.connect(":memory:")
+    a = pd.DataFrame({"mes_base": "2026-09", "ventana_1m": "2026-10", "ubigeo": ["010101", "010102"],
+                      "prob_zona_1m": [0.2, None], "creado": "x"})
+    assert bitacora(con, a) == 1 and bitacora(con, a) == 0  # la de septiembre no se reescribe
+    assert bitacora(con, a.assign(mes_base="2026-10")) == 1
