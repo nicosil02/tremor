@@ -80,6 +80,13 @@
   .dos b { display: block; font-size: 22px; font-weight: 700; font-variation-settings: var(--angosto); color: var(--tinta); }
   .dos .ext b { color: var(--cobre); }
   .dos small { font-size: 12px; line-height: 1.3; display: block; }
+  .op .prob .delta { display: block; font-size: 12px; font-weight: 600; }
+  .sube { color: var(--cobre-4); }
+  .baja { color: var(--patina); }
+  .op .dentro ul.cambios { list-style: none; padding: 0; display: grid; gap: 6px; }
+  .cambios li { display: grid; grid-template-columns: 40px 1fr; gap: 8px; }
+  .cambios li b { font-size: 12px; font-weight: 650; padding-top: 1px; }
+  .tranquila { margin: 10px 0 0; padding: 8px 10px; border-radius: 6px; background: var(--piedra); color: var(--tinta-2); }
   @media (prefers-reduced-motion: reduce) { .op .detalle { transition: none; } }
 
   .seccion { padding: 18px 24px; border-top: 1px solid var(--linea); }
@@ -132,8 +139,8 @@
     <div id="mapa"></div>
     <div class="cargando" id="cargando">Cargando el mapa</div>
     <div class="leyenda" id="leyenda" hidden>
-      <div class="escala"><span>Riesgo frente a las demás zonas mineras y petroleras</span></div>
-      <div class="escala"><i style="background:var(--cobre-1)"></i><i style="background:var(--cobre-2)"></i><i style="background:var(--cobre-3)"></i><i style="background:var(--cobre-4)"></i><span>el 10% más alto</span></div>
+      <div class="escala"><span>Probabilidad de paro o bloqueo en la zona</span></div>
+      <div class="escala"><i style="background:var(--cobre-1)"></i><i style="background:var(--cobre-2)"></i><i style="background:var(--cobre-3)"></i><i style="background:var(--cobre-4)"></i><span>cortes en 10%, 25% y 50%</span></div>
       <div class="punto"><i style="background:var(--patina)"></i>Protesta anunciada</div>
       <div class="punto"><i style="background:var(--tinta-3)"></i>Protesta reciente</div>
       <div class="punto"><i style="background:#fff;border:2px solid var(--tinta)"></i>Operación</div>
@@ -199,7 +206,7 @@ function iniciar(D, G) {
     for (const c of map.getStyle().layers) if (c.type === "symbol" && c.layout?.["text-field"])  // nombres en castellano
       map.setLayoutProperty(c.id, "text-field", ["coalesce", ["get", "name:es"], ["get", "name"]]);
     document.getElementById("leyenda").hidden = false;
-    const rampa = ["step", ["get", "r"], css("--cobre-1"), 0.5, css("--cobre-2"), 0.75, css("--cobre-3"), 0.9, css("--cobre-4")];
+    const rampa = ["step", ["get", "p"], css("--cobre-1"), 0.1, css("--cobre-2"), 0.25, css("--cobre-3"), 0.5, css("--cobre-4")];
     map.addSource("zonas", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     map.addLayer({ id: "zonas", type: "fill", source: "zonas", paint: { "fill-color": rampa, "fill-opacity": 0.8 } });
     map.addLayer({ id: "zonas-borde", type: "line", source: "zonas", paint: { "line-color": "#fff", "line-width": 0.8 } });
@@ -223,7 +230,12 @@ function iniciar(D, G) {
 
   // ---------- Elegir empresa, o todo el país ----------
   let filas = [], puntosEventos = [];
-  const nZonas = D.alerta.filter(a => a.puesto_zona != null).length;
+  // La alerta del mes (modelo de un mes) si ya existe; si no, la de 3 meses
+  const hayMes = D.alerta.some(a => a.prob_zona_1m != null);
+  const mesP = a => hayMes ? a.prob_zona_1m : a.prob_zona;
+  const enMes = hayMes ? `en ${mes(D.alerta.find(a => a.ventana_1m)?.ventana_1m)}` : `de aquí a ${hasta}`;
+  // Primero lo que más sube frente a lo normal en su zona; sin modelo del mes, la probabilidad
+  const orden = a => (hayMes ? a.cambio_zona_1m : mesP(a)) ?? -1;
   function elegir(t) {
     sug.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.t === t));
     const suyas = t ? D.operaciones.filter(o => llano(`${o.empresa} ${o.unidad}`).includes(t)) : null;
@@ -233,16 +245,18 @@ function iniciar(D, G) {
       return;
     }
     // En todo el país se listan las 25 zonas con operación más riesgosas
-    const base = suyas || D.alerta.filter(a => a.prob_zona != null).sort((x, y) => y.prob_zona - x.prob_zona).slice(0, 25)
+    const base = suyas || D.alerta.filter(a => mesP(a) != null).sort((x, y) => orden(y) - orden(x)).slice(0, 25)
       .map(a => ({ unidad: lugar(a.ubigeo), ubigeo: a.ubigeo }));
     filas = d3.groups(base, o => o.ubigeo).map(([u, os]) => ({ u, os, a: A.get(u) || {} }))
-      .sort((x, y) => (y.a.prob_zona ?? -1) - (x.a.prob_zona ?? -1));
+      .sort((x, y) => orden(y.a) - orden(x.a));
     const empresas = suyas ? [...new Set(suyas.map(o => o.empresa))] : [];
     const h1 = document.getElementById("h1");
     h1.textContent = !suyas ? "Las zonas mineras y petroleras con más riesgo"
       : empresas.length === 1 ? nombre(empresas[0]) : `${empresas.length} empresas`;
     h1.style.fontSize = h1.textContent.length > 28 ? "24px" : "";
-    document.getElementById("bajada").textContent = `Probabilidad de que haya un paro, un bloqueo o una toma en la zona de cada operación de aquí a ${hasta}. La zona es el distrito y los que lo rodean.`;
+    document.getElementById("bajada").textContent = hayMes
+      ? `Probabilidad de un paro, un bloqueo o una toma en la zona de cada operación ${enMes}, y cuánto se aparta de lo normal en esa zona. Arriba, las que más suben.`
+      : `Probabilidad de que haya un paro, un bloqueo o una toma en la zona de cada operación de aquí a ${hasta}. La zona es el distrito y los que lo rodean.`;
     lista(!suyas);
     const zonas = new Set(filas.map(f => f.u));
     cerca(zonas, !suyas);
@@ -253,19 +267,31 @@ function iniciar(D, G) {
   function lista(pais) {
     document.getElementById("ops").innerHTML = filas.map((f, i) => {
       const a = f.a, raz = (a.razones_zona_extractivo || a.razones_zona || "").split(" · ").filter(Boolean).slice(0, 3);
+      const cambios = (a.razones_cambio_1m || "").split(" · ").filter(Boolean)
+        .map(r => [r.startsWith("baja") ? "baja" : "sube", r.replace(/^(sube|baja): /, "").replace(/\(lo habitual(?: en el año)?, ([\d.]+)\)/g, (m, n) => `(lo habitual, ${Math.round(+n)})`)]);
       const titulo = pais ? f.os[0].unidad.split(",")[0] : f.os.map(o => o.unidad).join(", ");
       const donde = pais ? lugar(f.u).split(", ").slice(1).join(", ") + ", " + nombre((a.lugar || "").split(" / ")[0]) : lugar(f.u);
       return `<li class="op" data-i="${i}"><button type="button" aria-expanded="false">
           <span class="nombre">${esc(titulo)}</span><span class="lugar">${esc(donde)}</span>
-          <span class="prob"><b>${pct(a.prob_zona)}</b><small>de paro o bloqueo</small></span></button>
+          <span class="prob"><b>${pct(mesP(a))}</b>${delta(a)}</span></button>
         <div class="detalle"><div><div class="dentro">
+          ${cambios.length ? `<h3>Qué cambió en la zona</h3><ul class="cambios">${cambios.map(([s, r]) => `<li><b class="${s}">${s === "sube" ? "Sube" : "Baja"}</b><span>${esc(r.charAt(0).toUpperCase() + r.slice(1))}</span></li>`).join("")}</ul>` : ""}
+          ${a.zona_tranquila && a.prob_brote != null ? `<p class="tranquila">La zona no tuvo paros ni bloqueos en los últimos 3 meses. Entre las zonas así, la probabilidad de que arranque uno ${enMes} es ${pct(a.prob_brote)}.</p>` : ""}
+          <h3>Riesgo de fondo, de aquí a ${hasta}</h3>
           <div class="dos"><div><b>${pct(a.prob_zona)}</b><small>de que haya un paro o bloqueo en la zona, por cualquier reclamo</small></div>
           <div class="ext"><b>${pct(a.prob_zona_extractivo)}</b><small>de que sea contra la minería, el petróleo o por el ambiente</small></div></div>
-          ${raz.length ? `<h3>Por qué</h3><ul>${raz.map(r => `<li>${esc(r.charAt(0).toUpperCase() + r.slice(1))}</li>`).join("")}</ul>` : ""}
+          ${raz.length ? `<h3>Por qué es una zona de riesgo</h3><ul>${raz.map(r => `<li>${esc(r.charAt(0).toUpperCase() + r.slice(1))}</li>`).join("")}</ul>` : ""}
           ${a.alerta_inmediata ? `<h3>Ya anunciado</h3><p style="margin:0"><a href="${esc(a.enlace_prensa)}" target="_blank" rel="noopener">${esc(a.senal_prensa)}</a></p>` : ""}
           ${a.animo_proyectos ? `<h3>En la radio y la prensa</h3><p style="margin:0">${esc(a.animo_proyectos)}</p>` : ""}
         </div></div></div></li>`; }).join("");
     document.querySelectorAll(".op > button").forEach(b => b.onclick = () => abrir(+b.parentNode.dataset.i, true));
+  }
+
+  function delta(a) {
+    if (!hayMes || a.cambio_zona_1m == null) return `<small>de paro o bloqueo</small>`;
+    const d = Math.round(a.cambio_zona_1m * 100);
+    if (Math.abs(d) < 2) return `<small>como siempre, ${pct(a.normal_zona_1m)}</small>`;
+    return `<span class="delta ${d > 0 ? "sube" : "baja"}">${d > 0 ? "+" : "−"}${Math.abs(d)} puntos</span><small>lo normal, ${pct(a.normal_zona_1m)}</small>`;
   }
 
   function abrir(i, volar) {
@@ -307,10 +333,10 @@ function iniciar(D, G) {
     const z = [...zonas].map(u => D.zonas[u]).filter(Boolean);
     if (!z.length) { caja.innerHTML = `<div class="vacio">Se calcula con la próxima corrida del modelo.</div>`; return; }
     let ev = 0, vio = 0, alertas = 0, regla = 0;
-    z.forEach(s => { const x = s.z_fuerza; if (!x) return; x.y.forEach((y, k) => {
+    z.forEach(s => { const x = s.z1_fuerza || s.z_fuerza; if (!x) return; x.y.forEach((y, k) => {
       const m = x.pct[k] <= 0.1; ev += y; vio += y && m; alertas += m; regla += y && x.ingenuo[k] != null && x.ingenuo[k] <= 0.1; }); });
     caja.innerHTML = ev ? `<div class="linea"><b>${pct(vio / ev)}</b>de los meses con un paro o bloqueo en sus zonas el modelo ya los tenía en alerta. Mirando solo si hubo algo el mes anterior se habría visto ${pct(regla / ev)}.</div>
-      <div class="linea"><b>${alertas ? pct(vio / alertas) : "s/d"}</b>de sus alertas terminaron en un paro o bloqueo en los tres meses siguientes.</div>`
+      <div class="linea"><b>${alertas ? pct(vio / alertas) : "s/d"}</b>de sus alertas terminaron en un paro o bloqueo ${D.zonas && Object.values(D.zonas)[0]?.z1_fuerza ? "el mes siguiente" : "en los tres meses siguientes"}.</div>`
       : `<div class="vacio">En 2024 y 2025 no hubo paros ni bloqueos registrados en sus zonas.</div>`;
   }
 
@@ -318,8 +344,8 @@ function iniciar(D, G) {
     await listo;
     popup.remove();
     const feats = G.features.filter(f => f.geometry && zonas.has(f.properties.u)).map(f => { const a = A.get(f.properties.u) || {};
-      return { type: "Feature", geometry: f.geometry, properties: { r: a.puesto_zona ? 1 - (a.puesto_zona - 1) / nZonas : 0,
-        h: `<b>${esc(lugar(f.properties.u))}</b><br>${pct(a.prob_zona)} de que haya un paro o bloqueo en la zona hasta ${hasta}` } }; });
+      return { type: "Feature", geometry: f.geometry, properties: { p: mesP(a) ?? 0,
+        h: `<b>${esc(lugar(f.properties.u))}</b><br>${pct(mesP(a))} de que haya un paro o bloqueo en la zona ${enMes}` } }; });
     map.getSource("zonas").setData({ type: "FeatureCollection", features: feats });
     const pts = [...filas.map((f, i) => ({ c: centroDe(f.u), k: "op", i })), ...puntosEventos].filter(p => p.c)
       .map(p => ({ type: "Feature", geometry: { type: "Point", coordinates: p.c }, properties: { k: p.k, h: p.h || "", i: p.i ?? -1 } }));

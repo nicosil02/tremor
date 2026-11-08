@@ -263,3 +263,15 @@ def test_web_anillo_horario(monkeypatch, tmp_path):
     monkeypatch.setattr(web, "DATOS", tmp_path)
     anillo = json.loads(web.geo())["features"][0]["geometry"]["coordinates"][0]
     assert not Polygon(anillo).exterior.is_ccw  # d3 lo necesita horario
+
+
+def test_cambios_de_caso():
+    import pandas as pd
+    from tremor.modelo import cambios_de_caso
+    t = pd.DataFrame({"caso_id": [1, 1, 1, 2, 2], "ubigeo": "010101", "m": [10, 11, 12, 11, 12],
+                      "estado": ["latente", "activo", "activo", "activo", "activo"],
+                      "dialogo": [None, "HAY DIÁLOGO", "NO HAY DIÁLOGO", "NO HAY", "NO HAY"]})
+    r = cambios_de_caso(t).set_index(["caso_id", "m"])
+    assert not r.loc[(1, 10), "nuevos"] and r.loc[(2, 11), "nuevos"]  # el primer mes de la serie no cuenta
+    assert r.loc[(1, 11), "activados"] and not r.loc[(1, 12), "activados"]
+    assert r.loc[(1, 12), "dialogo_roto"] and r[["dialogo_roto"]].sum().item() == 1
