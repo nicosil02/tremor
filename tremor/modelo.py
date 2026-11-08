@@ -798,8 +798,7 @@ def eleccion(r, adelanto=2):
     if desde == 0:
         return "es el mes de la elección municipal"
     if desde <= 5:
-        return ("la elección municipal acaba de pasar y entre diciembre y febrero de los años electorales hubo el "
-                "doble de paros que en otros años")
+        return "pasó la elección municipal y los meses que siguen suelen traer el doble de paros"
     return f"{'falta 1 mes' if hasta == 1 else f'faltan {hasta} meses'} para la elección municipal"
 
 

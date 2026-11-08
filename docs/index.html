@@ -78,9 +78,14 @@
   .op .dentro li { margin: 2px 0; }
   .fondo { margin: 12px 0 0; }
   .op ul.casos { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 10px; }
-  .op ul.casos li { display: grid; gap: 2px; border-left: 3px solid var(--cobre); padding-left: 10px; }
+  .op ul.casos { gap: 4px; }
+  .op ul.casos summary { cursor: pointer; list-style: none; }
+  .op ul.casos summary::-webkit-details-marker { display: none; }
+  .op ul.casos summary::before { content: "+"; display: inline-block; width: 14px; color: var(--tinta-3); }
+  .op ul.casos details[open] summary::before { content: "−"; }
   .op ul.casos b { color: var(--tinta); font-weight: 650; }
-  .op ul.casos span { font-size: 15px; }
+  .op ul.casos span { color: var(--tinta-3); }
+  .op ul.casos p { margin: 4px 0 6px 14px; font-size: 15px; }
   .op .fuente { font-size: 13px; color: var(--tinta-3); margin: 6px 0 0; }
   .op .prob .delta { display: block; font-size: 14px; font-weight: 600; }
   .sube { color: var(--cobre-4); }
@@ -463,23 +468,22 @@ function iniciar(D, G, H) {
     const ev = D.eventos.filter(e => toca(e.ubigeo)).map(e => `${corta(e)} ${e.estado === "anunciada" ? "anunciado" : ""} en ${lugar(e.ubigeo).split(", ")[0]}, ${fecha(e)}. <a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.medio)}</a>`);
     const vias = D.sutran.filter(s => toca(s.ubigeo)).map(s => `Vía cortada por una protesta en ${esc(nombre(s.distrito || ""))}, ${esc(s.via || "")}`);
     const todo = [...ev, ...vias].slice(0, 4);
-    return `<h3>En su zona, últimos 45 días</h3>` + (todo.length ? `<ul>${todo.map(x => `<li>${x}</li>`).join("")}</ul>`
-      : `<p class="fondo" style="margin-top:0">Sin protestas registradas en ${esc(zonaDe(u).map(v => lugar(v).split(", ")[0]).slice(0, 4).join(", "))}${zonaDe(u).length > 4 ? " y alrededores" : ""}.</p>`);
+    return `<h3>Últimos 45 días</h3>` + (todo.length ? `<ul>${todo.map(x => `<li>${x}</li>`).join("")}</ul>`
+      : `<p class="fondo" style="margin-top:0">Sin protestas en su zona.</p>`);
   }
   // Dónde y quiénes: los distritos de la zona que más pesan y los conflictos que la Defensoría tiene abiertos en ella
   function quienes(u) {
     const z = zonaDe(u), prov = u.slice(0, 4);
-    const dist = z.map(v => [v, A.get(v)?.prob]).filter(([, p]) => p != null).sort((x, y) => y[1] - x[1]).slice(0, 3);
+    const dist = z.map(v => [v, A.get(v)?.prob]).filter(([, p]) => p != null).sort((x, y) => y[1] - x[1]).slice(0, 2);
     const peso = c => (c.estado === "activo" ? 0 : 2) + (c.fase === "escalamiento" ? -1 : 0) + (/NO HAY/i.test(c.dialogo || "") ? 0 : 1);
     const cs = (D.casos || []).filter(c => z.includes(String(c.ubigeo)) || String(c.ubigeo) === prov).sort((x, y) => peso(x) - peso(y));
-    const estado = c => [c.estado === "activo" ? "Activo" : "Latente", /NO HAY/i.test(c.dialogo || "") ? "sin diálogo" : /HAY/i.test(c.dialogo || "") ? "con diálogo" : "",
-                         c.fase ? `en ${c.fase.replace("fase de ", "").replace("fase ", "")}` : "", c.con_hechos ? "con hechos en el último reporte" : ""].filter(Boolean).join(", ");
-    const corto = s => s && s.length > 190 ? s.slice(0, 190).replace(/\s+\S*$/, "") + "…" : s;
-    return `<h3>Dónde y quiénes</h3>` +
-      (dist.length ? `<p class="fondo" style="margin-top:0">Distritos de su zona con más riesgo hasta ${hasta}: ${dist.map(([v, p]) => `<b>${esc(lugar(v).split(", ")[0])}</b> ${pct(p)}`).join(", ")}.</p>` : "") +
-      (cs.length ? `<ul class="casos">${cs.slice(0, 3).map(c => `<li><b>${esc(c.nombre)}</b><span>${esc(estado(c))}. ${esc(lugar(String(c.ubigeo)).split(", ")[0])}.</span>${c.reclamo ? `<span>${esc(corto(c.reclamo))}</span>` : ""}</li>`).join("")}</ul>
-        <p class="fuente">Conflictos abiertos en la zona según la Defensoría del Pueblo, reporte de ${MESES_TXT[cs[0].mes - 1]} de ${cs[0].anio}${cs.length > 3 ? `. Hay ${cs.length - 3} más` : ""}.</p>`
-        : `<p class="fondo" style="margin-top:0">La Defensoría no tiene conflictos abiertos en su zona.</p>`);
+    const nom = c => c.nombre.split(" - ")[0];
+    const estado = c => `${c.estado === "activo" ? "activo" : "latente"}${/NO HAY/i.test(c.dialogo || "") ? ", sin diálogo" : /HAY/i.test(c.dialogo || "") ? ", en diálogo" : ""}`;
+    const donde = dist.length ? `<p class="fondo" style="margin-top:0">Más riesgo en ${dist.map(([v, p]) => `${esc(lugar(v).split(", ")[0])} (${pct(p)})`).join(" y ")}.</p>` : "";
+    return `<h3>Quiénes reclaman</h3>${donde}` + (cs.length
+      ? `<ul class="casos">${cs.slice(0, 3).map(c => `<li><details><summary><b>${esc(nom(c))}</b> <span>${estado(c)}</span></summary>${c.reclamo ? `<p>${esc(c.reclamo)}</p>` : ""}</details></li>`).join("")}</ul>
+         <p class="fuente">Defensoría del Pueblo, ${MESES_TXT[cs[0].mes - 1]} ${cs[0].anio}${cs.length > 3 ? `, ${cs.length - 3} casos más` : ""}</p>`
+      : `<p class="fondo" style="margin-top:0">Sin conflictos abiertos en la Defensoría.</p>`);
   }
   const MESES_TXT = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
   const corta = e => { const a = `${e.accion || ""}`.toLowerCase();
@@ -523,8 +527,8 @@ function iniciar(D, G, H) {
     const ev = D.eventos.filter(toca).sort((x, y) => (x.estado === "anunciada" ? 0 : 1) - (y.estado === "anunciada" ? 0 : 1) || cuando(y).localeCompare(cuando(x)));
     const vias = D.sutran.filter(s => pais || provs.has(String(s.ubigeo || "").slice(0, 4)));
     document.getElementById("nota-avisos").textContent = pais
-      ? "Protestas por la minería, el petróleo o el ambiente en los últimos 45 días."
-      : "Protestas de los últimos 45 días cerca de sus operaciones.";
+      ? "Por minería, petróleo o ambiente, últimos 45 días."
+      : "Últimos 45 días.";
     const fecha = e => new Date(cuando(e) + "T12:00").toLocaleDateString("es-PE", { day: "numeric", month: "long" });
     document.getElementById("avisos").innerHTML = [
       ...ev.map(e => `<li class="aviso ${e.estado}"><i></i><div><a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.titular)}</a>
@@ -566,7 +570,7 @@ function iniciar(D, G, H) {
     const real = c => c.vistas + c.no_vistas, def = c => c.defensoria * c.vistas / real(c);
     const prom = cob.reduce((s, c) => s + def(c), 0) / cob.length;
     document.getElementById("oculto").hidden = false;
-    document.getElementById("oculto-texto").textContent = `De ${cob[0].anio} a ${cob.at(-1).anio}, la Defensoría registró cerca de ${pct(prom)} de los meses con protesta en un distrito. Al cruzar todas las fuentes se estima cuánto no vio ninguna. Tremor suma prensa regional, radio local y los reportes de las empresas para cerrar esa brecha.`;
+    document.getElementById("oculto-texto").textContent = `Entre ${cob[0].anio} y ${cob.at(-1).anio} la Defensoría registró cerca de ${pct(prom)} de las protestas. Tremor suma prensa regional, radio local y reportes de las empresas.`;
     const W = 300, h = 14;
     document.getElementById("oculto-barras").innerHTML = `<svg viewBox="0 0 ${W} ${cob.length * (h + 6)}" width="100%" role="img" aria-label="Cobertura por año">${cob.map((c, k) => {
       const y = k * (h + 6), a = def(c) * (W - 40), b = (c.vistas / real(c)) * (W - 40);
@@ -574,7 +578,7 @@ function iniciar(D, G, H) {
         <rect x="40" y="${y}" width="${W - 40}" height="${h}" fill="var(--linea)"/>
         <rect x="40" y="${y}" width="${b.toFixed(1)}" height="${h}" fill="var(--cobre-2)"/>
         <rect x="40" y="${y}" width="${a.toFixed(1)}" height="${h}" fill="var(--tinta)"/>`; }).join("")}</svg>
-      <p style="margin:6px 0 0;font-size:14px;color:var(--tinta-3)">En negro, lo que vio la Defensoría. En cobre, lo que agregan las demás fuentes. En gris, lo que se estima que nadie vio.</p>`;
+      <p style="margin:6px 0 0;font-size:14px;color:var(--tinta-3)">Negro, Defensoría. Cobre, otras fuentes. Gris, estimado sin registro.</p>`;
   }
   // Cifras de la prueba 2024-2026, tal como salieron del modelo
   const cifra = (o, m, k) => D.metricas.find(x => x.objetivo === o && x.modelo === m && x.metrica === k)?.valor;
