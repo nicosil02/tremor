@@ -1,4 +1,6 @@
-"""Lead de la nota para las protestas sin lugar: Google News da solo el titular (research R4, ponytail cumplido).
+"""Lead de la nota para las protestas sin lugar o anunciadas: muchos feeds dan solo el titular, y con el titular el LLM
+confunde una marcha ocurrida con un anuncio (p. ej. "Agricultores exigen a Southern…" era una marcha en Candarave).
+
 
 Decodifica el enlace de Google News al del medio, baja la página y guarda como `resumen` la descripción y los
 primeros párrafos (máx. 600 caracteres; nunca el texto completo). Luego borra la codificación para que el
@@ -59,13 +61,16 @@ def lead(pagina: str, n=600) -> str:
 
 
 def ampliar(con, version: str, limite=200, pausa=8.0) -> tuple[int, int]:
-    """Protestas sin lugar (o solo con departamento) de Google News sin resumen → lead del medio."""
+    """Protestas sin resumen que están sin lugar preciso o marcadas como anunciadas → lead del medio. Primero los
+    enlaces directos al medio (sin cupo), después los de Google News (con pausa)."""
     filas = con.execute("""SELECT n.id, n.enlace FROM nota n JOIN codificacion c ON c.nota_id = n.id AND c.version = ?
-        WHERE c.es_protesta = 1 AND (c.precision IS NULL OR c.precision = 'departamento')
-          AND coalesce(n.resumen, '') = '' AND n.enlace LIKE '%news.google.com%' LIMIT ?""", (version, limite)).fetchall()
+        WHERE c.es_protesta = 1 AND (c.precision IS NULL OR c.precision = 'departamento' OR c.estado = 'anunciada')
+          AND coalesce(n.resumen, '') = ''
+        ORDER BY n.enlace LIKE '%news.google.com%' LIMIT ?""", (version, limite)).fetchall()
     hechas = 0
     for id_, url in filas:
-        time.sleep(pausa)  # sin pausa Google corta con captcha a las ~15 consultas
+        if "news.google.com" in url:
+            time.sleep(pausa)  # sin pausa Google corta con captcha a las ~15 consultas
         try:
             real = enlace_real(url)
             texto = lead(requests.get(real, headers=UA, timeout=30).text) if real else ""
