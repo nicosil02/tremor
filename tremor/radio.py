@@ -1,10 +1,17 @@
-"""Radios regionales en vivo: graba el stream, transcribe con faster-whisper (local, sin cuota) y guarda cada
-fragmento como una `nota`, para que el codificador de prensa (manual EGPP) detecte las protestas.
+"""Radios en vivo de las zonas de influencia extractiva (módulo 003): graba el stream, transcribe con faster-whisper
+(local, sin cuota) y guarda cada fragmento como una `nota`. Después el codificador de prensa (manual EGPP) detecta las
+protestas y `tremor.animo` mide menciones y tono hacia cada proyecto o empresa.
 
-`python -m tremor.radio --minutos 20` (en GitHub Actions: .github/workflows/radio.yml, franjas de noticieros).
-Como en Base_legislativa (congreso_live/live_transcribe.py): Whisper "small" en CPU int8, audio mono 16 kHz.
-shortcut: solo castellano; el quechua y el aimara necesitan otro modelo (Omnilingual ASR), queda para el módulo 003."""
+    python -m tremor.radio escuchar --minutos 30                        # todas las radios, directo a la base
+    python -m tremor.radio escuchar --minutos 30 --grupo 2 --grupos 8 --salida notas_2.jsonl   # una máquina de 8
+    python -m tremor.radio cargar notas_*.jsonl                         # junta lo de las máquinas en la base
+
+En GitHub Actions: .github/workflows/radio.yml (matriz de máquinas, como tv-en-vivo.yml de Base_legislativa).
+Catálogo: tremor/radios.csv. Whisper "small" en CPU int8, audio mono 16 kHz (como Base_legislativa).
+shortcut: solo castellano; el quechua y el aimara necesitan otro modelo (Omnilingual ASR)."""
 import argparse
+import csv
+import json
 import os
 import subprocess
 import sys
@@ -13,36 +20,28 @@ import wave
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
-from tremor.db import ahora, conectar
+from tremor.db import RAIZ, ahora, conectar
 from tremor.prensa.recolectar import LIMA, filtro, id_nota
 
-# (medio, departamento, stream): de la web de cada radio o de radio-browser.info; probados el 7 nov 2026.
-RADIOS = [
-    ("Pachamama Radio", "Puno", "https://servidor14.brlogic.com:8744/live"),
-    ("Radio Sol de los Andes", "Puno", "https://cloudstream2036.conectarhosting.com/8036/stream"),
-    ("Radio Onda Popular", "Puno", "https://dattavolt.com/8278/stream"),
-    ("Radio Titanka", "Apurímac", "http://servistream.info:8482/stream"),
-    ("Radio Cusco Legal", "Cusco", "https://stream-144.zeno.fm/ryrhxgus0wzuv"),
-    ("Radio Intiraymi", "Cusco", "https://streamhotsperu.purosurfm.com:8150/intiraymi"),
-    ("Radio Salkantay", "Cusco", "https://stream.radiosalkantaycusco.com/7662/stream"),
-    ("Radio Yaraví", "Arequipa", "https://tupanel.info/stream/radioyaravi/stream"),
-    ("Radio Metropolitana", "Arequipa", "https://maximacenterdata.com/8120/stream"),
-    ("Radio Onda Popular Cajamarca", "Cajamarca", "https://envivo.top:8443/am"),
-    ("Radio Bambamarca", "Cajamarca", "https://envivo.top:8443/lider"),
-    ("Radio Nor Andina", "Cajamarca", "https://mediastreamm.com/8012/stream/1/"),
-    ("Radio Loreto", "Loreto", "https://sp.oyotunstream.com/8006/stream"),
-    ("Radio Milenium", "Amazonas", "https://sp.onliveperu.com/8102/stream"),
-    ("RPT Radio", "Moquegua", "https://stream.zeno.fm/m2x1vzybpapvv"),
-    ("Radio Andina Tarata", "Tacna", "http://sp.oyotunstream.com:8064/"),
-]
+CATALOGO = RAIZ / "tremor" / "radios.csv"
 SR = 16_000
 TROZO = 1200  # caracteres por nota: un noticiero trae muchas noticias y el codificador espera una por nota
 
 
+def radios(grupo=None, grupos=1):
+    with open(CATALOGO, encoding="utf-8") as f:
+        filas = list(csv.DictReader(f))
+    return filas if grupo is None else filas[grupo - 1::grupos]
+
+
 def grabar(url, segundos, ruta):
     ffmpeg = os.environ.get("FFMPEG_BIN", "ffmpeg")
-    subprocess.run([ffmpeg, "-loglevel", "error", "-y", "-i", url, "-t", str(segundos), "-vn", "-ac", "1",
-                    "-ar", str(SR), ruta], stdin=subprocess.DEVNULL, timeout=segundos + 120, check=False)
+    try:
+        subprocess.run([ffmpeg, "-loglevel", "error", "-y", "-reconnect", "1", "-reconnect_streamed", "1",
+                        "-i", url, "-t", str(segundos), "-vn", "-ac", "1", "-ar", str(SR), ruta],
+                       stdin=subprocess.DEVNULL, timeout=segundos + 120, check=False)
+    except subprocess.TimeoutExpired:
+        pass
     return os.path.exists(ruta) and os.path.getsize(ruta) > SR * 2 * 10  # al menos 10 s de audio
 
 
@@ -60,43 +59,69 @@ def transcribir(modelo, ruta):
     import numpy as np
     with wave.open(ruta) as w:
         audio = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768
-    segmentos, _ = modelo.transcribe(audio, language="es", vad_filter=True)  # sin av: evita el choque de versiones
+    segmentos, _ = modelo.transcribe(audio, language="es", vad_filter=True, beam_size=1)  # sin av: choque de versiones
     return " ".join(s.text.strip() for s in segmentos)
 
 
-def guardar(con, medio, dep, url, inicio, texto):
-    nuevas = 0
+def notas(radio, inicio, texto):
     if len(texto) < 100:  # música o silencio
-        return 0
-    for i, t in enumerate(trozos(texto), 1):
+        return []
+    medio, salida = radio["medio"], []
+    for i, x in enumerate(trozos(texto), 1):
         titular = f"{medio}, en vivo {inicio:%d/%m/%Y %H:%M} ({i})"
-        cur = con.execute("INSERT OR IGNORE INTO nota VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                          (id_nota(medio, titular), medio, titular, t, inicio.isoformat(timespec="minutes"), url,
-                           "radio", dep, ahora(), filtro(t)))
-        nuevas += cur.rowcount
+        salida.append({"id": id_nota(medio, titular), "medio": medio, "titular": titular, "resumen": x,
+                       "publicado": inicio.isoformat(timespec="minutes"), "enlace": radio["stream"],
+                       "departamento": radio["departamento"], "filtro": filtro(x)})
+    return salida
+
+
+def guardar(con, filas):
+    n = sum(con.execute("INSERT OR IGNORE INTO nota VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        (f["id"], f["medio"], f["titular"], f["resumen"], f["publicado"], f["enlace"], "radio",
+                         f["departamento"], ahora(), f["filtro"])).rowcount for f in filas)
     con.commit()
-    return nuevas
+    return n
+
+
+def escuchar(minutos, grupo=None, grupos=1, salida=None):
+    from faster_whisper import WhisperModel
+    lista, inicio, filas = radios(grupo, grupos), datetime.now(LIMA), []
+    print(f"Escuchando {len(lista)} radios {minutos} min", flush=True)
+    with tempfile.TemporaryDirectory() as d:
+        rutas = [os.path.join(d, f"{i}.wav") for i in range(len(lista))]
+        with ThreadPoolExecutor(len(lista)) as ex:  # todas a la vez: solo es red
+            ok = list(ex.map(lambda r: grabar(r[0]["stream"], int(minutos * 60), r[1]), zip(lista, rutas)))
+        modelo = WhisperModel("small", device="cpu", compute_type="int8")
+        for radio, ruta, bien in zip(lista, rutas, ok):
+            nuevas = notas(radio, inicio, transcribir(modelo, ruta)) if bien else []
+            filas += nuevas
+            pasan = sum(f["filtro"] is None for f in nuevas)
+            print(f"  {radio['medio']} ({radio['provincia']}): "
+                  + (f"{len(nuevas)} fragmentos, {pasan} al codificador" if bien else "sin audio"), flush=True)
+    if salida:
+        with open(salida, "w", encoding="utf-8") as f:
+            f.writelines(json.dumps(x, ensure_ascii=False) + "\n" for x in filas)
+    else:
+        print(f"{guardar(conectar(), filas)} notas nuevas")
 
 
 def main(argv=None):
-    from faster_whisper import WhisperModel
     ap = argparse.ArgumentParser(prog="python -m tremor.radio")
-    ap.add_argument("--minutos", type=float, default=20)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    e = sub.add_parser("escuchar")
+    e.add_argument("--minutos", type=float, default=30)
+    e.add_argument("--grupo", type=int)
+    e.add_argument("--grupos", type=int, default=1)
+    e.add_argument("--salida")
+    c = sub.add_parser("cargar")
+    c.add_argument("archivos", nargs="*")
     a = ap.parse_args(argv)
     sys.stdout.reconfigure(encoding="utf-8")
-    inicio = datetime.now(LIMA)
-    with tempfile.TemporaryDirectory() as d, ThreadPoolExecutor(len(RADIOS)) as ex:
-        rutas = [os.path.join(d, f"{i}.wav") for i in range(len(RADIOS))]
-        ok = list(ex.map(lambda r: grabar(r[0][2], int(a.minutos * 60), r[1]), zip(RADIOS, rutas)))  # en paralelo
-        modelo, con = WhisperModel("small", device="cpu", compute_type="int8"), conectar()
-        for (medio, dep, url), ruta, bien in zip(RADIOS, rutas, ok):
-            if not bien:
-                print(f"  {medio}: sin audio"); continue
-            texto = transcribir(modelo, ruta)
-            n = guardar(con, medio, dep, url, inicio, texto)
-            pasan = con.execute("SELECT COUNT(*) FROM nota WHERE consulta = 'radio' AND medio = ? AND publicado = ? "
-                                "AND filtro IS NULL", (medio, inicio.isoformat(timespec="minutes"))).fetchone()[0]
-            print(f"  {medio}: {len(texto)} caracteres, {n} fragmentos, {pasan} pasan al codificador")
+    if a.cmd == "escuchar":
+        escuchar(a.minutos, a.grupo, a.grupos, a.salida)
+    else:
+        filas = [json.loads(x) for f in a.archivos for x in open(f, encoding="utf-8") if x.strip()]
+        print(f"{guardar(conectar(), filas)} notas nuevas de {len(filas)} fragmentos de radio")
     return 0
 
 

@@ -1,31 +1,32 @@
-# Módulo 003: escucha las radios regionales en franjas de noticieros, transcribe con faster-whisper (en la máquina de
-# GitHub, sin cuota), codifica los fragmentos como notas de prensa y publica en la rama `datos`. Mismo esquema que
-# tv-en-vivo.yml de Base_legislativa. Lima = UTC-5.
+# Módulo 003: escucha las radios de las zonas de influencia extractiva en franjas de noticieros, transcribe con
+# faster-whisper en máquinas de GitHub (sin cuota; como tv-en-vivo.yml de Base_legislativa), codifica los fragmentos
+# como notas de prensa, mide el ánimo hacia cada proyecto (tremor.animo) y publica en la rama `datos`.
+# Lima = UTC-5. Corre solo desde `main`.
 # shortcut: el cron de GitHub puede arrancar 10-30 min tarde; si hace falta puntualidad, dispararlo desde cron-job.org.
 name: radio
 
 on:
   schedule:
-    - cron: "0 11 * * *"    # 6:00 Lima, noticiero de la mañana
-    - cron: "30 17 * * *"   # 12:30 Lima, noticiero del mediodía
+    - cron: "0 11 * * *"    # 6:00 Lima, noticieros de la mañana
+    - cron: "30 17 * * *"   # 12:30 Lima, noticieros del mediodía
   workflow_dispatch:
     inputs:
       minutos:
         description: "Minutos de escucha por radio"
         required: false
-        default: "30"
+        default: "45"
 
 permissions:
   contents: write
 
-concurrency:            # comparte la rama `datos` con defensoria.yml
-  group: datos
-  cancel-in-progress: false
-
 jobs:
   escuchar:
     runs-on: ubuntu-latest
-    timeout-minutes: 240
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        grupo: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]   # cada máquina toma 1/15 de tremor/radios.csv (~15 radios)
     steps:
       - uses: actions/checkout@v4
 
@@ -44,6 +45,44 @@ jobs:
           pip install -r requirements.txt faster-whisper
           sudo apt-get install -y -qq ffmpeg
 
+      - name: Escuchar y transcribir
+        run: |
+          MIN="${{ github.event.inputs.minutos }}"
+          if [ -z "$MIN" ]; then MIN=45; fi
+          python -m tremor.radio escuchar --minutos "$MIN" --grupo ${{ matrix.grupo }} --grupos 15 \
+            --salida notas_${{ matrix.grupo }}.jsonl || echo "[aviso] terminó con error; se sube lo que haya"
+          touch notas_${{ matrix.grupo }}.jsonl
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: notas-${{ matrix.grupo }}
+          path: notas_${{ matrix.grupo }}.jsonl
+          retention-days: 3
+
+  publicar:
+    needs: escuchar
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    concurrency:            # comparte la rama `datos` con defensoria.yml
+      group: datos
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: notas-*
+          merge-multiple: true
+          path: radio
+
       - name: Traer la base anterior
         run: |
           mkdir -p datos
@@ -51,16 +90,15 @@ jobs:
           git show origin/datos:tremor.db.gz | gunzip > datos/tremor.db
           git show origin/datos:distritos.geojson > datos/distritos.geojson || true
 
-      - name: Escuchar y transcribir
-        run: python -m tremor.radio --minutos "${{ github.event.inputs.minutos || '30' }}"
-
-      - name: Codificar y agrupar (prensa)
+      - name: Cargar, codificar y medir el ánimo
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
         run: |
+          python -m tremor.radio cargar radio/*.jsonl
           python -m tremor.prensa codificar
           python -m tremor.prensa agrupar
           python -m tremor.prensa exportar
+          python -m tremor.animo
 
       - name: Publicar en la rama datos
         run: |

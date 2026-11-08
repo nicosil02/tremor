@@ -168,3 +168,14 @@ def test_radio_trozos():
     texto = "Comuneros de Chumbivilcas anuncian paro. " * 60
     partes = trozos(texto, 300)
     assert all(len(x) <= 350 for x in partes) and "".join(partes).count("paro") == 60
+
+
+def test_animo():
+    from tremor.animo import menciones, provincias, tono
+    m = menciones("Hoy llovió en Abancay. Comuneros denuncian que Las Bambas incumple el acuerdo y anuncian paro. "
+                  "En otras noticias, el clima.")
+    assert [n for n, _ in m] == ["Las Bambas (MMG)"]
+    neg, pos, t = tono(m[0][1])
+    assert neg >= 3 and t < 0  # denuncian, incumple, paro (y "acuerdo" positivo)
+    assert tono("Se firmó un acuerdo y la empresa cumplió con el convenio")[2] > 0
+    assert provincias()["Las Bambas (MMG)"] == ["0305", "0307"]

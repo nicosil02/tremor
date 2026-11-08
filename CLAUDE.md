@@ -34,7 +34,7 @@ hidrocarburos, energía, concesiones) en el Perú, días antes, con razones expl
 - **Sin atribución a Claude:** nada de "Generated with Claude Code" ni co-autor en commits ni PRs.
 - **Código mínimo** (estilo "ponytail"):
   - reglas antes que LLM;
-  - una prueba pequeña por cada lógica que no sea trivial (`python -m pytest -q`, hoy 77 pruebas);
+  - una prueba pequeña por cada lógica que no sea trivial (`python -m pytest -q`, hoy 79 pruebas);
   - mejor borrar que agregar.
 - **Una sola base:** `datos/tremor.db` (SQLite). Se publica comprimida en la rama **`datos`**
   (`tremor.db.gz` + CSV); `datos/` no va en `main`.
@@ -58,7 +58,7 @@ git clone https://github.com/nicosil02/tremor && cd tremor && git checkout 002-p
 pip install -r requirements.txt
 cp .env.example .env        # y pegar LLM_API_KEY=gsk_... (la misma clave de Groq; no está en el repo)
 mkdir -p datos && git fetch origin datos && git show origin/datos:tremor.db.gz | gunzip > datos/tremor.db
-python -m pytest -q         # 77 pasan
+python -m pytest -q         # 79 pasan
 ```
 
 En Windows sin `gunzip`:
@@ -82,6 +82,8 @@ carpeta, aprobar el servidor MCP `tremor` (`.mcp.json`).
 | `distrito_variable` (larga: ubigeo, anio, variable, valor, fuente; anio 0 = foto) | ~370 000 | PNUD IDH 2017–2024 y componentes (1 874 distritos); INEI pobreza 2018 (1 873); INGEMMET catastro minero por año (1 719); MINEM pasivos ambientales (284); OEFA unidades mineras, lotes de hidrocarburos y Oleoducto Norperuano; ONPE elecciones municipales distritales 2006-2022 (margen, listas, número efectivo de listas, participación; ubigeo RENIEC traducido por nombre); Censo 2017 por REDATAM (ruralidad, lengua materna e identidad indígena, agua, electricidad; 1 874); BDPI Cultura (comunidades campesinas y nativas y su % del territorio, reservas indígenas; 1 319); MTC red vial nacional (km por distrito); SERNANP ANP y amortiguamiento, MINEM cartera de proyectos y minas por método (`ambiente`); ANA conflictos hídricos y estrés hídrico (`ana`); OEFA denuncias extractivas 2018-2024, solo conteos (`oefa_denuncias`); GEOBOSQUES pérdida de bosque 2001-2025 (Excel bajado a mano, `datos/crudos/geobosques/`); RENAMU 2023: rondas campesinas, oficina ambiental, participación ciudadana, personal municipal (`renamu`) |
 | `senace_certificacion` | 3 959 (721 distritos, 1995-2026) | SENACE: certificaciones ambientales de minería, hidrocarburos y electricidad | `python -m tremor.distritos senace` |
 | `emergencia` | 5 061 (1 238 distritos, 2020-2026) | Emergencias hídricas INDECI/ANA (lluvias, huaicos, sequías, heladas) | `python -m tremor.distritos emergencias` |
+| `nota` (consulta = 'radio') | se acumula | **Radio en vivo** (módulo 003): 225 radios de 96 provincias con operaciones extractivas o casos socioambientales (`tremor/radios.csv`, de OnlineRadioBox, Zeno y webs; streams probados el 7 nov). Graba en franjas de noticieros, transcribe con faster-whisper `small` (CPU int8, sin cuota) y cada fragmento entra como nota al codificador. Solo castellano (quechua y aimara: pendiente) | `python -m tremor.radio escuchar --minutos 30`; en Actions `radio.yml` (15 máquinas, 6:00 y 12:30) |
+| `mencion`, `animo` | por nota / por proyecto | **Ánimo hacia proyectos y empresas** (`tremor/animo.py`): 25 proyectos con alias y provincias de influencia; tono por léxico del dominio (reglas); índice de 14 días: menciones, alza frente a las 8 semanas previas y % negativas. Entra a `alerta.animo_proyectos` | `python -m tremor.animo` |
 | `acled_evento` | 12 326 (794 distritos, 2018-01 a 2025-11; 535 extractivos) | ACLED (CSV bajado a mano del Data Export Tool, requiere cuenta, en `datos/crudos/acled/`). Solo **valida** el modelo (`precision_top20_acled`), no entra como variable. No se guardan notas ni actores | `python -m tremor.distritos acled` | `python -m tremor.distritos todo` (exporta `distrito_variable.csv`) |
 | `distrito_corredor` | 920 distritos | Corredores logísticos (C01–C20) y alimentadores (AL…) del MTC, más el Corredor Minero del Sur (PE-3SG) | `python -m tremor.distritos vias` |
 | `nivel_mes`, `modelo_metrica`, `modelo_importancia`, `modelo_perfil`, `alerta` | escala 0–4 por distrito-mes; métricas en 2024+; alerta de los 1 892 distritos | Modelo de `specs/005-modelo` | `python -m tremor.modelo` (~10 min; exporta CSV) |

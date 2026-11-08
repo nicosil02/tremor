@@ -568,6 +568,8 @@ def alerta(con, p, mejor):
     corr = pd.read_sql("SELECT ubigeo, corredor FROM distrito_corredor WHERE corredor NOT LIKE 'AL%'", con)
     salida["corredores"] = corr.groupby("ubigeo").corredor.agg(lambda s: ", ".join(sorted(s))).reindex(salida.index)
     salida = salida.join(prensa_en_vivo(con, list(salida.index)))
+    from tremor.animo import senal
+    salida["animo_proyectos"] = [senal(con).get(u[:4]) for u in salida.index]  # radio y prensa, 14 días
     salida["alerta_inmediata"] = salida.alerta_inmediata.fillna(0).astype(int)
     salida["mes_base"] = texto_mes(ultimo)
     salida["ventana"] = f"{texto_mes(ultimo + 1)} a {texto_mes(ultimo + HORIZONTE)}"
