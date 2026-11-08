@@ -39,7 +39,7 @@
     .mapa { height: 58dvh; order: -1; }
     .panel { border-right: 0; }
     .leyenda { left: 8px; bottom: 8px; padding: 6px 8px; font-size: 12px; gap: 3px; }
-    .leyenda .escala:first-child { display: none; }
+    .leyenda b { font-size: 12px; }
   }
 
   .cabeza { padding: 20px 24px 18px; border-bottom: 1px solid var(--linea); }
@@ -106,8 +106,21 @@
 
   .leyenda { position: absolute; left: 16px; bottom: 16px; background: var(--papel); border: 1px solid var(--linea); border-radius: 8px; padding: 10px 12px;
              font-size: 14px; color: var(--tinta-2); display: grid; gap: 6px; box-shadow: 0 6px 20px rgb(28 38 41 / .12); }
-  .leyenda .escala, .leyenda .punto { display: flex; align-items: center; gap: 6px; }
-  .leyenda .escala i { width: 22px; height: 10px; display: inline-block; }
+  .leyenda { max-width: 300px; }
+  .leyenda b { display: block; font-weight: 650; color: var(--tinta); margin-bottom: 6px; line-height: 1.25; }
+  .leyenda .rampa { display: grid; grid-template-columns: repeat(4, 1fr); height: 10px; }
+  .leyenda .cortes { display: grid; grid-template-columns: repeat(4, 1fr); font-size: 12px; color: var(--tinta-3); margin-top: 2px; }
+  .leyenda .cortes span:not(:first-child) { margin-left: -10px; }
+  .leyenda .detalle { display: none; }
+  .leyenda.cerca .riesgo { display: none; }
+  .leyenda.cerca .detalle { display: grid; gap: 6px; }
+  .leyenda .linea { display: flex; align-items: center; gap: 8px; }
+  .leyenda .linea i { width: 26px; height: 12px; flex: none; border-radius: 2px; background: #6f5a48; position: relative; }
+  .leyenda .linea i::after { content: ""; position: absolute; left: 3px; right: 3px; top: 5px; }
+  .leyenda .l-unidad::after { border-top: 2px solid #fff; }
+  .leyenda .l-sel::after { border-top: 3px solid #fff; box-shadow: 0 0 4px #fff; }
+  .leyenda .l-zona::after { border-top: 2px dashed #ffd28a; }
+  .leyenda .punto { display: flex; align-items: center; gap: 6px; }
   .leyenda .punto i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
   .maplibregl-popup-content { font: 14px/1.4 "Archivo", sans-serif; padding: 10px 12px; border-radius: 8px; max-width: 280px; color: var(--tinta); }
   .maplibregl-popup-content b { font-weight: 650; }
@@ -145,10 +158,15 @@
     <div id="mapa"></div>
     <div class="cargando" id="cargando">Cargando el mapa</div>
     <div class="leyenda" id="leyenda" hidden>
-      <div class="escala"><span>Probabilidad de paro o bloqueo en la zona</span></div>
-      <div class="escala"><i style="background:var(--cobre-1)"></i><i style="background:var(--cobre-2)"></i><i style="background:var(--cobre-3)"></i><i style="background:var(--cobre-4)"></i><span>cortes en 10%, 25% y 50%</span></div>
+      <div class="riesgo"><b>Probabilidad de paro o bloqueo en la zona de influencia</b>
+        <div class="rampa"><i style="background:var(--cobre-1)"></i><i style="background:var(--cobre-2)"></i><i style="background:var(--cobre-3)"></i><i style="background:var(--cobre-4)"></i></div>
+        <div class="cortes"><span>Bajo</span><span>10%</span><span>25%</span><span>50%</span></div></div>
+      <div class="detalle"><b>Qué se ve en la imagen</b>
+        <div class="linea"><i class="l-unidad"></i>Área de la unidad minera, según OEFA</div>
+        <div class="linea"><i class="l-sel"></i>Unidad que abriste</div>
+        <div class="linea"><i class="l-zona"></i>Zona de influencia: su distrito y los vecinos</div></div>
       <div class="punto"><i style="background:var(--patina)"></i>Protesta anunciada</div>
-      <div class="punto"><i style="background:var(--tinta-3)"></i>Protesta reciente</div>
+      <div class="punto"><i style="background:var(--tinta-3)"></i>Protesta de los últimos 45 días</div>
       <div class="punto"><i style="background:#fff;border:2px solid var(--tinta)"></i>Operación</div>
     </div>
   </div>
@@ -229,26 +247,36 @@ function iniciar(D, G, H) {
     const rampa = ["step", ["get", "p"], css("--cobre-1"), 0.1, css("--cobre-2"), 0.25, css("--cobre-3"), 0.5, css("--cobre-4")];
     map.addSource("zonas", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     // Sobre el satélite la zona se vuelve transparente: manda la huella de la operación
+    // El color de riesgo es para mirar el país o la región; sobre el satélite se apaga y manda la imagen
     map.addLayer({ id: "zonas", type: "fill", source: "zonas", paint: { "fill-color": rampa,
-      "fill-opacity": ["interpolate", ["linear"], ["zoom"], 9, 0.8, 12, 0.18] } });
-    map.addLayer({ id: "zonas-borde", type: "line", source: "zonas", paint: { "line-color": "#fff", "line-width": 0.8, "line-dasharray": [2, 2] } });
+      "fill-opacity": ["interpolate", ["linear"], ["zoom"], 9, 0.8, 10.5, 0] } });
+    map.addLayer({ id: "zonas-borde", type: "line", source: "zonas", paint: { "line-color": "#fff", "line-width": 0.8,
+      "line-opacity": ["interpolate", ["linear"], ["zoom"], 9, 1, 10.5, 0] } });
     map.addSource("huellas", { type: "geojson", data: H });
     map.addLayer({ id: "huella", type: "fill", source: "huellas", filter: ["==", ["get", "empresa"], ""],
-      paint: { "fill-color": css("--cobre"), "fill-opacity": ["interpolate", ["linear"], ["zoom"], 8, 0.5, 12, 0.22] } });
+      paint: { "fill-color": css("--tinta"), "fill-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0.8, 8, 0] } });  // a escala país, una mancha; cerca, solo el borde
     map.addLayer({ id: "huella-borde", type: "line", source: "huellas", filter: ["==", ["get", "empresa"], ""],
-      paint: { "line-color": "#fff", "line-width": ["interpolate", ["linear"], ["zoom"], 8, 1, 13, 2.5] } });
+      paint: { "line-color": "#fff", "line-opacity": 0.85, "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.8, 13, 2] } });
     // La zona de influencia de la operación abierta: su distrito y los vecinos, con nombre
     map.addSource("zona-sel", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     map.addLayer({ id: "zona-sel-borde", type: "line", source: "zona-sel", filter: ["==", ["geometry-type"], "Polygon"],
-      paint: { "line-color": css("--cobre-4"), "line-width": 2.5, "line-dasharray": [3, 2] } });
+      paint: { "line-color": "#ffd28a", "line-width": 3, "line-dasharray": [2.5, 1.5] } });
+    map.addLayer({ id: "huella-sel-brillo", type: "line", source: "huellas", filter: ["==", ["get", "empresa"], ""],
+      paint: { "line-color": "#fff", "line-opacity": 0.55, "line-blur": 6, "line-width": ["interpolate", ["linear"], ["zoom"], 8, 6, 13, 14] } });
     map.addLayer({ id: "huella-sel", type: "line", source: "huellas", filter: ["==", ["get", "empresa"], ""],
-      paint: { "line-color": "#ffd28a", "line-width": ["interpolate", ["linear"], ["zoom"], 8, 2.5, 13, 5] } });
+      paint: { "line-color": "#fff", "line-width": ["interpolate", ["linear"], ["zoom"], 8, 2, 13, 3.5] } });
     const TEXTO = { "text-font": ["Noto Sans Bold"], "text-size": 13, "text-max-width": 12 };
     const HALO = { "text-color": "#fff", "text-halo-color": "rgb(28 38 41 / .85)", "text-halo-width": 1.6 };
     map.addLayer({ id: "zona-sel-nombre", type: "symbol", source: "zona-sel", filter: ["==", ["geometry-type"], "Point"],
       layout: { ...TEXTO, "text-field": ["get", "n"], "text-size": 12, "text-font": ["Noto Sans Italic"] }, paint: HALO });
-    map.addLayer({ id: "huella-nombre", type: "symbol", source: "huellas", minzoom: 8, filter: ["==", ["get", "empresa"], ""],
-      layout: { ...TEXTO, "text-field": ["get", "unidad"], "symbol-placement": "point", "text-offset": [0, 1.2], "text-anchor": "top" }, paint: HALO });
+    // Un nombre por unidad, en el centro de su área (sobre el polígono saldría uno por cada pedazo)
+    map.addSource("huellas-centro", { type: "geojson", data: { type: "FeatureCollection", features: H.features.map(f => {
+      const k = cajaDe([f]); return { type: "Feature", geometry: { type: "Point", coordinates: [(k[0] + k[2]) / 2, (k[1] + k[3]) / 2] },
+        properties: f.properties }; }) } });
+    map.addLayer({ id: "huella-nombre", type: "symbol", source: "huellas-centro", minzoom: 10, filter: ["==", ["get", "empresa"], ""],
+      layout: { ...TEXTO, "text-field": ["get", "unidad"], "text-offset": [0, 0.9], "text-anchor": "top" }, paint: HALO });
+    const modo = () => document.getElementById("leyenda").classList.toggle("cerca", map.getZoom() >= 10);
+    map.on("zoomend", modo); modo();
     map.addSource("puntos", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     map.addLayer({ id: "eventos", type: "circle", source: "puntos", filter: ["!=", ["get", "k"], "op"], paint: {
       "circle-radius": 6, "circle-stroke-width": 1.5, "circle-stroke-color": "#fff",
@@ -301,6 +329,7 @@ function iniciar(D, G, H) {
     lista(!suyas);
     listo.then(() => ["huella", "huella-borde", "huella-nombre"].forEach(c =>
       map.setFilter(c, suyas ? ["in", ["get", "empresa"], ["literal", empresas]] : ["==", ["get", "empresa"], ""])));
+    marcar(null);
     const zonas = new Set(filas.map(f => f.u));
     cerca(zonas, !suyas);
     dibujar(zonas, !suyas);
@@ -395,7 +424,9 @@ function iniciar(D, G, H) {
   function cajaHuella(fila) {
     const unidades = new Set(fila.os.map(o => `${o.empresa}|${o.unidad}`));
     const suyas = H.features.filter(f => unidades.has(`${f.properties.empresa}|${f.properties.unidad}`));
-    if (!suyas.length) return null;
+    return suyas.length ? cajaDe(suyas) : null;
+  }
+  function cajaDe(suyas) {
     let o = 180, s = 90, e = -180, n = -90;
     const recorrer = x => typeof x[0] === "number" ? (o = Math.min(o, x[0]), e = Math.max(e, x[0]), s = Math.min(s, x[1]), n = Math.max(n, x[1])) : x.forEach(recorrer);
     suyas.forEach(f => recorrer(f.geometry.coordinates));
@@ -409,8 +440,9 @@ function iniciar(D, G, H) {
   function marcar(fila) {
     listo.then(() => {
       const unidades = fila ? fila.os.map(o => o.unidad) : [];
-      map.setFilter("huella-sel", fila ? ["all", ["in", ["get", "empresa"], ["literal", fila.os.map(o => o.empresa)]],
-                                          ["in", ["get", "unidad"], ["literal", unidades]]] : ["==", ["get", "empresa"], ""]);
+      const filtro = fila ? ["all", ["in", ["get", "empresa"], ["literal", fila.os.map(o => o.empresa)]],
+                             ["in", ["get", "unidad"], ["literal", unidades]]] : ["==", ["get", "empresa"], ""];
+      ["huella-sel", "huella-sel-brillo"].forEach(c => map.setFilter(c, filtro));
       const z = new Set(fila ? zonaDe(fila.u) : []);
       const pol = G.features.filter(f => z.has(f.properties.u));
       const nom = [...z].map(u => ({ type: "Feature", geometry: { type: "Point", coordinates: centroDe(u) },
@@ -449,6 +481,10 @@ function iniciar(D, G, H) {
       const cam = map.cameraForBounds([[o, s], [e, n]], { padding: 90 });
       map.flyTo({ center: cam.center, zoom: Math.min(cam.zoom, 12.3), pitch: 50, bearing: -15, curve: 1.4,
                   duration: quieto ? 0 : 2400, essential: true });
+      // Con relieve la mina queda más arriba de lo pedido (está a 4 000 m): al llegar, se centra donde se ve
+      map.once("moveend", () => { const p = map.project(cam.center), k = map.getContainer();
+        const dx = p.x - k.clientWidth / 2, dy = p.y - k.clientHeight / 2;
+        if (Math.hypot(dx, dy) > 40) map.panBy([dx, dy], { duration: quieto ? 0 : 600 }); });
     } else if (c) map.flyTo({ center: c, zoom: 10.5, pitch: 45, bearing: -10, duration: quieto ? 0 : 2000, essential: true });
   }
 
