@@ -798,7 +798,7 @@ def eleccion(r, adelanto=2):
     if desde == 0:
         return "es el mes de la elección municipal"
     if desde <= 5:
-        return "pasó la elección municipal y los meses que siguen suelen traer el doble de paros"
+        return "tras la elección municipal, los paros suelen duplicarse en los meses siguientes"
     return f"{'falta 1 mes' if hasta == 1 else f'faltan {hasta} meses'} para la elección municipal"
 
 

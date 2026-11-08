@@ -34,12 +34,38 @@
   .panel { overflow-y: auto; background: var(--papel); border-right: 1px solid var(--linea); display: flex; flex-direction: column; }
   .mapa { position: relative; }
   #mapa { position: absolute; inset: 0; }
+  .franja { position: absolute; left: 16px; right: 60px; bottom: 16px; z-index: 3; display: grid; grid-template-columns: 1.15fr 0.9fr 1.2fr 1.1fr; gap: 10px; align-items: stretch; }
+  .franja[hidden] { display: none; }
+  .cuadro { background: var(--papel); border: 1px solid var(--linea); border-radius: 10px; padding: 12px 14px; height: 270px; overflow-y: auto;
+            box-shadow: 0 10px 28px rgb(28 38 41 / .22); font-size: 15px; line-height: 1.4; color: var(--tinta-2); }
+  .cuadro h3 { font-size: 13px; font-weight: 650; color: var(--tinta-3); margin: 0 0 6px; letter-spacing: 0.01em; }
+  .cuadro h4 { font-size: 14px; font-weight: 650; color: var(--tinta); margin: 10px 0 2px; }
+  .cuadro ul { margin: 0; padding-left: 18px; }
+  .cuadro .grande { display: flex; align-items: baseline; gap: 8px; }
+  .cuadro .grande b { font-size: 42px; line-height: 1; font-weight: 750; font-variation-settings: var(--angosto); color: var(--tinta); }
+  .cuadro .grande span { font-size: 16px; font-weight: 650; color: var(--cobre); }
+  .cuadro .cuanto { font-size: 14px; margin: 6px 0 0; }
+  .cerrar-franja { position: absolute; right: -44px; bottom: 0; width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--linea); background: var(--papel);
+                   font-size: 20px; line-height: 1; cursor: pointer; color: var(--tinta-2); box-shadow: 0 6px 18px rgb(28 38 41 / .2); }
+  .cerrar-franja:active { transform: scale(0.97); }
+  .agenda { list-style: none; padding: 0 !important; margin: 0; display: grid; gap: 8px; }
+  .agenda li { display: grid; grid-template-columns: 50px 1fr; gap: 8px; }
+  .agenda time { font-weight: 650; color: var(--tinta); font-size: 14px; }
+  .agenda li.anun time { color: var(--patina); }
+  .agenda small { display: block; color: var(--tinta-3); font-size: 13px; }
+  .mapa.con-franja .leyenda { top: 16px; bottom: auto; }
+  .orden { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 4px 24px 0; font-size: 14px; color: var(--tinta-3); }
+  .orden select { font: inherit; font-size: 14px; color: var(--tinta); border: 1px solid var(--linea); border-radius: 6px; padding: 4px 8px; background: #fff; }
   @media (max-width: 900px) {
     .app { grid-template-columns: 1fr; height: auto; }
     .mapa { height: 58dvh; order: -1; }
     .panel { border-right: 0; }
     .leyenda { left: 8px; bottom: 8px; padding: 6px 8px; font-size: 12px; gap: 3px; }
     .leyenda b { font-size: 12px; }
+    .franja { left: 8px; right: 8px; bottom: 8px; grid-template-columns: repeat(4, 84%); overflow-x: auto; scroll-snap-type: x mandatory; }
+    .cuadro { scroll-snap-align: start; height: 36dvh; }
+    .cerrar-franja { right: 0; bottom: auto; top: -44px; }
+    .mapa { height: 70dvh; }
   }
 
   .cabeza { padding: 20px 24px 18px; border-bottom: 1px solid var(--linea); }
@@ -56,8 +82,8 @@
   .vistas button[aria-selected="true"] { background: #fff; color: var(--tinta); box-shadow: 0 1px 3px rgb(28 38 41 / .12); }
   .cuanto { margin: 0 0 4px; font-size: 16px; }
   .cuanto b { font-weight: 650; }
-  .op ul.temas { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 6px 0 0; }
-  .op ul.temas li { margin: 0; }
+  .franja ul.temas { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 6px 0 0; }
+  .franja ul.temas li { margin: 0; }
   .temas li { padding: 4px 9px; border-radius: 6px; background: rgb(180 84 42 / .09); font-size: 15px; }
   .temas li small { color: var(--tinta-3); font-size: 14px; }
   .sugerencias { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
@@ -88,20 +114,20 @@
   .op .dentro ul { margin: 0; padding-left: 18px; }
   .op .dentro li { margin: 2px 0; }
   .fondo { margin: 12px 0 0; }
-  .op ul.casos { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 10px; }
-  .op ul.casos { gap: 4px; }
-  .op ul.casos li { border-left: 3px solid #ff7043; }
-  .op ul.casos button { all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer; padding: 6px 10px; border-radius: 0 6px 6px 0; }
-  .op ul.casos button:hover { background: rgb(255 112 67 / .08); }
-  .op ul.casos button:focus-visible { outline: 2px solid #ff7043; }
-  .op ul.casos li.elegida button { background: rgb(255 112 67 / .14); }
-  .op ul.casos button span { display: block; font-size: 15px; }
-  .op ul.casos p { display: none; margin: 0; padding: 0 10px 8px; }
-  .op ul.casos li.elegida p { display: block; }
-  .op ul.casos b { color: var(--tinta); font-weight: 650; }
-  .op ul.casos span { color: var(--tinta-3); }
-  .op ul.casos p { font-size: 15px; background: rgb(255 112 67 / .14); border-radius: 0 0 6px 0; }
-  .op .fuente { font-size: 13px; color: var(--tinta-3); margin: 6px 0 0; }
+  .franja ul.casos { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 10px; }
+  .franja ul.casos { gap: 4px; }
+  .franja ul.casos li { border-left: 3px solid #ff7043; }
+  .franja ul.casos button { all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer; padding: 6px 10px; border-radius: 0 6px 6px 0; }
+  .franja ul.casos button:hover { background: rgb(255 112 67 / .08); }
+  .franja ul.casos button:focus-visible { outline: 2px solid #ff7043; }
+  .franja ul.casos li.elegida button { background: rgb(255 112 67 / .14); }
+  .franja ul.casos button span { display: block; font-size: 15px; }
+  .franja ul.casos p { display: none; margin: 0; padding: 0 10px 8px; }
+  .franja ul.casos li.elegida p { display: block; }
+  .franja ul.casos b { color: var(--tinta); font-weight: 650; }
+  .franja ul.casos span { color: var(--tinta-3); }
+  .franja ul.casos p { font-size: 15px; background: rgb(255 112 67 / .14); border-radius: 0 0 6px 0; }
+  .franja .fuente { font-size: 13px; color: var(--tinta-3); margin: 6px 0 0; }
   .op .prob .delta { display: block; font-size: 14px; font-weight: 600; }
   .sube { color: var(--cobre-4); }
   .baja { color: var(--patina); }
@@ -180,18 +206,22 @@
       </div>
       <div class="elegir" hidden>
         <label for="empresa" class="oculto">Empresa o mina</label>
-        <input id="empresa" list="empresas" placeholder="Busca una empresa o una mina" autocomplete="off">
+        <input id="empresa" list="empresas" placeholder="Buscar empresa o unidad minera" autocomplete="off">
         <datalist id="empresas"></datalist>
       </div>
       <div class="sugerencias" id="sugerencias" hidden></div>
     </div>
     <div class="titular"><h1 id="h1">Cargando</h1><p id="bajada"></p></div>
+    <div class="orden"><label for="ordenar">Ordenar por</label>
+      <select id="ordenar"><option value="prob">Mayor probabilidad</option><option value="prob-asc">Menor probabilidad</option>
+        <option value="nombre">Nombre</option><option value="region">Región</option></select></div>
     <ol class="ops" id="ops"></ol>
-    <div class="seccion"><h2>Protestas cercanas</h2><p id="nota-avisos"></p><ul class="avisos" id="avisos"></ul></div>
+    <div class="seccion"><h2>Protestas y anuncios recientes</h2><p id="nota-avisos"></p><ul class="avisos" id="avisos"></ul></div>
     <div class="pie" id="pie">Con datos de la Defensoría del Pueblo, la base de protestas de la PUCP y unas 60 variables por distrito. <a href="metodo.html">Cómo se calcula y qué tan bien avisa</a>.</div>
   </div>
   <div class="mapa">
     <div id="mapa"></div>
+    <div class="franja" id="franja" hidden></div>
     <div class="cargando" id="cargando">Cargando el mapa</div>
     <div class="leyenda" id="leyenda" hidden>
       <div class="riesgo"><b>Probabilidad de paro o bloqueo en la zona de influencia</b>
@@ -388,28 +418,35 @@ function iniciar(D, G, H, C) {
   const hayMes = D.alerta.some(a => a.prob_zona_1m != null);
   const mesP = a => hayMes ? a.prob_zona_1m : a.prob_zona;
   const enMes = hayMes ? `en ${mes(D.alerta.find(a => a.ventana_1m)?.ventana_1m)}` : `de aquí a ${hasta}`;
-  // Primero lo que más sube frente a lo normal en su zona; sin modelo del mes, la probabilidad
-  const orden = a => (hayMes ? a.cambio_zona_1m : mesP(a)) ?? -1;
+  const sel = document.getElementById("ordenar");
+  let enPais = false;
+  const titFila = f => enPais ? f.os[0].unidad.split(",")[0] : f.os.map(o => o.unidad).join(", ");
+  function ordenarFilas() {
+    const p = f => mesP(f.a) ?? -1, reg = f => `${f.a.lugar || ""} ${lugar(f.u)}`, v = sel.value;
+    filas.sort(v === "prob-asc" ? (x, y) => p(x) - p(y) : v === "nombre" ? (x, y) => titFila(x).localeCompare(titFila(y), "es")
+      : v === "region" ? (x, y) => reg(x).localeCompare(reg(y), "es") || p(y) - p(x) : (x, y) => p(y) - p(x));
+  }
+  sel.onchange = () => { cerrarFicha(); marcar(null); ordenarFilas(); lista(enPais); };
   function elegir(t) {
     sug.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.t === t));
     const suyas = t ? D.operaciones.filter(o => llano(`${o.empresa} ${o.unidad}`).includes(t)) : null;
     if (suyas && !suyas.length) {
-      document.getElementById("h1").textContent = "No la encontramos";
-      document.getElementById("bajada").textContent = `Ninguna operación fiscalizada por el OEFA coincide con lo que escribiste. Prueba con el nombre de la mina o de la empresa.`;
+      document.getElementById("h1").textContent = "Sin resultados";
+      document.getElementById("bajada").textContent = "Ninguna operación fiscalizada por el OEFA coincide con la búsqueda. Puede probar con el nombre de la unidad minera o de la empresa.";
       return;
     }
     // En todo el país se listan las 25 zonas con operación más riesgosas
-    const base = suyas || D.alerta.filter(a => mesP(a) != null).sort((x, y) => orden(y) - orden(x)).slice(0, 25)
+    const base = suyas || D.alerta.filter(a => mesP(a) != null).sort((x, y) => mesP(y) - mesP(x)).slice(0, 25)
       .map(a => ({ unidad: lugar(a.ubigeo), ubigeo: a.ubigeo }));
-    filas = d3.groups(base, o => o.ubigeo).map(([u, os]) => ({ u, os, a: A.get(u) || {} }))
-      .sort((x, y) => orden(y.a) - orden(x.a));
+    filas = d3.groups(base, o => o.ubigeo).map(([u, os]) => ({ u, os, a: A.get(u) || {} }));
+    enPais = !suyas; ordenarFilas(); cerrarFicha();
     const empresas = suyas ? [...new Set(suyas.map(o => o.empresa))] : [];
     const h1 = document.getElementById("h1");
-    h1.textContent = !suyas ? "Las zonas mineras y petroleras con más riesgo"
+    h1.textContent = !suyas ? "Zonas mineras y petroleras con mayor riesgo"
       : empresas.length === 1 ? nombre(empresas[0]) : `${empresas.length} empresas`;
     h1.style.fontSize = h1.textContent.length > 28 ? "24px" : "";
     document.getElementById("bajada").textContent = hayMes
-      ? `Probabilidad de paro o bloqueo ${enMes} en la zona de cada operación. Primero, las que más subieron.`
+      ? `Probabilidad de paro o bloqueo en la zona de influencia de cada operación, ${enMes.replace(/^en /, "")}.`
       : `Probabilidad de que haya un paro, un bloqueo o una toma en la zona de cada operación de aquí a ${hasta}. La zona es el distrito y los que lo rodean.`;
     lista(!suyas);
     listo.then(() => ["huella", "huella-borde", "huella-nombre"].forEach(c =>
@@ -422,27 +459,36 @@ function iniciar(D, G, H, C) {
 
   function lista(pais) {
     document.getElementById("ops").innerHTML = filas.map((f, i) => {
-      const a = f.a, sube = (a.cambio_zona_1m ?? 0) >= 0;
-      const porque = (a.razones_cambio_1m || "").split(" · ").filter(r => r.startsWith(sube ? "sube" : "baja"))
-        .flatMap(r => coherente(sube ? "sube" : "baja", r.replace(/^(sube|baja): /, "")).split("; "))
-        .filter(r => r && !r.startsWith("cobre") && Math.abs(a.cambio_zona_1m) >= 0.015).map(oracion).slice(0, 3);  // el precio del cobre no es una señal local
-      const titulo = pais ? f.os[0].unidad.split(",")[0] : f.os.map(o => o.unidad).join(", ");
-      const donde = pais ? lugar(f.u).split(", ").slice(1).join(", ") + ", " + nombre((a.lugar || "").split(" / ")[0]) : lugar(f.u);
+      const a = f.a, donde = pais ? lugar(f.u).split(", ").slice(1).join(", ") + ", " + nombre((a.lugar || "").split(" / ")[0]) : lugar(f.u);
       return `<li class="op" data-i="${i}"><button type="button" aria-expanded="false">
-          <span class="nombre">${esc(titulo)}</span><span class="lugar">${esc(donde)}</span>
-          <span class="prob"><b>${pct(mesP(a))}</b><small>${banda(mesP(a))}</small>${delta(a)}</span></button>
-        <div class="detalle"><div><div class="dentro">
-          ${cuanto(a)}
-          ${vigilar(f.u)}
-          ${porque.length ? `<h3>${sube ? "Qué cambió este mes" : "Qué bajó este mes"}</h3><ul>${porque.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
-          ${quienes(f.u)}
-          ${enZona(f.u)}
-          ${linea(f.u)}
-          ${a.alerta_inmediata ? `<p class="fondo"><a href="${esc(a.enlace_prensa)}" target="_blank" rel="noopener">Ya hay una protesta anunciada cerca</a></p>` : ""}
-        </div></div></div></li>`; }).join("");
+          <span class="nombre">${esc(titFila(f))}</span><span class="lugar">${esc(donde)}</span>
+          <span class="prob"><b>${pct(mesP(a))}</b><small>${banda(mesP(a))}</small>${delta(a)}</span></button></li>`; }).join("");
     document.querySelectorAll(".op > button").forEach(b => b.onclick = () => abrir(+b.parentNode.dataset.i, true));
-    document.querySelectorAll(".casos button").forEach(b => b.onclick = () => elegirCaso(b.parentNode, true));
   }
+  // Los factores del mes, en la dirección del cambio
+  function factores(a) {
+    const sube = (a.cambio_zona_1m ?? 0) >= 0;
+    const porque = (a.razones_cambio_1m || "").split(" · ").filter(r => r.startsWith(sube ? "sube" : "baja"))
+      .flatMap(r => coherente(sube ? "sube" : "baja", r.replace(/^(sube|baja): /, "")).split("; "))
+      .filter(r => r && !r.startsWith("cobre") && Math.abs(a.cambio_zona_1m) >= 0.015).map(oracion).slice(0, 3);  // el precio del cobre no es una señal local
+    return porque.length ? `<h4>${sube ? "Factores que lo elevan" : "Factores que lo reducen"}</h4><ul>${porque.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : "";
+  }
+  // La ficha de una operación: riesgo, temas, comunidades y agenda, a la vista a la vez
+  const franja = document.getElementById("franja"), mapaEl = document.querySelector(".mapa");
+  function llenarFicha(f) {
+    const a = f.a, p = mesP(a);
+    franja.innerHTML = `<button type="button" class="cerrar-franja" aria-label="Cerrar la ficha">×</button>
+      <section class="cuadro"><h3>Riesgo de paro o bloqueo, ${esc(enMes.replace(/^en /, ""))}</h3>
+        <div class="grande"><b>${pct(p)}</b><span>${banda(p)}</span></div>${cuanto(a)}${factores(a)}${linea(f.u)}</section>
+      <section class="cuadro">${vigilar(f.u) || `<h3>Temas por atender</h3><p style="margin:0">Los conflictos y protestas recientes de la zona no registran un tema predominante.</p>`}</section>
+      <section class="cuadro">${quienes(f.u)}</section>
+      <section class="cuadro">${agenda(f.u)}</section>`;
+    franja.hidden = false; mapaEl.classList.add("con-franja");
+    map.setPadding({ top: 0, left: 0, right: 0, bottom: innerWidth > 900 ? franja.offsetHeight + 16 : 0 });  // la operación queda a la vista, sobre la franja
+    franja.querySelector(".cerrar-franja").onclick = () => { const li = document.querySelector(".op.abierta"); if (li) abrir(+li.dataset.i, true); };
+    franja.querySelectorAll(".casos button").forEach(b => b.onclick = () => elegirCaso(b.parentNode, true));
+  }
+  function cerrarFicha() { franja.hidden = true; franja.innerHTML = ""; mapaEl.classList.remove("con-franja"); map.setPadding({ top: 0, left: 0, right: 0, bottom: 0 }); }
 
   // Deja solo las señales que van en la dirección del cambio y redondea lo habitual
   function coherente(s, r) {
@@ -486,9 +532,8 @@ function iniciar(D, G, H, C) {
   // El porcentaje en palabras: cuántos de cada 100 meses así tuvieron un paro, y frente a qué
   function cuanto(a) {
     const p = mesP(a); if (p == null) return "";
-    const n = Math.round(p * 100), d = Math.round((a.cambio_zona_1m ?? 0) * 100);
-    return `<p class="cuanto"><b>${n}%, riesgo ${banda(p).toLowerCase()}.</b> En meses parecidos, ${n} de cada 100 tuvieron un paro o bloqueo en la zona. ` +
-      (a.normal_zona_1m != null ? `Lo normal aquí es ${pct(a.normal_zona_1m)}${Math.abs(d) >= 2 ? `, así que este mes está ${Math.abs(d)} puntos ${d > 0 ? "por encima" : "por debajo"}` : ""}.` : "") + `</p>`;
+    return `<p class="cuanto">En condiciones similares, ${Math.round(p * 100)} de cada 100 meses registraron un paro o bloqueo en la zona.` +
+      (a.normal_zona_1m != null ? ` Promedio de la zona en los últimos 12 meses: ${pct(a.normal_zona_1m)}.` : "") + `</p>`;
   }
   // Qué reclaman en la zona: los temas de los conflictos abiertos y de las protestas recientes
   const TEMAS = [["Agua", /agua|h[ií]dric|r[ií]o\b|laguna|riego|cuenca|manantial/i], ["Contaminación", /contamina|metales|ars[eé]nico|relave|derrame|ambiental|plomo/i],
@@ -504,7 +549,7 @@ function iniciar(D, G, H, C) {
       .filter(x => x.c + x.p).sort((a, b) => b.c + b.p - a.c - a.p).slice(0, 4);
     if (!t.length) return "";
     const cuenta = x => [x.c && `${x.c} ${x.c === 1 ? "conflicto" : "conflictos"}`, x.p && `${x.p} ${x.p === 1 ? "protesta" : "protestas"}`].filter(Boolean).join(", ");
-    return `<h3>Qué vigilar</h3><ul class="temas">${t.map(x => `<li>${x.n} <small>${cuenta(x)}</small></li>`).join("")}</ul>`;
+    return `<h3>Temas por atender</h3><ul class="temas">${t.map(x => `<li>${x.n} <small>${cuenta(x)}</small></li>`).join("")}</ul>`;
   }
   function delta(a) {
     if (!hayMes || a.cambio_zona_1m == null) return `<small>de paro o bloqueo</small>`;
@@ -523,11 +568,11 @@ function iniciar(D, G, H, C) {
     const paros = x.y.map((y, k) => y ? `<circle cx="${(k * w + w / 2).toFixed(1)}" cy="4" r="3" fill="var(--tinta)"/>` : "").join("");
     const anio = m => Math.floor(m / 12);
     const vistos = x.y.filter((y, k) => y && x.pct[k] <= 0.1).length, total = x.y.filter(Boolean).length;
-    return `<h3>Lo que avisó desde 2024</h3>
+    return `<h4>Historial 2024–2026</h4>
       <svg viewBox="0 0 ${W} ${Hh + 14}" width="100%" role="img" aria-label="Riesgo mensual de la zona y meses con paro">${barras}${paros}
         <text x="0" y="${Hh + 12}" font-size="12" fill="var(--tinta-3)">${anio(x.m0 + 1)}</text>
         <text x="${W}" y="${Hh + 12}" font-size="12" fill="var(--tinta-3)" text-anchor="end">${anio(x.m0 + n - 1)}</text></svg>
-      <p style="margin:4px 0 0;font-size:14px;color:var(--tinta-3)">En cobre, los meses en alerta. Los puntos son meses con paro. ${total ? `Avisó ${vistos} de ${total}.` : ""}</p>`;
+      <p style="margin:4px 0 0;font-size:14px;color:var(--tinta-3)">Barras en cobre, meses en que la zona figuró entre el 10% de mayor riesgo del país. Puntos, meses con paro o bloqueo.${total ? ` Coincidencias, ${vistos} de ${total}.` : ""}</p>`;
   }
 
   // Caja [oeste, sur, este, norte] de las huellas OEFA de las unidades de una fila. A mano: d3.geoBounds lee los
@@ -608,14 +653,14 @@ function iniciar(D, G, H, C) {
   }
   function globoCom(nombreCom, lngLat, u) {
     const cs = abierta ? casosDe(abierta.u) : [], k = cs.findIndex(c => c.com && llano(c.com) === llano(nombreCom)), c = cs[k];
-    const li = document.querySelector(`.op.abierta .casos li[data-k="${k}"]`);
+    const li = document.querySelector(`#franja .casos li[data-k="${k}"]`);
     if (li && !li.classList.contains("elegida")) { elegirCaso(li, false); li.scrollIntoView({ block: "nearest", behavior: quieto ? "auto" : "smooth" }); }
     map.setFilter("com-sel", ["==", ["get", "n"], nombreCom]);
     const dist = lugar(String(c?.ubigeo || u || "")).split(", ")[0];
     mostrar(lngLat, tarjeta(c
       ? { titulo: nombreCom, sub: `Comunidad campesina en ${dist}`, marca: estadoCaso(c), texto: primera(c.reclamo),
           fuente: `Defensoría del Pueblo, reporte de ${MESES_TXT[c.mes - 1]} ${c.anio}` }
-      : { titulo: nombreCom, sub: `Comunidad campesina en ${dist}`, marca: "Sin conflicto abierto en la Defensoría", calma: true,
+      : { titulo: nombreCom, sub: `Comunidad campesina en ${dist}`, marca: "Sin conflicto vigente ante la Defensoría", calma: true,
           fuente: "Territorio según el Ministerio de Cultura" }));
   }
   // Un distrito de la zona: su riesgo, sus comunidades, sus conflictos y lo que pasó en 45 días
@@ -638,7 +683,7 @@ function iniciar(D, G, H, C) {
     mostrar(lngLat, tarjeta({ titulo: p.unidad, sub: `${nombre(p.empresa)}, ${lugar(f.u)}`,
       cifra: pct(mesP(f.a)), sobre: `probabilidad de paro o bloqueo<br>en su zona ${enMes}`,
       marca: Math.abs(d) >= 2 ? `${d > 0 ? "+" : "−"}${Math.abs(d)} puntos frente a lo normal (${pct(f.a.normal_zona_1m)})` : "Igual que lo normal", calma: d < 2,
-      datos: [[comunidadesDe(new Set(zonaDe(f.u))).length, "comunidades en su zona"], [cs.length, `con conflicto abierto${cs.length ? `: ${esc(cs.slice(0, 3).map(c => c.com).join(", "))}${cs.length > 3 ? ` y ${cs.length - 3} más` : ""}` : ""}`]] }));
+      datos: [[comunidadesDe(new Set(zonaDe(f.u))).length, "comunidades en su zona"], [cs.length, `con conflicto vigente${cs.length ? `: ${esc(cs.slice(0, 3).map(c => c.com).join(", "))}${cs.length > 3 ? ` y ${cs.length - 3} más` : ""}` : ""}`]] }));
     return i;
   }
 
@@ -677,7 +722,7 @@ function iniciar(D, G, H, C) {
   }
   // Con relieve, el punto pedido queda más arriba de la pantalla: al llegar, se lleva al centro
   const centrar = c => map.once("moveend", () => { const p = map.project(c), k = map.getContainer();
-    const dx = p.x - k.clientWidth / 2, dy = p.y - k.clientHeight / 2;
+    const b = map.getPadding().bottom || 0, dx = p.x - k.clientWidth / 2, dy = p.y - (k.clientHeight - b) / 2;
     if (Math.hypot(dx, dy) > 40) map.panBy([dx, dy], { duration: quieto ? 0 : 600 }); });
   function verComunidad(c) {
     listo.then(() => {
@@ -689,15 +734,21 @@ function iniciar(D, G, H, C) {
       centrar(cam.center);
     });
   }
-  // Lo que pasó en los últimos 45 días en la zona de una operación (o en su provincia, si la nota no da el distrito)
-  function enZona(u) {
+  // La agenda de la zona: lo anunciado primero (por fecha), luego lo ocurrido en 45 días (lo más reciente arriba)
+  const dia = f => f ? new Date(String(f).slice(0, 10) + "T12:00").toLocaleDateString("es-PE", { day: "numeric", month: "short" }).replace(".", "") : "";
+  function agenda(u) {
     const z = new Set(zonaDe(u)), prov = u.slice(0, 4);
     const toca = x => { const v = String(x || ""); return z.has(v) || v === prov; };
-    const ev = D.eventos.filter(e => toca(e.ubigeo)).map(e => `${corta(e)} ${e.estado === "anunciada" ? "anunciado" : ""} en ${lugar(e.ubigeo).split(", ")[0]}, ${fecha(e)}. <a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.medio)}</a>`);
-    const vias = D.sutran.filter(s => toca(s.ubigeo)).map(s => `Vía cortada por una protesta en ${esc(nombre(s.distrito || ""))}, ${esc(s.via || "")}`);
-    const todo = [...ev, ...vias].slice(0, 4);
-    return `<h3>Últimos 45 días</h3>` + (todo.length ? `<ul>${todo.map(x => `<li>${x}</li>`).join("")}</ul>`
-      : `<p class="fondo" style="margin-top:0">Sin protestas en su zona.</p>`);
+    const ev = D.eventos.filter(e => toca(e.ubigeo)).map(e => ({ f: String(e.fecha_evento || e.fecha_anuncio || "").slice(0, 10), anun: e.estado === "anunciada",
+      t: `${corta(e)}${e.estado === "anunciada" ? " anunciado" : ""} en ${lugar(e.ubigeo).split(", ")[0]}`,
+      src: `<a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.medio)}</a>` }));
+    const vias = D.sutran.filter(s => toca(s.ubigeo)).map(s => ({ f: String(s.fecha_evento || "").slice(0, 10), anun: false,
+      t: `Vía bloqueada en ${nombre(s.distrito || "")}, ${s.via || ""} ${s.km || ""}`, src: "SUTRAN" }));
+    const items = [...ev, ...vias].sort((x, y) => (y.anun - x.anun) || (x.anun ? x.f.localeCompare(y.f) : y.f.localeCompare(x.f))).slice(0, 6);
+    return `<h3>Agenda de la zona</h3>` + (items.length
+      ? `<ol class="agenda">${items.map(x => `<li class="${x.anun ? "anun" : ""}"><time>${dia(x.f)}</time><div>${esc(x.t)}<small>${x.src}</small></div></li>`).join("")}</ol>`
+      : `<p style="margin:0">No se registran protestas ni anuncios en la zona en los últimos 45 días.</p>`) +
+      `<p class="fuente">Prensa regional, radio local y SUTRAN. En verde, lo anunciado. Actualizado al ${dia(D.creado)}.</p>`;
   }
   // Dónde y quiénes: los distritos de la zona que más pesan y los conflictos que la Defensoría tiene abiertos en ella
   function quienes(u) {
@@ -706,10 +757,10 @@ function iniciar(D, G, H, C) {
     const fila = c => `<li data-u="${u}" data-k="${cs.indexOf(c)}"><button type="button"><b>${esc(tituloCaso(c))}</b>
         <span>${esc(lugar(String(c.ubigeo)).split(", ")[0])}. ${esc(estadoCaso(c))}.</span></button></li>`;
     const fuente = cs.length ? `<p class="fuente">Defensoría del Pueblo, reporte de ${MESES_TXT[cs[0].mes - 1]} ${cs[0].anio}</p>` : "";
-    return `<h3>Comunidades de la zona</h3>
-      <p class="fondo" style="margin-top:0">${n ? `${n} en el registro del Ministerio de Cultura, marcadas en el mapa. ` : ""}${coms.length ? "En naranja, las que tienen un conflicto abierto. Elige una aquí o en el mapa para ver dónde está y qué pide." : "Ninguna tiene un conflicto abierto en la Defensoría."}</p>
+    return `<h3>Comunidades y conflictos</h3>
+      <p style="margin:0 0 6px">${n ? `${n} comunidades registradas en la zona. ` : ""}${coms.length ? "En naranja, las que mantienen un conflicto vigente." : "Ninguna registra un conflicto vigente ante la Defensoría."}</p>
       ${coms.length ? `<ul class="casos">${coms.slice(0, 4).map(fila).join("")}</ul>` : ""}
-      ${otros.length ? `<h3>Otros conflictos en la zona</h3><ul class="casos">${otros.slice(0, 3).map(fila).join("")}</ul>${otros.length > 3 ? `<p class="fuente">Y ${otros.length - 3} más en la provincia.</p>` : ""}` : ""}
+      ${otros.length ? `<h4>Otros conflictos vigentes</h4><ul class="casos">${otros.slice(0, 3).map(fila).join("")}</ul>${otros.length > 3 ? `<p class="fuente">${otros.length - 3} más en la provincia.</p>` : ""}` : ""}
       ${fuente}`;
   }
   const MESES_TXT = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -721,6 +772,9 @@ function iniciar(D, G, H, C) {
   function abrir(i, volar) {
     document.querySelectorAll(".op").forEach(li => { const si = +li.dataset.i === i && !li.classList.contains("abierta");
       li.classList.toggle("abierta", si); li.querySelector("button").setAttribute("aria-expanded", si);
+      if (si) llenarFicha(filas[i]); });
+    if (!document.querySelector(".op.abierta")) cerrarFicha();
+    document.querySelectorAll(".op").forEach(li => { const si = li.classList.contains("abierta");
       if (si && !volar) li.scrollIntoView({ block: "nearest", behavior: quieto ? "auto" : "smooth" }); });
     if (!volar) return;
     marcar(document.querySelector(`.op[data-i="${i}"]`).classList.contains("abierta") ? filas[i] : null);
@@ -752,8 +806,8 @@ function iniciar(D, G, H, C) {
     const ev = D.eventos.filter(toca).sort((x, y) => (x.estado === "anunciada" ? 0 : 1) - (y.estado === "anunciada" ? 0 : 1) || cuando(y).localeCompare(cuando(x)));
     const vias = D.sutran.filter(s => pais || provs.has(String(s.ubigeo || "").slice(0, 4)));
     document.getElementById("nota-avisos").textContent = pais
-      ? "Por minería, petróleo o ambiente, últimos 45 días."
-      : "Cerca de sus operaciones, últimos 45 días.";
+      ? "Vinculados a minería, hidrocarburos o medio ambiente, en los últimos 45 días."
+      : "En las provincias de sus operaciones, en los últimos 45 días.";
     const fecha = e => new Date(cuando(e) + "T12:00").toLocaleDateString("es-PE", { day: "numeric", month: "long" });
     document.getElementById("avisos").innerHTML = [
       ...ev.map(e => `<li class="aviso ${e.estado}"><i></i><div><a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.titular)}</a>
