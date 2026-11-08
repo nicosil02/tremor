@@ -65,7 +65,19 @@ def datos(con):
                                           "FROM animo WHERE menciones_7d > 0 ORDER BY menciones_7d DESC")),
             "metricas": registros(met), "mejor": mejor,
             "respaldo": registros(tabla(con, "SELECT * FROM modelo_respaldo")),
-            "cobertura": cobertura(con)}
+            "cobertura": cobertura(con),
+            "vecinos": vecinos(con)}
+
+
+def vecinos(con):
+    """Para cada distrito con operación, los distritos que limitan con él: su zona de influencia (como en el modelo)."""
+    import geopandas as gpd
+    from tremor.modelo import DATOS
+    ops = set(tabla(con, "SELECT DISTINCT ubigeo FROM operacion").ubigeo)
+    g = gpd.read_file(DATOS / "distritos.geojson")[["ubigeo", "geometry"]].to_crs(32718)
+    par = gpd.sjoin(g[g.ubigeo.isin(ops)].assign(geometry=lambda d: d.buffer(300)), g, predicate="intersects")
+    par = par[par.ubigeo_left != par.ubigeo_right]
+    return par.groupby("ubigeo_left").ubigeo_right.apply(sorted).to_dict()
 
 
 def cobertura(con):

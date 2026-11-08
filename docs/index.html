@@ -234,15 +234,29 @@ function iniciar(D, G, H) {
     map.addLayer({ id: "zonas-borde", type: "line", source: "zonas", paint: { "line-color": "#fff", "line-width": 0.8, "line-dasharray": [2, 2] } });
     map.addSource("huellas", { type: "geojson", data: H });
     map.addLayer({ id: "huella", type: "fill", source: "huellas", filter: ["==", ["get", "empresa"], ""],
-      paint: { "fill-color": "#fff", "fill-opacity": ["interpolate", ["linear"], ["zoom"], 8, 0.35, 12, 0.06] } });
+      paint: { "fill-color": css("--cobre"), "fill-opacity": ["interpolate", ["linear"], ["zoom"], 8, 0.5, 12, 0.22] } });
     map.addLayer({ id: "huella-borde", type: "line", source: "huellas", filter: ["==", ["get", "empresa"], ""],
       paint: { "line-color": "#fff", "line-width": ["interpolate", ["linear"], ["zoom"], 8, 1, 13, 2.5] } });
+    // La zona de influencia de la operación abierta: su distrito y los vecinos, con nombre
+    map.addSource("zona-sel", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+    map.addLayer({ id: "zona-sel-borde", type: "line", source: "zona-sel", filter: ["==", ["geometry-type"], "Polygon"],
+      paint: { "line-color": css("--cobre-4"), "line-width": 2.5, "line-dasharray": [3, 2] } });
+    map.addLayer({ id: "huella-sel", type: "line", source: "huellas", filter: ["==", ["get", "empresa"], ""],
+      paint: { "line-color": "#ffd28a", "line-width": ["interpolate", ["linear"], ["zoom"], 8, 2.5, 13, 5] } });
+    const TEXTO = { "text-font": ["Noto Sans Bold"], "text-size": 13, "text-max-width": 12 };
+    const HALO = { "text-color": "#fff", "text-halo-color": "rgb(28 38 41 / .85)", "text-halo-width": 1.6 };
+    map.addLayer({ id: "zona-sel-nombre", type: "symbol", source: "zona-sel", filter: ["==", ["geometry-type"], "Point"],
+      layout: { ...TEXTO, "text-field": ["get", "n"], "text-size": 12, "text-font": ["Noto Sans Italic"] }, paint: HALO });
+    map.addLayer({ id: "huella-nombre", type: "symbol", source: "huellas", minzoom: 8, filter: ["==", ["get", "empresa"], ""],
+      layout: { ...TEXTO, "text-field": ["get", "unidad"], "symbol-placement": "point", "text-offset": [0, 1.2], "text-anchor": "top" }, paint: HALO });
     map.addSource("puntos", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     map.addLayer({ id: "eventos", type: "circle", source: "puntos", filter: ["!=", ["get", "k"], "op"], paint: {
       "circle-radius": 6, "circle-stroke-width": 1.5, "circle-stroke-color": "#fff",
       "circle-color": ["match", ["get", "k"], "anunciada", css("--patina"), "via", css("--tinta"), css("--tinta-3")] } });
     map.addLayer({ id: "ops", type: "circle", source: "puntos", filter: ["==", ["get", "k"], "op"], paint: {
       "circle-radius": 5, "circle-color": "#fff", "circle-stroke-width": 2.2, "circle-stroke-color": css("--tinta") } });
+    map.addLayer({ id: "eventos-nombre", type: "symbol", source: "puntos", minzoom: 7.5, filter: ["!=", ["get", "k"], "op"],
+      layout: { ...TEXTO, "text-field": ["get", "t"], "text-size": 12, "text-offset": [0, 1.1], "text-anchor": "top" }, paint: HALO });
     for (const capa of ["eventos", "ops", "zonas"]) {
       map.on("mouseenter", capa, () => map.getCanvas().style.cursor = "pointer");
       map.on("mouseleave", capa, () => map.getCanvas().style.cursor = "");
@@ -285,7 +299,7 @@ function iniciar(D, G, H) {
       ? `Probabilidad de un paro o bloqueo en la zona de influencia de cada operación ${enMes}. Arriba, las que más se apartan de lo normal.`
       : `Probabilidad de que haya un paro, un bloqueo o una toma en la zona de cada operación de aquí a ${hasta}. La zona es el distrito y los que lo rodean.`;
     lista(!suyas);
-    listo.then(() => ["huella", "huella-borde"].forEach(c =>
+    listo.then(() => ["huella", "huella-borde", "huella-nombre"].forEach(c =>
       map.setFilter(c, suyas ? ["in", ["get", "empresa"], ["literal", empresas]] : ["==", ["get", "empresa"], ""])));
     const zonas = new Set(filas.map(f => f.u));
     cerca(zonas, !suyas);
@@ -305,6 +319,7 @@ function iniciar(D, G, H) {
           <span class="prob"><b>${pct(mesP(a))}</b><small>${banda(mesP(a))}</small>${delta(a)}</span></button>
         <div class="detalle"><div><div class="dentro">
           ${porque.length ? `<h3>${sube ? "Qué cambió este mes" : "Qué bajó este mes"}</h3><ul>${porque.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
+          ${enZona(f.u)}
           ${linea(f.u)}
           <p class="fondo">Hasta ${hasta}, ${pct(a.prob_zona)} de que haya un paro o bloqueo en la zona.</p>
           ${a.alerta_inmediata ? `<p class="fondo"><a href="${esc(a.enlace_prensa)}" target="_blank" rel="noopener">Ya hay una protesta anunciada cerca</a></p>` : ""}
@@ -389,12 +404,41 @@ function iniciar(D, G, H) {
   // El punto de la operación va en el centro de su huella; si no hay huella, en el centro del distrito
   const puntoOp = fila => { const k = cajaHuella(fila); return k ? [(k[0] + k[2]) / 2, (k[1] + k[3]) / 2] : centroDe(fila.u); };
 
+  // Zona de influencia: el distrito de la operación y los que limitan con él (la misma que usa el modelo)
+  const zonaDe = u => [u, ...((D.vecinos || {})[u] || [])];
+  function marcar(fila) {
+    listo.then(() => {
+      const unidades = fila ? fila.os.map(o => o.unidad) : [];
+      map.setFilter("huella-sel", fila ? ["all", ["in", ["get", "empresa"], ["literal", fila.os.map(o => o.empresa)]],
+                                          ["in", ["get", "unidad"], ["literal", unidades]]] : ["==", ["get", "empresa"], ""]);
+      const z = new Set(fila ? zonaDe(fila.u) : []);
+      const pol = G.features.filter(f => z.has(f.properties.u));
+      const nom = [...z].map(u => ({ type: "Feature", geometry: { type: "Point", coordinates: centroDe(u) },
+                                     properties: { n: lugar(u).split(", ")[0] } })).filter(f => f.geometry.coordinates);
+      map.getSource("zona-sel").setData({ type: "FeatureCollection", features: [...pol, ...nom] });
+    });
+  }
+  // Lo que pasó en los últimos 45 días en la zona de una operación (o en su provincia, si la nota no da el distrito)
+  function enZona(u) {
+    const z = new Set(zonaDe(u)), prov = u.slice(0, 4);
+    const toca = x => { const v = String(x || ""); return z.has(v) || v === prov; };
+    const ev = D.eventos.filter(e => toca(e.ubigeo)).map(e => `${corta(e)} ${e.estado === "anunciada" ? "anunciado" : ""} en ${lugar(e.ubigeo).split(", ")[0]}, ${fecha(e)}. <a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.medio)}</a>`);
+    const vias = D.sutran.filter(s => toca(s.ubigeo)).map(s => `Vía cortada por una protesta en ${esc(nombre(s.distrito || ""))}, ${esc(s.via || "")}`);
+    const todo = [...ev, ...vias].slice(0, 4);
+    return `<h3>En su zona, últimos 45 días</h3>` + (todo.length ? `<ul>${todo.map(x => `<li>${x}</li>`).join("")}</ul>`
+      : `<p class="fondo" style="margin-top:0">Sin protestas registradas en ${esc(zonaDe(u).map(v => lugar(v).split(", ")[0]).slice(0, 4).join(", "))}${zonaDe(u).length > 4 ? " y alrededores" : ""}.</p>`);
+  }
+  const corta = e => { const a = `${e.accion || ""}`.toLowerCase();
+    return /paro|huelga/.test(a) ? "Paro" : /bloque/.test(a) ? "Bloqueo" : /toma/.test(a) ? "Toma" : /march|moviliz/.test(a) ? "Marcha" : "Protesta"; };
+  const fecha = e => { const f = String(e.fecha_evento || e.fecha_anuncio || ""); return f ? new Date(f.slice(0, 10) + "T12:00").toLocaleDateString("es-PE", { day: "numeric", month: "long" }) : ""; };
+
   let vista = null;  // la cámara de la empresa elegida, para volver al cerrar una operación
   function abrir(i, volar) {
     document.querySelectorAll(".op").forEach(li => { const si = +li.dataset.i === i && !li.classList.contains("abierta");
       li.classList.toggle("abierta", si); li.querySelector("button").setAttribute("aria-expanded", si);
       if (si && !volar) li.scrollIntoView({ block: "nearest", behavior: quieto ? "auto" : "smooth" }); });
     if (!volar) return;
+    marcar(document.querySelector(`.op[data-i="${i}"]`).classList.contains("abierta") ? filas[i] : null);
     if (!document.querySelector(`.op[data-i="${i}"]`).classList.contains("abierta")) {  // al cerrar, de vuelta a la empresa
       if (vista) map.flyTo({ ...vista, duration: quieto ? 0 : 1400, essential: true });
       return;
@@ -403,7 +447,7 @@ function iniciar(D, G, H) {
     if (caja) {  // la huella de la mina, inclinada, para ver el tajo, la vía y quién vive al lado
       const [o, s, e, n] = caja;
       const cam = map.cameraForBounds([[o, s], [e, n]], { padding: 90 });
-      map.flyTo({ center: cam.center, zoom: Math.min(cam.zoom, 13.5), pitch: 55, bearing: -15, curve: 1.4,
+      map.flyTo({ center: cam.center, zoom: Math.min(cam.zoom, 12.3), pitch: 50, bearing: -15, curve: 1.4,
                   duration: quieto ? 0 : 2400, essential: true });
     } else if (c) map.flyTo({ center: c, zoom: 10.5, pitch: 45, bearing: -10, duration: quieto ? 0 : 2000, essential: true });
   }
@@ -430,8 +474,8 @@ function iniciar(D, G, H) {
       ...vias.map(s => `<li class="aviso via"><i></i><div><b>Vía cortada por una protesta</b><div class="m">${esc(s.via || "")} ${esc(s.km || "")} en ${esc(nombre(s.distrito || ""))}, ${esc(s.region || "")}. Según SUTRAN</div></div></li>`)
     ].join("") || `<li class="vacio">Nada en los últimos 45 días.</li>`;
     puntosEventos = [
-      ...ev.map(e => ({ c: centroDe(e.ubigeo), k: e.estado, h: `<b>${esc(e.titular)}</b><br>${e.estado === "anunciada" ? "Anunciada" : "Ocurrió"} en ${esc(lugar(e.ubigeo))}. <a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.medio)}</a>` })),
-      ...vias.map(s => ({ c: centroDe(s.ubigeo), k: "via", h: `<b>Vía cortada por una protesta</b><br>${esc(s.via || "")} ${esc(s.km || "")}` }))];
+      ...ev.map(e => ({ c: centroDe(e.ubigeo), k: e.estado, t: `${corta(e)}, ${fecha(e).replace(/ de /, " ")}`, h: `<b>${esc(e.titular)}</b><br>${e.estado === "anunciada" ? "Anunciada" : "Ocurrió"} en ${esc(lugar(e.ubigeo))}. <a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.medio)}</a>` })),
+      ...vias.map(s => ({ c: centroDe(s.ubigeo), k: "via", t: "Vía cortada", h: `<b>Vía cortada por una protesta</b><br>${esc(s.via || "")} ${esc(s.km || "")}` }))];
   }
 
 
@@ -443,7 +487,7 @@ function iniciar(D, G, H) {
         h: `<b>${esc(lugar(f.properties.u))}</b><br>${pct(mesP(a))} de que haya un paro o bloqueo en la zona ${enMes}` } }; });
     map.getSource("zonas").setData({ type: "FeatureCollection", features: feats });
     const pts = [...filas.map((f, i) => ({ c: puntoOp(f), k: "op", i })), ...puntosEventos].filter(p => p.c)
-      .map(p => ({ type: "Feature", geometry: { type: "Point", coordinates: p.c }, properties: { k: p.k, h: p.h || "", i: p.i ?? -1 } }));
+      .map(p => ({ type: "Feature", geometry: { type: "Point", coordinates: p.c }, properties: { k: p.k, h: p.h || "", t: p.t || "", i: p.i ?? -1 } }));
     map.getSource("puntos").setData({ type: "FeatureCollection", features: pts });
     const cs = filas.map(f => centroDe(f.u)).filter(Boolean);
     if (cs.length && !pais) {
