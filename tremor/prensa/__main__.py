@@ -29,6 +29,7 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("recolectar"); r.add_argument("--desde", type=date.fromisoformat); r.add_argument("--hasta", type=date.fromisoformat)
     c = sub.add_parser("codificar"); c.add_argument("--max-solicitudes", type=int, default=200)
+    sub.add_parser("ampliar")
     sub.add_parser("agrupar")
     v = sub.add_parser("validar"); v.add_argument("--mes", required=True)
     sub.add_parser("exportar")
@@ -39,6 +40,10 @@ def main(argv=None):
     if a.cmd in ("recolectar", "todo"):
         nuevas, vistas = rec.recolectar(con, getattr(a, "desde", None), getattr(a, "hasta", None))
         print(f"Prensa: {vistas} notas vistas, {nuevas} nuevas.")
+    if a.cmd in ("ampliar", "todo"):
+        from tremor.prensa.ampliar import ampliar
+        vistas, hechas = ampliar(con, cod.VERSION)
+        print(f"Ampliadas {hechas} de {vistas} protestas sin lugar (lead del medio).")
     if a.cmd in ("codificar", "todo"):
         s, n, falta = cod.codificar(con, getattr(a, "max_solicitudes", 200))
         print(f"Codificadas {n} notas en {s} solicitudes." + (" Quedan pendientes." if falta else ""))

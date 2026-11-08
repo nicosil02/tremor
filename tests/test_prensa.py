@@ -179,3 +179,11 @@ def test_animo():
     assert neg >= 3 and t < 0  # denuncian, incumple, paro (y "acuerdo" positivo)
     assert tono("Se firmó un acuerdo y la empresa cumplió con el convenio")[2] > 0
     assert provincias()["Las Bambas (MMG)"] == ["0305", "0307"]
+
+
+def test_lead_de_la_nota():
+    from tremor.prensa.ampliar import lead
+    p = ('<meta property="og:description" content="Comuneros de Chamaca bloquean la vía">'
+         '<p>Menú</p><p>Los comuneros del distrito de Chamaca, provincia de Chumbivilcas, iniciaron un paro indefinido.</p>')
+    t = lead(p)
+    assert t.startswith("Comuneros de Chamaca") and "Chumbivilcas" in t and "Menú" not in t
