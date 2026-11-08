@@ -66,7 +66,20 @@ def datos(con):
             "metricas": registros(met), "mejor": mejor,
             "respaldo": registros(tabla(con, "SELECT * FROM modelo_respaldo")),
             "cobertura": cobertura(con),
-            "vecinos": vecinos(con)}
+            "vecinos": vecinos(con),
+            "casos": casos_zona(con)}
+
+
+def casos_zona(con):
+    """Conflictos de la Defensoría vigentes en el último reporte, en distritos con operación, sus vecinos o su
+    provincia: quién reclama (el nombre del caso, que nombra a la comunidad o al frente), qué pide, en qué estado
+    está y si hay diálogo. No se publican los actores ni los hechos del mes: pueden nombrar personas."""
+    c = tabla(con, """SELECT c.id, c.nombre, c.tipo, c.ubigeo, cm.estado, cm.dialogo, cm.fase, cm.con_hechos,
+                             substr(COALESCE(cm.descripcion, c.descripcion), 1, 320) AS reclamo, r.anio, r.mes
+                      FROM caso c JOIN caso_mes cm ON cm.caso_id = c.id JOIN reporte r ON r.num = cm.reporte_num
+                      WHERE cm.reporte_num = (SELECT MAX(num) FROM reporte) AND cm.estado IN ('activo', 'latente')""")
+    c["reclamo"] = [None if not isinstance(x, str) or x.strip() == n.strip() else x for x, n in zip(c.reclamo, c.nombre)]
+    return registros(c.drop(columns="id"))
 
 
 def vecinos(con):
