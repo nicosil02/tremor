@@ -51,6 +51,11 @@
          cursor: pointer; white-space: nowrap; box-shadow: 0 1px 2px rgb(28 38 41 / .08); transition: transform 140ms var(--ease-out), background-color 140ms ease; }
   .btn:hover { background: var(--piedra); }
   .btn:active { transform: scale(0.97); }
+  .panel.en-detalle .elegir, .panel.en-detalle .sugerencias, .panel.en-detalle #bajada { display: none; }
+  .vistas.pestanas { grid-template-columns: repeat(4, auto); margin: 4px 0 14px; }
+  .vistas.pestanas button { font-size: 14px; padding: 7px 8px; }
+  .pest > h3:first-child { display: none; }
+  .pest h3 { border-top: 0; padding-top: 0; margin-top: 16px; }
   .panel.en-detalle #alertas-sec, .panel.en-detalle #bloque-ops, .panel.en-detalle #avisos-sec { display: none; }
   .t-ops { margin: 0; padding: 18px 24px 0; font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho); border-top: 1px solid var(--linea); }
   .detalle-op { padding: 6px 24px 22px; }
@@ -506,11 +511,21 @@ function iniciar(D, G, H, C) {
     const a = f.a, p = mesP(a);
     det.innerHTML = `<button type="button" class="btn volver">← ${enPais ? "Volver a la lista" : "Alertas y operaciones"}</button>
       <h2>${esc(titFila(f))}</h2><p class="lugar-op">${esc(lugar(f.u))}${enPais ? "" : `. ${esc(nombre(f.os[0].empresa))}`}</p>
-      <div class="riesgo-op"><b>${pct(p)}</b><span class="nivel n${nivelN(p)}">Riesgo ${banda(p).toLowerCase()}, ${esc(enMes.replace(/^en /, ""))}</span></div>
-      ${cuanto(a)}${factores(a)}${agenda(f.u)}${quienes(f.u)}${vigilar(f.u)}${linea(f.u)}`;
+      <div class="vistas pestanas" role="tablist">${[["resumen", "Resumen"], ["comunidades", `Comunidades (${casosDe(f.u).filter(c => c.com).length})`],
+        ["fechas", "Fechas"], ["historial", "Historial"]].map(([k, n], j) => `<button type="button" role="tab" data-p="${k}" aria-selected="${!j}">${n}</button>`).join("")}</div>
+      <div class="pest" data-p="resumen"><div class="riesgo-op"><b>${pct(p)}</b><span class="nivel n${nivelN(p)}">Riesgo ${banda(p).toLowerCase()}, ${esc(enMes.replace(/^en /, ""))}</span></div>
+        ${cuanto(a)}${factores(a)}${vigilar(f.u)}</div>
+      <div class="pest" data-p="comunidades" hidden>${quienes(f.u)}</div>
+      <div class="pest" data-p="fechas" hidden>${agenda(f.u)}</div>
+      <div class="pest" data-p="historial" hidden>${linea(f.u) || "<p>Sin historial para esta zona.</p>"}</div>`;
+    det.querySelector(".pestanas").onclick = e => { const b = e.target.closest("button"); if (b) pestana(b.dataset.p); };
     det.hidden = false; panel.classList.add("en-detalle"); panel.scrollTop = 0;
     det.querySelector(".volver").onclick = () => { const li = document.querySelector(".op.abierta"); if (li) abrir(+li.dataset.i, true); };
     det.querySelectorAll(".casos button").forEach(b => b.onclick = () => elegirCaso(b.parentNode, true));
+  }
+  function pestana(p) {
+    det.querySelectorAll(".pestanas button").forEach(b => b.setAttribute("aria-selected", b.dataset.p === p));
+    det.querySelectorAll(".pest").forEach(x => x.hidden = x.dataset.p !== p);
   }
   function cerrarFicha() { det.hidden = true; det.innerHTML = ""; panel.classList.remove("en-detalle"); }
 
@@ -678,6 +693,7 @@ function iniciar(D, G, H, C) {
   function globoCom(nombreCom, lngLat, u) {
     const cs = abierta ? casosDe(abierta.u) : [], k = cs.findIndex(c => c.com && llano(c.com) === llano(nombreCom)), c = cs[k];
     const li = document.querySelector(`#detalle-op .casos li[data-k="${k}"]`);
+    if (li) pestana("comunidades");
     if (li && !li.classList.contains("elegida")) { elegirCaso(li, false); li.scrollIntoView({ block: "nearest", behavior: quieto ? "auto" : "smooth" }); }
     map.setFilter("com-sel", ["==", ["get", "n"], nombreCom]);
     const dist = lugar(String(c?.ubigeo || u || "")).split(", ")[0];
