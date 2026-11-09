@@ -67,6 +67,13 @@
   ol.cadena .est { grid-row: 1 / 3; grid-column: 2; align-self: center; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--tinta); }
   .leyenda-via { position: fixed; z-index: 3; left: 12px; top: 64px; margin: 0; padding: 6px 10px; border-radius: 8px; background: rgb(248 250 249 / .92); font-weight: 650; }
   .grande { display: flex; align-items: center; gap: 14px; padding: 16px; }
+  :root { --sal: cubic-bezier(0.23, 1, 0.32, 1); }
+  .fila, ol.cadena button, button.vermapa, nav button { transition: transform 140ms var(--sal), background-color 160ms ease; }
+  .fila:active, ol.cadena button:active, button.vermapa:active, nav button:active { transform: scale(0.98); }
+  .maplibregl-popup { animation: brota 180ms var(--sal); transform-origin: bottom center; }
+  @keyframes brota { from { opacity: 0; scale: 0.96; } }
+  nav [aria-current=page] { transition: color 160ms ease; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
   .grande b { font-size: 64px; line-height: .9; font-weight: 750; color: var(--cobre-4); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
   .grande span { font-size: 18px; font-weight: 650; } .grande small { display: block; font-size: 15px; font-weight: 400; color: var(--tinta-2); }
   .por { margin: 0; padding: 0 16px 0 34px; color: var(--tinta-2); } .por li { list-style: disc; margin: 3px 0; }
@@ -324,7 +331,7 @@ function marcar() {
         mapa.addLayer({ id: "sel", type: "line", source: "sel", paint: { "line-color": "#1c2629", "line-width": 2.5 } }, "ops"); }
       const b = new maplibregl.LngLatBounds();
       fs.forEach(f => JSON.stringify(f.geometry.coordinates).match(/-?\d+\.?\d*,-?\d+\.?\d*/g).forEach(c => b.extend(c.split(",").map(Number))));
-      if (!b.isEmpty()) mapa.fitBounds(b, { padding: 60, maxZoom: 11, duration: 800 });
+      if (!b.isEmpty()) mapa.fitBounds(b, { padding: 60, maxZoom: 11, duration: 1000, curve: 1.3 });
     };
     const espera = () => mapa.getLayer("ops") ? poner() : setTimeout(espera, 200);
     espera();
@@ -333,16 +340,28 @@ function marcar() {
 const ANCHO = matchMedia("(min-width: 900px)");  // en el computador el mapa está siempre a la vista
 const DISTRITOS = () => (DISTRITOS.p ||= fetch("distritos.json").then(r => r.json()));
 const RUTAS = () => (RUTAS.p ||= fetch("rutas.geojson").then(r => r.json()));
+// Movimiento con propósito: el detalle entra desde la derecha y al volver sale hacia ella; cambiar de pestaña funde
+const QUIETO = matchMedia("(prefers-reduced-motion: reduce)");
+const mover = (de, ms = 240) => QUIETO.matches || document.getElementById("vista").animate([{ opacity: 0, transform: de }, { opacity: 1, transform: "none" }],
+  { duration: ms, easing: "cubic-bezier(0.23, 1, 0.32, 1)" });
+// la primera vez, las filas llegan en cascada corta (una sola vez por sesión)
+function cascada() { if (QUIETO.matches || cascada.ya) return; cascada.ya = 1;
+  document.querySelectorAll("#vista li, #vista .via").forEach((el, i) => i < 10 && el.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }],
+    { duration: 320, delay: 40 * i, easing: "cubic-bezier(0.23, 1, 0.32, 1)", fill: "backwards" })); }
+// el porcentaje grande cuenta hasta su valor al abrir la ficha
+function contar() { const b = document.querySelector(".grande b"), n = parseInt(b?.textContent); if (!b || isNaN(n) || QUIETO.matches) return;
+  const t0 = performance.now(), paso = t => { const k = Math.min(1, (t - t0) / 600); b.textContent = Math.round(n * (1 - (1 - k) ** 3)) + "%"; if (k < 1) requestAnimationFrame(paso); };
+  requestAnimationFrame(paso); }
 function ir(v) {
   actual = v; pila = [];
   document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-current", b.dataset.v === v ? "page" : "false"));
-  document.getElementById("vista").innerHTML = VISTAS[v]();
+  document.getElementById("vista").innerHTML = VISTAS[v](); mover("translateY(4px)", 180); cascada();
   document.getElementById("mapa").hidden = v !== "mapa";
   if (v === "mapa" || ANCHO.matches) verMapa();
   scrollTo(0, 0); conectar();
 }
-function abrir(html) { pila.push(document.getElementById("vista").innerHTML); document.getElementById("vista").innerHTML = html; scrollTo(0, 0); conectar(); }
-function volver() { ver(null); const h = pila.pop(); if (h == null) return ir(actual); document.getElementById("vista").innerHTML = h; if (!pila.length) cabecera(false); conectar(); }
+function abrir(html) { pila.push(document.getElementById("vista").innerHTML); document.getElementById("vista").innerHTML = html; scrollTo(0, 0); conectar(); mover("translateX(28px)"); contar(); }
+function volver() { ver(null); const h = pila.pop(); if (h == null) return ir(actual); document.getElementById("vista").innerHTML = h; if (!pila.length) cabecera(false); conectar(); mover("translateX(-28px)"); }
 function conectar() {
   document.querySelectorAll("[data-aviso]").forEach(b => b.onclick = () => abrir(detalleAviso(+b.dataset.aviso)));
   document.querySelectorAll("[data-pais]").forEach(b => b.onclick = () => abrir(detalleAviso(PAIS[+b.dataset.pais])));
@@ -405,7 +424,7 @@ function verMapa() {
           "text-offset": [0, 1.4], "text-anchor": "top", "text-font": ["Noto Sans Bold"] }, paint: { "text-halo-color": "#fff", "text-halo-width": 1.5 } });
       }
       const b = new maplibregl.LngLatBounds(); fs.forEach(f => b.extend(f.geometry.coordinates));
-      if (!b.isEmpty() && !SEL && !X.cadena.length) mapa.fitBounds(b, { padding: 60, maxZoom: 11, duration: 0 });
+      if (!b.isEmpty() && !SEL && !X.cadena.length) mapa.fitBounds(b, { padding: 60, maxZoom: 11, duration: 900 });
     };
     mapa.loaded() ? pintar() : mapa.once("load", pintar);
   }).catch(() => {});
@@ -434,7 +453,7 @@ function verMapa() {
       const b = new maplibregl.LngLatBounds();
       fc.features.filter(f => foco == null || f.properties.i === foco).forEach(f =>
         JSON.stringify(f.geometry.coordinates).match(/-?\d+\.?\d*,-?\d+\.?\d*/g).forEach(s => b.extend(s.split(",").map(Number))));
-      if (!b.isEmpty() && !SEL) mapa.fitBounds(b, { padding: 40, duration: foco == null ? 0 : 800 });
+      if (!b.isEmpty() && !SEL) mapa.fitBounds(b, { padding: 40, duration: 900 });
     };
     const listo = () => mapa.getLayer("ops") ? poner() : setTimeout(listo, 200);
     listo();
