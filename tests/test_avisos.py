@@ -47,3 +47,11 @@ def test_leer_adhesiones():
     assert leer("Movilización contra la extorsión y asesinatos de choferes")["urbano"]
     assert not leer("Alza de combustibles afecta a transportistas")["urbano"]
     assert not leer("Transporte de carga pesada y mototaxistas anuncian paro en Piura")["urbano"]
+    assert leer("La protesta bloqueó vías, entre ellas un tramo de la carretera Central. Exigen agua.")["puntos"] == ["La protesta bloqueó vías, entre ellas un tramo de la carretera Central."]
+
+
+def test_dia_dicho():
+    from tremor.web import dia_dicho
+    assert dia_dicho("Aplazan paro y convocan marcha para el martes 20", "2026-11-20") == "2026-10-20"
+    assert dia_dicho("Paro el miércoles 4", "2026-11-04") == "2026-11-04"
+    assert dia_dicho("Paro nacional", "2026-11-16") == "2026-11-16"

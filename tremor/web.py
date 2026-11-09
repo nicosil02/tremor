@@ -44,16 +44,19 @@ def datos(con):
         zonas.setdefault(u, {})[o] = {"m0": int(mejor.m.iloc[0]), "y": mejor.y.astype(int).tolist(),
                                       "pct": mejor.pct.round(3).tolist(), "ingenuo": ing.round(3).tolist()}
     desde = (date.today() - timedelta(days=45)).isoformat()
-    ev = tabla(con, "SELECT e.*, MIN(n.enlace) AS enlace, MIN(n.medio) AS medio, MIN(n.titular) AS titular "
+    ev = tabla(con, "SELECT * FROM (SELECT e.*, n.enlace, n.medio, n.titular, ROW_NUMBER() OVER (PARTITION BY e.id ORDER BY "
+                    "(n.enlace LIKE '%news.google%') + (n.medio IN ('Facebook', 'Instagram', 'YouTube', 'TikTok', 'X')), "
+                    "-length(COALESCE(n.resumen, '')), n.publicado) AS k "
                     "FROM evento_prensa e JOIN evento_nota en ON en.evento_id = e.id JOIN nota n ON n.id = en.nota_id "
-                    f"WHERE COALESCE(e.fecha_evento, e.fecha_anuncio) >= '{desde}' GROUP BY e.id "
-                    "ORDER BY COALESCE(e.fecha_evento, e.fecha_anuncio) DESC")
+                    f"WHERE COALESCE(e.fecha_evento, e.fecha_anuncio) >= '{desde}') WHERE k = 1 "
+                    "ORDER BY COALESCE(fecha_evento, fecha_anuncio) DESC").drop(columns="k")
     if len(ev):  # lo que dice el cuerpo de las notas: quién se suma, quién se retira, si se suspendió, si es transporte urbano
         texto = dict(con.execute("""SELECT en.evento_id, group_concat(n.titular || '. ' || coalesce(n.resumen, ''), ' ')
                                     FROM evento_nota en JOIN nota n ON n.id = en.nota_id GROUP BY 1"""))
         leido = [leer(texto.get(i, "")) for i in ev.id]
-        for k in ("adhieren", "retiran", "suspendido", "urbano"):
+        for k in ("adhieren", "retiran", "suspendido", "urbano", "puntos"):
             ev[k] = [x[k] for x in leido]
+        ev["fecha_evento"] = [dia_dicho(t, f) for t, f in zip(ev.titular, ev.fecha_evento)]
     met = tabla(con, "SELECT objetivo, modelo, metrica, valor FROM modelo_metrica WHERE metrica IN ('precision_top20', "
                      "'precision_top20_li', 'precision_top20_ls', 'captura_top10pct', 'tasa_base')")
     ventana = tabla(con, "SELECT ventana, mes_base FROM alerta LIMIT 1")
@@ -103,6 +106,40 @@ SUMA = re.compile(r"se suma|sumar[aá]n|sumarse|acatar|respald|adhie|adhes|plega
 NO = re.compile(r"no (se )?(suma|acata|participa|pleg)|deslig|se retira|desist|no acatar|no se plegar")
 SUSPENDE = re.compile(r"(suspend|levant|desconvoc|posterg|aplaz|cancel)\w*\s+(el |la |su |del )?(paro|huelga|bloqueo|medida|paralizaci)")
 CARGA = re.compile(r"carga pesada|transporte de carga|transportistas de carga")  # "carga pesada y mototaxistas" sigue siendo carga
+CORTA = re.compile(r"bloque|quema de llantas|cortaron|cerraron|tomaron|piquete")
+DONDE = re.compile(r"carretera|v[ií]as?\b|puente|ingreso|salida|km\b|kil[oó]metro|avenida|\bav\.|[oó]valo|jir[oó]n|plaza|cruce|desv[ií]o|panamericana|interoce[aá]nica")
+DIAS = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]
+
+
+def puntos(texto, n=3):
+    """Las frases que dicen dónde se corta o se cortó el paso (vías, puentes, ingresos), sin repetirse."""
+    out = []
+    for f in re.split(r"(?<=[.;!?])\s+|\n", texto or ""):
+        f = " ".join(f.split())
+        if 25 < len(f) < 260 and CORTA.search(f.lower()) and DONDE.search(f.lower()) and not any(f[:60] == o[:60] for o in out):
+            out.append(f)
+    return out[:n]
+
+
+def dia_dicho(titular, fecha):
+    """Si el titular dice "martes 20" y la fecha no cae martes, la nota es vieja (Google la reindexó): se toma el último
+    mes, hasta tres atrás, en que el 20 fue martes."""
+    m = re.search(r"\b(lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)\s+(\d{1,2})\b", (titular or "").lower())
+    if not m or not fecha:
+        return fecha
+    dia = DIAS.index(m.group(1).replace("é", "e").replace("á", "a"))
+    f = date.fromisoformat(str(fecha)[:10])
+    for k in range(4):
+        y, mes = (f.year, f.month - k) if f.month > k else (f.year - 1, f.month - k + 12)
+        try:
+            d = date(y, mes, int(m.group(2)))
+        except ValueError:
+            continue
+        if d.weekday() == dia:
+            return d.isoformat()
+    return fecha
+
+
 URBANO = re.compile(r"extorsi|transporte (publico|urbano)|combis?\b|colectiver|mototaxi|choferes asesinad|asesinatos? de chofer")
 
 
@@ -115,7 +152,7 @@ def leer(texto):
         destino = ret if NO.search(o) else adh if SUMA.search(o) else None
         if destino is not None:
             destino.update(u for k, us in idx.items() if re.search(rf"\b{re.escape(k)}\b", o) for u in us)
-    return {"adhieren": sorted(adh - ret), "retiran": sorted(ret), "suspendido": bool(SUSPENDE.search(t)), "urbano": bool(URBANO.search(t)) and not CARGA.search(t)}
+    return {"adhieren": sorted(adh - ret), "retiran": sorted(ret), "suspendido": bool(SUSPENDE.search(t)), "urbano": bool(URBANO.search(t)) and not CARGA.search(t), "puntos": puntos(texto)}
 
 
 def focos(con, n=5):
