@@ -28,3 +28,16 @@ def test_unidad_sola_exige_nombre_entero():
            ("MINERA CHINALCO PERÚ S.A.", "Toromocho", "120806")]
     assert emparejar(ops, "MTC", "Valle Santa Lacramarca", "021801") == (None, None, None)
     assert emparejar(ops, "Chinalco", None, "120806")[1] == "Toromocho"
+
+
+def test_limpiar_proyecto():
+    from tremor.empresas import limpiar_proyecto
+    assert limpiar_proyecto('EIA-SD DEL PROYECTO "PARQUE EÓLICO URANI Y SU INTERCONEXION AL SEIN"') == "Parque Eólico Urani"
+    assert limpiar_proyecto('EIA-SD DEL PROYECTO DE EXPLORACIÓN MINERA "SUMAC WAYRA"') == "Sumac Wayra"
+    assert limpiar_proyecto("ESTUDIO DE IMPACTO AMBIENTAL DETALLADO (EIAD) DEL PROYECTO TRAPICHE") == "Trapiche"
+
+
+def test_unidad_que_no_tenemos_no_se_pega_a_otra_lejana():
+    ops = [("REPSOL EXPLORACION PERU", "Lote 101", "160101"), ("MINERA LAS BAMBAS S.A.", "Bordebamba", "030506")]
+    assert emparejar(ops, "Repsol", "Refinería La Pampilla", "070106") == (None, None, None)
+    assert emparejar(ops, "MMG Las Bambas", "carretera (Ruta Nacional)", "030506")[1] == "Bordebamba"

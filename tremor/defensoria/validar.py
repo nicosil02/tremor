@@ -150,10 +150,13 @@ def puntaje(f, c, idf):
         return 0.0
     p = (PESOS[0] * _parecido(f["_d"], c["_d"], idf) + PESOS[1] * _parecido(f["_u"], c["_u"], idf)
          + PESOS[2] * _parecido(f["_a"], c["_a"], idf))
-    return p + BONO_INGRESO if f["_ing"] and f["_ing"] == c["_ing"] else p
+    # El bono confirma un parecido, no lo reemplaza: en enero de 2026 entraron decenas de casos y el bono solo
+    # pegaba "Minera Chaska II" (Junín) al caso de Pasto Grande (Puno/Moquegua).
+    return p + BONO_INGRESO if f["_ing"] and f["_ing"] == c["_ing"] and p >= PISO_TEXTO else p
 
 
 BONO_INGRESO = 0.3
+PISO_TEXTO = 0.1
 UMBRAL_OTRO_DEP = 0.6
 COMODIN = {"nacional", "multirregional"}
 

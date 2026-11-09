@@ -490,7 +490,8 @@ function iniciar(D, G, H, C) {
   const enMes = hayMes ? `en ${mes(D.alerta.find(a => a.ventana_1m)?.ventana_1m)}` : `de aquí a ${hasta}`;
   const sel = document.getElementById("ordenar");
   let enPais = false;
-  const titFila = f => enPais ? f.os[0].unidad.split(",")[0] : f.os.map(o => o.unidad).join(", ");
+  const uni = o => o.unidad + (o.tipo === "proyecto" ? " (proyecto)" : "");
+  const titFila = f => enPais ? uni(f.os[0]).split(",")[0] : f.os.map(uni).join(", ");
   function ordenarFilas() {
     const p = f => mesP(f.a) ?? -1, reg = f => `${f.a.lugar || ""} ${lugar(f.u)}`, v = sel.value;
     filas.sort(v === "prob-asc" ? (x, y) => p(x) - p(y) : v === "nombre" ? (x, y) => titFila(x).localeCompare(titFila(y), "es")

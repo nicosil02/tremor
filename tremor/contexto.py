@@ -90,7 +90,7 @@ VINCULO = ("Para cada conflicto social del Perú (ficha de la Defensoría del Pu
 GENERICAS = {"compania", "cia", "sociedad", "minera", "minero", "mineros", "empresa", "sac", "saa", "srl", "eirl", "del",
              "peru", "sucursal", "mining", "resources", "gold", "corporation", "holding", "the", "los", "las", "san",
              "unidad", "proyecto", "mina", "petrolera", "energia", "anonima", "cerrada", "abierta", "limitada",
-             "regional", "hospital", "central", "planta", "norte", "sur", "nacional", "municipal", "cerro", "lote"}
+             "regional", "hospital", "central", "planta", "norte", "sur", "nacional", "municipal", "cerro", "lote", "energy", "energia", "oil", "gas", "petroleum"}
 
 
 def emparejar(ops, empresa, unidad, ubigeo=None):
@@ -103,13 +103,16 @@ def emparejar(ops, empresa, unidad, ubigeo=None):
     raiz = lambda s: {w for w in norm(s or "").replace(".", " ").replace(",", " ").split() if len(w) > 2 and w not in GENERICAS}
     re_, ru, dep = raiz(empresa), raiz(unidad), str(ubigeo or "")[:2]
     mejor = None
-    for e, u, ub in ops:
+    for e, u, ub, *et in ops:
         re2, ru2 = raiz(e), raiz(u)
         entera = lambda x, y: bool(x and y) and len(x & y) == min(len(x), len(y))
         misma, pu, cerca = entera(re_, re2), len(ru & ru2), bool(dep) and str(ub or "")[:2] == dep
         if not (misma or (entera(ru, ru2) and cerca)):
             continue
-        p = (misma, pu, str(ub) == str(ubigeo), cerca)
+        if misma and ru and not pu and not cerca:
+            continue  # nombra una unidad que no tenemos (la refinería, un decreto) y está en otro departamento
+        prov = len(str(ubigeo or "")) >= 4 and str(ub or "").startswith(str(ubigeo)[:4])
+        p = (misma, pu, str(ub) == str(ubigeo), et[:1] == ['operación'], prov, cerca)  # un derrame sale del lote que produce
         if not mejor or p > mejor[0]:
             mejor = (p, e, u, ub)
     return mejor[1:] if mejor else (None, None, None)
@@ -122,7 +125,7 @@ def vinculos(con) -> int:
     con.execute("""CREATE TABLE IF NOT EXISTS caso_vinculo (caso_id INTEGER PRIMARY KEY, quien_reclama TEXT,
                    contra_empresa TEXT, unidad TEXT, estado TEXT, tema TEXT, empresa_op TEXT, unidad_op TEXT,
                    ubigeo_op TEXT, actualizado TEXT NOT NULL)""")
-    ops = con.execute("SELECT empresa, unidad, ubigeo FROM operacion").fetchall()
+    ops = con.execute("SELECT empresa, unidad, ubigeo, etapa FROM operacion").fetchall()
     filas = con.execute("""SELECT c.id, c.ubigeo, c.nombre, coalesce(cm.descripcion, c.descripcion, ''), coalesce(cm.actores_primarios, ''),
                                   coalesce(x.resumen, '')
                            FROM caso c JOIN caso_mes cm ON cm.caso_id = c.id LEFT JOIN caso_contexto x ON x.caso_id = c.id

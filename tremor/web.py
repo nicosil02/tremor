@@ -55,7 +55,7 @@ def datos(con):
             "ventana": ventana.ventana.iloc[0] if len(ventana) else None,
             "mes_base": ventana.mes_base.iloc[0] if len(ventana) else None,
             "alerta": registros(a),
-            "operaciones": registros(tabla(con, "SELECT empresa, unidad, tipo, ubigeo FROM operacion")),
+            "operaciones": registros(tabla(con, "SELECT empresa, unidad, tipo, ubigeo, etapa FROM operacion")),
             "zonas": zonas,
             "eventos": registros(ev),
             "sutran": sutran(con),

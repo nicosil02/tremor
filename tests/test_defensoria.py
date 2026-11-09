@@ -318,3 +318,11 @@ def test_enlace_reactivado_y_otro_departamento():
     casos = {1: _con_tokens(previo), 2: _con_tokens(coar)}
     fichas = [dict(previo, ingreso=None, reactivado="Enero de 2024"), dict(coar, departamento="Nacional")]
     assert [cid for cid, _ in enlazar_reporte(fichas, casos, {})] == [1, 2]
+
+
+def test_bono_de_ingreso_no_enlaza_textos_distintos():
+    from tremor.defensoria.validar import _con_tokens, puntaje, UMBRAL
+    f = _con_tokens({"nombre": "CC Mariscal Castilla - Minera Chaska II", "departamento": "Junín", "ingreso": "enero 2026"})
+    c = _con_tokens({"descripcion": "Autoridades y población de Puno y Moquegua disputan el límite de Pasto Grande",
+                     "departamento": "Multirregional", "ingreso": "enero 2026"})
+    assert puntaje(f, c, {}) < UMBRAL
