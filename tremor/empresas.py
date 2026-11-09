@@ -60,8 +60,7 @@ def corregir(con):
     """OEFA tarda en registrar los cambios de titular (el Lote 192 sigue a nombre de Pluspetrol, que lo dejó en 2015).
     tremor/operadores.csv lleva el titular vigente, con su fuente; se revisa a mano cuando cambia un contrato."""
     for f in pd.read_csv(OPERADORES).itertuples():
-        con.execute("UPDATE operacion SET empresa = ?, etapa = ? WHERE empresa IN (?, ?) AND unidad = ?",
-                    (f.empresa, f.etapa, f.empresa_oefa, f.empresa, f.unidad))
+        con.execute("UPDATE operacion SET empresa = ?, etapa = ? WHERE unidad = ?", (f.empresa, f.etapa, f.unidad))
     con.commit()
 
 
@@ -78,16 +77,109 @@ def limpiar_proyecto(s):
     return re.sub(r"\s+", " ", s.strip(q)).title()
 
 
-CPIM = RAIZ / "datos" / "crudos" / "minem_cartera" / "cpim-2026.pdf"  # Cartera de Proyectos de Inversión Minera 2026 (MINEM, jun 2026)
+CPIM = RAIZ / "datos" / "crudos" / "minem_cartera" / "cpim-2026.pdf"  # Cartera de Proyectos de Inversión Minera (MINEM); la más reciente que haya
 ETAPAS = ("INGENIERÍA DE DETALLE", "PRE-FACTIBILIDAD", "FACTIBILIDAD", "CONSTRUCCIÓN", "EJECUTANDO", "EJECUCIÓN")
 
 
-def cartera_minem(pdf=CPIM):
+GOBPE = "https://www.gob.pe"
+NAVEGADOR = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}  # gob.pe responde 418 sin navegador
+
+
+def bajar_cartera(carpeta=CPIM.parent):
+    """La última edición de la Cartera de Proyectos de Inversión Minera (MINEM, en gob.pe), si aún no está.
+    Sale una vez al año; la búsqueda de gob.pe lista todas las ediciones."""
+    import re
+    import requests
+    r = requests.get(f"{GOBPE}/busquedas", params={"term": "cartera de proyectos de inversion minera",
+                     "institucion": "minem"}, headers=NAVEGADOR, timeout=60)
+    ediciones = sorted(set(re.findall(r"/institucion/minem/informes-publicaciones/\d+-cartera-de-proyectos-de-inversion-minera-(\d{4})", r.text)))
+    if not ediciones:
+        return None
+    anio = ediciones[-1]
+    destino = carpeta / f"cpim-{anio}.pdf"
+    if destino.exists():
+        return destino
+    pagina = re.search(rf"/institucion/minem/informes-publicaciones/\d+-cartera-de-proyectos-de-inversion-minera-{anio}", r.text).group(0)
+    p = requests.get(GOBPE + pagina, headers=NAVEGADOR, timeout=60)
+    pdf = re.search(r"https://cdn\.www\.gob\.pe/[^\"]+\.pdf[^\"]*", p.text).group(0)
+    carpeta.mkdir(parents=True, exist_ok=True)
+    destino.write_bytes(requests.get(pdf, headers=NAVEGADOR, timeout=300).content)
+    print(f"  cartera minera {anio} bajada de gob.pe")
+    return destino
+
+
+CONTRATO = ("Te doy un decreto supremo del Perú que modifica el contrato de un lote de hidrocarburos. Di qué empresa queda "
+            "como operadora del lote y qué empresas tienen participación. Si el decreto no cambia al operador, "
+            'operador = null. Responde JSON {"lote": "<Lote N>", "operador": "<razón social o null>", '
+            '"socios": "<empresa y % separados por coma>"}.')
+
+
+def contratos(con, dias=60):
+    """Cambios de titular en lotes de hidrocarburos publicados en El Peruano (normas del sector Energía y Minas): OEFA
+    tarda meses en registrarlos. Cada decreto se guarda en contrato_lote; si se puede leer su texto, el LLM saca el
+    operador nuevo (una vez por decreto, queda en caché) y se aplica a la tabla operacion."""
+    import html
+    import re
+    import time
+    from datetime import date, timedelta
+    import requests
+    from tremor.gobierno import PERUANO, TARJETA
+    from tremor.llm import chat_json, SinCuota, RespuestaInvalida
+    from tremor.territorio import UA
+    con.execute("""CREATE TABLE IF NOT EXISTS contrato_lote (id TEXT PRIMARY KEY, fecha TEXT, lote TEXT, titulo TEXT,
+                   operador TEXT, socios TEXT, leido INTEGER DEFAULT 0)""")
+    hoy = date.today()
+    for q in ("contrato de licencia lote", "contrato de servicios lote", "posición contractual lote"):
+        r = None
+        for espera in (1, 10, 30):  # el servidor corta el SSL si se le pide seguido
+            time.sleep(espera)
+            try:
+                r = requests.get(PERUANO, headers=UA, timeout=120, params=dict(query=q, tipoPublicacion="NL", ci="ONLY",
+                                 fechaIni=(hoy - timedelta(dias)).strftime("%Y%m%d"), fechaFin=hoy.strftime("%Y%m%d")))
+                break
+            except requests.RequestException:
+                r = None
+        if r is None:
+            continue
+        for ente, i, t in TARJETA.findall(r.content.decode("utf-8", "replace")):
+            t = html.unescape(t).strip()
+            lote = re.search(r"\bLote\s+([\w-]+)", t)
+            if lote and ("ENERG" in ente or "PERUPETRO" in ente) and "ontrato" in t:
+                con.execute("INSERT OR IGNORE INTO contrato_lote (id, fecha, lote, titulo) VALUES (?, ?, ?, ?)",
+                            (i, None, f"Lote {lote.group(1)}", t))
+        time.sleep(5)  # el servidor corta la conexión si se le pide seguido
+    for i, lote, titulo in con.execute("SELECT id, lote, titulo FROM contrato_lote WHERE leido = 0").fetchall():
+        try:
+            r = requests.get(f"{PERUANO}dispositivo/NL/{i}", headers=UA, timeout=120)
+            texto = html.unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", r.content.decode("utf-8", "replace"))))
+            fecha = re.search(r"Fecha de publicaci[oó]n: (\d\d/\d\d/20\d\d)", texto)
+            k = max(texto.find("DECRETA:"), texto.find("DECRETA :"), 3000)  # los considerandos que citan la cesión y los artículos
+            out = chat_json(con, CONTRATO, f"{titulo}. {texto[k - 3000:k + 3000]}", "contrato-lote-1")
+        except (requests.RequestException, SinCuota, RespuestaInvalida):
+            time.sleep(10)
+            continue  # queda para la próxima corrida; en el informe el lote sale como "contrato modificado"
+        con.execute("UPDATE contrato_lote SET fecha = ?, operador = ?, socios = ?, leido = 1 WHERE id = ?",
+                    (fecha and fecha.group(1), out.get("operador"), out.get("socios"), i))
+        time.sleep(5)
+    for lote, operador, socios, titulo, leido in con.execute(
+            "SELECT lote, operador, socios, titulo, leido FROM contrato_lote ORDER BY id").fetchall():
+        unidad = f"{lote} %"
+        if operador:
+            con.execute("UPDATE operacion SET empresa = ?, etapa = ? WHERE unidad = ? OR unidad LIKE ?",
+                        (operador.upper(), f"operador según El Peruano; socios: {socios}" if socios else "operador según El Peruano", lote, unidad))
+        elif not leido:
+            con.execute("UPDATE operacion SET etapa = ? WHERE (unidad = ? OR unidad LIKE ?) AND etapa = 'operación'",
+                        ("contrato modificado (El Peruano), titular por confirmar", lote, unidad))
+    con.commit()
+
+
+def cartera_minem(pdf=None):
     """Las 66 fichas de la cartera minera del MINEM: proyecto, titular, lugar, etapa, inicio y puesta en marcha.
     Cada ficha es una página en columnas: rótulo a la izquierda y valor a su derecha, a la misma altura."""
     import re
     import pymupdf
     from tremor.lugares import resolver
+    pdf = pdf or max(CPIM.parent.glob("cpim-*.pdf"))
     filas = []
     for p in pymupdf.open(pdf):
         bl = [(l["bbox"][0], l["bbox"][1], " ".join("".join(s["text"] for s in l["spans"]).split()))
@@ -121,12 +213,16 @@ def proyectos(con, desde=2021):
     import geopandas as gpd
     from tremor.distritos import CARTERA
     distritos = gpd.read_file(GEOJSON)[["ubigeo", "geometry"]]
-    if CPIM.exists():  # la cartera 2026 del MINEM (PDF, jun 2026), con etapa, inicio y puesta en marcha
+    try:
+        bajar_cartera()
+    except Exception as e:  # sin red o gob.pe cambió: se sigue con la que haya
+        print(f"  cartera minera: no se pudo revisar gob.pe ({e.__class__.__name__})")
+    if any(CPIM.parent.glob("cpim-*.pdf")):  # la cartera 2026 del MINEM (PDF, jun 2026), con etapa, inicio y puesta en marcha
         c = cartera_minem().dropna(subset=["ubigeo"])
         fase = c.etapa_minem.fillna("etapa sin dato").str.lower().replace({"ejecución": "en construcción", "ejecutando": "en construcción"})
         cuando = [f", operaría en {p}" if p and p[:2] == "20" else "" for p in c.puesta_en_marcha.fillna("")]
         a = pd.DataFrame({"empresa": c.empresa, "unidad": c.unidad, "tipo": "proyecto", "ubigeo": c.ubigeo,
-                          "etapa": ["proyecto, " + f + w + " (cartera MINEM 2026)" for f, w in zip(fase, cuando)],
+                          "etapa": ["proyecto, " + f + w + f" (cartera MINEM {max(CPIM.parent.glob('cpim-*.pdf')).stem[-4:]})" for f, w in zip(fase, cuando)],
                           "nuevo": c.subtipo.fillna("").str.startswith("Nuevo")})
     else:  # respaldo: la cartera 2023 del GEOCATMIN
         c = gpd.GeoDataFrame.from_features(arcgis(f"{CARTERA}/1", "nom_proy,est_proy,emp_local,inicio_opr", geometria=True), crs=4326)
@@ -139,7 +235,8 @@ def proyectos(con, desde=2021):
                       "ubigeo": s.ubigeo, "etapa": [f"proyecto, EIA aprobado en {x} ({y.lower()})" for x, y in zip(s.anio, s.actividad)]})
     con.execute("DELETE FROM operacion WHERE tipo = 'proyecto'")
     con.execute("UPDATE operacion SET etapa = 'operación' WHERE tipo != 'proyecto' AND etapa NOT LIKE 'lote en%'")
-    corregir(con)
+    contratos(con)  # decretos de El Peruano
+    corregir(con)   # y lo verificado a mano (operadores.csv) manda
     # El mismo proyecto puede venir de la cartera, del SENACE y de OEFA (Tía María): mismo distrito y las palabras
     # de un nombre contenidas en las del otro ("Yumpag" y "Yumpag - Carama"). Si OEFA ya lo fiscaliza, no se
     # duplica: se anota en su fila que está en la cartera (sin afirmar la etapa: la cartera es de 2023).

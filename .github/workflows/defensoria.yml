@@ -41,6 +41,14 @@ jobs:
       - name: Defensoría
         run: python -m tremor.defensoria todo
 
+      - name: Operaciones y proyectos (una vez al día; OEFA, cartera del MINEM, SENACE y decretos de El Peruano)
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          [ "$(date -u +%H)" = "11" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] || exit 0
+          python -m tremor.empresas cargar
+
       - name: SUTRAN (alertas viales vigentes, y qué dicen los medios de cada bloqueo)
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
