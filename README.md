@@ -200,8 +200,8 @@ ya existen y se actualizan a diario:
 
 Eso abre la puerta a exportadores, operadores logísticos y aseguradoras.
 
-**Riesgos.** La base de la PUCP es de uso académico y ACLED requiere licencia comercial. Ninguna de las dos se
-redistribuye. La versión comercial necesita su permiso o seguir solo con las fuentes públicas propias.
+**Riesgos.** La base de la PUCP es de uso académico y no se redistribuye. ACLED autorizó publicar sus datos en
+Tremor. La versión comercial necesita el permiso de la PUCP o seguir solo con las fuentes públicas propias.
 
 ## 8. Herramientas del curso
 
@@ -226,7 +226,7 @@ Casi todo el código lo escribió Claude Code bajo mi dirección.
 
 - elegí el problema y las fuentes;
 - decidí las reglas del proyecto: costo cero, actores por rol, no leer Facebook y no redistribuir la base de la
-  PUCP ni ACLED;
+  PUCP y pedir permiso a ACLED;
 - revisé los resultados contra lo que conozco de los conflictos;
 - corregí errores del clasificador, como no contar como protesta que una municipalidad paralice una obra;
 - definí qué debía ver un cliente.
@@ -247,7 +247,8 @@ proyecto están en [`.specify/memory/constitution.md`](.specify/memory/constitut
 - **Defensoría del Pueblo:** reportes mensuales de conflictos sociales, 271 reportes desde 2004.
 - **Base de protestas de la Escuela de Gobierno de la PUCP:** Arce 2024 y EGPP 2025. De uso académico, solo se
   publican agregados por distrito.
-- **ACLED:** solo valida el modelo. No se publica.
+- **ACLED:** valida el modelo. Se publica en la rama `datos` con autorización de ACLED. Cita: Armed Conflict
+  Location & Event Data (ACLED), www.acleddata.com.
 - **Datos abiertos del Estado:** INEI, MEF, BCRP, MINEM, OEFA, ONPE, SENACE, ANA, INDECI, MTC, SERNANP y Cultura.
 
 Código bajo la [licencia](LICENSE) del repositorio.

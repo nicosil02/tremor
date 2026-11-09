@@ -1,6 +1,6 @@
 # Módulo 005: reentrena el modelo de alerta una vez al mes, cuando la Defensoría ya publicó su reporte mensual
 # (sale a mediados de mes), y publica la alerta y las métricas en la rama `datos`.
-# ACLED no viaja en `datos` (sus condiciones no permiten redistribuirlo): se baja de su API con la cuenta del autor
+# ACLED viaja en `datos` con permiso de ACLED al autor (nov 2026); se actualiza desde su API con la cuenta del autor
 # (secretos ACLED_EMAIL y ACLED_PASSWORD) y se borra de la base antes de publicar.
 # Tarda ~2 h; GitHub da hasta 6. Corre solo desde `main`.
 name: modelo
@@ -39,7 +39,7 @@ jobs:
           mkdir -p datos/exportes && git archive origin/datos | tar -x -C datos/exportes --wildcards "*.csv"  # conserva los CSV de los otros workflows (la alerta del modelo)
           git show origin/datos:distritos.geojson > datos/distritos.geojson
 
-      - name: ACLED (solo para validar; no se publica)
+      - name: ACLED (valida el modelo; se publica con permiso de ACLED)
         env:
           ACLED_EMAIL: ${{ secrets.ACLED_EMAIL }}
           ACLED_PASSWORD: ${{ secrets.ACLED_PASSWORD }}
@@ -55,10 +55,9 @@ jobs:
       - name: Modelo
         run: python -u -m tremor.modelo
 
-      - name: Publicar en la rama datos (sin ACLED)
+      - name: Publicar en la rama datos
         run: |
           rm -rf datos/crudos/acled
-          sqlite3 datos/tremor.db "DROP TABLE IF EXISTS acled_evento; VACUUM;"
           python -m tremor.web   # web.json: lo que lee la página (docs/index.html)
           mkdir -p /tmp/datos && gzip -9 -c datos/tremor.db > /tmp/datos/tremor.db.gz && cp datos/exportes/*.csv /tmp/datos/
           cp datos/exportes/web.json /tmp/datos/
