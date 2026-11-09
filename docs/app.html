@@ -85,6 +85,19 @@
     min-height: 44px; padding: 0 16px; margin: 4px 16px 8px; cursor: pointer; }
   .nota button.vermapa { margin: 14px 0 0 16px; }
   .leyenda-via small { display: block; font-weight: 400; font-size: 13px; color: var(--tinta-2); max-width: 240px; }
+  .cuando { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; padding: 18px 16px 0; }
+  .cuando b { font-size: 34px; line-height: 1; font-weight: 750; font-variation-settings: var(--ancho); color: var(--rojo); }
+  .cuando b::first-letter { text-transform: uppercase; } .cuando.paso b { color: var(--tinta-2); } .cuando span { color: var(--tinta-2); }
+  .titulo-av { margin: 8px 16px 0; font-size: 22px; line-height: 1.25; text-wrap: balance; }
+  dl.datos { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 14px 16px 4px; }
+  dl.datos dt { font-size: 14px; font-weight: 700; color: var(--tinta-2); padding-top: 2px; } dl.datos dd { margin: 0; }
+  ol.cadena li.nada::before { background: var(--linea); } ol.cadena li.nada b { color: var(--tinta-2); font-weight: 600; }
+  .aclara { margin: 0 16px 4px; font-size: 14px; color: var(--tinta-2); }
+  .resumen { margin: 4px 16px 0; line-height: 1.5; max-width: 60ch; }
+  a.fuente { display: block; margin: 8px 16px; padding: 14px 16px; border-radius: 12px; background: #eaefed; color: var(--tinta); text-decoration: none;
+    line-height: 1.4; transition: background-color 160ms ease, transform 140ms var(--sal); }
+  a.fuente:hover { background: #e0e7e4; } a.fuente:active { transform: scale(0.98); }
+  a.fuente small { display: block; margin-bottom: 4px; font-weight: 700; color: var(--cobre-4); }
   .etq { display: block; margin-top: 14px; font-size: 14px; font-weight: 700; color: var(--tinta-2); }
   .tono-neg { color: var(--rojo); } .tono-pos { color: var(--verde); }
   #mapa { position: fixed; inset: 0 0 calc(60px + env(safe-area-inset-bottom)); }
@@ -284,7 +297,7 @@ function detalleOp(nom) {
   const o = X.unidades.find(x => x.unidad === nom), av = X.avisos.filter(x => (x.cerca && x.cerca.unidad === nom) || x.m || x.trans).slice(0, 3);
   const por = String(o.a.razones_zona_extractivo || "").replace(/^en la zona \(distrito y vecinos\): /, "").split(/ · |; /).slice(0, 3);
   const cs = X.casos.filter(c => o.zona.has(String(c.ubigeo))).slice(0, 4);
-  const estado = c => `${c.estado === "latente" ? "latente" : /NO HAY/i.test(c.dialogo || "") ? "sin diálogo" : /HAY/i.test(c.dialogo || "") ? "en diálogo" : "activo"}`;
+  const estado = estadoCaso;
   cabecera(true, "Operaciones");
   foto(o); ver([o.ubigeo], o.unidad);
   return `<div class="foto" id="foto"><div><h3>${esc(o.unidad)}</h3><p>${esc(lugar(o.ubigeo))}</p></div><small>Imagen Esri, Maxar</small></div><div class="grande"><b>${o.p == null ? "–" : pct(o.p)}</b><span>${o.p == null ? "Sin cálculo" : `Riesgo ${nivel(o.p).toLowerCase()} ${flecha(o.p - (o.normal ?? o.p))}`}
@@ -292,9 +305,20 @@ function detalleOp(nom) {
     + (por[0] ? `<h2>Por qué</h2><ul class="por">${por.map(p => `<li>${esc(p.replace(/\s*\(.*?\)/g, ""))}</li>`).join("")}</ul>` : "")
     + `<h2>Qué pasó</h2>` + (av.length ? `<ul>${av.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas cerca en 45 días.</p>`)
     + `<h2>Comunidades</h2>` + (cs.length ? `<ul>${cs.map(c => fila("", 0, titulo(String(c.nombre).replace(/^(comunidad(es)? (campesinas?|nativas?)|cc\.?|c\.c\.)\s+(de(l)?\s+)?/i, "").split(/\s+[-–]\s+/)[0]),
-        estado(c), c.medios && c.medios[0] ? `${dia(c.medios[0].fecha)}, ${c.medios[0].titular}` : `Defensoría, ${MES[c.mes - 1]}`)).join("")}</ul>` : `<p class="vacio">Sin conflictos vigentes ante la Defensoría.</p>`);
+        estado(c), c.medios && c.medios[0] ? `${dia(c.medios[0].fecha)}, ${c.medios[0].titular}` : `Defensoría, ${MES[c.mes - 1]}`, `data-caso="${X.casos.indexOf(c)}"`)).join("")}</ul>` : `<p class="vacio">Sin conflictos vigentes ante la Defensoría.</p>`);
 }
 
+const estadoCaso = c => c.estado === "latente" ? "latente" : /NO HAY/i.test(c.dialogo || "") ? "sin diálogo" : /HAY/i.test(c.dialogo || "") ? "en diálogo" : "activo";
+function detalleCaso(i) {
+  const c = X.casos[i], u = String(c.ubigeo), ms = c.medios || [];
+  cabecera(true, "Comunidades"); ver([u], c.nombre);
+  return `<div class="cuando${c.estado === "latente" ? " paso" : ""}"><b>${esc(estadoCaso(c))}</b><span>Defensoría, ${MES[c.mes - 1]} ${esc(c.anio)}</span></div>
+    <h3 class="titulo-av">${esc(c.nombre)}</h3>
+    <dl class="datos"><dt>Dónde</dt><dd>${esc(lugar(u))}</dd>${c.tipo ? `<dt>Tipo</dt><dd>${esc(c.tipo)}</dd>` : ""}
+      ${c.quien_reclama ? `<dt>Quién</dt><dd>${esc(c.quien_reclama[0].toUpperCase() + c.quien_reclama.slice(1))}</dd>` : ""}${c.fase ? `<dt>Fase</dt><dd>${esc(c.fase[0].toUpperCase() + c.fase.slice(1))}</dd>` : ""}</dl>
+    ${c.resumen ? `<h2>Qué reclaman</h2><p class="resumen">${esc(c.resumen)}</p>` : ""}
+    ${ms.length ? `<h2>En medios</h2>${ms.slice(0, 3).map(m => `<a class="fuente" href="${esc(m.enlace)}" target="_blank" rel="noopener"><small>${esc(m.medio)}, ${esc(dia(m.fecha))}</small>${esc(m.titular)}</a>`).join("")}` : ""}${VER}`;
+}
 function detalleAviso(k) {
   const x = typeof k === "number" ? X.avisos[k] : k;
   cabecera(true, x.tipo);
@@ -305,13 +329,18 @@ function detalleAviso(k) {
   if (x.sutran) { const s = x.sutran;
     return `<div class="nota"><h3>${esc(x.t)}</h3><p class="meta">${esc(titulo(s.distrito || ""))}, ${esc(titulo(s.region || ""))}${s.km ? `, km ${esc(s.km)}` : ""}. Según SUTRAN.</p>
       ${s.contexto ? `<p class="cita">${esc(s.contexto)}</p>` : ""}</div>`; }
-  const e = x.e, f = x.f, u = String(e.ubigeo), ts = x.tramos || [], y = xs => xs.length > 1 ? xs.slice(0, -1).join(", ") + " y " + xs.at(-1) : xs[0] || "";
+  const e = x.e, f = x.f, u = String(e.ubigeo), ts = (x.tramos || []).length ? x.tramos : x.trans && u === "00" ? X.cadena.filter(r => r.via) : [], y = xs => xs.length > 1 ? xs.slice(0, -1).join(", ") + " y " + xs.at(-1) : xs[0] || "";
   ver(ts.length ? ts.flatMap(r => r.ubigeos) : u === "00" ? null : [u], x.t);
-  return `<div class="nota"><h3>${esc(x.t)}</h3><p class="meta">${esc(largo(f))}${e.estado === "anunciada" && f >= HOY ? `, ${cuando(f)}` : e.estado === "anunciada" ? ", anunciada" : ""}</p>
-    <span class="etq">Dónde</span>${esc(String(e.ubigeo) === "00" ? (x.trans ? "La nota no lo dice. Suelen ser en Lima" : "La nota no lo dice") : lugar(String(e.ubigeo)))}${x.cerca ? `, zona de ${esc(x.cerca.unidad)}` : ""}
-    ${ts.length ? `<span class="etq">Qué puede tocar</span>${ts.length > 1 ? "Los tramos" : "El tramo"} ${esc(y(ts.map(r => r.nombre)))} de su ruta${ts.some(r => r.via) ? `, por la ${esc(y([...new Set(ts.map(r => r.via).filter(Boolean))]))}` : ""}.${u.length < 6 ? ` La nota no dice en qué parte de ${esc(lugar(u))}, así que se marcan todos los tramos que pasan por ahí.` : ""}` : ""}
-    ${x.trans && !x.tramo ? `<span class="etq">Qué puede tocar</span>El traslado de concentrado e insumos${X.rutas.length ? ` por ${esc(X.rutas.join(" y "))}` : ""}` : ""}
-    <span class="etq">La nota</span>${esc(e.titular)}<br><a class="ir" href="${esc(e.enlace)}" target="_blank" rel="noopener">Leer en ${esc(e.medio)}</a>${SEL ? VER : ""}</div>`;
+  // Menos texto: cuándo en grande, dos datos, su ruta pintada (lo que puede cortarse en rojo) y la nota como tarjeta
+  const viene = e.estado === "anunciada" && f >= HOY, toca = new Set(ts.map(r => r.nombre));
+  return `<div class="cuando${viene ? "" : " paso"}"><b>${esc(viene ? cuando(f) : dia(f))}</b><span>${esc(viene ? largo(f) : e.estado === "anunciada" ? "anunciada" : "ocurrió")}</span></div>
+    <h3 class="titulo-av">${esc(x.t)}</h3>
+    <dl class="datos"><dt>Dónde</dt><dd>${esc(u === "00" ? (x.trans ? "Todo el país" : "La nota no lo dice") : lugar(u))}${x.cerca ? `, zona de ${esc(x.cerca.unidad)}` : ""}</dd>
+      ${e.reclamo ? `<dt>Reclamo</dt><dd>${esc(e.reclamo)}</dd>` : ""}</dl>
+    ${toca.size && X.cadena.length ? `<h2>Su ruta</h2><ol class="cadena">${X.cadena.map((r, i) => `<li class="${toca.has(r.nombre) ? "mal" : "nada"}"><button type="button" data-tramo="${i}">
+      <b>${esc(r.nombre)}</b><span class="modo">${toca.has(r.nombre) ? "Puede cortarse" : "Fuera de esta protesta"}${r.via ? `, ${esc(r.via)}` : ""}</span><span class="est">${pct(r.p)}</span></button></li>`).join("")}</ol>
+      ${u === "00" ? `<p class="aclara">Paro nacional, puede cortar cualquier tramo por carretera.</p>` : u.length < 6 ? `<p class="aclara">La nota solo dice ${esc(lugar(u))}, por eso se marcan sus tramos en todo el departamento.</p>` : ""}` : ""}
+    <h2>La nota</h2><a class="fuente" href="${esc(e.enlace)}" target="_blank" rel="noopener"><small>${esc(e.medio)}</small>${esc(e.titular)}</a>${SEL ? VER : ""}`;
 }
 
 let actual = "avisos", mapa, PAIS = [], FOCO = null, SEL = null;  // SEL: distritos que el mapa resalta y encuadra
@@ -367,6 +396,7 @@ function conectar() {
   document.querySelectorAll("[data-pais]").forEach(b => b.onclick = () => abrir(detalleAviso(PAIS[+b.dataset.pais])));
   document.querySelectorAll("[data-tramo]").forEach(b => b.onclick = () => { SEL = null; FOCO = +b.dataset.tramo; ANCHO.matches ? verMapa() : ir("mapa"); });
   document.querySelectorAll("[data-op]").forEach(b => b.onclick = () => abrir(detalleOp(b.dataset.op)));
+  document.querySelectorAll("[data-caso]").forEach(b => b.onclick = () => abrir(detalleCaso(+b.dataset.caso)));
   document.querySelectorAll("[data-vermapa]").forEach(b => b.onclick = () => ir("mapa"));
 }
 document.querySelector("nav").onclick = e => { const b = e.target.closest("button"); if (b) { SEL = null; ir(b.dataset.v); } };
