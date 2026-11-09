@@ -54,9 +54,10 @@ def datos(con):
         texto = dict(con.execute("""SELECT en.evento_id, group_concat(n.titular || '. ' || coalesce(n.resumen, ''), ' ')
                                     FROM evento_nota en JOIN nota n ON n.id = en.nota_id GROUP BY 1"""))
         leido = [leer(texto.get(i, "")) for i in ev.id]
-        for k in ("adhieren", "retiran", "suspendido", "urbano", "puntos"):
+        for k in ("adhieren", "retiran", "suspendido", "urbano", "puntos", "plazo"):
             ev[k] = [x[k] for x in leido]
         ev["fecha_evento"] = [dia_dicho(t, f) for t, f in zip(ev.titular, ev.fecha_evento)]
+        ev = pd.DataFrame(juntar(ev.to_dict("records")))
     met = tabla(con, "SELECT objetivo, modelo, metrica, valor FROM modelo_metrica WHERE metrica IN ('precision_top20', "
                      "'precision_top20_li', 'precision_top20_ls', 'captura_top10pct', 'tasa_base')")
     ventana = tabla(con, "SELECT ventana, mes_base FROM alerta LIMIT 1")
@@ -121,6 +122,59 @@ def puntos(texto, n=3):
     return out[:n]
 
 
+MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre"]
+PLAZO = re.compile(r"plazo|ultim[aá]tum|de lo contrario|caso contrario|de no (ser )?atend")
+
+
+def plazo(texto, hoy=None):
+    """La fecha que vence un plazo ("dio plazo hasta el jueves 12 de noviembre para que el ministro llegue, de lo
+    contrario paro regional"): ese día puede empezar la medida aunque nadie la haya convocado todavía."""
+    hoy, out = hoy or date.today(), None
+    for f in re.split(r"(?<=[.;!?])\s+|\n", (texto or "").lower()):
+        if not PLAZO.search(f):
+            continue
+        for d, m in re.findall(r"(\d{1,2}) de (" + "|".join(MESES) + "|septiembre)", f):
+            mes = 9 if m == "septiembre" else MESES.index(m) + 1
+            try:
+                x = date(hoy.year, mes, int(d))
+            except ValueError:
+                continue
+            x = x.replace(year=hoy.year + 1) if (hoy - x).days > 180 else x
+            out = max(out or x, x)
+    return out.isoformat() if out else None
+
+
+def familia(accion):
+    a = (accion or "").lower()
+    return "paro" if re.search(r"paro|huelga", a) else "bloqueo" if "bloque" in a else "marcha" if re.search(r"march|moviliz", a) else a
+
+
+def juntar(evs):
+    """Una protesta contada una vez: el mismo día, el mismo reclamo y un lugar dentro del otro (Huánuco, la provincia y el
+    departamento), con la misma medida o el mismo actor, son un solo evento. Queda el de más notas, con el lugar más preciso."""
+    out = []
+    for e in sorted(evs, key=lambda e: -(e.get("n_notas") or 0)):
+        u = str(e["ubigeo"])
+        par = next((o for o in out if o["fecha_evento"] == e["fecha_evento"] and o["reclamo"] == e["reclamo"] and u != "00"
+                    and (u.startswith(str(o["ubigeo"])) or str(o["ubigeo"]).startswith(u))
+                    and (familia(o["accion"]) == familia(e["accion"]) or o["actor"] == e["actor"])), None)
+        if par is None:
+            out.append(dict(e)); continue
+        if len(u) > len(str(par["ubigeo"])):
+            par["ubigeo"] = e["ubigeo"]
+        par["n_notas"] = (par.get("n_notas") or 0) + (e.get("n_notas") or 0)
+        for k in ("adhieren", "retiran", "puntos"):
+            par[k] = list(dict.fromkeys((par.get(k) or []) + (e.get(k) or [])))
+        par["suspendido"] = bool(par.get("suspendido")) or bool(e.get("suspendido"))
+        par["plazo"] = max([x for x in (par.get("plazo"), e.get("plazo")) if isinstance(x, str)], default=None)
+    visto = set()  # el mismo plazo citado por varias protestas del departamento: un solo aviso, en la de más notas
+    for e in out:
+        k = (e.get("plazo"), str(e["ubigeo"])[:2])
+        if isinstance(k[0], str):
+            e["plazo"] = None if k in visto else k[0]; visto.add(k)
+    return sorted(out, key=lambda e: str(e.get("fecha_evento") or e.get("fecha_anuncio") or ""), reverse=True)
+
+
 def dia_dicho(titular, fecha):
     """Si el titular dice "martes 20" y la fecha no cae martes, la nota es vieja (Google la reindexó): se toma el último
     mes, hasta tres atrás, en que el 20 fue martes."""
@@ -152,7 +206,7 @@ def leer(texto):
         destino = ret if NO.search(o) else adh if SUMA.search(o) else None
         if destino is not None:
             destino.update(u for k, us in idx.items() if re.search(rf"\b{re.escape(k)}\b", o) for u in us)
-    return {"adhieren": sorted(adh - ret), "retiran": sorted(ret), "suspendido": bool(SUSPENDE.search(t)), "urbano": bool(URBANO.search(t)) and not CARGA.search(t), "puntos": puntos(texto)}
+    return {"adhieren": sorted(adh - ret), "retiran": sorted(ret), "suspendido": bool(SUSPENDE.search(t)), "urbano": bool(URBANO.search(t)) and not CARGA.search(t), "puntos": puntos(texto), "plazo": plazo(texto)}
 
 
 def focos(con, n=5):

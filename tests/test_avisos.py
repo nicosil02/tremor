@@ -50,6 +50,20 @@ def test_leer_adhesiones():
     assert leer("La protesta bloqueó vías, entre ellas un tramo de la carretera Central. Exigen agua.")["puntos"] == ["La protesta bloqueó vías, entre ellas un tramo de la carretera Central."]
 
 
+def test_plazo_y_juntar():
+    from datetime import date
+    from tremor.web import juntar, plazo
+    t = "El Comité de Lucha dio plazo hasta el jueves 12 de noviembre para que el ministro llegue a Huánuco. Paro el 4 de noviembre."
+    assert plazo(t, date(2026, 11, 9)) == "2026-11-12"
+    assert plazo("Paro el 4 de noviembre", date(2026, 11, 9)) is None
+    base = {"fecha_evento": "2026-11-04", "reclamo": "Servicios", "adhieren": [], "retiran": [], "puntos": [], "suspendido": False, "plazo": None}
+    evs = [{**base, "ubigeo": "1001", "accion": "Paro", "actor": "Pobladores", "n_notas": 20},
+           {**base, "ubigeo": "10", "accion": "Paro", "actor": "Transportistas de carga", "n_notas": 1, "plazo": "2026-11-12"},
+           {**base, "ubigeo": "2301", "accion": "Paro", "actor": "Pobladores", "n_notas": 3}]
+    j = juntar(evs)
+    assert len(j) == 2 and j[0]["n_notas"] == 21 and j[0]["ubigeo"] == "1001" and j[0]["plazo"] == "2026-11-12"
+
+
 def test_dia_dicho():
     from tremor.web import dia_dicho
     assert dia_dicho("Aplazan paro y convocan marcha para el martes 20", "2026-11-20") == "2026-10-20"

@@ -232,15 +232,15 @@ function armar() {
   const rutas = [...new Set(unidades.filter(opera).flatMap(u => D.rutas[u.ubigeo] || []))];
   const avisos = [];
   for (const e of D.eventos) {
-    const f = String(e.fecha_evento || e.fecha_anuncio || "").slice(0, 10), u = String(e.ubigeo);
+    const pl = e.plazo && e.plazo >= HOY && !e.suspendido, f = pl ? e.plazo : String(e.fecha_evento || e.fecha_anuncio || "").slice(0, 10), u = String(e.ubigeo);
     const trans = /transportista/i.test(e.actor || "") && !e.urbano, nombra = alias.test(`${e.empresa || ""} ${e.operacion || ""}`);
     if (!nombra && !(trans && u === "00") && !zona.has(u) && !tramoDe(u, e)) continue;
-    const anun = e.estado === "anunciada" && !e.suspendido, viene = anun && f >= HOY;
+    const anun = (e.estado === "anunciada" || pl) && !e.suspendido, viene = anun && f >= HOY;
     const cerca = unidades.find(x => x.zona.has(u));
     avisos.push({ f, urge: viene || (anun && dias(f) > -3), tipo: "Protesta", e, cerca, trans, tramo: tramoDe(u, e), tramos: tramos.filter(r => toca(r, u, e)),
       t: `${accion(e)}${e.actor ? ` de ${e.actor.toLowerCase()}` : ""}`,
       w: viene ? cuando(f) : dia(f),
-      s: [u === "00" ? (trans ? "Puede frenar sus despachos" : "Lugar sin precisar") : !zona.has(u) && tramoDe(u, e) ? `${lugar(u)}, en su ruta${sinBloqueo(e) ? ", no suele cortar vías" : ""}` : lugar(u), e.suspendido ? "suspendida" : viene ? "" : anun ? "anunciada" : "ocurrió"].filter(Boolean).join(", ") });
+      s: [pl ? "vence un plazo, amenazan con nueva medida" : "", u === "00" ? (trans ? "Puede frenar sus despachos" : "Lugar sin precisar") : !zona.has(u) && tramoDe(u, e) ? `${lugar(u)}, en su ruta${sinBloqueo(e) ? ", no suele cortar vías" : ""}` : lugar(u), e.suspendido ? "suspendida" : viene ? "" : anun ? "anunciada" : "ocurrió"].filter(Boolean).join(", ") });
   }
   for (const s of D.sutran || []) if (rutas.includes(s.via))
     avisos.push({ f: String(s.fecha_evento || HOY).slice(0, 10), urge: true, tipo: "Bloqueo", sutran: s, t: `Vía ${s.via} bloqueada`, w: "ahora",
@@ -492,7 +492,7 @@ function peru() {
         mapa.on("mouseenter", "peru-ev", () => mapa.getCanvas().style.cursor = "pointer"); mapa.on("mouseleave", "peru-ev", () => mapa.getCanvas().style.cursor = "");
       }
       CAPAS.forEach(c => mapa.setLayoutProperty(c, "visibility", on ? "visible" : "none"));
-      ["ops", "ops-t", "tramos", "tramos-l", "vias", "rotulos"].forEach(c => mapa.getLayer(c) && mapa.setLayoutProperty(c, "visibility", on ? "none" : "visible"));
+      ["ops", "ops-t", "tramos", "tramos-l", "vias-c", "vias", "rotulos"].forEach(c => mapa.getLayer(c) && mapa.setLayoutProperty(c, "visibility", on ? "none" : "visible"));
       if (on && !SEL) mapa.fitBounds([[-81.4, -18.4], [-68.6, -0.03]], { padding: 30, duration: 900 });
     };
     const espera = () => mapa.getLayer("ops") ? poner() : setTimeout(espera, 200);
@@ -515,7 +515,9 @@ function marcar() {
         mapa.setPaintProperty("tramos", "fill-color", hay ? ["case", en("i", tr), "#c8321f", en("i", tr2), "#e8962e", "#cfd6d4"] : RIESGO);
         mapa.setPaintProperty("tramos", "fill-opacity", hay ? ["case", en("i", tr), 0.55, en("i", tr2), 0.4, 0.25] : 0.45);
         mapa.setPaintProperty("vias", "line-color", hay ? ["case", en("r", vias), "#d7261e", en("r", vias2), "#e8962e", "#9aa5a3"] : "#e0a32e");
-        mapa.setPaintProperty("vias", "line-width", hay ? ["case", en("r", vias), 5, en("r", vias2), 4, 2] : 3);
+        const ancho = k => ["interpolate", ["linear"], ["zoom"], 6, k, 13, ["*", k, 2.4]];  // más gruesa al acercarse, para que se vea sobre el satélite
+        mapa.setPaintProperty("vias", "line-width", ancho(hay ? ["case", en("r", vias), 5, en("r", vias2), 4, 2] : 3));
+        mapa.setPaintProperty("vias-c", "line-width", ancho(hay ? ["case", en("r", vias), 8, en("r", vias2), 7, 0] : 5));
         mapa.setLayoutProperty("rotulos", "text-field", hay ? ["case", en("i", tr), ["concat", ["get", "t"], /se suma/.test(s.etq) ? "\nSe suman al paro" : tr2.length ? "\nMás probable" : "\nPuede cortarse"], ""] : ["get", "t"]);
       }
       PULSO?.remove(); PULSO = null;
@@ -582,7 +584,7 @@ function verMapa() {
     mapa.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     // nombres del mapa base en castellano ("Arequipa", no "Department of Arequipa")
     mapa.on("load", () => {
-      mapa.getStyle().layers.forEach(l => l.type === "symbol" && l.layout && l.layout["text-field"]
+      mapa.getStyle().layers.forEach(l => l.type === "symbol" && !/shield/.test(l.id) && l.layout && l.layout["text-field"]
         && mapa.setLayoutProperty(l.id, "text-field", ["coalesce", ["get", "name:es"], ["get", "name"]]));
       // relieve y satélite al acercarse, como en la versión completa (Esri World Imagery, Terrain Tiles de AWS)
       const bajo = mapa.getStyle().layers.find(c => c.type === "symbol")?.id;
@@ -651,7 +653,8 @@ function verMapa() {
         mapa.addSource("tramos", { type: "geojson", data: fc }); mapa.addSource("vias", { type: "geojson", data: lineas });
         mapa.addLayer({ id: "tramos", type: "fill", source: "tramos", paint: { "fill-color": ["interpolate", ["linear"], ["get", "p"], 0, "#f3e1d3", 0.3, "#d98a5c", 0.6, "#8a3213"], "fill-opacity": 0.45 } }, "ops");
         mapa.addLayer({ id: "tramos-l", type: "line", source: "tramos", paint: { "line-color": "#8a3213", "line-width": 0.6 } }, "ops");
-        mapa.addLayer({ id: "vias", type: "line", source: "vias", paint: { "line-color": "#e0a32e", "line-width": 3 } }, "ops");
+        mapa.addLayer({ id: "vias-c", type: "line", source: "vias", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#1c2629", "line-opacity": 0.45, "line-width": 5 } }, "ops");
+        mapa.addLayer({ id: "vias", type: "line", source: "vias", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#e0a32e", "line-width": 3 } }, "ops");
         mapa.addSource("rotulos", { type: "geojson", data: rotulos });
         mapa.addLayer({ id: "rotulos", type: "symbol", source: "rotulos", layout: { "text-field": ["get", "t"], "text-font": ["Noto Sans Bold"], "text-size": 13 },
           paint: { "text-color": "#5c2410", "text-halo-color": "#fff", "text-halo-width": 1.8 } });
