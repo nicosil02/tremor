@@ -193,6 +193,13 @@
   .pesas .hit { fill: transparent; }
   .pesas .fila:hover .hit { fill: rgb(19 48 74 / .04); }
   table.riesgo td, table.riesgo th { padding-top: 7px; padding-bottom: 7px; }
+  .rotulo { font-size: 13.5px; font-weight: 650; color: var(--tinta); margin: 0 0 8px; }
+  table.cuadro { font-size: 13.5px; border-top: 1.5px solid var(--tinta); border-bottom: 1.5px solid var(--tinta); }
+  table.cuadro th { background: #eef1f3; color: var(--tinta); font-size: 12.5px; font-weight: 650; padding: 6px 8px; border-bottom: 1px solid #c9d0d5; }
+  table.cuadro td { padding: 6px 8px; border-bottom: 1px solid #e3e7ea; vertical-align: top; }
+  table.cuadro tr:last-child td { border-bottom: 0; }
+  table.cuadro th:first-child, table.cuadro td:first-child { padding-left: 4px; }
+  .fuente br + * { margin-top: 0; }
   [hidden] { display: none !important; }
   @media (max-width: 760px) {
     .hoja { padding: 24px 16px; margin: 0; }
@@ -211,9 +218,9 @@
     .hoja { margin: 0; box-shadow: none; max-width: none; padding: 0; }
     h1 { font-size: 21pt; } .evaluacion { font-size: 11.5pt; max-width: none; }
     section { margin-top: 18px; padding-top: 14px; } h2 { font-size: 12.5pt; }
-    table { font-size: 9.5pt; } td { padding-top: 6px; padding-bottom: 6px; } td small { font-size: 8.5pt; }
+    table { font-size: 9.5pt; } table.cuadro { font-size: 8.8pt; } table.cuadro th { font-size: 8.5pt; } .rotulo { font-size: 9.5pt; }
     tr, .pesas, .evaluacion { break-inside: avoid; } h2 { break-after: avoid; }
-    .fuente, .para, .anexo { font-size: 8.5pt; } .seguir { font-family: Archivo, sans-serif; font-size: 10pt; } .enl { display: none; } table.riesgo { display: none; } .anexo { margin-top: 18px; padding-top: 8px; } .hoja .membrete { padding-bottom: 6px; } h1 { margin-bottom: 12px; }
+    .fuente, .para, .anexo { font-size: 8.5pt; } .seguir { font-family: Archivo, sans-serif; font-size: 10pt; } .enl { display: none; } .anexo { margin-top: 18px; padding-top: 8px; } .hoja .membrete { padding-bottom: 6px; } h1 { margin-bottom: 12px; }
     .pesas .fila:hover .hit { fill: transparent; }
     .vista-alerta { display: none !important; }
     a { color: inherit; text-decoration: none; }
@@ -339,6 +346,12 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
             <text x="${Math.max(x(p), x(n)) + 12}" y="${y + 4.5}" class="val">${pct(p)}</text></g>`; }).join("")}
         </svg></div>`;
     }
+    // Asunto en frase nominal corta, como se anota en un cuadro: "Compromisos, área de influencia"
+    const ASUNTOS = [[/compromis|acuerdo|acta|incumpl/i, "compromisos"], [/área de influencia/i, "área de influencia"], [/contamina|ambiental|relave|metales/i, "impacto ambiental"],
+      [/consulta previa/i, "consulta previa"], [/compensa|indemniza/i, "compensaciones"], [/v[ií]as?|vial|convoy|carretera/i, "uso de vías"], [/emple|laboral/i, "empleo local"],
+      [/propiedad|tierra|terreno|predio/i, "tierras"], [/agua|h[ií]dric/i, "agua"], [/canon/i, "canon"]];
+    const asunto = c => { const s = `${c.resumen || ""} ${c.nombre}`, xs = ASUNTOS.filter(([re]) => re.test(s)).map(x => x[1]).slice(0, 3);
+      const r = xs.length ? xs.join(", ") : (c.tema || "sin dato").replace(/_/g, " "); return r.charAt(0).toUpperCase() + r.slice(1); };
     const titular = altos.length
       ? `Riesgo alto de paro en ${num(altos.length)} de las ${num(zonas.length)} operaciones de ${provsOp} durante ${mesTxt}`
       : `Riesgo ${BANDAS[niv].toLowerCase()} de paro en las operaciones de ${provsOp} durante ${mesTxt}`;
@@ -349,7 +362,8 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
       altos.length ? `${hechos ? "La" : "No obstante, la"} probabilidad de paro para ${mesTxt} se mantiene en nivel alto en ${lista(altos.map(z => `${nombreZ(z)} (${pct(mesP(z.a))})`))}.`
                    : `La operación con mayor exposición es ${nombreZ(top)}, con una probabilidad de paro de ${pct(mesP(top.a))} para ${mesTxt}.`,
       motor ? `El principal factor es ${motor}.` : "",
-      deEmpresa.length ? `La Defensoría del Pueblo registra ${num(deEmpresa.length, false)} conflictos vigentes con la empresa, de los cuales ${num(activosE.length, false)} se encuentran activos${sinDialogoE.length ? ` y ${num(sinDialogoE.length, false)} carecen de mesa de diálogo` : ". Ninguno figura sin mesa de diálogo"}.` : ""
+      deEmpresa.length ? `La Defensoría del Pueblo registra ${num(deEmpresa.length, false)} conflictos vigentes con la empresa, de los cuales ${num(activosE.length, false)} se encuentran activos. ${(() => { const con = deEmpresa.filter(c => /HAY/i.test(c.dialogo || "") && !/NO HAY/i.test(c.dialogo || "")).length;
+        return `${Num(con, false)} ${con === 1 ? "cuenta" : "cuentan"} con mesa de diálogo${sinDialogoE.length ? ` y ${num(sinDialogoE.length, false)} ${sinDialogoE.length === 1 ? "carece" : "carecen"} de ella` : ""}.`; })()}` : ""
     ].filter(Boolean).join(" ");
     // El reclamo sin el sujeto repetido ("La comunidad campesina exige..."): el caso ya dice quién es
     const reclamo = s => { const r = String(s || "").replace(/^(catorce |dos |tres |las |los |la |el )*(comunidad(es)?( campesinas?| nativas?)?|pobladores|comuneros|productores|agricultores|ronderos|trabajadores|vecinos)( locales)?( (de|del) [\p{L} ]+?)?\s+(?=(exigen?|demandan?|piden?|reclaman?|solicitan?|cuestionan?|rechazan?)\b)/iu, "")
@@ -369,13 +383,13 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
       <h1>${esc(titular)}</h1>
       <p class="evaluacion">${esc(evaluacion)}</p>
 
-      <section><h2>Riesgo por operación, ${mesTxt}</h2>
+      <section><h2>Riesgo por operación</h2>
+        <p class="rotulo">Gráfico 1. Probabilidad de paro o bloqueo en la zona de cada operación, ${mesTxt} de ${hoy.slice(0, 4)}</p>
         ${pesas(zonas)}
-        <table class="riesgo"><thead><tr><th>Operación</th><th class="num">${mesTxt.charAt(0).toUpperCase() + mesTxt.slice(1)}</th><th class="num">Promedio 12 meses</th><th class="num">Diferencia</th><th>Nivel</th></tr></thead><tbody>
+        <table class="cuadro riesgo"><thead><tr><th>Operación</th><th>Distrito</th><th class="num">${mesTxt.charAt(0).toUpperCase() + mesTxt.slice(1)}</th><th class="num">Prom. 12 meses</th><th class="num">Var. (pp)</th><th>Nivel</th></tr></thead><tbody>
         ${zonas.map(z => { const p = mesP(z.a), n = z.a.normal_zona_1m, d = Math.round((z.a.cambio_zona_1m ?? 0) * 100);
-          return `<tr><td><b>${esc(nombreZ(z))}</b><small>${esc(lugar(z.u))}</small></td><td class="num"><b>${pct(p)}</b></td>
-            <td class="num">${pct(n)}</td><td class="num">${d > 0 ? "+" : ""}${d} ${Math.abs(d) === 1 ? "punto" : "puntos"}</td><td>${BANDAS[nivel(p)]}</td></tr>`; }).join("")}</tbody></table>
-        <p class="fuente">Probabilidad de que ocurra un paro o bloqueo en el distrito de la operación o en los distritos colindantes. Nivel bajo, menos de 10%. Medio, de 10% a 25%. Alto, de 25% a 50%. Crítico, más de 50%.</p>
+          return `<tr><td>${esc(nombreZ(z))}</td><td>${esc(lugar(z.u).split(", ")[0])}</td><td class="num">${pct(p)}</td><td class="num">${pct(n)}</td><td class="num">${d > 0 ? "+" : ""}${d}</td><td>${BANDAS[nivel(p)]}</td></tr>`; }).join("")}</tbody></table>
+        <p class="fuente">Nota. La zona comprende el distrito de la operación y los distritos colindantes. Nivel bajo, menos de 10%. Medio, de 10% a 25%. Alto, de 25% a 50%. Crítico, más de 50%.<br>Fuente: Defensoría del Pueblo, Base de protestas EGPP-PUCP, INEI, MINEM y otras. Elaboración: Tremor.</p>
       </section>
 
       <section><h2>Hechos de la semana</h2>
@@ -387,12 +401,12 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
       </section>
 
       <section><h2>Conflictos registrados con la empresa</h2>
-        <table><thead><tr><th>Caso</th><th>Reclamo</th><th>Estado</th></tr></thead><tbody>
-        ${(deEmpresa.length ? deEmpresa : casos).slice(0, 7).map(c => `<tr><td style="width:30%"><b>${esc(c.nombre)}</b><small>${esc(lugar(c.ubigeo))}</small></td>
-          <td>${esc(c.resumen ? reclamo(c.resumen) : "Sin descripción en el reporte de la Defensoría.")}</td>
-          <td style="width:16%">${c.estado === "activo" ? "Activo" : "Latente"}<small>${/NO HAY/i.test(c.dialogo || "") ? "Sin diálogo" : /HAY/i.test(c.dialogo || "") ? "Con mesa de diálogo" : ""}</small></td></tr>`).join("")}
+        <p class="rotulo">Cuadro 1. Conflictos sociales vigentes que involucran a ${esc(corto)}</p>
+        <table class="cuadro"><thead><tr><th class="num">N.º</th><th>Caso</th><th>Ubicación</th><th>Asunto principal</th><th>Estado</th><th>Diálogo</th></tr></thead><tbody>
+        ${(deEmpresa.length ? deEmpresa : casos).slice(0, 8).map((c, k) => `<tr><td class="num">${k + 1}</td><td>${esc(c.nombre)}</td><td>${esc(lugar(c.ubigeo) || "s. d.")}</td>
+          <td>${esc(asunto(c))}</td><td>${c.estado === "activo" ? "Activo" : "Latente"}</td><td>${/NO HAY/i.test(c.dialogo || "") ? "No" : /HAY/i.test(c.dialogo || "") ? "Sí" : "s. d."}</td></tr>`).join("")}
         </tbody></table>
-        ${casos.length > 7 ? `<p class="fuente">Fuente: Defensoría del Pueblo, último reporte mensual. En total hay ${casos.length} conflictos vigentes en las zonas de sus operaciones.</p>` : ""}
+        <p class="fuente">${casos.length > 8 ? `Nota. Se listan ${Math.min(8, deEmpresa.length || casos.length)} de los ${casos.length} conflictos vigentes en las zonas de sus operaciones. ` : ""}s. d. sin dato.<br>Fuente: Defensoría del Pueblo, último reporte mensual de conflictos sociales. Elaboración: Tremor.</p>
       </section>
 
       ${vigilar.length ? `<section><h2>Aspectos a vigilar</h2><ul class="seguir">${vigilar.map(v => `<li>${esc(v)}</li>`).join("")}</ul></section>` : ""}
