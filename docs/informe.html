@@ -99,7 +99,7 @@
   .resumen ol li { font-family: var(--serif); font-size: 17px; line-height: 1.5; padding-left: 4px; }
   .resumen ol li::marker { font-family: Archivo, sans-serif; font-weight: 700; color: var(--marino); }
   .fuente { font-size: 14px; color: var(--tinta-3); margin: 10px 0 0; }
-  .seguir { margin: 0; padding-left: 20px; display: grid; gap: 10px; font-family: var(--serif); font-size: 17px; }
+  .seguir { margin: 0; padding-left: 20px; display: grid; gap: 8px; font-size: 16px; }
   .telefono .noti + .noti { margin-top: 10px; }
   button.noti { display: block; width: 100%; text-align: left; font: inherit; border: 0; cursor: pointer; transition: transform 140ms var(--ease-out); }
   button.noti:active { transform: scale(0.98); }
@@ -202,12 +202,21 @@
     table { font-size: 14px; }
     .barrita { display: none; }
   }
+  @page { size: A4; margin: 16mm 16mm 18mm;
+    @bottom-left { content: "Tremor. Informe semanal de riesgo social. Uso interno."; font: 8pt Archivo, sans-serif; color: #66737c; }
+    @bottom-right { content: "Página " counter(page) " de " counter(pages); font: 8pt Archivo, sans-serif; color: #66737c; } }
   @media print {
-    body { background: #fff; font-size: 13px; }
+    body { background: #fff; font-size: 10pt; }
     .barra { display: none; }
     .hoja { margin: 0; box-shadow: none; max-width: none; padding: 0; }
-    section, tr { break-inside: avoid; }
+    h1 { font-size: 21pt; } .evaluacion { font-size: 11.5pt; max-width: none; }
+    section { margin-top: 18px; padding-top: 14px; } h2 { font-size: 12.5pt; }
+    table { font-size: 9.5pt; } td { padding-top: 6px; padding-bottom: 6px; } td small { font-size: 8.5pt; }
+    tr, .pesas, .evaluacion { break-inside: avoid; } h2 { break-after: avoid; }
+    .fuente, .para, .anexo { font-size: 8.5pt; } .seguir { font-family: Archivo, sans-serif; font-size: 10pt; } .enl { display: none; } table.riesgo { display: none; } .anexo { margin-top: 18px; padding-top: 8px; } .hoja .membrete { padding-bottom: 6px; } h1 { margin-bottom: 12px; }
+    .pesas .fila:hover .hit { fill: transparent; }
     .vista-alerta { display: none !important; }
+    a { color: inherit; text-decoration: none; }
   }
 </style>
 </head>
@@ -216,7 +225,7 @@
   <b>TREMOR</b>
   <div class="grupo" id="vistas"><button type="button" data-v="informe" aria-pressed="true">Informe semanal</button><button type="button" data-v="alerta" aria-pressed="false">Alerta inmediata</button></div>
   <div class="grupo der" id="chips"></div>
-  <button type="button" onclick="print()">Guardar en PDF</button>
+  <button type="button" onclick="print()">Descargar PDF</button>
 </div>
 <main class="hoja" id="hoja"><p>Cargando…</p></main>
 <div class="vista-alerta" id="alerta" hidden></div>
@@ -303,7 +312,7 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
     const deEmpresa = casos.filter(suya), activosE = deEmpresa.filter(c => c.estado === "activo"), sinDialogoE = deEmpresa.filter(c => /NO HAY/i.test(c.dialogo || ""));
     const corredor = [...rutas].includes("PE-3SG") ? "el Corredor Minero del Sur" : rutas.size ? `las vías ${lista([...rutas].slice(0, 3))}` : "sus vías de acceso";
     const anunciadas = ev.filter(e => e.estado === "anunciada");
-    const MOTOR_TXT = { "el ciclo poselectoral municipal": "el cambio de autoridades municipales, que históricamente duplica los paros en los meses siguientes a la elección",
+    const MOTOR_TXT = { "el ciclo poselectoral municipal": "el cambio de autoridades municipales. Históricamente, los paros en estas zonas se duplican en los meses posteriores a cada elección",
       "el alza de los precios de los metales": "el alza del precio del cobre y del oro en el último año, que suele reactivar los reclamos por canon y empleo",
       "la pérdida de mesas de diálogo": "la pérdida de mesas de diálogo en conflictos de la zona",
       "nuevas aprobaciones ambientales": "la aprobación reciente de estudios ambientales en la zona",
@@ -331,16 +340,16 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
         </svg></div>`;
     }
     const titular = altos.length
-      ? `${provsOp}: riesgo alto de paro en ${num(altos.length)} de ${num(zonas.length)} operaciones para ${mesTxt}`
-      : `${provsOp}: riesgo ${BANDAS[niv].toLowerCase()} de paro para ${mesTxt}`;
+      ? `Riesgo alto de paro en ${num(altos.length)} de las ${num(zonas.length)} operaciones de ${provsOp} durante ${mesTxt}`
+      : `Riesgo ${BANDAS[niv].toLowerCase()} de paro en las operaciones de ${provsOp} durante ${mesTxt}`;
     const motor = motores[0] ? MOTOR_TXT[motores[0].corto] : "";
     const evaluacion = [
-      hechos ? `La semana dejó ${hechos} ${hechos === 1 ? "protesta o bloqueo" : "protestas o bloqueos"} en sus provincias o rutas, detallados abajo.`
-             : `La semana cerró sin protestas ni bloqueos en ${provsOp} ni en ${corredor}.`,
-      altos.length ? `${hechos ? "El" : "Aun así, el"} riesgo de paro en ${mesTxt} sigue alto en ${lista(altos.map(z => `${nombreZ(z)} (${pct(mesP(z.a))})`))}.`
-                   : `La operación más expuesta es ${nombreZ(top)}, con ${pct(mesP(top.a))} de probabilidad de paro en ${mesTxt}.`,
-      motor ? `Pesa sobre todo ${motor}.` : "",
-      deEmpresa.length ? `De los ${num(deEmpresa.length, false)} conflictos que la Defensoría registra contra la empresa, ${num(activosE.length, false)} están activos${sinDialogoE.length ? ` y ${num(sinDialogoE.length, false)} no tienen mesa de diálogo` : " y todos tienen mesa de diálogo o no la requieren"}.` : ""
+      hechos ? `Durante la semana se registraron ${hechos} ${hechos === 1 ? "protesta o bloqueo" : "protestas o bloqueos"} en las provincias de sus operaciones o en sus rutas, que se detallan más adelante.`
+             : `Durante la semana no se registraron protestas ni bloqueos en ${provsOp} ni en ${corredor}.`,
+      altos.length ? `${hechos ? "La" : "No obstante, la"} probabilidad de paro para ${mesTxt} se mantiene en nivel alto en ${lista(altos.map(z => `${nombreZ(z)} (${pct(mesP(z.a))})`))}.`
+                   : `La operación con mayor exposición es ${nombreZ(top)}, con una probabilidad de paro de ${pct(mesP(top.a))} para ${mesTxt}.`,
+      motor ? `El principal factor es ${motor}.` : "",
+      deEmpresa.length ? `La Defensoría del Pueblo registra ${num(deEmpresa.length, false)} conflictos vigentes con la empresa, de los cuales ${num(activosE.length, false)} se encuentran activos${sinDialogoE.length ? ` y ${num(sinDialogoE.length, false)} carecen de mesa de diálogo` : ". Ninguno figura sin mesa de diálogo"}.` : ""
     ].filter(Boolean).join(" ");
     // El reclamo sin el sujeto repetido ("La comunidad campesina exige..."): el caso ya dice quién es
     const reclamo = s => { const r = String(s || "").replace(/^(catorce |dos |tres |las |los |la |el )*(comunidad(es)?( campesinas?| nativas?)?|pobladores|comuneros|productores|agricultores|ronderos|trabajadores|vecinos)( locales)?( (de|del) [\p{L} ]+?)?\s+(?=(exigen?|demandan?|piden?|reclaman?|solicitan?|cuestionan?|rechazan?)\b)/iu, "")
@@ -349,14 +358,14 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
     const vigilar = [
       ...anunciadas.map(e => `${e.titular}. Anunciada para el ${dia(e.fecha_evento)} en ${lugar(e.ubigeo)}.`),
       ...sinDialogoE.slice(0, 2).map(c => `El conflicto ${c.nombre} no tiene mesa de diálogo. ${c.resumen || ""}`),
-      ...(motores.some(m => /poselectoral/.test(m.corto)) ? ["La instalación de las nuevas autoridades municipales en enero. Las nuevas gestiones suelen revisar los acuerdos vigentes con la empresa."] : []),
-      ...(temas[0] ? [`Los reclamos por ${temas[0][0]}, presentes en ${num(temas[0][1], false)} de los ${casos.length} conflictos de sus zonas.`] : [])].slice(0, 4);
+      ...(motores.some(m => /poselectoral/.test(m.corto)) ? ["La instalación de las nuevas autoridades municipales en enero de 2027. Las nuevas gestiones suelen revisar los acuerdos vigentes con las empresas de su jurisdicción."] : []),
+      ...(temas[0] ? [`Los reclamos por ${temas[0][0]}, presentes en ${num(temas[0][1], false)} de los ${casos.length} conflictos vigentes en las zonas de sus operaciones.`] : [])].slice(0, 4);
 
     document.title = `Tremor. Informe semanal, ${emp}`;
     document.getElementById("hoja").innerHTML = `
       <div class="membrete"><div class="marca">TREMOR<span>Riesgo social en operaciones</span></div>
         <div class="num">Informe semanal n.º ${semana}<br>${largo(hoy)}</div></div>
-      <p class="para">Preparado para ${esc(emp.replace(/\.$/, ""))}. Cubre del ${periodo}. Uso interno.</p>
+      <p class="para">Preparado para ${esc(emp.replace(/\.$/, ""))}. Periodo del ${periodo}. Documento de uso interno.</p>
       <h1>${esc(titular)}</h1>
       <p class="evaluacion">${esc(evaluacion)}</p>
 
@@ -366,29 +375,29 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
         ${zonas.map(z => { const p = mesP(z.a), n = z.a.normal_zona_1m, d = Math.round((z.a.cambio_zona_1m ?? 0) * 100);
           return `<tr><td><b>${esc(nombreZ(z))}</b><small>${esc(lugar(z.u))}</small></td><td class="num"><b>${pct(p)}</b></td>
             <td class="num">${pct(n)}</td><td class="num">${d > 0 ? "+" : ""}${d} ${Math.abs(d) === 1 ? "punto" : "puntos"}</td><td>${BANDAS[nivel(p)]}</td></tr>`; }).join("")}</tbody></table>
-        <p class="fuente">Probabilidad de un paro o bloqueo en el distrito de la operación o sus vecinos. Bajo, menos de 10%. Medio, hasta 25%. Alto, hasta 50%. Crítico, más.</p>
+        <p class="fuente">Probabilidad de que ocurra un paro o bloqueo en el distrito de la operación o en los distritos colindantes. Nivel bajo, menos de 10%. Medio, de 10% a 25%. Alto, de 25% a 50%. Crítico, más de 50%.</p>
       </section>
 
-      <section><h2>La semana</h2>
+      <section><h2>Hechos de la semana</h2>
         ${hechos ? `<table><thead><tr><th>Fecha</th><th>Hecho</th><th>Lugar</th><th>Fuente</th></tr></thead><tbody>
           ${vias.map(s => `<tr><td>${dia(s.fecha_evento)}</td><td><b>Vía ${esc(s.via)} bloqueada, sigue vigente.</b><small>${esc(s.contexto || "")}</small></td><td>${esc(nombre(s.distrito))}</td><td>SUTRAN</td></tr>`).join("")}
           ${ev.map(e => `<tr><td>${dia(e.fecha_evento || e.fecha_anuncio)}</td><td><b>${esc(e.titular)}</b>${e.estado === "anunciada" ? "<small>Anunciada, aún no ocurre.</small>" : ""}</td><td>${esc(lugar(e.ubigeo))}</td><td><a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.medio)}</a></td></tr>`).join("")}
           </tbody></table>`
-        : `<p>Sin protestas, anuncios ni bloqueos en ${provsOp} ni en ${corredor}. Fuentes revisadas: prensa nacional y regional, radios locales, SUTRAN y Defensoría del Pueblo.</p>`}
+        : `<p>No se registraron protestas, anuncios de protesta ni bloqueos de vías en ${provsOp} ni en ${corredor} durante el periodo. Se revisaron la prensa nacional y regional, las radios locales, las alertas de la SUTRAN y los reportes de la Defensoría del Pueblo.</p>`}
       </section>
 
-      <section><h2>Conflictos contra la empresa</h2>
+      <section><h2>Conflictos registrados con la empresa</h2>
         <table><thead><tr><th>Caso</th><th>Reclamo</th><th>Estado</th></tr></thead><tbody>
         ${(deEmpresa.length ? deEmpresa : casos).slice(0, 7).map(c => `<tr><td style="width:30%"><b>${esc(c.nombre)}</b><small>${esc(lugar(c.ubigeo))}</small></td>
           <td>${esc(c.resumen ? reclamo(c.resumen) : "Sin descripción en el reporte de la Defensoría.")}</td>
           <td style="width:16%">${c.estado === "activo" ? "Activo" : "Latente"}<small>${/NO HAY/i.test(c.dialogo || "") ? "Sin diálogo" : /HAY/i.test(c.dialogo || "") ? "Con mesa de diálogo" : ""}</small></td></tr>`).join("")}
         </tbody></table>
-        ${casos.length > 7 ? `<p class="fuente">Fuente: Defensoría del Pueblo, último reporte mensual. Hay ${casos.length} conflictos vigentes en sus zonas, todos en el mapa.</p>` : ""}
+        ${casos.length > 7 ? `<p class="fuente">Fuente: Defensoría del Pueblo, último reporte mensual. En total hay ${casos.length} conflictos vigentes en las zonas de sus operaciones.</p>` : ""}
       </section>
 
-      ${vigilar.length ? `<section><h2>A seguir</h2><ul class="seguir">${vigilar.map(v => `<li>${esc(v)}</li>`).join("")}</ul></section>` : ""}
+      ${vigilar.length ? `<section><h2>Aspectos a vigilar</h2><ul class="seguir">${vigilar.map(v => `<li>${esc(v)}</li>`).join("")}</ul></section>` : ""}
 
-      <div class="anexo">Método. Modelo entrenado con los conflictos de la Defensoría del Pueblo desde 2004 y la base de protestas de la PUCP, más unas 60 variables por distrito. En 2024 a 2026 sus probabilidades coincidieron con la frecuencia real de paros. <a href="metodo.html">Detalle</a>. <a href="index.html">Mapa</a>.</div>`;
+      <div class="anexo">Método. Modelo entrenado con los conflictos de la Defensoría del Pueblo desde 2004 y la base de protestas de la PUCP, más unas 60 variables por distrito. En 2024 a 2026 sus probabilidades coincidieron con la frecuencia real de paros. <span class="enl"><a href="metodo.html">Detalle del método</a>. <a href="index.html">Mapa</a>.</span></div>`;
 
     // ---- Alertas inmediatas: tres tipos, con datos reales donde ya los hay
     const radiosZona = [...provs].flatMap(p => (D.radios || {})[p] || []);
