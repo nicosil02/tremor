@@ -77,6 +77,17 @@
   .etq { display: block; margin-top: 14px; font-size: 14px; font-weight: 700; color: var(--tinta-2); }
   .tono-neg { color: var(--rojo); } .tono-pos { color: var(--verde); }
   #mapa { position: fixed; inset: 0 0 calc(60px + env(safe-area-inset-bottom)); }
+  @media (min-width: 900px) {
+    body { padding-bottom: 60px; }
+    header, main, nav { width: 440px; }
+    main { border-right: 1px solid var(--linea); min-height: calc(100dvh - 120px); }
+    header { border-right: 1px solid var(--linea); }
+    nav { right: auto; border-right: 1px solid var(--linea); grid-template-columns: repeat(3, 1fr); }
+    nav [data-v=mapa] { display: none; }
+    #mapa, #mapa[hidden] { display: block; inset: 0 0 0 440px; }
+    .leyenda-via { left: 452px; top: 12px; }
+    .fila:hover { background: #eef2f1; }
+  }
   nav { position: fixed; z-index: 6; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr);
     height: calc(60px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); background: var(--papel); border-top: 1px solid var(--linea); }
   nav button { all: unset; cursor: pointer; display: grid; place-items: center; font-size: 15px; font-weight: 600; color: var(--tinta-2); position: relative; }
@@ -290,6 +301,7 @@ function detalleAviso(k) {
 }
 
 let actual = "avisos", mapa, PAIS = [], FOCO = null;
+const ANCHO = matchMedia("(min-width: 900px)");  // en el computador el mapa está siempre a la vista
 const DISTRITOS = () => (DISTRITOS.p ||= fetch("distritos.json").then(r => r.json()));
 const RUTAS = () => (RUTAS.p ||= fetch("rutas.geojson").then(r => r.json()));
 function ir(v) {
@@ -297,7 +309,7 @@ function ir(v) {
   document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-current", b.dataset.v === v ? "page" : "false"));
   document.getElementById("vista").innerHTML = VISTAS[v]();
   document.getElementById("mapa").hidden = v !== "mapa";
-  if (v === "mapa") verMapa();
+  if (v === "mapa" || ANCHO.matches) verMapa();
   scrollTo(0, 0); conectar();
 }
 function abrir(html) { pila.push(document.getElementById("vista").innerHTML); document.getElementById("vista").innerHTML = html; scrollTo(0, 0); conectar(); }
@@ -305,7 +317,7 @@ function volver() { const h = pila.pop(); if (h == null) return ir(actual); docu
 function conectar() {
   document.querySelectorAll("[data-aviso]").forEach(b => b.onclick = () => abrir(detalleAviso(+b.dataset.aviso)));
   document.querySelectorAll("[data-pais]").forEach(b => b.onclick = () => abrir(detalleAviso(PAIS[+b.dataset.pais])));
-  document.querySelectorAll("[data-tramo]").forEach(b => b.onclick = () => { FOCO = +b.dataset.tramo; ir("mapa"); });
+  document.querySelectorAll("[data-tramo]").forEach(b => b.onclick = () => { FOCO = +b.dataset.tramo; ANCHO.matches ? verMapa() : ir("mapa"); });
   document.querySelectorAll("[data-op]").forEach(b => b.onclick = () => abrir(detalleOp(b.dataset.op)));
 }
 document.querySelector("nav").onclick = e => { const b = e.target.closest("button"); if (b) ir(b.dataset.v); };

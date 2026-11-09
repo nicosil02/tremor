@@ -17,3 +17,10 @@ def test_medios_del_caso_piden_contraparte_o_conflicto():
     assert [m["medio"] for m in out[0]] == ["B"]
     assert [m["medio"] for m in out[1]] == ["C"]
     assert out[2] == []
+
+
+def test_fecha_pagina():
+    from tremor.prensa.ampliar import fecha_pagina
+    assert fecha_pagina('<meta property="article:published_time" content="2026-08-12T10:00:00-05:00">') == "2026-08-12"
+    assert fecha_pagina('{"@type":"NewsArticle","datePublished": "2026-08-11T09:00"}') == "2026-08-11"
+    assert fecha_pagina("<p>sin fecha</p>") is None

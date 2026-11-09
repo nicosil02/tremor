@@ -10,6 +10,7 @@ import html
 import json
 import re
 import time
+from datetime import date
 from urllib.parse import quote
 
 import requests
@@ -60,25 +61,36 @@ def lead(pagina: str, n=600) -> str:
     return texto[:n]
 
 
+def fecha_pagina(pagina: str) -> str | None:
+    """Fecha de publicación que declara el medio (meta article:published_time o datePublished de JSON-LD), AAAA-MM-DD.
+    Google News a veces reindexa notas viejas con fecha de hoy: un paro de agosto aparecía como del 9 de noviembre."""
+    m = re.search(r'(?:article:published_time|datePublished)"?\s*(?:content=|:)\s*"(\d{4}-\d{2}-\d{2})', pagina)
+    return m[1] if m else None
+
+
 def ampliar(con, version: str, limite=200, pausa=8.0) -> tuple[int, int]:
     """Protestas sin resumen que están sin lugar preciso o marcadas como anunciadas → lead del medio. Primero los
     enlaces directos al medio (sin cupo), después los de Google News (con pausa)."""
-    filas = con.execute("""SELECT n.id, n.enlace FROM nota n JOIN codificacion c ON c.nota_id = n.id AND c.version = ?
+    filas = con.execute("""SELECT n.id, n.enlace, substr(n.publicado, 1, 10) FROM nota n JOIN codificacion c ON c.nota_id = n.id AND c.version = ?
         WHERE c.es_protesta = 1 AND (c.precision IS NULL OR c.precision = 'departamento' OR c.estado = 'anunciada')
           AND coalesce(n.resumen, '') = ''
         ORDER BY n.enlace LIKE '%news.google.com%' LIMIT ?""", (version, limite)).fetchall()
     hechas = 0
-    for id_, url in filas:
+    for id_, url, publicado in filas:
         if "news.google.com" in url:
             time.sleep(pausa)  # sin pausa Google corta con captcha a las ~15 consultas
         try:
             real = enlace_real(url)
-            texto = lead(requests.get(real, headers=UA, timeout=30).text) if real else ""
+            pagina = requests.get(real, headers=UA, timeout=30).text if real else ""
+            texto = lead(pagina)
         except requests.RequestException:
             continue
         except Limite as e:
             print(f"  {e}")
             break
+        f = fecha_pagina(pagina)
+        if f and publicado and f < publicado and (date.fromisoformat(publicado) - date.fromisoformat(f)).days > 3:
+            con.execute("UPDATE nota SET publicado = ? WHERE id = ?", (f, id_))  # la fecha real manda
         if texto:
             con.execute("UPDATE nota SET resumen = ?, enlace = ? WHERE id = ?", (texto, real, id_))
             con.execute("DELETE FROM codificacion WHERE nota_id = ? AND version = ?", (id_, version))

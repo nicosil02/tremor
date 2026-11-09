@@ -449,7 +449,7 @@
 // Lee la rama `datos` (se actualiza sola); si no responde, la copia de docs/.
 // En el teléfono abre la app (docs/app.html): avisos, operaciones y mapa, una cosa por pantalla. ?web fuerza esta versión.
 const ADMIN = /[?&]admin\b/.test(location.search);
-if (matchMedia("(max-width: 700px)").matches && !/[?&]web\b/.test(location.search)) location.replace("app.html" + (ADMIN ? "?admin" : ""));
+if (!/[?&]web\b/.test(location.search)) location.replace("app.html" + (ADMIN ? "?admin" : ""));
 let CADENA = {}; fetch("cadena.json").then(r => r.json()).then(c => CADENA = c).catch(() => {});
 const FUENTES = ["https://raw.githubusercontent.com/nicosil02/tremor/datos/web.json", "web.json"];
 const BASE = "https://tiles.openfreemap.org/styles/positron";
