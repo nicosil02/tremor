@@ -279,10 +279,11 @@ const VISTAS = {
     const v = PAIS.filter(x => x.viene).sort((a, b) => a.f.localeCompare(b.f)), r = PAIS.filter(x => !x.viene && x.f <= HOY && dias(x.f) >= -7).sort((a, b) => b.f.localeCompare(a.f));
     const ls = xs => `<ul>${xs.map(x => fila(x.urge ? "urge" : "", 0, x.t, x.w, x.s, `data-pais="${PAIS.indexOf(x)}"`)).join("")}</ul>`;
     // ponytail: sin capitales de departamento ni Lima-Callao, donde la EGPP pone lo que no sabe ubicar
-    const top = D.alerta.filter(a => a.prob != null && !/0101$/.test(a.ubigeo) && !/^(1501|0701)/.test(a.ubigeo)).sort((a, b) => b.prob - a.prob).slice(0, 10);
+    const top = D.alerta.filter(a => +a.operacion_extractiva === 1 && a.prob_zona_extractivo != null && !/0101$/.test(a.ubigeo) && !/^(1501|0701)/.test(a.ubigeo))
+      .sort((a, b) => b.prob_zona_extractivo - a.prob_zona_extractivo).slice(0, 10);
     return `<h2>Anunciado en el país</h2>${v.length ? ls(v) : `<p class="vacio">Nada anunciado.</p>`}<h2>Última semana</h2>${r.length ? ls(r) : `<p class="vacio">Sin protestas registradas.</p>`}
-      <h2>Distritos con más riesgo de paro o bloqueo, octubre a diciembre</h2><ul>${top.map(a => `<li><button type="button" class="fila" data-distrito="${a.ubigeo}"><i style="background:var(--cobre-4)"></i>
-        <span class="t">${esc(lugar(a.ubigeo))}</span><span class="pct">${pct(a.prob)}</span><span class="s" style="grid-column:2">${esc(String(a.razones || "").split(/ \(| · |; /)[0])}</span></button></li>`).join("")}</ul>${ANCHO.matches ? "" : VER}`;
+      <h2>Zonas extractivas con más riesgo, octubre a diciembre</h2><ul>${top.map(a => `<li><button type="button" class="fila" data-distrito="${a.ubigeo}"><i style="background:var(--cobre-4)"></i>
+        <span class="t">${esc(lugar(a.ubigeo))}</span><span class="pct">${pct(a.prob_zona_extractivo)}</span><span class="s" style="grid-column:2">${esc(String(a.razones_zona_extractivo || "").replace(/^en la zona \(distrito y vecinos\): /, "").split(/ \(| · |; /)[0])}</span></button></li>`).join("")}</ul>${ANCHO.matches ? "" : VER}`;
   },
   mapa() { cabecera(false); return X.cadena.length || PAIS_VISTA ? `<p class="leyenda-via">${ley()}</p>` : ""; },
 };
@@ -372,7 +373,7 @@ function detalleAviso(k) {
 let actual = "avisos", mapa, PAIS = [], FOCO = null, SEL = null;  // SEL: distritos que el mapa resalta y encuadra
 const VER = `<button type="button" class="ir vermapa" data-vermapa>Ver en el mapa</button>`;
 const ley = () => (actual === "pais" || PAIS_VISTA) && !SEL
-  ? `Riesgo de paro o bloqueo por distrito<small>Octubre a diciembre. Más oscuro es más riesgo. Toque un distrito para ver su porcentaje</small>`
+  ? `Riesgo en zonas con operación extractiva<small>Paro, bloqueo o toma contra la actividad extractiva, octubre a diciembre. Toque un distrito para ver su porcentaje</small>`
   : (FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Riesgo en la vía, " + pct(X.via))
   + (SEL ? (SEL.tr.length ? `<small><i class="rojo"></i>${/se suma/.test(SEL.etq) ? "Anunciaron que se suman" : SEL.tr2.length ? "Más probable" : "Tramos que puede cortar"}${SEL.tr2.length ? `<br><i class="naranja"></i>Posible` : ""}<br><i class="punto"></i>${/se suma/.test(SEL.etq) ? "Base que se suma" : SEL.etq ? "Donde más bloquearon antes" : "Dónde es la protesta"}</small>` : "")
     : `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`);
@@ -383,13 +384,14 @@ function peru() {
   DISTRITOS().then(g => {
     const poner = () => {
       if (!mapa.getSource("peru")) {
-        const fc = { type: "FeatureCollection", features: g.features.map(f => ({ ...f, properties: { ...f.properties, p: (A.get(f.properties.u) || {}).prob ?? 0 } })) };
+        const fc = { type: "FeatureCollection", features: g.features.filter(f => +(A.get(f.properties.u) || {}).operacion_extractiva === 1)
+          .map(f => ({ ...f, properties: { ...f.properties, p: +(A.get(f.properties.u) || {}).prob_zona_extractivo || 0 } })) };
         mapa.addSource("peru", { type: "geojson", data: fc });
         mapa.addLayer({ id: "peru", type: "fill", source: "peru", layout: { visibility: "none" }, paint: { "fill-opacity": 0.7,
           "fill-color": ["step", ["get", "p"], "#f3e1d3", 0.1, "#e3a67c", 0.25, "#c2552b", 0.5, "#8a3213"] } }, "ops");
         mapa.addLayer({ id: "peru-l", type: "line", source: "peru", layout: { visibility: "none" }, paint: { "line-color": "#fff", "line-width": 0.3 } }, "ops");
         mapa.on("click", "peru", ev => { if (!(actual === "pais" || PAIS_VISTA)) return; const u = ev.features[0].properties.u;
-          new maplibregl.Popup({ maxWidth: "240px" }).setLngLat(ev.lngLat).setHTML(`<b>${esc(lugar(u))}</b><br>Probabilidad de paro o bloqueo hasta diciembre, ${pct(ev.features[0].properties.p)}`).addTo(mapa); });
+          new maplibregl.Popup({ maxWidth: "240px" }).setLngLat(ev.lngLat).setHTML(`<b>${esc(lugar(u))}</b><br>${pct(ev.features[0].properties.p)} de paro, bloqueo o toma contra la actividad extractiva en la zona, octubre a diciembre`).addTo(mapa); });
       }
       ["peru", "peru-l"].forEach(c => mapa.setLayoutProperty(c, "visibility", on ? "visible" : "none"));
       ["ops", "ops-t", "tramos", "tramos-l", "vias", "rotulos"].forEach(c => mapa.getLayer(c) && mapa.setLayoutProperty(c, "visibility", on ? "none" : "visible"));
@@ -529,7 +531,7 @@ function verMapa() {
           "text-offset": [0, 1.4], "text-anchor": "top", "text-font": ["Noto Sans Bold"] }, paint: { "text-halo-color": "#fff", "text-halo-width": 1.5 } });
       }
       const b = new maplibregl.LngLatBounds(); fs.forEach(f => b.extend(f.geometry.coordinates));
-      if (!b.isEmpty() && !SEL && !X.cadena.length) mapa.fitBounds(b, { padding: 60, maxZoom: 11, duration: 900 });
+      if (!b.isEmpty() && !SEL && !X.cadena.length && !(actual === "pais" || PAIS_VISTA)) mapa.fitBounds(b, { padding: 60, maxZoom: 11, duration: 900 });
     };
     mapa.loaded() ? pintar() : mapa.once("load", pintar);
   }).catch(() => {});
@@ -558,7 +560,7 @@ function verMapa() {
       const b = new maplibregl.LngLatBounds();
       fc.features.filter(f => foco == null || f.properties.i === foco).forEach(f =>
         JSON.stringify(f.geometry.coordinates).match(/-?\d+\.?\d*,-?\d+\.?\d*/g).forEach(s => b.extend(s.split(",").map(Number))));
-      if (!b.isEmpty() && !SEL) mapa.fitBounds(b, { padding: 40, duration: 900 });
+      if (!b.isEmpty() && !SEL && !(actual === "pais" || PAIS_VISTA)) mapa.fitBounds(b, { padding: 40, duration: 900 });
     };
     const listo = () => mapa.getLayer("ops") ? poner() : setTimeout(listo, 200);
     listo();
