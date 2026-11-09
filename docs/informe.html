@@ -245,7 +245,7 @@
 <script>
 // [botón, clave del archivo, cómo empieza el titular en OEFA]: se busca en el nombre de la empresa, no en el de la
 // unidad ("bambas" también está en "Cotabambas - Ccalla", que es de Panoro)
-const EMPRESAS = [["Las Bambas", "bambas", "minera las bambas"], ["Southern", "southern", "southern peru"], ["Antamina", "antamina", "minera antamina"], ["Yanacocha", "yanacocha", "minera yanacocha"]];
+const EMPRESAS = [["Bateas", "bateas", "minera bateas"], ["Raura", "raura", "minera raura"], ["Poderosa", "poderosa", "minera poderosa"], ["Las Bambas", "bambas", "minera las bambas"], ["Southern", "southern", "southern peru"], ["Antamina", "antamina", "minera antamina"], ["Yanacocha", "yanacocha", "minera yanacocha"]];
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const llano = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const nombre = s => String(s ?? "").toLowerCase().replace(/(^|[\s(-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase())
@@ -306,12 +306,14 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
     const nombreZ = z => z.os.map(o => o.unidad.split(",")[0] + (o.tipo === "proyecto" ? " (proyecto)" : "")).slice(0, 2).join(" / ");
     const enZona = new Set(zonas.flatMap(z => zonaDe(z.u))), provs = new Set([...enZona].map(u => u.slice(0, 4)));
     const rutas = new Set([...enZona].flatMap(u => (D.rutas || {})[u] || []));
-    const ev = D.eventos.filter(e => provs.has(String(e.ubigeo || "").slice(0, 4)) && /paro|bloqueo|huelga|toma|marcha|plant|moviliz|protesta/i.test(e.accion || "")
-      && (e.estado === "anunciada" || String(e.fecha_evento || "") >= desde));
+    const carga = e => String(e.ubigeo) === "00" && /transportistas de carga/i.test(e.actor || "") && !e.urbano;
+    const ev = D.eventos.filter(e => !e.suspendido && (provs.has(String(e.ubigeo || "").slice(0, 4)) || carga(e)) && /paro|bloqueo|huelga|toma|marcha|plant|moviliz|protesta/i.test(e.accion || "")
+      && (e.estado === "anunciada" ? String(e.fecha_evento || "") >= String(D.creado) : String(e.fecha_evento || "") >= desde));
     const vias = (D.sutran || []).filter(s => rutas.has(s.via) && provs.has(String(s.ubigeo || "").slice(0, 4)) || provs.has(String(s.ubigeo || "").slice(0, 4)));
     const raiz = llano(corto).split(" ").find(w => w.length > 3) || "@";
     const suya = c => empresas.includes(c.empresa_op) || new RegExp(`\b${raiz}\b`).test(llano(`${c.contra_empresa || ""} ${c.nombre}`));
-    const casos = (D.casos || []).filter(c => suya(c) || enZona.has(String(c.ubigeo)))
+    const deOtra = c => !suya(c) && /\s[-–]\s.*(minera|mina\b|s\.a|las bambas|southern|antamina|yanacocha|hudbay|glencore|xstrata|petro|repsol|bateas|raura|poderosa)/i.test(c.nombre || "");
+    const casos = (D.casos || []).filter(c => suya(c) || (enZona.has(String(c.ubigeo)) && !deOtra(c)))
       .sort((x, y) => suya(y) - suya(x) || (x.estado === "activo" ? 0 : 1) - (y.estado === "activo" ? 0 : 1));
     const activos = casos.filter(c => c.estado === "activo"), sinDialogo = casos.filter(c => /NO HAY/i.test(c.dialogo || ""));
     const altos = zonas.filter(z => nivel(mesP(z.a)) >= 2), top = zonas[0];
@@ -392,7 +394,7 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
       : `Riesgo ${BANDAS[niv].toLowerCase()} de ${PARO} en las operaciones de ${provsOp} durante ${mesTxt}`;
     const motor = motores[0] ? MOTOR_TXT[motores[0].corto] : "";
     const evaluacion = [
-      hechos ? `En los últimos 30 días se registraron ${num(hechos, false) === "un" ? "una" : num(hechos)} ${hechos === 1 ? "protesta o bloqueo" : "protestas o bloqueos"} en las provincias de sus operaciones o en sus rutas, que se detallan más adelante.`
+      hechos ? `En los últimos 30 días ${hechos === 1 ? "se registró una protesta o bloqueo, o un anuncio," : `se registraron ${num(hechos)} protestas, bloqueos o anuncios`} en las provincias de sus operaciones, en sus rutas o a nivel nacional en el transporte de carga, que se detallan más adelante.`
              : `En los últimos 30 días no se registraron protestas ni bloqueos en ${provsOp} ni en ${corredor}.`,
       altos.length ? `${hechos ? "La" : "No obstante, la"} probabilidad de ${PARO} para ${mesTxt} se mantiene en nivel alto en ${altos.length > 3 ? `${altos.slice(0, 3).map(z => `${nombreZ(z)} (${pct(mesP(z.a))})`).join(", ")} y otras ${num(altos.length - 3)} zonas` : lista(altos.map(z => `${nombreZ(z)} (${pct(mesP(z.a))})`))}.`
                    : `La operación con mayor exposición es ${nombreZ(top)}, con una probabilidad de ${PARO} de ${pct(mesP(top.a))} para ${mesTxt}.`,
@@ -407,10 +409,11 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
       .replace(/ a (la|una) empresa minera( Las Bambas)?/g, " a la empresa"); return r.charAt(0).toUpperCase() + r.slice(1); };
 
     const vigilar = [
-      ...anunciadas.map(e => `${e.titular}. Anunciada para el ${dia(e.fecha_evento)} en ${lugar(e.ubigeo)}.`),
+      ...anunciadas.map(e => `${e.titular}. Anunciada para el ${dia(e.fecha_evento)} ${String(e.ubigeo) === "00" ? "en todo el país" : `en ${lugar(e.ubigeo)}`}.`),
       ...sinDialogoE.slice(0, 2).map(c => `El conflicto ${c.nombre} no tiene mesa de diálogo. ${c.resumen || ""}`),
       ...(motores.some(m => /poselectoral/.test(m.corto)) ? ["La instalación de las nuevas autoridades municipales en enero de 2027. Las nuevas gestiones suelen revisar los acuerdos vigentes con las empresas de su jurisdicción."] : []),
-      ...(temas[0] ? [`Los reclamos por ${temas[0][0]}, presentes en ${num(temas[0][1], false)} de los ${num(deEmpresa.length || casos.length, false)} conflictos vigentes ${deEmpresa.length ? "con la empresa" : "en las zonas de sus operaciones"}.`] : [])].slice(0, 4);
+      ...(temas[0] ? [(deEmpresa.length || casos.length) === 1 ? `Los reclamos por ${temas[0][0]}, tema del único conflicto vigente ${deEmpresa.length ? "con la empresa" : "en las zonas de sus operaciones"}.`
+        : `Los reclamos por ${temas[0][0]}, presentes en ${num(temas[0][1], false)} de los ${num(deEmpresa.length || casos.length, false)} conflictos vigentes ${deEmpresa.length ? "con la empresa" : "en las zonas de sus operaciones"}.`] : [])].slice(0, 4);
 
     document.title = `Tremor. Informe mensual, ${emp}`;
     document.getElementById("hoja").innerHTML = `
@@ -433,14 +436,14 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
         ${hechos ? `
           <table class="cuadro"><caption class="rotulo">Cuadro ${"1"}. Protestas, anuncios y bloqueos en las provincias de sus operaciones</caption><thead><tr><th>Fecha</th><th>Hecho</th><th>Ubicación</th><th>Fuente</th></tr></thead><tbody>
           ${vias.map(s => `<tr><td>${diaC(dia(s.fecha_evento))}</td><td>Bloqueo de la vía ${esc(s.via)}, vigente. ${esc(s.contexto || "")}</td><td>${esc(nombre(s.distrito))}</td><td>SUTRAN</td></tr>`).join("")}
-          ${ev.map(e => `<tr><td>${diaC(dia(e.fecha_evento || e.fecha_anuncio))}</td><td>${esc(e.titular)}${e.estado === "anunciada" ? " (anunciada)" : ""}</td><td>${esc(lugar(e.ubigeo) || "s. d.")}</td><td>${esc(e.medio)}</td></tr>`).join("")}
+          ${ev.map(e => `<tr><td>${diaC(dia(e.fecha_evento || e.fecha_anuncio))}</td><td>${esc(e.titular)}${e.estado === "anunciada" ? " (anunciada)" : ""}</td><td>${String(e.ubigeo) === "00" ? "Todo el país" : esc(lugar(e.ubigeo) || "s. d.")}</td><td>${esc(e.medio)}</td></tr>`).join("")}
           </tbody></table><p class="fuente">Fuente: prensa nacional y regional y SUTRAN. Elaboración: Tremor.</p>`
         : `<p>No se registraron protestas, anuncios de protesta ni bloqueos de vías en ${provsOp} ni en ${corredor} durante el periodo. Se revisaron la prensa nacional y regional y las alertas de la SUTRAN.</p>`}
       </section>
 
       <section><h2>Conflictos registrados con la empresa</h2>
-        
-        <table class="cuadro"><caption class="rotulo">Cuadro ${hechos ? 2 : 1}. Conflictos sociales vigentes que involucran a ${esc(corto)}</caption><thead><tr><th class="num">N.º</th><th>Caso</th><th>Ubicación</th><th>Asunto principal</th><th>Estado</th><th>Diálogo</th></tr></thead><tbody>
+        ${casos.length ? "" : `<p>La Defensoría del Pueblo no registra conflictos vigentes con la empresa ni en las zonas de sus operaciones.</p>`}
+        <table style="${casos.length ? "" : "display:none"}" class="cuadro"><caption class="rotulo">Cuadro ${hechos ? 2 : 1}. Conflictos sociales vigentes que involucran a ${esc(corto)}</caption><thead><tr><th class="num">N.º</th><th>Caso</th><th>Ubicación</th><th>Asunto principal</th><th>Estado</th><th>Diálogo</th></tr></thead><tbody>
         ${(deEmpresa.length ? deEmpresa : casos).slice(0, 8).map((c, k) => `<tr><td class="num">${k + 1}</td><td>${esc(c.nombre)}</td><td>${esc(lugar(c.ubigeo) || "s. d.")}</td>
           <td>${esc(asunto(c))}</td><td>${c.estado === "activo" ? "Activo" : "Latente"}</td><td>${/NO HAY/i.test(c.dialogo || "") ? "No" : /HAY/i.test(c.dialogo || "") ? "Sí" : "s. d."}</td></tr>`).join("")}
         </tbody></table>

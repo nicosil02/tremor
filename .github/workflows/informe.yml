@@ -1,0 +1,28 @@
+# El informe de riesgo social en PDF de cada empresa del piloto, por Telegram y por correo, cada lunes a las 7:00 de
+# Lima (o a mano desde Actions). Lee los datos del día de la rama `datos`. Sin secretos, solo genera los PDF.
+name: informe
+
+on:
+  schedule:
+    - cron: "0 12 * * 1"
+  workflow_dispatch:
+
+jobs:
+  enviar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install requests playwright && python -m playwright install --with-deps chromium
+      - name: Generar y mandar los informes
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          CORREO_PARA: ${{ secrets.CORREO_PARA }}
+        run: python -m tremor.envio

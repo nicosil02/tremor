@@ -300,7 +300,7 @@ const VISTAS = {
       <p class="hoy-pie">${cal(o.p)}</p>` : "";
     return hoy + (u.length ? `<h2>Atender</h2><ul>${u.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<h2>Atender</h2><p class="vacio">Nada anunciado en su zona ni en sus rutas.</p>`)
       + `<h2>Para seguir</h2>` + (r.length ? `<ul>${r.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas ni notas sobre la empresa.</p>`)
-      + `<p class="pie">Datos al ${dia(D.creado)}.</p>`;
+      + `<p class="pie">Datos al ${dia(D.creado)}. <a href="informe.html?e=${empresa.toLowerCase().replace(/^las /, "")}" target="_blank" rel="noopener">Informe del mes en PDF</a></p>`;
   },
   operaciones() {
     cabecera(false);

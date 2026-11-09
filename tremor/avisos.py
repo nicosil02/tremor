@@ -48,20 +48,28 @@ def zona(con, empresa, vecinos):
     return z
 
 
-def eventos(con, z, alias, desde):
-    """Protestas de la prensa y la radio en la zona, o que nombran a la empresa."""
-    q = """SELECT e.id, e.estado, e.fecha_anuncio, e.fecha_evento, e.ubigeo, e.accion, e.empresa, e.operacion, e.tipo_conflicto, e.actor,
-                  (SELECT n.medio || '|' || n.enlace || '|' || n.titular FROM evento_nota en JOIN nota n ON n.id = en.nota_id
-                    WHERE en.evento_id = e.id ORDER BY n.enlace LIKE '%news.google%' LIMIT 1)
-           FROM evento_prensa e WHERE coalesce(e.fecha_anuncio, e.fecha_evento) >= ?"""
-    for id_, est, fa, fe, ub, acc, emp, op, tipo, actor, fuente in con.execute(q, (desde,)):
-        nombra = re.search(alias, f"{emp or ''} {op or ''}", re.I)
-        # en la zona: lo extractivo, o una medida de fuerza que corta igual sus vías (una marcha política, no)
-        if nombra or (ub == "00" and "ransportista" in (actor or "")) or (ub in z and (tipo not in (None, "otro") or re.search(LUCHA.replace("|marcha", ""), acc or "", re.I))):
-            medio, enlace, titular = ((fuente or "") + "||").split("|")[:3]
-            yield {"clave": f"evento:{id_}", "estado": est, "fecha": fe or fa, "ubigeo": ub, "accion": acc or "Protesta",
-                   "unidad": z.get(ub), "medio": medio, "enlace": enlace, "titular": titular,
-                   "transporte": "ransportista" in (actor or "")}
+SECTOR = r"transportistas urbanos|docente|maestr|profesor|m[eé]dic|enfermer|salud|judicial|estatal|universit|estudiant"
+
+
+def eventos(web, z, alias, desde):
+    """Protestas en la zona o la ruta, o que nombran a la empresa. Lee los eventos ya depurados de la página (web.json):
+    una protesta contada una vez, sin las suspendidas, y sin avisar como corte de despachos el transporte urbano ni
+    los gremios que paran sin bloquear (docentes, salud)."""
+    for e in web["eventos"]:
+        f, ub, actor, acc = e.get("fecha_evento") or e.get("fecha_anuncio") or "", str(e["ubigeo"]), e.get("actor") or "", e.get("accion") or ""
+        pl = e.get("plazo") if isinstance(e.get("plazo"), str) and e["plazo"] >= date.today().isoformat() else None
+        vieja = e["estado"] == "anunciada" and not pl and f < date.today().isoformat()  # anunciada y ya pasó sin noticia de que ocurriera
+        if e.get("suspendido") or vieja or max(f, pl or "") < desde:
+            continue
+        transporte = "ransportista" in actor and "urbano" not in actor.lower() and not e.get("urbano")
+        sin_bloqueo = re.search(SECTOR, actor, re.I) and not re.search(r"bloque|toma", acc, re.I)
+        nombra = re.search(alias, f"{e.get('empresa') or ''} {e.get('operacion') or ''}", re.I)
+        en_zona = ub in z and not (sin_bloqueo and z[ub].startswith("en su ruta")) and (
+            e.get("tipo_conflicto") not in (None, "otro") or re.search(LUCHA.replace("|marcha", ""), acc, re.I))
+        if nombra or (ub == "00" and transporte) or en_zona:
+            yield {"clave": f"evento:{e['id']}" + (f":plazo{pl}" if pl else ""), "estado": "plazo" if pl else e["estado"], "fecha": pl or f,
+                   "ubigeo": ub, "accion": acc or "Protesta", "unidad": z.get(ub), "medio": e.get("medio") or "", "enlace": e.get("enlace") or "",
+                   "titular": e.get("titular") or "", "transporte": transporte, "punto": (e.get("puntos") or [""])[0]}
 
 
 def radio(con, alias, desde):
@@ -110,11 +118,12 @@ def mensaje(nombre, evs, rad, rie):
     pct = lambda x: f"{round(x * 100)}%"
     lineas = [f"*Tremor, avisos para {nombre}*"]
     for e in sorted(evs, key=lambda e: e["estado"] != "anunciada"):
-        cuando = "Anunciada para el" if e["estado"] == "anunciada" else "Ocurrió el"
+        cuando = {"anunciada": "Anunciada para el", "plazo": "Vence un plazo, amenazan con nueva medida, el"}.get(e["estado"], "Ocurrió el")
         cerca = f", {e['unidad']}" if (e["unidad"] or "").startswith("en su ruta") else f", zona de {e['unidad']}" if e["unidad"] else ""
         fuente = f"[{e['medio']}]({e['enlace']})" if e["enlace"] else e["medio"]
         ruta = " Puede afectar sus despachos e insumos." if e["transporte"] else ""
-        lineas.append(f"\n• *{e['titular'] or e['accion']}*\n{cuando} {dia(e['fecha'])} en {lugar(e['ubigeo'])}{cerca}.{ruta} {fuente}")
+        donde = f" Según la prensa: {e['punto']}" if e["punto"] else ""
+        lineas.append(f"\n• *{e['titular'] or e['accion']}*\n{cuando} {dia(e['fecha'])} en {lugar(e['ubigeo'])}{cerca}.{ruta}{donde} {fuente}")
     for r in rad:
         lineas.append(f"\n• {r['medio']} lo mencionó el {dia(r['dia'])} a las {r['hora']}: «{r['texto']}»")
     for r in rie:
@@ -150,7 +159,7 @@ def main(dias=3):
             for u in t["ubigeos"]:
                 z.setdefault(u, f"en su ruta, tramo {t['nombre']}")
         nuevo = lambda xs: [x for x in xs if (f"{x['clave']}|{nombre}",) not in ya]
-        evs, rad, rie = nuevo(eventos(con, z, alias, desde)), nuevo(radio(con, alias, desde)), nuevo(riesgo(web, z))
+        evs, rad, rie = nuevo(eventos(web, z, alias, desde)), nuevo(radio(con, alias, desde)), nuevo(riesgo(web, z))
         if not (evs or rad or rie):
             continue
         if enviar(mensaje(nombre, evs, rad, rie)):

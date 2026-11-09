@@ -23,7 +23,14 @@ def test_eventos_en_la_zona_o_que_nombran_a_la_empresa():
 """)
     z = zona(con, "minera las bambas", {"030506": ["030501"]})
     assert z == {"030506": "Las Bambas", "030501": "Las Bambas"}
-    assert [e["clave"] for e in eventos(con, z, r"las bambas", "2026-11-01")] == ["evento:1", "evento:3"]
+    ev = lambda i, est, f, ub, acc, emp=None, actor=None, **k: {"id": i, "estado": est, "fecha_evento": f, "ubigeo": ub, "accion": acc,
+                                                                  "empresa": emp, "actor": actor, "tipo_conflicto": "otro", **k}
+    web = {"eventos": [ev(1, "anunciada", "2099-11-12", "030501", "Paro"), ev(2, "ocurrida", "2026-11-08", "150101", "Marcha"),
+                       ev(3, "ocurrida", "2026-11-08", "04", "Bloqueo", "Minera Las Bambas"), ev(4, "anunciada", "2026-10-02", "030506", "Paro"),
+                       ev(5, "anunciada", "2099-11-10", "00", "Marcha", actor="Transportistas urbanos", urbano=True),
+                       ev(6, "anunciada", "2026-11-03", "00", "Paro", actor="Transportistas de carga"),
+                       ev(7, "anunciada", "2099-11-12", "030506", "Paro", suspendido=True)]}
+    assert [e["clave"] for e in eventos(web, z, r"las bambas", "2026-11-01")] == ["evento:1", "evento:3"]
 
 
 def test_focos():
