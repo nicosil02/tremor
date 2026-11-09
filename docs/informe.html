@@ -76,7 +76,7 @@
   .anexo { margin-top: 34px; padding-top: 14px; border-top: 2px solid var(--tinta); font-size: 13px; color: var(--tinta-3); }
   .anexo a { color: inherit; }
   /* La alerta inmediata */
-  .vista-alerta { max-width: 900px; margin: 28px auto 60px; display: grid; grid-template-columns: 360px 1fr; gap: 40px; align-items: start; }
+  .vista-alerta { max-width: 980px; margin: 28px auto 60px; display: grid; grid-template-columns: 350px 1fr; gap: 40px; align-items: start; }
   .telefono { background: #0e1a24; border-radius: 34px; padding: 18px 14px 26px; box-shadow: 0 10px 30px rgb(20 33 43 / .25); }
   .telefono .hora { color: #fff; text-align: center; font-size: 44px; font-weight: 300; margin: 18px 0 2px; }
   .telefono .fecha { color: #b9c4cb; text-align: center; font-size: 15px; margin-bottom: 22px; }
@@ -112,6 +112,68 @@
   .noti .afecta { margin-top: 6px; font-size: 14px; color: var(--tinta); font-weight: 600; }
   .explica table { margin: 16px 0 6px; }
   h2 { font-size: 19px; font-weight: 720; color: var(--marino); margin: 0 0 8px; }
+  /* Teléfono simulado: pantalla bloqueada */
+  .sim { display: grid; justify-items: center; gap: 14px; }
+  .iphone { width: 340px; height: 720px; padding: 11px; border-radius: 56px; background: #1b1d20;
+            box-shadow: inset 0 0 0 2px #3a3d42, 0 18px 40px rgb(20 33 43 / .28); }
+  .iphone.vibra { animation: vibra 420ms linear; }
+  @keyframes vibra { 0%,100% { transform: none; } 15%,55% { transform: translateX(-3px) rotate(-.4deg); } 35%,75% { transform: translateX(3px) rotate(.4deg); } }
+  .pantalla { position: relative; height: 100%; border-radius: 46px; overflow: hidden; color: #fff;
+              background: radial-gradient(120% 70% at 30% 10%, #3f6e86 0%, transparent 60%), linear-gradient(170deg, #20435a 0%, #16283a 45%, #3b2a2a 78%, #8a5236 100%);
+              transition: filter 350ms ease; font-family: system-ui, -apple-system, "Segoe UI", Archivo, sans-serif; }
+  .pantalla.dormida { filter: brightness(.18); }
+  .isla { position: absolute; top: 11px; left: 50%; width: 104px; height: 31px; margin-left: -52px; background: #000; border-radius: 20px; z-index: 3; }
+  .estado { display: flex; justify-content: space-between; align-items: center; padding: 17px 30px 0 34px; font-size: 15px; font-weight: 600; }
+  .iconos { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+  .senal { display: inline-flex; align-items: flex-end; gap: 2px; height: 11px; }
+  .senal b { width: 3px; background: #fff; border-radius: 1px; } .senal b:nth-child(1) { height: 4px; } .senal b:nth-child(2) { height: 6px; }
+  .senal b:nth-child(3) { height: 8px; } .senal b:nth-child(4) { height: 11px; }
+  .bat { width: 24px; height: 12px; border: 1.5px solid rgb(255 255 255 / .6); border-radius: 4px; padding: 1px; display: inline-block; }
+  .bat b { display: block; width: 70%; height: 100%; background: #fff; border-radius: 1.5px; }
+  .candado { width: 12px; height: 10px; margin: 18px auto 0; border-radius: 2px; background: #fff; position: relative; }
+  .candado::before { content: ""; position: absolute; left: 2px; top: -7px; width: 8px; height: 8px; border: 2px solid #fff; border-bottom: 0; border-radius: 5px 5px 0 0; box-sizing: border-box; }
+  .fecha-tel { text-align: center; font-size: 17px; font-weight: 600; margin-top: 8px; text-transform: lowercase; }
+  .fecha-tel::first-letter { text-transform: uppercase; }
+  .reloj { text-align: center; font-size: 84px; line-height: 1; font-weight: 700; letter-spacing: -2px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .lista { position: absolute; left: 10px; right: 10px; bottom: 38px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; }
+  .n { display: grid; grid-template-columns: 38px 1fr; gap: 10px; padding: 11px 12px; border-radius: 22px; color: #111;
+       background: rgb(245 245 245 / .78); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+       animation: entra 520ms cubic-bezier(.32, .72, 0, 1); transition: transform 300ms var(--ease-out), opacity 300ms ease; }
+  .n:active { transform: scale(.98); }
+  @keyframes entra { from { opacity: 0; transform: translateY(40px) scale(.92); } }
+  .app { width: 38px; height: 38px; border-radius: 9px; background: var(--marino) linear-gradient(160deg, #2c5f86, #13304a); position: relative; }
+  .app::after { content: "T"; position: absolute; inset: 0; display: grid; place-items: center; font: 800 21px Archivo, sans-serif; color: #fff; }
+  .n .cab, .larga .cab { display: flex; justify-content: space-between; font-size: 13px; color: #3c3c43; }
+  .n .cab b { font-weight: 600; letter-spacing: .02em; }
+  .urg { font-size: 12px; font-weight: 700; color: #c4281c; margin-top: 1px; }
+  .n .tit { font-weight: 650; font-size: 15px; line-height: 1.25; margin-top: 1px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .n .pv { font-size: 14px; line-height: 1.3; color: #222; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  /* Agrupadas: se ve la primera y dos bordes detrás */
+  .lista.apilada { gap: 0; }
+  .lista.apilada .n:nth-child(n+2) { height: 10px; padding: 0; margin: 0 10px; border-radius: 0 0 16px 16px; overflow: hidden; background: rgb(245 245 245 / .55); animation: none; }
+  .lista.apilada .n:nth-child(n+2) > * { visibility: hidden; }
+  .lista.apilada .n:nth-child(3) { margin: 0 20px; background: rgb(245 245 245 / .35); }
+  .lista.apilada .n:nth-child(n+4) { display: none; }
+  .indicador { position: absolute; bottom: 8px; left: 50%; width: 130px; height: 5px; margin-left: -65px; border-radius: 3px; background: #fff; }
+  .velo { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 16px 12px;
+          background: rgb(10 20 30 / .35); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); opacity: 0; transition: opacity 220ms ease; }
+  .velo.visible { opacity: 1; }
+  .larga { background: rgb(250 250 250 / .95); color: #111; border-radius: 24px; padding: 14px 16px; transform: scale(.94); transition: transform 320ms cubic-bezier(.32, .72, 0, 1); }
+  .velo.visible .larga { transform: none; }
+  .larga .cab { align-items: center; gap: 8px; } .larga .cab .app { width: 24px; height: 24px; border-radius: 6px; }
+  .larga .cab .app::after { font-size: 13px; } .larga .cab b { flex: 1; font-weight: 600; }
+  .larga .tit { font-weight: 700; font-size: 17px; line-height: 1.25; margin: 6px 0 6px; }
+  .larga p { margin: 0 0 8px; font-size: 14.5px; line-height: 1.4; color: #222; }
+  .larga .af b { font-weight: 700; } .larga .fu { font-size: 13px; color: #555; margin: 0; }
+  .acciones { display: grid; border-radius: 16px; overflow: hidden; background: rgb(250 250 250 / .9); }
+  .acciones button { font: 500 16px system-ui, sans-serif; color: #0a5bd6; background: none; border: 0; padding: 12px; cursor: pointer; }
+  .acciones button + button { border-top: 1px solid rgb(0 0 0 / .1); }
+  .acciones button:active { background: rgb(0 0 0 / .06); }
+  .mandos { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--tinta-2); }
+  .mandos { width: 340px; } .mandos span { flex: 1; }
+  .mandos button { white-space: nowrap; font: 600 14px Archivo, sans-serif; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--linea); background: #fff; cursor: pointer; }
+  .mandos button:active { transform: scale(.97); }
+  @media (prefers-reduced-motion: reduce) { .n, .iphone.vibra { animation: none; } }
   [hidden] { display: none !important; }
   @media (max-width: 760px) {
     .hoja { padding: 24px 16px; margin: 0; }
@@ -181,7 +243,7 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
   chips.onclick = e => { const b = e.target.closest("button"); if (b) { history.replaceState(null, "", `?e=${b.dataset.k}`); pintar(b.dataset.k); } };
   vistas.onclick = e => { const b = e.target.closest("button"); if (!b) return;
     vistas.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
-    document.getElementById("hoja").hidden = b.dataset.v !== "informe"; document.getElementById("alerta").hidden = b.dataset.v !== "alerta"; };
+    document.getElementById("hoja").hidden = b.dataset.v !== "informe"; document.getElementById("alerta").hidden = b.dataset.v !== "alerta"; if (b.dataset.v === "alerta") window.reproducirAlerta?.(); };
   pintar(new URLSearchParams(location.search).get("e") || "bambas");
 
   function pintar(k) {
@@ -310,11 +372,11 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
     const diaC = s => s.replace(/ de (\p{L}{3})\p{L}*$/u, " $1");
     const otra = zonas.find(z => prov(z) !== prov(top)) || zonas[1] || top;
     const alertas = [
-      { sev: "alta", hora: "6:58", c: `Paro de 48 h en ${prov(top)} el ${diaC(masDias(4))}`, pv: `Afecta ${num(enProv(prov(top)).length)} operaciones y ${via.split(" (")[0]}`,
+      { sev: "alta", hora: "12:10", c: `Paro de 48 h en ${prov(top)} el ${diaC(masDias(4))}`, pv: `Afecta ${num(enProv(prov(top)).length)} operaciones y ${via.split(" (")[0]}`,
         t: `Paro de 48 horas anunciado en ${prov(top)} desde el ${masDias(4)}`,
-        p: `Dirigentes de ${dist(top)} lo anunciaron en el noticiero de ${radioCorto}. Incluye bloqueo de ${via}.`,
+        p: `Dirigentes de ${dist(top)} lo anunciaron en el noticiero del mediodía de ${radioCorto}. Incluye bloqueo de ${via}.`,
         a: `${lista(enProv(prov(top)))} y el transporte de carga por ${via}.`,
-        f: `${radioCorto}, noticiero de las 6:40` },
+        f: `${radioCorto}, noticiero del mediodía` },
       { sev: "media", hora: "9:15", c: `${prov(otra)}: comunidades dan plazo de 15 días`, pv: `Evalúan un paro. Afecta ${lista(enProv(prov(otra)))}`,
         t: `Posible paro en ${prov(otra)}: comunidades dan plazo de 15 días a ${corto}`,
         p: `En asamblea, comunidades de ${dist(otra)} acordaron evaluar medidas de lucha si no hay respuesta a sus reclamos por ${temas[0] ? temas[0][0] : "compromisos"}.`,
@@ -325,25 +387,80 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
         p: `Pasa a nivel ${BANDAS[nivel(mesP(sub.a))].toLowerCase()}, ${Math.round(sub.a.cambio_zona_1m * 100)} puntos sobre su promedio del último año. ${motores[0] ? `Lo empuja ${MOTOR_TXT[motores[0].corto].split(",")[0]}.` : ""}`,
         a: `${nombreZ(sub)} y los distritos vecinos de ${dist(sub)}.`,
         f: "Modelo Tremor" }] : [])];
-    const sevTxt = s => s === "alta" ? "Prioridad alta" : s === "media" ? "Prioridad media" : "Para seguimiento";
+    // ---- Simulación de la pantalla bloqueada de un teléfono: llegan, se apilan y se abren como notificaciones reales
+    const llegada = alertas.slice().sort((x, y) => x.hora.padStart(5, "0").localeCompare(y.hora.padStart(5, "0")));
+    const fechaTel = new Date(hoy + "T12:00").toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" });
     document.getElementById("alerta").innerHTML = `
-      <div class="telefono"><div class="hora">12:16</div><div class="fecha">${new Date(hoy + "T12:00").toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}</div>
-        ${alertas.slice().sort((x, y) => (x.sev !== "alta") - (y.sev !== "alta") || y.hora.padStart(5, "0").localeCompare(x.hora.padStart(5, "0"))).map(a => `<button type="button" class="noti"><div class="de"><b>Tremor · ${a.sev === "alta" ? "Prioridad alta" : "Prioridad media"}</b><span>${a.hora}</span></div>
-          <div class="t">${esc(a.c)}</div><div class="prev">${esc(a.pv)}</div>
-          <div class="full"><p>${esc(a.p)}</p><p class="afecta">Puede afectar: ${esc(a.a)}</p></div></button>`).join("")}
-      <p class="toca">Toque una notificación para abrirla</p></div>
+      <div class="sim">
+        <div class="iphone" id="iphone"><div class="pantalla dormida" id="pant">
+          <div class="isla"></div>
+          <div class="estado"><span id="hora-est"></span><span class="iconos"><i class="senal"><b></b><b></b><b></b><b></b></i>4G<i class="bat"><b></b></i></span></div>
+          <div class="candado"></div>
+          <div class="fecha-tel">${fechaTel}</div><div class="reloj" id="reloj"></div>
+          <div class="lista" id="lista"></div>
+          <div class="indicador"></div>
+          <div class="velo" id="velo" hidden></div>
+        </div></div>
+        <div class="mandos"><button type="button" id="repetir">Repetir la llegada</button><span id="pista">Las alertas llegan en orden</span></div>
+      </div>
       <div class="explica"><h3>Alertas inmediatas</h3>
-        <p>Tremor avisa en minutos cuando aparece algo nuevo que toca las operaciones de ${esc(corto)}. Llegan por correo, WhatsApp o Teams, con la fuente y el enlace al mapa.</p>
+        <p>Tremor avisa en minutos cuando aparece algo nuevo que toca las operaciones de ${esc(corto)}. La notificación cabe en dos líneas; al tocarla se abre con el detalle, las zonas que puede afectar y las acciones.</p>
         <table><thead><tr><th>Tipo</th><th>Cuándo se envía</th><th>Este ejemplo</th></tr></thead><tbody>
-          <tr><td><b>Paro anunciado</b></td><td>Una radio local, la prensa o la SUTRAN informan un paro, bloqueo o toma con fecha en la zona o en sus rutas.</td><td>Ilustrativo. La escucha de radios en vivo entra con el piloto.</td></tr>
+          <tr><td><b>Paro anunciado</b></td><td>Una radio local, la prensa o la SUTRAN informan un paro, bloqueo o toma con fecha en la zona o en sus rutas. Llega como urgente aunque el teléfono esté en silencio.</td><td>Ilustrativo. La escucha de radios en vivo entra con el piloto.</td></tr>
           <tr><td><b>Posible movilización</b></td><td>Asambleas que evalúan medidas de lucha, plazos o ultimátums a la empresa o al Estado. Da tiempo para dialogar antes del paro.</td><td>Ilustrativo.</td></tr>
           <tr><td><b>Sube el riesgo</b></td><td>La probabilidad de una operación cambia de nivel o supera en 5 puntos su promedio del último año.</td><td>Datos reales de hoy.</td></tr>
         </tbody></table>
-        <p class="fuente">El tono de las radios hacia la empresa no genera alertas: se ve en el mapa como contexto de cada zona.</p>
-        <div class="correo"><div class="asunto">[Tremor] ${sevTxt(alertas[0].sev)}. ${esc(alertas[0].t)}</div>
-          <div class="meta">Para: relaciones comunitarias y seguridad de ${esc(corto)}</div>
-          <p style="margin:0 0 8px">${esc(alertas[0].p)}</p><p style="margin:0 0 8px"><b>Puede afectar:</b> ${esc(alertas[0].a)}</p><p style="margin:0;font-size:14px;color:var(--tinta-3)">Fuente: ${esc(alertas[0].f)}. Escuchar el fragmento y ver en el mapa.</p></div></div>`;
-    document.getElementById("alerta").onclick = e => { const n = e.target.closest(".noti"); if (n) n.classList.toggle("abierta"); };
+        <p class="fuente">También llegan por correo, WhatsApp o Teams. El tono de las radios hacia la empresa no genera alertas: se ve en el mapa como contexto de cada zona.</p></div>`;
+
+    const pant = document.getElementById("pant"), pila = document.getElementById("lista"), velo = document.getElementById("velo");
+    const reloj = document.getElementById("reloj"), horaEst = document.getElementById("hora-est"), pista = document.getElementById("pista");
+    const min = h => { const [a, b] = h.split(":").map(Number); return a * 60 + b; };
+    const hace = (h, ahora) => { const d = min(ahora) - min(h); return d < 1 ? "ahora" : d < 60 ? `hace ${d} min` : `hace ${Math.floor(d / 60)} h`; };
+    const tarjeta = a => `<div class="n ${a.sev}" data-i="${alertas.indexOf(a)}"><div class="app"></div><div class="cuerpo">
+        <div class="cab"><b>TREMOR</b><span class="cuando" data-h="${a.hora}"></span></div>
+        ${a.sev === "alta" ? `<div class="urg">Urgente</div>` : ""}<div class="tit">${esc(a.c)}</div><div class="pv">${esc(a.pv)}</div></div></div>`;
+    const ponerHora = h => { reloj.textContent = h; horaEst.textContent = h;
+      pila.querySelectorAll(".cuando").forEach(s => s.textContent = hace(s.dataset.h, h)); };
+    const espera = ms => new Promise(r => setTimeout(r, matchMedia("(prefers-reduced-motion: reduce)").matches ? Math.min(ms, 150) : ms));
+    let corrida = 0;
+
+    async function reproducir() {
+      const yo = ++corrida;
+      cerrar(); pila.innerHTML = ""; pila.classList.remove("apilada"); pant.classList.add("dormida");
+      ponerHora(llegada[0].hora.replace(/:\d\d/, m => ":" + String(Math.max(0, +m.slice(1) - 3)).padStart(2, "0")));
+      for (const [k, a] of llegada.entries()) {
+        pista.textContent = `Llega la alerta ${k + 1} de ${llegada.length}`;
+        await espera(k ? 1400 : 900); if (yo !== corrida) return;
+        ponerHora(a.hora); pant.classList.remove("dormida");
+        pila.insertAdjacentHTML("afterbegin", tarjeta(a)); ponerHora(a.hora);
+        const iphone = document.getElementById("iphone");
+        iphone.classList.remove("vibra"); void iphone.offsetWidth; iphone.classList.add("vibra");
+        await espera(2300); if (yo !== corrida) return;
+        if (k < llegada.length - 1) pant.classList.add("dormida");
+      }
+      await espera(1200); if (yo !== corrida) return;
+      pila.classList.add("apilada");
+      pista.textContent = "Toque el grupo para ver las alertas";
+    }
+
+    function abrir(a) {
+      velo.innerHTML = `<div class="larga ${a.sev}"><div class="cab"><div class="app"></div><b>TREMOR</b><span>${hace(a.hora, reloj.textContent)}</span></div>
+        ${a.sev === "alta" ? `<div class="urg">Urgente</div>` : ""}<div class="tit">${esc(a.c)}</div>
+        <p>${esc(a.p)}</p><p class="af"><b>Puede afectar:</b> ${esc(a.a)}</p><p class="fu">Fuente: ${esc(a.f)}</p></div>
+        <div class="acciones"><button type="button">Ver en el mapa</button><button type="button">Avisar al equipo</button><button type="button">Silenciar esta zona 1 h</button></div>`;
+      velo.hidden = false; requestAnimationFrame(() => velo.classList.add("visible"));
+      pista.textContent = "Toque fuera de la alerta para cerrarla";
+    }
+    function cerrar() { velo.classList.remove("visible"); velo.hidden = true; }
+
+    pila.onclick = e => {
+      if (pila.classList.contains("apilada")) { pila.classList.remove("apilada"); pista.textContent = "Toque una alerta para abrirla"; return; }
+      const n = e.target.closest(".n"); if (n) abrir(alertas[+n.dataset.i]);
+    };
+    velo.onclick = e => { if (!e.target.closest(".larga, .acciones")) cerrar(); };
+    document.getElementById("repetir").onclick = reproducir;
+    window.reproducirAlerta = reproducir;  // la pestaña "Alerta inmediata" la arranca
+    if (!document.getElementById("alerta").hidden) reproducir();
   }
 })();
 </script>
