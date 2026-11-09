@@ -89,7 +89,9 @@
   .pulso span { position: absolute; left: 50%; top: 22px; transform: translateX(-50%); white-space: nowrap; padding: 3px 8px; border-radius: 6px; background: #fff; font-weight: 700; font-size: 13px;
     box-shadow: 0 2px 8px rgb(28 38 41 / .2); }
   .leyenda-via i { display: inline-block; width: 18px; height: 4px; margin: 0 6px 3px 0; vertical-align: middle; }
-  .leyenda-via i.rojo { background: #d7261e; } .leyenda-via i.punto.negro { background: #1c2629; } .leyenda-via i.via-l { background: #4a3b2e; height: 2px; margin-left: 4px; } .leyenda-via i.naranja { background: #e8962e; } .leyenda-via i.punto { width: 10px; height: 10px; border-radius: 50%; background: var(--rojo); margin-left: 4px; }
+  .leyenda-via i.rojo { background: #d7261e; } .cifras-d { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 8px; margin: 4px 16px 8px; } .cifras-d div { display: grid; }
+.cifras-d b { font-size: 28px; font-weight: 750; font-variant-numeric: tabular-nums; } .cifras-d span { font-size: 14px; color: var(--tinta-2); }
+.leyenda-via i.punto.negro { background: #1c2629; } .leyenda-via i.via-l { background: #4a3b2e; height: 2px; margin-left: 4px; } .leyenda-via i.naranja { background: #e8962e; } .leyenda-via i.punto { width: 10px; height: 10px; border-radius: 50%; background: var(--rojo); margin-left: 4px; }
   .leyenda-via small { display: block; font-weight: 400; font-size: 13px; color: var(--tinta-2); max-width: 240px; }
   .cuando { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; padding: 18px 16px 0; }
   .cuando b { font-size: 34px; line-height: 1; font-weight: 750; font-variation-settings: var(--ancho); color: var(--rojo); }
@@ -321,6 +323,25 @@ function detalleOp(nom) {
         estado(c), c.medios && c.medios[0] ? `${dia(c.medios[0].fecha)}, ${c.medios[0].titular}` : `Defensoría, ${MES[c.mes - 1]}`, `data-caso="${X.casos.indexOf(c)}"`)).join("")}</ul>` : `<p class="vacio">Sin conflictos vigentes ante la Defensoría.</p>`);
 }
 
+function detalleDistrito(u) {
+  const a = A.get(u) || {}, p = a.prob_zona_extractivo == null ? null : +a.prob_zona_extractivo, zona = new Set(zonaDe(u));
+  const por = String(a.razones_zona_extractivo || "").replace(/^en la zona \(distrito y vecinos\): /, "").split(/ · |; /).filter(Boolean).slice(0, 4);
+  const os = D.operaciones.filter(o => o.ubigeo === u), vec = D.operaciones.filter(o => o.ubigeo !== u && zona.has(o.ubigeo));
+  const n = (xs, f) => xs.filter(f).length, TIPO = { mineria: "minería", hidrocarburos: "hidrocarburos", electricidad: "electricidad" };
+  const ts = [...new Set(os.map(o => TIPO[o.tipo]).filter(Boolean))], tipos = ts.length ? (ts.slice(0, -1).join(", ") + (ts.length > 1 ? (/^h?i/.test(ts.at(-1)) ? " e " : " y ") : "") + ts.at(-1)).replace(/^./, c => c.toUpperCase()) : "Unidades";
+  const evs = D.eventos.filter(e => zona.has(String(e.ubigeo))).sort((x, y) => String(y.fecha_evento).localeCompare(x.fecha_evento));
+  const cs = D.casos.filter(c => zona.has(String(c.ubigeo)));
+  cabecera(true, "País"); ver([u], lugar(u));
+  const cifra = (k, t) => `<div><b>${k}</b><span>${t}</span></div>`;
+  return `<h3 class="titulo-av">${esc(lugar(u))}</h3><div class="grande"><b>${p == null ? "–" : pct(p)}</b><span>${p == null ? "Sin cálculo" : `Riesgo ${nivel(p).toLowerCase()} ${flecha(p - (a.normal_zona_ext ?? p))}`}
+      <small>${a.normal_zona_ext != null ? `Lo habitual en la zona, ${pct(a.normal_zona_ext)}` : ""}</small><small>Paro, bloqueo o toma contra la actividad extractiva, octubre a diciembre</small></span></div>${VER}
+    <h2>Unidades extractivas</h2>${os.length ? `<div class="cifras-d">${[[n(os, opera), "en operación"], [n(os, o => /fiscalizada|operador/.test(o.etapa)), "fiscalizadas por OEFA"], [n(os, o => /explor/.test(o.etapa)), "en exploración"],
+        [n(os, o => /^proyecto/.test(o.etapa)), "proyectos"], [n(os, o => /paraliz/.test(o.etapa)), "paralizadas"]].filter(([k]) => k).map(([k, t]) => cifra(k, t)).join("")}</div>
+      <p class="aclara">${esc(tipos)} en el distrito${vec.length ? `; ${vec.length} más en los distritos vecinos` : ""}.</p>` : `<p class="vacio">Ninguna en el distrito${vec.length ? `; ${vec.length} en los distritos vecinos` : ""}.</p>`}
+    ${por.length ? `<h2>Por qué</h2><ul class="por">${por.map(x => `<li>${esc(x.replace(/\s*\(.*?\)/g, ""))}</li>`).join("")}</ul>` : ""}
+    <h2>Protestas recientes en la zona</h2>${evs.length ? `<ul>${evs.slice(0, 6).map(e => fila("", 0, `${accion(e)}${e.actor ? ` de ${e.actor.toLowerCase()}` : ""}`, dia(e.fecha_evento), lugar(String(e.ubigeo)))).join("")}</ul>${evs.length > 6 ? `<p class="aclara">Y ${evs.length - 6} más.</p>` : ""}` : `<p class="vacio">Ninguna en la prensa en las últimas seis semanas.</p>`}
+    <h2>Conflictos ante la Defensoría</h2>${cs.length ? `<ul>${cs.slice(0, 5).map(c => fila("", 0, titulo(String(c.nombre).split(/\s+[-–]\s+/)[0]), estadoCaso(c), `${lugar(String(c.ubigeo))}, ${MES[c.mes - 1]}`)).join("")}</ul>` : `<p class="vacio">Sin conflictos vigentes.</p>`}`;
+}
 const estadoCaso = c => c.estado === "latente" ? "latente" : /NO HAY/i.test(c.dialogo || "") ? "sin diálogo" : /HAY/i.test(c.dialogo || "") ? "en diálogo" : "activo";
 function detalleCaso(i) {
   const c = X.casos[i], u = String(c.ubigeo), ms = c.medios || [];
@@ -376,7 +397,7 @@ let actual = "avisos", mapa, PAIS = [], FOCO = null, SEL = null;  // SEL: distri
 const VER = `<button type="button" class="ir vermapa" data-vermapa>Ver en el mapa</button>`;
 const ley = () => (actual === "pais" || PAIS_VISTA) && !SEL
   ? `Riesgo en zonas con operación extractiva<small>Paro, bloqueo o toma contra la operación, octubre a diciembre. Numeradas, las 10 más altas.
-    <br><i class="punto"></i>Protesta anunciada <i class="punto negro"></i>Bloqueo vigente (SUTRAN). Al acercarse se ven las vías; toque un distrito para ver qué operaciones hay</small>`
+    <br><i class="punto"></i>Protesta anunciada <i class="punto negro"></i>Bloqueo vigente (SUTRAN). Al acercarse se ven las vías; toque un distrito para ver su ficha</small>`
   : (FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Riesgo en la vía, " + pct(X.via))
   + (SEL ? (SEL.tr.length ? `<small><i class="rojo"></i>${/se suma/.test(SEL.etq) ? "Anunciaron que se suman" : SEL.tr2.length ? "Más probable" : "Tramos que puede cortar"}${SEL.tr2.length ? `<br><i class="naranja"></i>Posible` : ""}<br><i class="punto"></i>${/se suma/.test(SEL.etq) ? "Base que se suma" : SEL.etq ? "Donde más bloquearon antes" : "Dónde es la protesta"}</small>` : "")
     : `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`);
@@ -423,6 +444,7 @@ function peru() {
           const et = [cuenta(os.filter(opera), "en operación", "en operación"), cuenta(os.filter(o => /^explor/.test(o.etapa)), "en exploración", "en exploración"),
             cuenta(os.filter(o => /^proyecto/.test(o.etapa)), "proyecto", "proyectos")].filter(Boolean);
           const tipos = [...new Set(os.map(o => ({ mineria: "minería", hidrocarburos: "hidrocarburos" })[o.tipo] || o.tipo).filter(Boolean))];
+          if (!ANCHO.matches) ir("pais"); abrir(detalleDistrito(f.u)); return;
           new maplibregl.Popup({ maxWidth: "260px" }).setLngLat(ev.lngLat).setHTML(`<b>${esc(lugar(f.u))}</b><br><b style="font-size:20px">${pct(f.p)}</b> de paro, bloqueo o toma contra la actividad extractiva en la zona, octubre a diciembre
             <br>${os.length ? `${os.length} ${os.length > 1 ? "unidades" : "unidad"} de ${esc(tipos.join(" e "))} en el distrito${et.length ? ` (${esc(et.join(", "))})` : ""}` : "Sin unidades en el distrito; la operación está en un vecino"}`).addTo(mapa); });
         mapa.on("click", "peru-ev", ev => { const k = ev.features[0].properties.k; if (k >= 0) { if (!ANCHO.matches) ir("pais"); abrir(detalleAviso(PAIS[k])); }
@@ -466,8 +488,9 @@ function marcar() {
       const fc = { type: "FeatureCollection", features: fs };
       if (mapa.getSource("sel")) mapa.getSource("sel").setData(fc);
       else { mapa.addSource("sel", { type: "geojson", data: fc });
-        mapa.addLayer({ id: "sel-f", type: "fill", source: "sel", paint: { "fill-color": "#1c2629", "fill-opacity": 0.1 } }, "ops");
-        mapa.addLayer({ id: "sel", type: "line", source: "sel", paint: { "line-color": "#1c2629", "line-width": 2.5 } }, "ops"); }
+        mapa.addLayer({ id: "sel-f", type: "fill", source: "sel", paint: { "fill-color": "#fff", "fill-opacity": 0.08 } }, "ops");
+        mapa.addLayer({ id: "sel-h", type: "line", source: "sel", paint: { "line-color": "#1c2629", "line-width": 5, "line-opacity": 0.18, "line-blur": 3 } }, "ops");
+        mapa.addLayer({ id: "sel", type: "line", source: "sel", paint: { "line-color": "#fff", "line-width": 2 } }, "ops"); }
       const b = new maplibregl.LngLatBounds();
       [...fs, ...g.features.filter(f => afect.has(f.properties.u)), ...(fs.length ? [] : lugar6.slice(0, 1))]
         .forEach(f => JSON.stringify(f.geometry.coordinates).match(/-?\d+\.?\d*,-?\d+\.?\d*/g).forEach(c => b.extend(c.split(",").map(Number))));
@@ -508,7 +531,7 @@ function conectar() {
   document.querySelectorAll("[data-tramo]").forEach(b => b.onclick = () => { SEL = null; FOCO = +b.dataset.tramo; ANCHO.matches ? verMapa() : ir("mapa"); });
   document.querySelectorAll("[data-op]").forEach(b => b.onclick = () => abrir(detalleOp(b.dataset.op)));
   document.querySelectorAll("[data-caso]").forEach(b => b.onclick = () => abrir(detalleCaso(+b.dataset.caso)));
-  document.querySelectorAll("[data-distrito]").forEach(b => b.onclick = () => { ver([b.dataset.distrito], lugar(b.dataset.distrito)); if (!ANCHO.matches) { PAIS_VISTA = true; ir("mapa"); } });
+  document.querySelectorAll("[data-distrito]").forEach(b => b.onclick = () => abrir(detalleDistrito(b.dataset.distrito)));
   document.querySelectorAll("[data-vermapa]").forEach(b => b.onclick = () => { PAIS_VISTA = actual === "pais"; ir("mapa"); });
 }
 document.querySelector("nav").onclick = e => { const b = e.target.closest("button"); if (b) { SEL = null; PAIS_VISTA = false; ir(b.dataset.v); } };
