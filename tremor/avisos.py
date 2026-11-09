@@ -17,6 +17,7 @@ import csv
 import requests
 
 from tremor.db import DATOS, RAIZ, ahora, conectar
+from tremor.web import ES_PROTESTA
 
 MESES = "ene feb mar abr may jun jul ago set oct nov dic".split()
 # ubigeo de 2, 4 o 6 dígitos → departamento, provincia o distrito
@@ -49,7 +50,7 @@ def eventos(con, z, alias, desde):
     q = """SELECT e.id, e.estado, e.fecha_anuncio, e.fecha_evento, e.ubigeo, e.accion, e.empresa, e.operacion, e.tipo_conflicto, e.actor,
                   (SELECT n.medio || '|' || n.enlace || '|' || n.titular FROM evento_nota en JOIN nota n ON n.id = en.nota_id
                     WHERE en.evento_id = e.id ORDER BY n.enlace LIKE '%news.google%' LIMIT 1)
-           FROM evento_prensa e WHERE coalesce(e.fecha_anuncio, e.fecha_evento) >= ?"""
+           FROM evento_prensa e WHERE coalesce(e.fecha_anuncio, e.fecha_evento) >= ? AND """ + ES_PROTESTA
     for id_, est, fa, fe, ub, acc, emp, op, tipo, actor, fuente in con.execute(q, (desde,)):
         nombra = re.search(alias, f"{emp or ''} {op or ''}", re.I)
         # en la zona: lo extractivo, o una medida de fuerza que corta igual sus vías (una marcha política, no)

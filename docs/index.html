@@ -106,7 +106,38 @@
   @media (max-width: 900px) {
     .app { grid-template-columns: 1fr; height: auto; }
     .mapa { height: 42dvh; order: -1; }
-    .panel { border-right: 0; }
+    .panel { border-right: 0; position: relative; z-index: 2; margin-top: -18px; border-radius: 18px 18px 0 0; box-shadow: 0 -6px 20px rgb(28 38 41 / .12); }
+    /* Con la empresa elegida, la hoja va directo a lo suyo: sin la marca ni el buscador (los botones de empresa bastan) */
+    .mapa { position: fixed !important; top: 0; left: 0; right: 0; height: calc(var(--tope-mapa, 46dvh) + 24px) !important; }
+    .panel { position: fixed !important; left: 0; right: 0; top: var(--tope, 46dvh); bottom: calc(58px + env(safe-area-inset-bottom));
+      margin-top: 0 !important; transition: top 280ms cubic-bezier(.32, .72, 0, 1); overscroll-behavior: contain; }
+    .panel.arrastrando { transition: none; }
+    .panel::before { display: none !important; }
+    .asa { position: sticky; top: 0; z-index: 4; height: 24px; flex: none; display: flex; justify-content: center; align-items: center;
+      background: var(--papel); touch-action: none; cursor: grab; border-radius: 18px 18px 0 0; }
+    .asa::after { content: ""; width: 40px; height: 5px; border-radius: 3px; background: #b9c3c2; }
+    .cabeza > .vistas, #tabs-cliente { display: none !important; }
+    .barra { position: fixed; z-index: 6; left: 0; right: 0; bottom: 0; display: grid !important; grid-template-columns: repeat(3, 1fr);
+      height: calc(58px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); background: var(--papel); border-top: 1px solid var(--linea); }
+    .barra button { all: unset; display: grid; place-items: center; font-size: 15px; font-weight: 600; color: var(--tinta-3); position: relative; }
+    .barra button[aria-current="true"] { color: var(--tinta); }
+    .barra button[aria-current="true"]::before { content: ""; position: absolute; top: 0; width: 28px; height: 3px; border-radius: 0 0 3px 3px; background: var(--cobre-4); }
+    .barra button:focus-visible { outline: 3px solid var(--cobre); outline-offset: -3px; }
+    .barra button:active { transform: scale(.97); }
+    .leyenda { top: 10px; left: 10px; right: auto !important; bottom: auto !important; }
+    .panel.con-empresa .marca, .panel.con-empresa .elegir { display: none; }
+    .panel.con-empresa .cabeza { padding: 6px 16px 10px; }
+    .panel.con-empresa .cabeza .vistas { margin-bottom: 10px; }
+    .panel.con-empresa .sugerencias { margin-inline: -16px; padding-inline: 16px; margin-top: 0; }
+    .panel.con-empresa .titular { padding: 12px 16px 2px; }
+    .panel.con-empresa .titular h1 { font-size: 24px !important; }
+    .panel.con-empresa dl.cifras { margin-top: 8px; gap: 24px; }
+    .panel.con-empresa dl.cifras dd { font-size: 24px; } .panel.con-empresa p.fresco { margin-top: 6px; }
+    .panel.con-empresa .pie, .panel.con-empresa p.fresco span { display: none; }
+    .alerta.nota details:not([open]) summary .a-tit { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    .panel.con-empresa .seccion, .panel.con-empresa .pie, .panel.con-empresa .rutas-emp { padding-inline: 16px; }
+    .panel::before { content: ""; display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--linea); margin: 8px auto -4px; flex: none; }
     .leyenda { right: 8px; bottom: 30px; padding: 6px 10px; font-size: 14px; }
     .leyenda[open] summary { margin-bottom: 6px; }
 
@@ -138,7 +169,33 @@
   .detalle-op .temas details li { font-size: 15px; color: var(--tinta-2); margin: 0 0 6px; }
   .detalle-op .temas details b { color: var(--tinta); font-weight: 600; }
   .temas li small { color: var(--tinta-3); font-size: 15px; }
+  .barra { display: none; }
   .sugerencias { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  dl.cifras { display: flex; gap: 28px; margin: 12px 0 0; }
+  dl.cifras > div { display: flex; flex-direction: column-reverse; }
+  dl.cifras dt { font-size: 14px; color: var(--tinta-2); }
+  dl.cifras dd { margin: 0; font-size: 28px; font-weight: 700; line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--tinta); }
+  dl.cifras .urge dd { color: #b3261e; } dl.cifras .c2 dd, dl.cifras .c3 dd { color: var(--cobre-4); }
+  .titular p.fresco { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-size: 14px; margin-top: 12px; color: var(--tinta-2); }
+  .fresco i { width: 8px; height: 8px; border-radius: 50%; background: #2f8f5b; align-self: center; } .fresco b { color: var(--tinta); font-weight: 650; }
+  li.proximo { list-style: none; display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; padding: 12px 0 14px; border-top: 1px solid var(--linea); }
+  details.la-nota { margin-top: 6px; font-size: 15px; } details.la-nota summary { cursor: pointer; color: var(--tinta-2); font-weight: 600; }
+  details.la-nota p { margin: 6px 0 2px; color: var(--tinta); line-height: 1.4; }
+  li.proximo .p-cuando { font-size: 14px; font-weight: 650; color: #b3261e; margin-bottom: 4px; }
+  li.proximo .cuenta { display: flex; align-items: baseline; gap: 4px; color: #b3261e; }
+  li.proximo .cuenta b { font-size: 52px; font-weight: 700; line-height: .9; font-variant-numeric: tabular-nums; } li.proximo .cuenta small { font-size: 16px; }
+  .alerta.nota details summary { list-style: none; cursor: pointer; display: grid; gap: 2px; }
+  .alerta.nota details summary::-webkit-details-marker { display: none; }
+  .alerta.nota details summary .a-tit::after { content: " +"; color: var(--tinta-3); font-weight: 400; }
+  .alerta.nota details[open] summary .a-tit::after { content: " −"; }
+  .alerta.extra { display: none; } .mas-notas { list-style: none; padding: 10px 0 0 70px; }
+  .tema { font-size: 14px; font-weight: 600; color: var(--tinta-2); }
+  @media (max-width: 700px) {
+    .sugerencias { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -24px; padding-inline: 24px; }
+    .sugerencias button { flex: none; }
+    .titular h1 { font-size: 28px; }
+    .a-tit { font-size: 17px !important; }
+  }
   .sugerencias button { font-size: 16px; padding: 9px 14px; border-radius: 6px; border: 1px solid #8a9397; background: transparent; cursor: pointer;
                         color: var(--tinta-2); transition: transform 140ms var(--ease-out), border-color 140ms ease; }
   .sugerencias button:active { transform: scale(0.97); }
@@ -385,6 +442,8 @@
 
 <script>
 // Lee la rama `datos` (se actualiza sola); si no responde, la copia de docs/.
+// En el teléfono abre la app (docs/app.html): avisos, operaciones y mapa, una cosa por pantalla. ?web fuerza esta versión.
+if (matchMedia("(max-width: 700px)").matches && !/[?&]web/.test(location.search)) location.replace("app.html");
 const FUENTES = ["https://raw.githubusercontent.com/nicosil02/tremor/datos/web.json", "web.json"];
 const BASE = "https://tiles.openfreemap.org/styles/positron";
 const PERU = [[-81.4, -18.4], [-68.6, 0.1]];
@@ -662,12 +721,12 @@ function iniciar(D, G, H, C) {
     const empresas = suyas ? [...d3.group(suyas, o => llano(o.empresa).replace(/[^a-z0-9]+/g, " ").trim()).values()].map(os => os[0].empresa) : [];
     const h1 = document.getElementById("h1");
     h1.textContent = !suyas ? "Zonas mineras y petroleras con mayor riesgo"
-      : empresas.length === 1 ? nombre(empresas[0]) : `${empresas.length} empresas`;
+      : empresas.length === 1 ? nombre(empresas[0]).replace(/,?\s+S\.?\s?A\.?(\s?A\.?|\s?C\.?)?$/i, "") : `${empresas.length} empresas`;
     h1.style.fontSize = h1.textContent.length > 28 ? "24px" : "";
     document.getElementById("bajada").textContent = hayMes
       ? `Probabilidad de ${QUE} en la zona de influencia de cada operación, ${enMes.replace(/^en /, "")}.${conDatos}`
       : `Probabilidad de que haya un paro, un bloqueo o una toma en la zona de cada operación de aquí a ${hasta}. La zona es el distrito y los que lo rodean.`;
-    lista(!suyas); rutasEmpresa(!suyas);
+    lista(!suyas); rutasEmpresa(!suyas); document.querySelector(".panel").classList.toggle("con-empresa", !!suyas);
     listo.then(() => ["huella", "huella-borde", "huella-nombre"].forEach(c =>
       map.setFilter(c, suyas ? ["in", ["get", "empresa"], ["literal", empresas]] : ["==", ["get", "empresa"], ""])));
     marcar(null);
@@ -776,6 +835,37 @@ function iniciar(D, G, H, C) {
     document.querySelector(".panel").dataset.ver = c;
   }
   document.getElementById("tabs-cliente").onclick = e => { const b = e.target.closest("button"); if (b) verCliente(b.dataset.c); };
+  // Celular: una barra abajo (Avisos, Operaciones, País) en vez de dos filas de pestañas, y una hoja que se arrastra sobre el mapa
+  const barra = document.createElement("nav"); barra.className = "barra"; barra.setAttribute("aria-label", "Secciones");
+  barra.innerHTML = `<button type="button" data-b="alertas">Avisos</button><button type="button" data-b="ops">Operaciones</button><button type="button" data-b="pais">Todo el país</button>`;
+  document.body.append(barra);
+  const marcarBarra = () => { const emp = panel.classList.contains("con-empresa"), ver = panel.dataset.ver;
+    barra.querySelectorAll("button").forEach(b => b.setAttribute("aria-current", b.dataset.b === (emp ? ver : "pais"))); };
+  barra.onclick = e => { const b = e.target.closest("button"); if (!b) return;
+    if (panel.classList.contains("en-detalle")) cerrarFicha();
+    if (b.dataset.b === "pais") verVista("pais");
+    else { if (!panel.classList.contains("con-empresa")) verVista("empresa"); verCliente(b.dataset.b); }
+    marcarBarra(); hoja(TOPES[1]); panel.scrollTop = 0; };
+  new MutationObserver(marcarBarra).observe(panel, { attributes: true, attributeFilter: ["class", "data-ver"] });
+  const TOPES = [0.1, 0.46, 0.8], movil = matchMedia("(max-width: 900px)");
+  function hoja(f) {
+    if (!movil.matches) return;
+    panel.style.setProperty("--tope", `${f * 100}dvh`);
+    // el mapa mide lo que la hoja deja ver: así el encuadre de cada empresa queda a la vista
+    document.querySelector(".mapa").style.setProperty("--tope-mapa", `${Math.max(f, TOPES[1]) * 100}dvh`); map.resize();
+  }
+  const asa = document.createElement("div"); asa.className = "asa"; asa.setAttribute("aria-hidden", "true"); panel.prepend(asa);
+  let y0 = null, top0 = 0, movio = false;
+  asa.onpointerdown = e => { y0 = e.clientY; top0 = panel.getBoundingClientRect().top; movio = false; asa.setPointerCapture(e.pointerId); panel.classList.add("arrastrando"); };
+  asa.onpointermove = e => { if (y0 === null) return; movio ||= Math.abs(e.clientY - y0) > 4;
+    panel.style.setProperty("--tope", `${Math.min(innerHeight * 0.85, Math.max(innerHeight * 0.08, top0 + e.clientY - y0))}px`); };
+  asa.onpointerup = () => { if (y0 === null) return; y0 = null; panel.classList.remove("arrastrando");
+    const f = panel.getBoundingClientRect().top / innerHeight, cerca = TOPES.reduce((a, b) => Math.abs(b - f) < Math.abs(a - f) ? b : a);
+    hoja(movio ? cerca : cerca === TOPES[0] ? TOPES[1] : TOPES[0]); };  // un toque sin arrastre sube o baja la hoja
+  // al pedir ver algo en el mapa, la hoja baja a la mitad para que se vea
+  panel.addEventListener("click", e => { if (e.target.closest(".op > button, .ver[data-i]")) hoja(TOPES[1]); });
+  hoja(TOPES[1]); marcarBarra();
+  movil.addEventListener("change", () => map.resize());
   function rutasFicha(u) {
     const rs = rutasDe(u); if (!rs.length) return "";
     const bloq = D.sutran.filter(s => rs.includes(s.via) && usanVia(s).some(o => zonaDe(u).includes(String(o.ubigeo))));
@@ -1036,7 +1126,7 @@ function iniciar(D, G, H, C) {
       const k = c.territorio ? cajaDe([c.territorio]) : null, p = k ? null : PUNTOS[c.com] || (abierta && buscarEnMapa(c.com || "", abierta.u));
       if (!k && !p) return;
       map.setFilter("com-sel", ["==", ["get", "n"], c.territorio ? c.territorio.properties.n : ""]);
-      const cam = k ? map.cameraForBounds([[k[0], k[1]], [k[2], k[3]]], { padding: 120 }) : { center: p, zoom: 13 };
+      const cam = k ? map.cameraForBounds([[k[0], k[1]], [k[2], k[3]]], { padding: pad(120) }) : { center: p, zoom: 13 };
       map.flyTo({ center: cam.center, zoom: Math.min(cam.zoom - 0.6, 12.3), pitch: 45, duration: quieto ? 0 : 1600 });
       centrar(cam.center);
     });
@@ -1081,10 +1171,12 @@ function iniciar(D, G, H, C) {
     return /paro|huelga/.test(a) ? "Paro" : /bloque/.test(a) ? "Bloqueo" : /toma/.test(a) ? "Toma" : /march|moviliz/.test(a) ? "Marcha" : "Protesta"; };
   const fecha = e => { const f = String(e.fecha_evento || e.fecha_anuncio || ""); return f ? new Date(f.slice(0, 10) + "T12:00").toLocaleDateString("es-PE", { day: "numeric", month: "long" }) : ""; };
 
+  // el margen del encuadre no puede pasar de un cuarto del mapa (en el celular mide ~290 px de alto)
+  const pad = n => Math.min(n, Math.floor(Math.min(map.getContainer().clientWidth, map.getContainer().clientHeight) / 4));
   let vista = null;  // la cámara de la empresa elegida, para volver al cerrar una operación
   function abrir(i, volar) {
     document.querySelectorAll(".op").forEach(li => { const si = +li.dataset.i === i && !li.classList.contains("abierta");
-      li.classList.toggle("abierta", si); li.querySelector("button").setAttribute("aria-expanded", si);
+      li.classList.toggle("abierta", si); li.querySelector("button")?.setAttribute("aria-expanded", si);
       if (si) llenarFicha(filas[i]); });
     if (!document.querySelector(".op.abierta")) cerrarFicha();
     document.querySelectorAll(".op").forEach(li => { const si = li.classList.contains("abierta");
@@ -1099,7 +1191,7 @@ function iniciar(D, G, H, C) {
     const caja = cajaHuella(filas[i]), c = centroDe(filas[i].u);
     if (caja) {  // la huella de la mina, inclinada, para ver el tajo, la vía y quién vive al lado
       const [o, s, e, n] = caja;
-      const cam = map.cameraForBounds([[o, s], [e, n]], { padding: 90 });
+      const cam = map.cameraForBounds([[o, s], [e, n]], { padding: pad(90) });
       map.flyTo({ center: cam.center, zoom: Math.min(cam.zoom - 1.6, 10.8), pitch: 45, bearing: -15, curve: 1.4,  // de lejos: se ve la unidad y lo que la rodea
                   duration: quieto ? 0 : 2400, essential: true });
       // Con relieve la mina queda más arriba de lo pedido (está a 4 000 m): al llegar, se centra donde se ve
@@ -1177,6 +1269,7 @@ function iniciar(D, G, H, C) {
   const ORDEN_S = { viene: -1, alta: 0, media: 1, dicen: 2 };
   const GRUPO_S = { viene: "Lo que viene", alta: "Prioridad alta", media: "Pasó en las últimas semanas", dicen: "Lo que dicen los medios" };
   const hoyISO = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+  const TEMA_TXT = { protesta: "Protesta", judicial: "Proceso judicial", dialogo: "Diálogo o acuerdo", aporte: "Aporte social", ambiente: "Ambiente", otro: "" };
   const TONO = t => t < 0 ? ["neg", "Crítico con la empresa"] : t > 0 ? ["pos", "Favorable a la empresa"] : ["neu", "Informativo"];
   // Las rutas por donde sale su mineral también son activos: protestas en 45 días en los distritos que cruzan
   function rutasEmpresa(pais) {
@@ -1195,18 +1288,19 @@ function iniciar(D, G, H, C) {
       ...ev.map(e => { const f = String(e.fecha_evento || e.fecha_anuncio || "").slice(0, 10), anun = e.estado === "anunciada";
         // Un anuncio queda en "Lo que viene" hasta su fecha; pasada la fecha sin noticia de que ocurrió, se dice así
         const viene = anun && f >= hoyISO(), trans = /transportista/i.test(e.actor || "");
-        const donde = String(e.ubigeo) === "00" ? `La nota no dice dónde${trans ? "; estas movilizaciones suelen concentrarse en Lima" : ""}.` : `En ${esc(lugar(e.ubigeo).split(", ")[0])}.`;
+        const sinLugar = String(e.ubigeo) === "00", sitio = sinLugar ? "" : lugar(e.ubigeo).split(", ")[0];
         return { f, i: opDe(e.ubigeo), s: viene ? "viene" : anun && (fuerza(`${e.accion} ${e.titular}`) || trans) ? "alta" : "media",
           // El titular dice el hecho mejor que cualquier plantilla; debajo, dónde, qué puede tocar y quién lo publicó
-          t: e.titular || corta(e),
-          src: `${viene ? "" : anun ? `Anunciada para el ${esc(dia(f))}, sin noticia de que haya ocurrido. ` : `Ocurrió el ${esc(dia(f))}. `}${donde}`
-            + `${trans ? " Puede afectar el traslado de concentrado e insumos." : ""} <a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.medio)}</a>` }; }),
+          t: `${corta(e)}${e.actor ? ` de ${e.actor.toLowerCase()}` : ""}${sitio ? ` en ${sitio}` : ""}`,
+          src: `${viene ? "" : anun ? `Anunciada para el ${esc(dia(f))}, sin noticia de que ocurriera. ` : `Ocurrió el ${esc(dia(f))}. `}`
+            + `${sinLugar ? "Lugar sin precisar. " : ""}${trans ? "Puede frenar el traslado de concentrado." : ""}`,
+          nota: e.titular, medio: e.medio, enlace: e.enlace }; }),
       ...vias.map(s => { let i = filas.findIndex(f => usanVia(s).some(o => zonaDe(f.u).includes(String(o.ubigeo)))); if (i < 0) i = opDe(s.ubigeo);
         return { f: String(s.fecha_evento || "").slice(0, 10), i, s: "alta", via: s,
           t: `Vía ${s.via || ""} bloqueada por una protesta en ${nombre(s.distrito || "")}, ${s.region || ""}. Es una ruta de salida de la operación`, src: "SUTRAN" }; }),
       // Lo que dijeron de ella radio y medios: cada nota es un hecho, con quién lo dijo y su tono
       ...(D.menciones || []).filter(m => ALIAS && ALIAS.test(llano(m.proyecto)) && !ev.some(e => e.titular === m.titular))
-        .map(m => ({ f: m.fecha, i: -1, s: "dicen", t: m.titular, cita: m.resumen, tono: m.tono,
+        .map(m => ({ f: m.fecha, i: -1, s: "dicen", t: m.titular, cita: m.resumen, tono: m.tono, tema: m.tema,
           quien: `${m.origen === "radio" ? "Radio " : ""}${m.medio}`, enlace: m.enlace }))
     ].filter(x => x.s).sort((a, b) => ORDEN_S[a.s] - ORDEN_S[b.s] || (a.s === "viene" ? a.f.localeCompare(b.f) : b.f.localeCompare(a.f)));
     // Un registro: agrupado por prioridad (el título lo dice en palabras), la fecha en su columna y la regleta del riesgo
@@ -1216,30 +1310,38 @@ function iniciar(D, G, H, C) {
       return `<time class="a-fecha rel" datetime="${f}"><b>${n === 0 ? "Hoy" : n === 1 ? "Mañana" : `En ${n} días`}</b><small>${d}</small></time>`; };
     const fecha = f => { const d = new Date(String(f).slice(0, 10) + "T12:00"); return isNaN(d) ? "" :
       `<time class="a-fecha" datetime="${String(f).slice(0, 10)}"><b>${d.getDate()}</b><small>${d.toLocaleDateString("es-PE", { month: "short" }).replace(".", "")}</small></time>`; };
+    let nD = 0; const nTot = items.slice(0, 12).filter(x => x.s === "dicen").length;
     document.getElementById("alertas").innerHTML = items.slice(0, 12).map((x, k, xs) => {
       const p = x.i >= 0 ? mesP(filas[x.i].a) : null;
       const grupo = !k || xs[k - 1].s !== x.s ? `<li class="a-grupo ${x.s}">${GRUPO_S[x.s]}</li>` : "";
-      if (x.s === "viene") return `${grupo}<li class="alerta viene">${falta(x.f)}<div><div class="a-tit">${esc(x.t)}</div><div class="a-src">${x.src}</div></div></li>`;
-      if (x.s === "dicen") { const [c, tx] = TONO(x.tono);
-        return `${grupo}<li class="alerta">${fecha(x.f)}<div><div class="a-tit">${esc(x.t)}</div>
-          <div class="a-quien"><b>${esc(x.quien)}</b><span class="tono ${c}">${tx}</span></div>
+      if (x.s === "viene") { const n = Math.round((new Date(x.f + "T12:00") - new Date(hoyISO() + "T12:00")) / 864e5);
+        const d = new Date(x.f + "T12:00").toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" });
+        return `${grupo}<li class="proximo"><div><div class="p-cuando">${esc(d[0].toUpperCase() + d.slice(1))}</div><div class="a-tit">${esc(x.t)}</div>${x.src ? `<div class="a-src">${x.src}</div>` : ""}${x.nota ? `<details class="la-nota"><summary>Ver la nota</summary><p>${esc(x.nota)}</p><a href="${esc(x.enlace)}" target="_blank" rel="noopener">${esc(x.medio)}</a></details>` : ""}</div>
+          <div class="cuenta"><b>${n === 0 ? "Hoy" : n}</b>${n === 0 ? "" : `<small>${n === 1 ? "día" : "días"}</small>`}</div></li>`; }
+      if (x.s === "dicen") { const [c, tx] = TONO(x.tono), extra = ++nD > 3 ? " extra" : "";
+        return `${grupo}<li class="alerta nota${extra}">${fecha(x.f)}<details><summary><span class="a-tit">${esc(x.t)}</span>
+          <span class="a-quien"><b>${esc(x.quien)}</b>${x.tema ? `<span class="tema">${TEMA_TXT[x.tema]}</span>` : ""}${x.tono || !x.tema ? `<span class="tono ${c}">${tx}</span>` : ""}</span></summary>
           ${x.cita ? `<p class="a-cita">${esc(x.cita)}${x.cita.length >= 300 ? "…" : ""}</p>` : ""}
-          <a class="ver" href="${esc(x.enlace)}" target="_blank" rel="noopener">Leer en ${esc(x.quien)}</a></div></li>`; }
+          <a class="ver" href="${esc(x.enlace)}" target="_blank" rel="noopener">Leer en ${esc(x.quien)}</a></details></li>`
+          + (nD === 3 && nTot > 3 ? `<li class="mas-notas"><button type="button" class="ver">Ver ${nTot - 3} ${nTot - 3 === 1 ? "nota más" : "notas más"}</button></li>` : ""); }
       return `${grupo}<li class="alerta">${fecha(x.f)}
         <div>${x.i >= 0 ? (x.zona ? `<div class="a-op">Zona de ${esc(lugar(filas[x.i].u).split(",")[0])}</div><div class="a-uni">${esc(filas.filter(g => g.u === filas[x.i].u).map(titFila).join(", "))}</div>`
                                     : `<div class="a-op">${esc(titFila(filas[x.i]))}</div>`) : ""}
           ${x.pc ? `<div class="a-pc"><b class="c${x.n}">${x.pc}</b><div><span class="nv c${x.n}">Riesgo ${banda(p).toLowerCase()}</span>${escala(p)}</div></div><div class="a-que">${esc(x.t)}</div>` : `<div class="a-tit">${esc(x.t)}</div>`}
-          ${x.por ? `<div class="a-por">${esc(x.por)}${x.mas ? `<details><summary>Por qué</summary>${esc(x.mas)}</details>` : ""}</div>` : ""}${x.src ? `<div class="a-src">${x.src}</div>` : ""}
+          ${x.por ? `<div class="a-por">${esc(x.por)}${x.mas ? `<details><summary>Por qué</summary>${esc(x.mas)}</details>` : ""}</div>` : ""}${x.src ? `<div class="a-src">${x.src}</div>` : ""}${x.nota ? `<details class="la-nota"><summary>Ver la nota</summary><p>${esc(x.nota)}</p><a href="${esc(x.enlace)}" target="_blank" rel="noopener">${esc(x.medio)}</a></details>` : ""}
           ${x.i >= 0 ? `<button type="button" class="ver" data-i="${x.i}">Ver en el mapa</button>` : ""}</div></li>`; }).join("")
       || `<li class="alerta"><span></span><div class="a-tit">Sin protestas ni bloqueos en su zona en 45 días, y sin menciones en medios en 30.</div></li>`;
-    document.querySelectorAll("#alertas .ver").forEach(b => b.onclick = () => abrir(+b.dataset.i, true));
+    document.querySelectorAll("#alertas .ver[data-i]").forEach(b => b.onclick = () => abrir(+b.dataset.i, true));
+    const mas = document.querySelector("#alertas .mas-notas button");
+    if (mas) mas.onclick = () => { document.querySelectorAll("#alertas .extra").forEach(li => li.classList.remove("extra")); mas.parentElement.remove(); };
     const op = filas.filter(f => opera(f.os[0])), altos = op.filter(f => (mesP(f.a) ?? 0) >= 0.25).length, nAl = items.filter(x => x.s === "alta").length,
       nDic = items.filter(x => x.s === "dicen").length, nHe = items.length - nDic;
     const hoy = new Date(String(D.creado) + "T12:00").toLocaleDateString("es-PE", { day: "numeric", month: "long" });
-    document.getElementById("bajada").textContent = `Al ${hoy}. ${op.length} ${op.length === 1 ? "unidad en operación" : "unidades en operación"}, ${altos} con riesgo alto o crítico ${enMes}` +
-      `${filas.length > op.length ? `, y ${filas.length - op.length} en exploración o proyecto` : ""}. ` +
-      (nAl ? `${nAl} ${nAl === 1 ? "hecho" : "hechos"} de prioridad alta. ` : nHe ? `${nHe} ${nHe === 1 ? "protesta o bloqueo" : "protestas o bloqueos"} en su zona. ` : "Sin protestas ni bloqueos en su zona. ") +
-      (nDic ? `${nDic} ${nDic === 1 ? "nota" : "notas"} de medios sobre la empresa en 30 días.` : "");
+    const pmax = Math.max(0, ...op.map(f => mesP(f.a) ?? 0)), nVi = items.filter(x => x.s === "viene" || x.s === "alta").length;
+    const cifra = (txt, n, cls = "") => `<div class="${cls}"><dt>${txt}</dt><dd>${n}</dd></div>`;
+    document.getElementById("bajada").innerHTML = `<dl class="cifras">${
+      cifra("Riesgo", `${Math.round(pmax * 100)}%`, `c${nivelN(pmax)}`)}${cifra("Avisos", nVi, nVi ? "urge" : "")}${cifra("En medios", nDic)}</dl>
+      <p class="fresco"><i></i><b>Medios al ${hoy}</b> <span>Riesgo de ${op.length === 1 ? "su operación" : `sus ${op.length} operaciones`} a diciembre</span></p>`;
   }
 
 
@@ -1258,7 +1360,7 @@ function iniciar(D, G, H, C) {
     const cs = filas.map(f => puntoOp(f) || centroDe(f.u)).filter(Boolean);
     if (cs.length && !pais) {
       const b = cs.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(cs[0], cs[0]));
-      const cam = map.cameraForBounds(b, { padding: 160, maxZoom: 12 });
+      const cam = map.cameraForBounds(b, { padding: pad(160), maxZoom: 12 });
       vista = { ...cam, zoom: cam.zoom - (cam.zoom > 8 ? 0.4 : 0), pitch: cam.zoom > 8 ? 55 : 0, bearing: cam.zoom > 8 ? -15 : 0 };
       map.flyTo({ ...vista, duration: quieto ? 0 : 1600, essential: true });
     } else {
