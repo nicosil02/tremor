@@ -1,0 +1,12 @@
+{
+  "Las Bambas": {
+    "fuente": "MMG: camión por el Corredor Minero del Sur hasta la estación Pillones (≈490 km) y tren de PeruRail hasta el puerto de Matarani (≈295 km)",
+    "tramos": [
+      {"nombre": "Mina a Velille", "modo": "Camión", "via": "PE-3SG", "ubigeos": ["030506", "030504", "080702", "080704", "080701", "080703", "080705", "080708"]},
+      {"nombre": "Espinar", "modo": "Camión", "via": "PE-3SG", "ubigeos": ["080801", "080802", "080803", "080805", "080806", "080808"]},
+      {"nombre": "Estación Pillones", "modo": "Camión", "via": "PE-34E", "ubigeos": ["040504", "040514"]},
+      {"nombre": "Tren a la costa", "modo": "Tren", "ubigeos": ["040128", "040104", "040124", "040702", "040703", "040705"]},
+      {"nombre": "Puerto de Matarani", "modo": "Puerto", "ubigeos": ["040704", "040701"]}
+    ]
+  }
+}

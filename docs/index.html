@@ -445,6 +445,7 @@
 // En el teléfono abre la app (docs/app.html): avisos, operaciones y mapa, una cosa por pantalla. ?web fuerza esta versión.
 const ADMIN = /[?&]admin\b/.test(location.search);
 if (matchMedia("(max-width: 700px)").matches && !/[?&]web\b/.test(location.search)) location.replace("app.html" + (ADMIN ? "?admin" : ""));
+let CADENA = {}; fetch("cadena.json").then(r => r.json()).then(c => CADENA = c).catch(() => {});
 const FUENTES = ["https://raw.githubusercontent.com/nicosil02/tremor/datos/web.json", "web.json"];
 const BASE = "https://tiles.openfreemap.org/styles/positron";
 const PERU = [[-81.4, -18.4], [-68.6, 0.1]];
@@ -1275,6 +1276,16 @@ function iniciar(D, G, H, C) {
   // Las rutas por donde sale su mineral también son activos: protestas en 45 días en los distritos que cruzan
   function rutasEmpresa(pais) {
     const box = document.getElementById("rutas-emp"); box.hidden = pais; if (pais) return;
+    // Con cadena de traslado conocida (docs/cadena.json), cada tramo con lo ocurrido o anunciado en 14 días
+    const cad = CADENA[Object.keys(CADENA).find(k => filas.some(f => f.os[0].unidad === k))];
+    if (cad) {
+      const toca = (r, e) => { const u = String(e.ubigeo); return r.ubigeos.includes(u) || (u.length < 6 && u !== "00" && /paro|bloque|huelga/i.test(e.accion || "") && r.ubigeos.some(x => x.startsWith(u))); };
+      box.innerHTML = `<h3>Traslado del concentrado</h3><ul>${cad.tramos.map(r => { const ev = D.eventos.filter(e => toca(r, e)
+          && Math.abs(new Date(String(e.fecha_evento || e.fecha_anuncio).slice(0, 10)) - new Date(hoyISO())) <= 14 * 864e5);
+        return `<li><b>${esc(r.nombre)}, ${esc(r.modo.toLowerCase())}</b><span class="${ev.length ? "mal" : ""}">${ev.length
+          ? ev.map(e => `${esc(corta(e))} ${e.estado === "anunciada" ? "anunciado para el" : "el"} ${esc(dia(String(e.fecha_evento || e.fecha_anuncio).slice(0, 10)))} en ${esc(lugar(e.ubigeo))}`).join(". ") : "Sin avisos"}.</span></li>`; }).join("")}</ul>`;
+      return;
+    }
     const rs = [...new Set(filas.filter(f => opera(f.os[0])).flatMap(f => rutasDe(f.u)))];
     const por = r => { const ds = new Set(Object.entries(D.rutas || {}).filter(([, v]) => v.includes(r)).map(([u]) => u));
       return { r, ev: D.eventos.filter(e => ds.has(String(e.ubigeo))).length, bl: D.sutran.filter(s => s.via === r).length }; };
@@ -1374,8 +1385,7 @@ function iniciar(D, G, H, C) {
   // Cobertura: qué parte de las protestas reales ve la Defensoría y qué parte se le escapa a todas las fuentes
   const cob = (D.cobertura || []).filter(c => c.anio >= 2019);
   // Piloto con Las Bambas: sin "Todo el país" ni buscador; ?admin deja ver todo para revisar
-  if (!ADMIN) { document.querySelector(".cabeza > .vistas").hidden = true; verVista("empresa"); document.querySelector(".elegir").hidden = true; }
-  else verVista("pais");
+  verVista(ADMIN ? "pais" : "empresa");  // piloto: abre en Las Bambas; Todo el país sigue a mano
 }
 </script>
 </body>
