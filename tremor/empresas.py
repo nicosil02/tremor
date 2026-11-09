@@ -194,6 +194,77 @@ def contratos(con, dias=60):
     con.commit()
 
 
+def bajar_bem(carpeta=CPIM.parent, meses=12):
+    """Los anexos en Excel de los últimos Boletines Estadísticos Mineros (MINEM, mensual) que falten. Traen la
+    Cartera de Proyectos de Exploración Minera (hoja CPEM): un proyecto sale de ella cuando termina, por eso se
+    leen los del último año."""
+    import re
+    from datetime import date
+    import requests
+    ids = set()
+    for anio in (date.today().year, date.today().year - 1):
+        r = requests.get(f"{GOBPE}/busquedas", params={"term": f"boletin estadistico minero {anio}", "institucion": "minem"},
+                         headers=NAVEGADOR, timeout=60)
+        ids |= set(re.findall(r"/institucion/minem/informes-publicaciones/(\d+-boletin-estadistico-minero-[a-z]+-\d{4})", r.text))
+    for pagina in sorted(ids, key=lambda s: int(s.split("-")[0]))[-meses:]:
+        destino = carpeta / f"bem-{pagina.split('-')[0]}.xlsx"
+        if destino.exists():
+            continue
+        p = requests.get(f"{GOBPE}/institucion/minem/informes-publicaciones/{pagina}", headers=NAVEGADOR, timeout=60)
+        if xlsx := re.search(r"https://cdn\.www\.gob\.pe/[^\"]+\.xlsx[^\"]*", p.text):
+            carpeta.mkdir(parents=True, exist_ok=True)
+            destino.write_bytes(requests.get(xlsx.group(0), headers=NAVEGADOR, timeout=300).content)
+
+
+def exploracion_minem():
+    """{(proyecto, operador)} de la Cartera de Proyectos de Exploración Minera en los boletines bajados."""
+    import openpyxl
+    salida = set()
+    for x in CPIM.parent.glob("bem-*.xlsx"):
+        for hoja in openpyxl.load_workbook(x, read_only=True).worksheets:
+            if hoja.title.startswith("CPEM"):
+                salida |= {(f[2], f[3]) for f in hoja.iter_rows(values_only=True) if f[2] and f[3] and f[2] != "PROYECTO"}
+    return salida
+
+
+def situacion_minas(con, distritos):
+    """Qué unidades mineras de OEFA producen. OEFA no lo dice: "Sallahue Norte" o "Azulccacca" de Las Bambas son
+    exploraciones. Cada mina en producción del MINEM (GEOCATMIN, con su distrito: el de Las Bambas es Challhuahuacho,
+    no el del centro de la concesión) marca la unidad de su titular con el nombre más parecido; la cartera de
+    exploración de los boletines marca las exploraciones. Lo que no está en ninguna queda como unidad fiscalizada,
+    sin afirmar que opera."""
+    import geopandas as gpd
+    from tremor.contexto import GENERICAS
+    from tremor.distritos import CARTERA
+    try:
+        bajar_bem()
+    except Exception as e:
+        print(f"  boletín minero: no se pudo revisar gob.pe ({e.__class__.__name__})")
+    pal = lambda s: frozenset(w for w in norm(s or "").replace(".", " ").replace("-", " ").replace(",", " ").split()
+                              if len(w) > 2 and w not in GENERICAS)
+    m = gpd.sjoin(gpd.GeoDataFrame.from_features(arcgis(f"{CARTERA}/0", "titular,proyecto", geometria=True), crs=4326),
+                  distritos, predicate="within")
+    unidades = con.execute("SELECT DISTINCT empresa, unidad FROM operacion WHERE tipo = 'mineria'").fetchall()
+    minas = {}
+    for f in m.itertuples():
+        te, tp = pal(f.titular), pal(f.proyecto)
+        cand = [(pal(u) == tp, -len(pal(u) ^ tp), e, u) for e, u in unidades
+                if pal(e) & te and pal(u) and tp and (pal(u) <= tp or tp <= pal(u))]
+        if cand:
+            minas.setdefault(max(cand)[2:], f.ubigeo)  # "Yanacocha" es la mina, no "Yanacocha Sur - Cerro Quilish"
+    exp = {(pal(p), pal(o)) for p, o in exploracion_minem()}
+    for e, u in unidades:
+        pe, pu = pal(e), pal(u)
+        if (e, u) in minas:
+            con.execute("UPDATE operacion SET ubigeo = ? WHERE empresa = ? AND unidad = ?", (minas[e, u], e, u))
+        elif any(p == pu and pe & o for p, o in exp) and not pu <= pe:  # "Las Bambas" explora junto al tajo: sigue siendo mina
+            con.execute("UPDATE operacion SET etapa = 'exploración (cartera de exploración del MINEM)' "
+                        "WHERE empresa = ? AND unidad = ? AND etapa = 'operación'", (e, u))
+        else:
+            con.execute("UPDATE operacion SET etapa = 'unidad fiscalizada por OEFA' "
+                        "WHERE empresa = ? AND unidad = ? AND etapa = 'operación'", (e, u))
+
+
 def cartera_minem(pdf=None):
     """Las 66 fichas de la cartera minera del MINEM: proyecto, titular, lugar, etapa, inicio y puesta en marcha.
     Cada ficha es una página en columnas: rótulo a la izquierda y valor a su derecha, a la misma altura."""
@@ -258,6 +329,7 @@ def proyectos(con, desde=2021):
     con.execute("UPDATE operacion SET etapa = 'operación' WHERE tipo != 'proyecto' AND etapa NOT LIKE 'lote en%'")
     contratos(con)  # decretos de El Peruano
     corregir(con)   # y lo verificado a mano (operadores.csv) manda
+    situacion_minas(con, distritos)
     # El mismo proyecto puede venir de la cartera, del SENACE y de OEFA (Tía María): mismo distrito y las palabras
     # de un nombre contenidas en las del otro ("Yumpag" y "Yumpag - Carama"). Si OEFA ya lo fiscaliza, no se
     # duplica: se anota en su fila que está en la cartera (sin afirmar la etapa: la cartera es de 2023).
@@ -276,10 +348,16 @@ def proyectos(con, desde=2021):
             if not hay:
                 continue
             if getattr(f, "nuevo", True) is True and "cartera" in f.etapa:  # una ampliación no vuelve proyecto a la mina
-                con.execute("UPDATE operacion SET etapa = ? WHERE empresa = ? AND unidad = ? AND etapa = 'operación'",
-                            (f"unidad OEFA; proyecto {f.unidad}: " + f.etapa.replace("proyecto, ", ""), *hay))
+                con.execute("UPDATE operacion SET etapa = CASE WHEN etapa = 'operación' THEN 'operación; ' ELSE '' END || ? "
+                            "WHERE empresa = ? AND unidad = ? AND etapa IN ('operación', 'unidad fiscalizada por OEFA')",
+                            (f"proyecto {f.unidad}: " + f.etapa.replace("proyecto, ", ""), *hay))
         elif not any(str(g.ubigeo)[:4] == str(f.ubigeo)[:4] and igual(p, pal(g.unidad)) for g in t):
             t.append(f)
+    # El mismo titular se escribe distinto en cada fuente ("Minera Las Bambas S.A." y "MINERA LAS BAMBAS S.A."): se
+    # usa el nombre de OEFA para que la empresa sea una sola en la página.
+    clave = lambda e: " ".join(norm(e).replace(".", " ").replace(",", " ").split())
+    nombres = {clave(e): e for (e,) in con.execute("SELECT DISTINCT empresa FROM operacion WHERE tipo != 'proyecto'")}
+    t = [f._replace(empresa=nombres.get(clave(f.empresa), f.empresa)) for f in t]
     pd.DataFrame(t).drop(columns="nuevo", errors="ignore").to_sql("operacion", con, if_exists="append", index=False)
     con.commit()
     print(f"{len(t)} proyectos-distrito nuevos ({len(a)} filas de la cartera MINEM, {len(b)} con EIA del SENACE desde {desde})")

@@ -500,7 +500,10 @@ function iniciar(D, G, H, C) {
   sel.onchange = () => { cerrarFicha(); marcar(null); ordenarFilas(); lista(enPais); };
   function elegir(t) {
     sug.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.t === t));
-    const suyas = t ? D.operaciones.filter(o => llano(`${o.empresa} ${o.unidad}`).includes(t)) : null;
+    // Si el texto es parte del nombre de una empresa, se buscan sus operaciones; si no, por unidad ("bambas" no debe
+    // traer "Cotabambas - Ccalla", que es de Panoro)
+    const porEmpresa = t ? D.operaciones.filter(o => llano(o.empresa).includes(t)) : null;
+    const suyas = t ? (porEmpresa.length ? porEmpresa : D.operaciones.filter(o => llano(o.unidad).includes(t))) : null;
     if (suyas && !suyas.length) {
       document.getElementById("h1").textContent = "Sin resultados";
       document.getElementById("bajada").textContent = "Ninguna operación fiscalizada por el OEFA coincide con la búsqueda. Puede probar con el nombre de la unidad minera o de la empresa.";
@@ -511,7 +514,8 @@ function iniciar(D, G, H, C) {
       .map(a => ({ unidad: lugar(a.ubigeo), ubigeo: a.ubigeo }));
     filas = d3.groups(base, o => o.ubigeo).map(([u, os]) => ({ u, os, a: A.get(u) || {} }));
     enPais = !suyas; ordenarFilas(); cerrarFicha();
-    const empresas = suyas ? [...new Set(suyas.map(o => o.empresa))] : [];
+    // Una empresa aunque cada fuente la escriba distinto ("MINERA LAS BAMBAS S.A." y "Minera Las Bambas S.A.")
+    const empresas = suyas ? [...d3.group(suyas, o => llano(o.empresa).replace(/[^a-z0-9]+/g, " ").trim()).values()].map(os => os[0].empresa) : [];
     const h1 = document.getElementById("h1");
     h1.textContent = !suyas ? "Zonas mineras y petroleras con mayor riesgo"
       : empresas.length === 1 ? nombre(empresas[0]) : `${empresas.length} empresas`;
