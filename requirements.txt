@@ -10,3 +10,5 @@ geopandas>=1.0
 scikit-learn>=1.5
 streamlit>=1.40
 plotly>=5.24
+py7zr
+xlrd

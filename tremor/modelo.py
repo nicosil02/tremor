@@ -234,6 +234,20 @@ def panel(con):
     PRY3 = ventana(G("dev_proyectos"), 3)
     CAE = np.where(np.roll(PRY3, 12, axis=1) > 0, PRY3 / np.where(np.roll(PRY3, 12, axis=1) > 0, np.roll(PRY3, 12, axis=1), 1) - 1, np.nan)
     CAE[:, antes(2011)] = np.nan  # obras del trimestre frente al mismo trimestre del año anterior
+    # Producción minera por unidad (tremor/produccion.py, MINEM): valor del cobre y el oro concentrados en el distrito
+    # a precios del mes (BCRP). Se publica con ~2 meses de rezago. Antes de 2011 el formato no se lee: sin dato.
+    pr = pd.read_sql("""SELECT ubigeo, anio * 12 + mes - 1 AS m, mineral, SUM(valor) AS v FROM produccion_unidad
+                        WHERE etapa NOT IN ('fundicion', 'refinacion', 'refineria') AND mineral IN ('cobre', 'oro')
+                        GROUP BY 1, 2, 3""", con)
+    px = pd.read_sql("SELECT serie, periodo, valor FROM bcrp_mensual WHERE serie IN ('PN01652XM', 'PN01654XM')", con)
+    px = px.assign(m=px.periodo.map(mes)).pivot_table(index="m", columns="serie", values="valor")
+    usd = {"cobre": px.PN01652XM * 22.0462 / 1e6, "oro": px.PN01654XM / 31.1035 / 1e6}  # ¢/lb → US$ mill. por t; US$/oz → por g
+    pr["usd"] = [v * usd[mi].get(m, np.nan) for v, mi, m in zip(pr.v, pr.mineral, pr.m)]
+    PR = np.roll(matriz(pr.groupby(["ubigeo", "m"], as_index=False).usd.sum(), "usd", distritos, meses), 2, axis=1)
+    PR3, PR12 = ventana(PR, 3), ventana(PR, 12)
+    PRC = np.log1p(PR3) - np.log1p(np.roll(PR3, 12, axis=1))  # trimestre frente al mismo del año anterior
+    for x in (PR12, PRC):
+        x[:, antes(2012)] = np.nan
     nivel = np.select([K > 0, F > 0, (P > 0) | (A > 0), L > 0], [4, 3, 2, 1], 0)
     F3 = ventana(F, 3)
     W = vecinos(distritos)
@@ -266,6 +280,9 @@ def panel(con):
          "zona_alza": zona(F3) - zona(ventana(F, 12)) / 4, "zona_emergencias_3": zona(EM),
          "zona_vacancias_12": zona(VAC), "zona_revocatorias_24": zona(REV), "zona_control_12": zona(CGR),
          "inversion_pct_gasto": np.clip(INV, 0, 1), "obras_vs_anio_previo": np.clip(CAE, -1, 5),
+         "produccion_usd_12": np.log1p(PR12), "produccion_cambio_3": PRC,
+         "zona_produccion_usd_12": np.log1p(zona(np.nan_to_num(PR12))) + 0 * PR12,
+         "zona_produccion_cambio_3": np.log1p(zona(np.nan_to_num(PR3))) - np.log1p(zona(np.nan_to_num(np.roll(PR3, 12, axis=1)))) + 0 * PRC,
          # El mes que importa es t+2: el reporte del mes t sale a mediados de t+1, y para entonces t+1 ya va por la mitad.
          "z1_fuerza": (futuro(zona(F + K), 2) - futuro(zona(F + K), 1) > 0).astype(float)}
     v["z1_brote"] = np.where(zona(F3) > 0, np.nan, v["z1_fuerza"])
@@ -387,7 +404,8 @@ GRUPOS = {
     "vias": ["via_nacional_km", "fuerza_3_corredor", "corredor_minero_sur"],
     "extraccion": ["unidades_mineras", "pasivos_mineros", "lote_explotacion", "lote_exploracion",
                    "oleoducto_norperuano", "concesiones_ha", "concesiones_metalicas_nuevas_ha", "proyectos_cartera",
-                   "certificaciones_12", "eia_36",
+                   "certificaciones_12", "eia_36", "produccion_usd_12", "produccion_cambio_3", "zona_produccion_usd_12",
+                   "zona_produccion_cambio_3",
                    "minas_tajo_abierto", "minas_subterraneas"],
     "territorio": ["comunidades", "comunidades_pct_territorio", "reserva_indigena_pct_territorio",
                    "lengua_indigena", "autoidentificacion_indigena", "rural", "anp_pct_territorio",

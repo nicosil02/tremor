@@ -53,3 +53,16 @@ def test_lote_urbano_no_es_extractivo():
     from tremor.egpp import tipo_conflicto
     assert tipo_conflicto("Pobladores", "Servicios", "Ciudadanía", None, "antena en avenida Los Robles, manzana A, lote 20") == "otro"
     assert tipo_conflicto("Pobladores", "Ambientales", "Ciudadanía", None, "derrame en el Lote 192") == "socioambiental_extractivo"
+
+
+def test_produccion_lee_meses_abreviados():
+    import io
+    import pandas as pd
+    from tremor.produccion import leer
+    filas = [["PRODUCCIÓN METÁLICA - ENERO A DICIEMBRE 2023"] + [None] * 11, [None] * 12,
+             ["METAL", "UNIDAD DE MEDIDA", "ETAPA", "TITULAR", "UNIDAD", "REGIÓN", "PROVINCIA", "DISTRITO", "ENE", "FEB", "MAR", "SET"],
+             ["COBRE", "TMF", "CONCENTRACIÓN", "MINERA LAS BAMBAS S.A.", "LAS BAMBAS", "APURÍMAC", "COTABAMBAS",
+              "CHALLHUAHUACHO", 10.0, 0, 5.0, 2.0]]
+    b = io.BytesIO(); pd.DataFrame(filas).to_excel(b, header=False, index=False)
+    d = leer("x.xlsx", b.getvalue())
+    assert sorted(d.mes) == [1, 3, 9] and d.anio.iloc[0] == 2023 and d.valor.sum() == 17
