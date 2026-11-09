@@ -213,10 +213,13 @@ def panel(con):
     em = pd.read_sql("SELECT ubigeo, anio * 12 + mes - 1 AS m, 1 AS n FROM emergencia", con)
     EM = ventana(matriz(em, "n", distritos, meses), 3)
     EM[:, np.array(meses) < 2020 * 12 + 2] = np.nan  # el registro empieza en 2020: antes es "sin dato", no cero
-    ac = pd.read_sql("SELECT ubigeo, anio * 12 + mes - 1 AS m, 1 AS n, extractivo AS x FROM acled_evento "
-                     "WHERE tipo IN ('Protests', 'Riots')", con)
+    try:  # ACLED es opcional: solo valida desde afuera y su licencia no permite usarlo en un producto pagado
+        ac = pd.read_sql("SELECT ubigeo, anio * 12 + mes - 1 AS m, 1 AS n, extractivo AS x FROM acled_evento "
+                         "WHERE tipo IN ('Protests', 'Riots')", con)
+    except Exception:
+        ac = pd.DataFrame({"ubigeo": pd.Series(dtype=str), "m": pd.Series(dtype=int), "n": [], "x": []})
     AC, AX = (matriz(ac, c, distritos, meses) for c in ("n", "x"))
-    sin_acled = (np.array(meses) < 2018 * 12) | (np.array(meses) + HORIZONTE >= ac.m.max())  # último mes: parcial
+    sin_acled = (np.array(meses) < 2018 * 12) | (np.array(meses) + HORIZONTE >= (ac.m.max() if len(ac) else 0))  # último mes: parcial
     # Gobierno local (tremor/gobierno.py): gasto municipal del mes, JNE en El Peruano, revocatorias e informes de control
     gm = pd.read_sql("SELECT ubigeo, m, variable, valor FROM distrito_mes", con)
     G = lambda *vs: matriz(gm[gm.variable.isin(vs)], "valor", distritos, meses)
@@ -608,7 +611,7 @@ def evaluar(p, objetivo):
              "tasa_base": y.mean(), "filas_prueba": len(y), "filas_entrena": len(entrena)}
         ok = prueba[externa].notna().to_numpy()
         ya = prueba[externa].to_numpy()[ok]
-        m |= {"pr_auc_acled": average_precision_score(ya, s[ok]), "tasa_base_acled": ya.mean(),
+        m |= {} if not ok.any() else {"pr_auc_acled": average_precision_score(ya, s[ok]), "tasa_base_acled": ya.mean(),
               "precision_top20_acled": precision_top(prueba[ok], s[ok], ya, disjuntas=z),
               "captura_top10pct_acled": captura(prueba[ok], s[ok], ya)}
         filas += [(n, objetivo, k, float(v)) for k, v in m.items()]

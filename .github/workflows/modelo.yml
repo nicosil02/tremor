@@ -43,7 +43,9 @@ jobs:
         env:
           ACLED_EMAIL: ${{ secrets.ACLED_EMAIL }}
           ACLED_PASSWORD: ${{ secrets.ACLED_PASSWORD }}
-        run: python -m tremor.distritos acled_api
+        run: |  # opcional: sin cuenta con clave (el login con Google no da una), el modelo corre sin esta validación
+          [ -n "$ACLED_EMAIL" ] || { echo "sin ACLED: se omite la validación externa"; exit 0; }
+          python -m tremor.distritos acled_api
 
       - name: Producción minera del MINEM (el archivo del año se actualiza cada mes) y qué unidades operan
         run: |
