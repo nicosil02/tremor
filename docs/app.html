@@ -375,8 +375,8 @@ function detalleAviso(k) {
 let actual = "avisos", mapa, PAIS = [], FOCO = null, SEL = null;  // SEL: distritos que el mapa resalta y encuadra
 const VER = `<button type="button" class="ir vermapa" data-vermapa>Ver en el mapa</button>`;
 const ley = () => (actual === "pais" || PAIS_VISTA) && !SEL
-  ? `Riesgo en zonas con operación extractiva<small>Paro, bloqueo o toma contra la operación, octubre a diciembre. Numeradas, las 10 más altas
-    <br><i class="punto"></i>Protesta anunciada <i class="punto negro"></i>Bloqueo vigente (SUTRAN) <i class="via-l"></i>Red vial nacional</small>`
+  ? `Riesgo en zonas con operación extractiva<small>Paro, bloqueo o toma contra la operación, octubre a diciembre. Numeradas, las 10 más altas.
+    <br><i class="punto"></i>Protesta anunciada <i class="punto negro"></i>Bloqueo vigente (SUTRAN). Al acercarse se ven las vías; toque un distrito para ver qué operaciones hay</small>`
   : (FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Riesgo en la vía, " + pct(X.via))
   + (SEL ? (SEL.tr.length ? `<small><i class="rojo"></i>${/se suma/.test(SEL.etq) ? "Anunciaron que se suman" : SEL.tr2.length ? "Más probable" : "Tramos que puede cortar"}${SEL.tr2.length ? `<br><i class="naranja"></i>Posible` : ""}<br><i class="punto"></i>${/se suma/.test(SEL.etq) ? "Base que se suma" : SEL.etq ? "Donde más bloquearon antes" : "Dónde es la protesta"}</small>` : "")
     : `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`);
@@ -409,17 +409,22 @@ function peru() {
           "fill-color": ["step", ["get", "p"], "#f1d9c6", 0.15, "#e3a67c", 0.25, "#c8642f", 0.4, "#8a3213"],
           "fill-opacity": ["step", ["get", "p"], 0.25, 0.15, 0.55, 0.25, 0.75, 0.4, 0.85] } }, "ops");
         mapa.addLayer({ id: "peru-l", type: "line", source: "peru", layout: off, paint: { "line-color": "#fff", "line-width": 0.3, "line-opacity": 0.6 } }, "ops");
-        mapa.addLayer({ id: "peru-vias", type: "line", source: "peru-vias", layout: { ...off, "line-cap": "round" }, paint: { "line-color": "#3d3128", "line-opacity": 0.8,
-          "line-width": ["interpolate", ["linear"], ["zoom"], 4, 1, 8, 2.5] } }, "ops");
-        mapa.addLayer({ id: "peru-vias-t", type: "symbol", source: "peru-vias", minzoom: 6, layout: { ...off, "symbol-placement": "line", "text-field": ["get", "r"], "text-size": 11,
+        mapa.addLayer({ id: "peru-vias", type: "line", source: "peru-vias", minzoom: 7.5, layout: { ...off, "line-cap": "round" }, paint: { "line-color": "#e0a32e",
+          "line-opacity": ["interpolate", ["linear"], ["zoom"], 7.5, 0, 8.5, 0.9], "line-width": ["interpolate", ["linear"], ["zoom"], 8, 2, 12, 4] } }, "ops");
+        mapa.addLayer({ id: "peru-vias-t", type: "symbol", source: "peru-vias", minzoom: 8.5, layout: { ...off, "symbol-placement": "line", "text-field": ["get", "r"], "text-size": 11,
           "text-font": ["Noto Sans Bold"] }, paint: { "text-color": "#4a3b2e", "text-halo-color": "#fff", "text-halo-width": 1.5 } });
         mapa.addLayer({ id: "peru-ev", type: "circle", source: "peru-ev", layout: off, paint: { "circle-radius": ["case", ["==", ["get", "s"], 1], 7, 6],
           "circle-color": ["case", ["==", ["get", "s"], 1], "#1c2629", "#d7261e"], "circle-stroke-color": "#fff", "circle-stroke-width": 2 } });
         mapa.addLayer({ id: "peru-top", type: "circle", source: "peru-top", layout: off, paint: { "circle-radius": 5, "circle-color": "#fff", "circle-stroke-color": "#8a3213", "circle-stroke-width": 2.5 } });
-        mapa.addLayer({ id: "peru-top-t", type: "symbol", source: "peru-top", layout: { ...off, "text-field": ["concat", ["to-string", ["get", "k"]], ". ", ["get", "t"]], "text-size": 13,
+        mapa.addLayer({ id: "peru-top-t", type: "symbol", source: "peru-top", layout: { ...off, "text-field": ["concat", ["to-string", ["get", "k"]], ". ", ["get", "t"]], "text-size": 12,
           "text-font": ["Noto Sans Bold"], "text-anchor": "left", "text-offset": [0.8, 0], "text-variable-anchor": ["left", "right", "top", "bottom"], "text-radial-offset": 0.8 }, paint: { "text-color": "#1c2629", "text-halo-color": "#fff", "text-halo-width": 2 } });
         mapa.on("click", "peru", ev => { if (!(actual === "pais" || PAIS_VISTA) || mapa.queryRenderedFeatures(ev.point, { layers: ["peru-ev"] }).length) return; const f = ev.features[0].properties;
-          new maplibregl.Popup({ maxWidth: "240px" }).setLngLat(ev.lngLat).setHTML(`<b>${esc(lugar(f.u))}</b><br>${pct(f.p)} de paro, bloqueo o toma contra la actividad extractiva en la zona, octubre a diciembre`).addTo(mapa); });
+          const os = D.operaciones.filter(o => o.ubigeo === f.u), cuenta = (xs, uno, varios) => xs.length ? `${xs.length} ${xs.length > 1 ? varios : uno}` : "";
+          const et = [cuenta(os.filter(opera), "en operación", "en operación"), cuenta(os.filter(o => /^explor/.test(o.etapa)), "en exploración", "en exploración"),
+            cuenta(os.filter(o => /^proyecto/.test(o.etapa)), "proyecto", "proyectos")].filter(Boolean);
+          const tipos = [...new Set(os.map(o => ({ mineria: "minería", hidrocarburos: "hidrocarburos" })[o.tipo] || o.tipo).filter(Boolean))];
+          new maplibregl.Popup({ maxWidth: "260px" }).setLngLat(ev.lngLat).setHTML(`<b>${esc(lugar(f.u))}</b><br><b style="font-size:20px">${pct(f.p)}</b> de paro, bloqueo o toma contra la actividad extractiva en la zona, octubre a diciembre
+            <br>${os.length ? `${os.length} ${os.length > 1 ? "unidades" : "unidad"} de ${esc(tipos.join(" e "))} en el distrito${et.length ? ` (${esc(et.join(", "))})` : ""}` : "Sin unidades en el distrito; la operación está en un vecino"}`).addTo(mapa); });
         mapa.on("click", "peru-ev", ev => { const k = ev.features[0].properties.k; if (k >= 0) { if (!ANCHO.matches) ir("pais"); abrir(detalleAviso(PAIS[k])); }
           else new maplibregl.Popup().setLngLat(ev.lngLat).setHTML(`<b>${esc(ev.features[0].properties.t)}</b><br>Según SUTRAN`).addTo(mapa); });
         mapa.on("mouseenter", "peru-ev", () => mapa.getCanvas().style.cursor = "pointer"); mapa.on("mouseleave", "peru-ev", () => mapa.getCanvas().style.cursor = "");
