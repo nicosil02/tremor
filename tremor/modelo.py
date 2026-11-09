@@ -776,7 +776,7 @@ def frase(g, r):
     return f"{eleccion(r)}{margen}"
 
 
-def este_mes(mdl, p, x, calibrador, meses=12):
+def este_mes(mdl, p, x, calibrador, meses=12, sufijo="1m"):
     """La alerta del mes frente a lo normal en la misma zona: `normal` es la probabilidad media de sus últimos 12 meses
     y las razones del cambio salen de poner cada grupo de variables en su promedio de esos 12 meses (oclusión contra
     la propia zona, no contra el país): lo que hoy está distinto de lo habitual allí."""
@@ -788,9 +788,9 @@ def este_mes(mdl, p, x, calibrador, meses=12):
     habitual = normal.reindex(x.index)[VARIABLES].fillna(x[VARIABLES])
     prob, caida = razones(mdl, x, habitual)
     prob = calibrador.predict(prob)
-    salida = pd.DataFrame({"normal_zona_1m": normal.prob.reindex(x.index), "cambio_zona_1m": prob - normal.prob.reindex(x.index)},
-                          index=x.index)
-    salida["razones_cambio_1m"] = [
+    salida = pd.DataFrame({f"normal_zona_{sufijo}": normal.prob.reindex(x.index),
+                           f"cambio_zona_{sufijo}": prob - normal.prob.reindex(x.index)}, index=x.index)
+    salida[f"razones_cambio_{sufijo}"] = [
         " · ".join(frase_cambio(g, x.loc[u], habitual.loc[u], caida.loc[u, g] > 0)
                    for g in caida.loc[u].drop("economia").abs().nlargest(3).index if abs(caida.loc[u, g]) >= 0.005)
         for u in x.index]
@@ -906,11 +906,11 @@ def alerta(con, p, mejor):
             salida[col.replace("prob", "razones")] = [
                 " · ".join(frase(g, x.loc[u]) for g in caida.loc[u].nlargest(3).index if caida.loc[u, g] > 0)
                 for u in x.index]
-        if objetivo == "z1_fuerza":
-            salida = salida.join(este_mes(mdl, p, x, CALIBRADOR[objetivo]))
+        if objetivo in ("z1_fuerza", "z_extractivo"):  # el de la página: conflicto contra la operación en 3 meses
+            salida = salida.join(este_mes(mdl, p, x, CALIBRADOR[objetivo], sufijo="1m" if objetivo == "z1_fuerza" else "ext"))
     for c in ("prob_zona", "puntaje_zona", "razones_zona", "prob_zona_extractivo", "puntaje_zona_extractivo",
               "razones_zona_extractivo", "prob_zona_1m", "puntaje_zona_1m", "razones_zona_1m", "normal_zona_1m",
-              "cambio_zona_1m", "razones_cambio_1m", "prob_brote", "puntaje_brote", "razones_brote"):
+              "cambio_zona_1m", "razones_cambio_1m", "normal_zona_ext", "cambio_zona_ext", "razones_cambio_ext", "prob_brote", "puntaje_brote", "razones_brote"):
         salida.loc[x.operacion == 0, c] = np.nan  # la alerta de zona es solo para distritos con operación
     salida["puesto_zona"] = salida.puntaje_zona.rank(ascending=False, method="first")
     salida["puesto_zona_extractivo"] = salida.puntaje_zona_extractivo.rank(ascending=False, method="first")

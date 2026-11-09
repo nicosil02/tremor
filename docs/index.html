@@ -284,7 +284,7 @@
     <div id="mapa"></div>
     <div class="cargando" id="cargando">Cargando el mapa</div>
     <div class="leyenda" id="leyenda" hidden>
-      <div class="riesgo"><b>Probabilidad de paro o bloqueo en la zona de influencia</b>
+      <div class="riesgo"><b id="ley-riesgo">Probabilidad de paro o bloqueo en la zona de influencia</b>
         <div class="rampa"><i style="background:var(--cobre-1)"></i><i style="background:var(--cobre-2)"></i><i style="background:var(--cobre-3)"></i><i style="background:var(--cobre-4)"></i></div>
         <div class="cortes"><span>Bajo</span><span>10%</span><span>25%</span><span>50%</span></div></div>
       <div class="detalle"><b>En el mapa</b>
@@ -498,9 +498,16 @@ function iniciar(D, G, H, C) {
   // ---------- Elegir empresa, o todo el país ----------
   let filas = [], puntosEventos = [];
   // La alerta del mes (modelo de un mes) si ya existe; si no, la de 3 meses
-  const hayMes = D.alerta.some(a => a.prob_zona_1m != null);
-  const mesP = a => hayMes ? a.prob_zona_1m : a.prob_zona;
-  const enMes = hayMes ? `en ${mes(D.alerta.find(a => a.ventana_1m)?.ventana_1m)}` : `de aquí a ${hasta}`;
+  // El número de la página: conflicto contra la actividad extractiva en la zona en 3 meses, el objetivo que el modelo
+  // predice mejor que la regla ingenua en todas las ventanas. Con datos viejos, el de cualquier paro en el mes.
+  const EXT = D.alerta.some(a => a.normal_zona_ext != null);
+  const K = EXT ? { p: "prob_zona_extractivo", n: "normal_zona_ext", c: "cambio_zona_ext", r: "razones_cambio_ext" }
+                : { p: "prob_zona_1m", n: "normal_zona_1m", c: "cambio_zona_1m", r: "razones_cambio_1m" };
+  const QUE = EXT ? "paro, bloqueo o toma contra la actividad extractiva" : "paro o bloqueo";
+  const hayMes = D.alerta.some(a => a[K.p] != null);
+  const mesP = a => hayMes ? a[K.p] : a.prob_zona;
+  const enMes = hayMes && !EXT ? `en ${mes(D.alerta.find(a => a.ventana_1m)?.ventana_1m)}` : `de aquí a ${hasta}`;
+  document.getElementById("ley-riesgo").textContent = `Probabilidad de ${QUE} en la zona de influencia, ${enMes}`;
   const sel = document.getElementById("ordenar");
   let enPais = false;
   const uni = o => o.unidad + (o.tipo === "proyecto" ? " (proyecto)" : "");
@@ -545,7 +552,7 @@ function iniciar(D, G, H, C) {
       : empresas.length === 1 ? nombre(empresas[0]) : `${empresas.length} empresas`;
     h1.style.fontSize = h1.textContent.length > 28 ? "24px" : "";
     document.getElementById("bajada").textContent = hayMes
-      ? `Probabilidad de paro o bloqueo en la zona de influencia de cada operación, ${enMes.replace(/^en /, "")}.`
+      ? `Probabilidad de ${QUE} en la zona de influencia de cada operación, ${enMes.replace(/^en /, "")}.`
       : `Probabilidad de que haya un paro, un bloqueo o una toma en la zona de cada operación de aquí a ${hasta}. La zona es el distrito y los que lo rodean.`;
     lista(!suyas);
     listo.then(() => ["huella", "huella-borde", "huella-nombre"].forEach(c =>
@@ -576,25 +583,25 @@ function iniciar(D, G, H, C) {
     document.querySelectorAll(".op > button").forEach(b => b.onclick = () => abrir(+b.parentNode.dataset.i, true));
   }
   // Los factores del mes, en la dirección del cambio
-  const razonesTodas = a => { const sube = (a.cambio_zona_1m ?? 0) >= 0;
-    return (a.razones_cambio_1m || "").split(" · ").filter(r => r.startsWith(sube ? "sube" : "baja"))
+  const razonesTodas = a => { const sube = (a[K.c] ?? 0) >= 0;
+    return (a[K.r] || "").split(" · ").filter(r => r.startsWith(sube ? "sube" : "baja"))
       .flatMap(r => coherente(sube ? "sube" : "baja", r.replace(/^(sube|baja): /, "")).split("; "))
-      .filter(r => r && !r.startsWith("cobre") && Math.abs(a.cambio_zona_1m) >= 0.015).map(oracion); };  // el precio del cobre no es una señal local
+      .filter(r => r && !r.startsWith("cobre") && Math.abs(a[K.c]) >= 0.015).map(oracion); };  // el precio del cobre no es una señal local
   // Lo que pesa en casi todo el país (la elección municipal) no distingue a una zona: va al final
   const clave = r => r.replace(/[\d,.%]+/g, "").trim();
   let comunes; const COMUNES = { has: r => (comunes ??= (() => { const n = d3.rollup(D.alerta.flatMap(a => [...new Set(razonesTodas(a).map(clave))]), v => v.length, r => r);
-    return new Set([...n].filter(([, k]) => k > D.alerta.filter(a => a.razones_cambio_1m).length * 0.25).map(([r]) => r)); })()).has(r) };  // se calcula al usarse, con todo ya cargado
+    return new Set([...n].filter(([, k]) => k > D.alerta.filter(a => a[K.r]).length * 0.25).map(([r]) => r)); })()).has(r) };  // se calcula al usarse, con todo ya cargado
   const razonesDe = a => { const rs = razonesTodas(a); return [...rs.filter(r => !COMUNES.has(clave(r))), ...rs.filter(r => COMUNES.has(clave(r))).map(r => r.replace(/\.$/, ", como en todo el país."))].slice(0, 3); };
   const propia = a => razonesTodas(a).find(r => !COMUNES.has(clave(r))) || "";  // el precio del cobre no es una señal local
   // El porcentaje solo no dice nada: frente a lo habitual de la zona y su puesto en el país
-  const frente = a => { const p = mesP(a), n = a.normal_zona_1m; if (p == null || n == null || !hayMes) return "";
+  const frente = a => { const p = mesP(a), n = a[K.n]; if (p == null || n == null || !hayMes) return "";
     const d = Math.round((p - n) * 100);
     return Math.abs(d) < 2 ? `Igual que lo habitual en esta zona (${pct(n)}).`
       : `${Math.abs(d)} puntos ${d > 0 ? "más" : "menos"} que lo habitual en esta zona (${pct(n)}).`; };
   const puesto = a => a.puesto_zona_extractivo && a.puesto_zona_extractivo <= 20
     ? `Es la zona n.º ${a.puesto_zona_extractivo} del país con más riesgo de conflicto contra una operación.` : "";
   function factores(a) {
-    const sube = (a.cambio_zona_1m ?? 0) >= 0, porque = razonesDe(a);
+    const sube = (a[K.c] ?? 0) >= 0, porque = razonesDe(a);
     return porque.length ? `<h4>${sube ? "Factores que lo elevan" : "Factores que lo reducen"}</h4><ul>${porque.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : "";
   }
   const panel = document.querySelector(".panel"), det = document.getElementById("detalle-op");
@@ -676,7 +683,7 @@ function iniciar(D, G, H, C) {
   // El porcentaje en palabras: cuántos de cada 100 meses así tuvieron un paro, y frente a qué
   function cuanto(a) {
     const p = mesP(a); if (p == null) return "";
-    return `<p class="cuanto"><b>${esc(frente(a))}</b> ${esc(puesto(a))}</p><p class="cuanto">En condiciones parecidas, ${Math.round(p * 100)} de cada 100 meses tuvieron un paro o bloqueo en la zona.</p>`;
+    return `<p class="cuanto"><b>${esc(frente(a))}</b> ${esc(puesto(a))}</p><p class="cuanto">En condiciones parecidas, ${Math.round(p * 100)} de cada 100 veces hubo un ${QUE} en la zona${EXT ? " en los tres meses siguientes" : ""}.</p>`;
   }
   // Qué reclaman en la zona: los temas de los conflictos abiertos y de las protestas recientes
   const TEMAS = [["Agua", /agua|h[ií]dric|r[ií]o\b|laguna|riego|cuenca|manantial/i], ["Contaminación", /contamina|metales|ars[eé]nico|relave|derrame|ambiental|plomo/i],
@@ -698,14 +705,14 @@ function iniciar(D, G, H, C) {
   }
   // En la lista, una sola línea bajo el porcentaje: el nivel y cuánto se aparta de lo normal de la zona
   function corto(a) {
-    const d = hayMes && a.cambio_zona_1m != null ? Math.round(a.cambio_zona_1m * 100) : 0;
+    const d = hayMes && a[K.c] != null ? Math.round(a[K.c] * 100) : 0;
     return Math.abs(d) < 2 ? "" : `, <span class="delta ${d > 0 ? "sube" : "baja"}">${d > 0 ? "+" : "−"}${Math.abs(d)} pts</span>`;
   }
   function delta(a) {
-    if (!hayMes || a.cambio_zona_1m == null) return `<small>de paro o bloqueo</small>`;
-    const d = Math.round(a.cambio_zona_1m * 100);
+    if (!hayMes || a[K.c] == null) return `<small>de paro o bloqueo</small>`;
+    const d = Math.round(a[K.c] * 100);
     if (Math.abs(d) < 2) return `<small>igual que siempre</small>`;
-    return `<span class="delta ${d > 0 ? "sube" : "baja"}">${d > 0 ? "+" : "−"}${Math.abs(d)} puntos</span><small>normal ${pct(a.normal_zona_1m)}</small>`;
+    return `<span class="delta ${d > 0 ? "sube" : "baja"}">${d > 0 ? "+" : "−"}${Math.abs(d)} puntos</span><small>normal ${pct(a[K.n])}</small>`;
   }
 
   // Lo que el modelo decía de esta zona cada mes desde 2024, con datos que no había visto, y cuándo hubo paro
@@ -832,10 +839,10 @@ function iniciar(D, G, H, C) {
   function fichaUnidad(p, lngLat) {
     const i = filas.findIndex(x => x.os.some(o => o.empresa === p.empresa && o.unidad === p.unidad)), f = filas[i];
     if (!f) return mostrar(lngLat, tarjeta({ titulo: p.unidad, sub: nombre(p.empresa) }));
-    const d = Math.round((f.a.cambio_zona_1m ?? 0) * 100), cs = casosDe(f.u).filter(c => c.com);
+    const d = Math.round((f.a[K.c] ?? 0) * 100), cs = casosDe(f.u).filter(c => c.com);
     mostrar(lngLat, tarjeta({ titulo: p.unidad, sub: `${nombre(p.empresa)}, ${lugar(f.u)}`,
-      cifra: pct(mesP(f.a)), sobre: `probabilidad de paro o bloqueo<br>en su zona ${enMes}`,
-      marca: Math.abs(d) >= 2 ? `${d > 0 ? "+" : "−"}${Math.abs(d)} puntos frente a lo normal (${pct(f.a.normal_zona_1m)})` : "Igual que lo normal", calma: d < 2,
+      cifra: pct(mesP(f.a)), sobre: `probabilidad de ${QUE}<br>en su zona ${enMes}`,
+      marca: Math.abs(d) >= 2 ? `${d > 0 ? "+" : "−"}${Math.abs(d)} puntos frente a lo normal (${pct(f.a[K.n])})` : "Igual que lo normal", calma: d < 2,
       datos: [[comunidadesDe(new Set(zonaDe(f.u))).length, "comunidades en su zona"], [cs.length, `con conflicto vigente${cs.length ? `: ${esc(cs.slice(0, 3).map(c => c.com).join(", "))}${cs.length > 3 ? ` y ${cs.length - 3} más` : ""}` : ""}`]] }));
     return i;
   }
@@ -1023,7 +1030,7 @@ function iniciar(D, G, H, C) {
           t: `Vía ${s.via || ""} bloqueada por una protesta en ${nombre(s.distrito || "")}, ${s.region || ""}. Es una ruta de salida de la operación`, src: "SUTRAN" }; }),
       ...filas.map((f, i) => ({ f, i })).filter(({ f, i }) => filas.findIndex(g => g.u === f.u) === i).map(({ f, i }) => { const p = mesP(f.a) ?? 0;
         return { f: String(D.creado), i, zona: true, s: p >= 0.5 ? "alta" : p >= 0.25 ? "media" : null,
-                 pc: pct(p), t: `Riesgo ${banda(p).toLowerCase()} de paro o bloqueo ${enMes}`,
+                 pc: pct(p), t: `Riesgo ${banda(p).toLowerCase()} de ${QUE} ${enMes}`,
                  por: [frente(f.a), propia(f.a), puesto(f.a)].filter(Boolean).join(" "),
                  src: "" }; })
     ].filter(x => x.s).sort((a, b) => (a.s === "alta" ? 0 : 1) - (b.s === "alta" ? 0 : 1) || b.f.localeCompare(a.f));
@@ -1045,7 +1052,7 @@ function iniciar(D, G, H, C) {
     popup.remove();
     const feats = G.features.filter(f => f.geometry && zonas.has(f.properties.u)).map(f => { const a = A.get(f.properties.u) || {};
       return { type: "Feature", geometry: f.geometry, properties: { p: mesP(a) ?? 0, u: f.properties.u,
-        h: `<b>${esc(lugar(f.properties.u))}</b><br>${pct(mesP(a))} de que haya un paro o bloqueo en la zona ${enMes}` } }; });
+        h: `<b>${esc(lugar(f.properties.u))}</b><br>${pct(mesP(a))} de que haya un ${QUE} en la zona ${enMes}` } }; });
     map.getSource("zonas").setData({ type: "FeatureCollection", features: feats });
     // En la vista de una empresa el color va en sus operaciones; la zona queda como un fondo tenue
     map.setPaintProperty("zonas", "fill-opacity", ["interpolate", ["linear"], ["zoom"], 9, 0.75, 10.5, 0]);  // el mismo color de riesgo en el país y en la empresa
