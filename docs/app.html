@@ -153,6 +153,11 @@
   nav button:focus-visible { outline: 3px solid var(--cobre); outline-offset: -3px; }
   nav .n { position: absolute; top: 9px; margin-left: 64px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--rojo); color: #fff;
     font-size: 12px; font-weight: 700; display: grid; place-items: center; padding: 0 5px; }
+  .hoy { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 14px 16px 4px; }
+  .hoy > * { all: unset; box-sizing: border-box; display: grid; gap: 4px; align-content: start; padding: 12px; border-radius: 12px; background: #eaefed; cursor: pointer; }
+  .hoy b { font-size: 30px; line-height: 1; font-weight: 750; font-variant-numeric: tabular-nums; } .hoy b.c1 { color: var(--cobre-4); }
+  .hoy span { font-size: 14px; line-height: 1.3; color: var(--tinta-2); } .hoy button:focus-visible { outline: 3px solid var(--cobre); }
+  .hoy-pie { margin: 6px 16px 0; font-size: 13px; color: var(--tinta-2); }
   .pie { padding: 18px 16px; font-size: 14px; color: var(--tinta-2); } .pie a { color: var(--tinta-2); }
   @media (prefers-reduced-motion: no-preference) { .fila, nav button { transition: background 160ms ease; } }
 </style>
@@ -189,6 +194,11 @@ const dia = f => f ? `${+f.slice(8, 10)} ${MES[+f.slice(5, 7) - 1]}` : "";
 const dias = f => Math.round((new Date(f + "T12:00") - new Date(HOY + "T12:00")) / 864e5);
 const cuando = f => { const n = dias(f); return n === 0 ? "hoy" : n === 1 ? "mañana" : n > 1 ? `en ${n} días` : dia(f); };
 const largo = f => { const s = new Date(f + "T12:00").toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" }); return s[0].toUpperCase() + s.slice(1); };
+const cal = p => { const c = p == null ? null : (D.calibracion || []).find(c => p >= c.desde && p <= c.hasta);
+  return c ? `De cada 10 zonas con este riesgo, ${Math.round(c.hubo * 10)} tuvieron un paro, bloqueo o toma contra la operación en 3 meses (2024-2026).` : ""; };
+// las razones que le dicen algo a un gerente: sin ceros ni el conteo de unidades, que es el mismo motivo de la zona
+const razones = txt => String(txt || "").replace(/^en la zona \(distrito y vecinos\): /, "").split(/ · |; /).map(x => x.replace(/\s*\(.*?\)/g, "").trim())
+  .filter(x => x && !/^0 /.test(x) && !/unidades mineras$/.test(x));
 const nivel = p => p >= 0.5 ? "Crítico" : p >= 0.25 ? "Alto" : p >= 0.1 ? "Medio" : "Bajo";
 const flecha = d => d > 0.01 ? "↑" : d < -0.01 ? "↓" : "";
 const pct = p => `${Math.round(p * 100)}%`;
@@ -223,7 +233,7 @@ function armar() {
     return { ...o, p, normal: a.normal_zona_ext ?? null, a, zona: new Set(zonaDe(o.ubigeo)) };
   }).sort((x, y) => opera(y) - opera(x) || (y.p ?? -1) - (x.p ?? -1));
   const zona = new Set(unidades.flatMap(u => [...u.zona]));
-  const SECTOR = /docente|maestr|profesor|m[eé]dic|enfermer|obstetr|salud|judicial|estatal|universit|estudiant|administrativ/i;
+  const SECTOR = /transportistas urbanos|docente|maestr|profesor|m[eé]dic|enfermer|obstetr|salud|judicial|estatal|universit|estudiant|administrativ/i;
   const tramos = (CAD[empresa] || {}).tramos || [], sinBloqueo = e => SECTOR.test(e.actor || "") && !/bloque|toma/i.test(e.accion || ""),
     pasa = (r, u, e) => (r.ubigeos.includes(u)
     || (u.length < 6 && u !== "00" && /paro|bloque|huelga/i.test(e.accion || "") && r.ubigeos.some(x => x.startsWith(u)))),
@@ -233,19 +243,20 @@ function armar() {
   const avisos = [];
   for (const e of D.eventos) {
     const pl = e.plazo && e.plazo >= HOY && !e.suspendido, f = pl ? e.plazo : String(e.fecha_evento || e.fecha_anuncio || "").slice(0, 10), u = String(e.ubigeo);
-    const trans = /transportista/i.test(e.actor || "") && !e.urbano, nombra = alias.test(`${e.empresa || ""} ${e.operacion || ""}`);
+    const trans = /transportista/i.test(e.actor || "") && !/urbano/i.test(e.actor || "") && !e.urbano, nombra = alias.test(`${e.empresa || ""} ${e.operacion || ""}`);
     if (!nombra && !(trans && u === "00") && !zona.has(u) && !tramoDe(u, e)) continue;
     const anun = (e.estado === "anunciada" || pl) && !e.suspendido, viene = anun && f >= HOY;
     const cerca = unidades.find(x => x.zona.has(u));
-    avisos.push({ f, urge: viene || (anun && dias(f) > -3), tipo: "Protesta", e, cerca, trans, tramo: tramoDe(u, e), tramos: tramos.filter(r => toca(r, u, e)),
+    const leve = sinBloqueo(e) && !zona.has(u);  // gremio que no corta vías y solo pasa por la ruta: se informa, no se atiende
+    avisos.push({ f, urge: !leve && (viene || (anun && dias(f) > -3)), tipo: "Protesta", e, cerca, trans, tramo: tramoDe(u, e), tramos: tramos.filter(r => toca(r, u, e)),
       t: `${accion(e)}${e.actor ? ` de ${e.actor.toLowerCase()}` : ""}`,
       w: viene ? cuando(f) : dia(f),
-      s: [pl ? "vence un plazo, amenazan con nueva medida" : "", u === "00" ? (trans ? "Puede frenar sus despachos" : "Lugar sin precisar") : !zona.has(u) && tramoDe(u, e) ? `${lugar(u)}, en su ruta${sinBloqueo(e) ? ", no suele cortar vías" : ""}` : lugar(u), e.suspendido ? "suspendida" : viene ? "" : anun ? "anunciada" : "ocurrió"].filter(Boolean).join(", ") });
+      s: [pl ? "vence un plazo, amenazan con nueva medida" : "", u === "00" ? (trans ? "Puede frenar sus despachos" : "Lugar sin precisar") : !zona.has(u) && tramoDe(u, e) ? `${lugar(u)}, en su ruta${sinBloqueo(e) ? ", no suele cortar vías" : ""}` : lugar(u), e.suspendido ? "suspendida" : viene ? "" : anun ? "anunciada, sin confirmar" : "ocurrió"].filter(Boolean).join(", ") });
   }
   for (const s of D.sutran || []) if (rutas.includes(s.via))
     avisos.push({ f: String(s.fecha_evento || HOY).slice(0, 10), urge: true, tipo: "Bloqueo", sutran: s, t: `Vía ${s.via} bloqueada`, w: "ahora",
       s: `${titulo(s.distrito || "")}, SUTRAN` });
-  for (const m of D.menciones || []) if (alias.test(m.proyecto || "") && !avisos.some(x => x.e && x.e.titular === m.titular))
+  for (const m of D.menciones || []) if (alias.test(m.proyecto || "") && (/protesta|judicial|dialogo/.test(m.tema) || (m.tema === "ambiente" && m.tono < 0)) && !avisos.some(x => x.e && x.e.titular === m.titular))
     avisos.push({ f: m.fecha, urge: false, tipo: TEMA[m.tema] || "En medios", m, t: m.titular.replace(/^[^:]{2,25}:\s*/, ""), w: dia(m.fecha),
       s: `${TEMA[m.tema] || "En medios"}, ${m.medio}` });
   avisos.sort((a, b) => b.urge - a.urge || (a.urge ? a.f.localeCompare(b.f) : b.f.localeCompare(a.f)));
@@ -282,8 +293,13 @@ const VISTAS = {
   avisos() {
     const u = X.avisos.filter(x => x.urge), r = X.avisos.filter(x => !x.urge);
     cabecera(false);
-    return (u.length ? `<h2>Atender</h2><ul>${u.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<h2>Atender</h2><p class="vacio">Nada anunciado en su zona ni en sus rutas.</p>`)
-      + `<h2>Últimas semanas</h2>` + (r.length ? `<ul>${r.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas ni notas sobre la empresa.</p>`)
+    const ops = X.unidades.filter(opera).filter(o => o.p != null).sort((a, b) => b.p - a.p), o = ops[0], prox = u[0];
+    const hoy = o ? `<div class="hoy"><button type="button" data-op="${esc(o.unidad)}"><b class="c${nivel(o.p) === "Bajo" ? 0 : 1}">${pct(o.p)}</b>
+        <span>Riesgo ${nivel(o.p).toLowerCase()} ${flecha(o.p - (o.normal ?? o.p))} en ${ops.length > 1 ? `${esc(o.unidad)}, la más alta de ${ops.length}` : esc(o.unidad)}</span></button>
+      ${prox ? `<button type="button" data-aviso="${X.avisos.indexOf(prox)}"><b class="c1">${esc(prox.w)}</b><span>${esc(prox.t)}</span></button>` : `<div><b>–</b><span>Nada anunciado</span></div>`}</div>
+      <p class="hoy-pie">${cal(o.p)}</p>` : "";
+    return hoy + (u.length ? `<h2>Atender</h2><ul>${u.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<h2>Atender</h2><p class="vacio">Nada anunciado en su zona ni en sus rutas.</p>`)
+      + `<h2>Para seguir</h2>` + (r.length ? `<ul>${r.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas ni notas sobre la empresa.</p>`)
       + `<p class="pie">Datos al ${dia(D.creado)}.</p>`;
   },
   operaciones() {
@@ -337,13 +353,13 @@ function foto(o) {
 }
 function detalleOp(nom) {
   const o = X.unidades.find(x => x.unidad === nom), av = X.avisos.filter(x => (x.cerca && x.cerca.unidad === nom) || x.m || x.trans).slice(0, 3);
-  const por = String(o.a.razones_zona_extractivo || "").replace(/^en la zona \(distrito y vecinos\): /, "").split(/ · |; /).slice(0, 3);
+  const por = razones(o.a.razones_zona_extractivo).slice(0, 3);
   const cs = X.casos.filter(c => o.zona.has(String(c.ubigeo))).slice(0, 4);
   const estado = estadoCaso;
   cabecera(true, "Operaciones");
   foto(o); ver([o.ubigeo], o.unidad);
   return `<div class="foto" id="foto"><div><h3>${esc(o.unidad)}</h3><p>${esc(lugar(o.ubigeo))}</p></div><small>Imagen Esri, Maxar</small></div><div class="grande"><b>${o.p == null ? "–" : pct(o.p)}</b><span>${o.p == null ? "Sin cálculo" : `Riesgo ${nivel(o.p).toLowerCase()} ${flecha(o.p - (o.normal ?? o.p))}`}
-      <small>${o.normal != null ? `Lo habitual en la zona, ${pct(o.normal)}` : ""}</small><small>Octubre a diciembre</small></span></div>${VER}`
+      <small>${cal(o.p)}</small><small>${o.normal != null ? `Lo habitual en la zona, ${pct(o.normal)}` : ""}</small><small>Octubre a diciembre</small></span></div>${VER}`
     + (por[0] ? `<h2>Por qué</h2><ul class="por">${por.map(p => `<li>${esc(p.replace(/\s*\(.*?\)/g, ""))}</li>`).join("")}</ul>` : "")
     + `<h2>Qué pasó</h2>` + (av.length ? `<ul>${av.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas cerca en 45 días.</p>`)
     + `<h2>Comunidades</h2>` + (cs.length ? `<ul>${cs.map(c => fila("", 0, titulo(String(c.nombre).replace(/^(comunidad(es)? (campesinas?|nativas?)|cc\.?|c\.c\.)\s+(de(l)?\s+)?/i, "").split(/\s+[-–]\s+/)[0]),
@@ -359,7 +375,7 @@ function detalleDistrito(u) {
     ["pr", "proyecto", o => /^proyecto/.test(o.etapa)], ["pa", "paralizada", o => /paraliz/.test(o.etapa)]];
   const etapa = o => (ETAPAS.find(([, , f]) => f(o)) || ["pa"])[0], cuenta = ETAPAS.map(([k, t]) => [k, t, os.filter(o => etapa(o) === k).length]).filter(x => x[2]);
   const TIPO = { mineria: "minería", hidrocarburos: "hidrocarburos", electricidad: "electricidad" }, ts = [...new Set(os.map(o => TIPO[o.tipo]).filter(Boolean))];
-  const por = String(a.razones_zona_extractivo || "").replace(/^en la zona \(distrito y vecinos\): /, "").split(/ · |; /).map(x => x.replace(/\s*\(.*?\)/g, "").trim()).filter(Boolean);
+  const por = razones(a.razones_zona_extractivo);
   const cifras = por.map(x => x.match(/^(\d+%?)\s+(.*)$/)).filter(Boolean).slice(0, 4), resto = por.filter(x => !/^\d/.test(x)).slice(0, 2);
   const evs = D.eventos.filter(e => zona.has(String(e.ubigeo))).sort((x, y) => String(y.fecha_evento).localeCompare(x.fecha_evento));
   const cs = D.casos.filter(c => zona.has(String(c.ubigeo))), EST = { "sin diálogo": "sd", activo: "ac", "en diálogo": "ed", latente: "la" };
@@ -369,7 +385,7 @@ function detalleDistrito(u) {
   return `<div class="dz-cab"><h3>${esc(lugar(u))}</h3><p>${esc(donde)}</p></div>
     ${p == null ? `<p class="vacio">Sin cálculo para este distrito.</p>` : `<div class="medidor"><div class="m-num"><b>${pct(p)}</b><span class="nv nv-${nivel(p).toLowerCase()}">${nivel(p)} ${flecha(p - (nh ?? p))}</span></div>
       <div class="m-barra"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i><em style="left:${x(p)}%"></em>${nh != null ? `<u style="left:${x(nh)}%"><span>habitual ${pct(nh)}</span></u>` : ""}</div>
-      <p class="m-pie">Paro, bloqueo o toma contra la actividad extractiva, octubre a diciembre</p></div>`}${VER}
+      <p class="m-pie">Paro, bloqueo o toma contra la actividad extractiva, octubre a diciembre. ${cal(p)}</p></div>`}${VER}
     <h2>Unidades extractivas en el distrito</h2>${os.length ? `<div class="waffle">${os.slice().sort((x, y) => ETAPAS.findIndex(e => e[0] === etapa(x)) - ETAPAS.findIndex(e => e[0] === etapa(y))).map(o => `<i class="w-${etapa(o)}"></i>`).join("")}</div>
       <ul class="w-ley">${cuenta.map(([k, t, n]) => `<li><i class="w-${k}"></i><b>${n}</b> ${n > 1 ? t.replace(/^(proyecto|paralizada|fiscalizada)/, "$1s") : t}</li>`).join("")}</ul>
       <p class="aclara">${esc((ts.join(" y ") || "Unidades").replace(/^./, c => c.toUpperCase()))}${nVec ? `. Hay ${nVec} más en los distritos vecinos` : ""}.</p>`
