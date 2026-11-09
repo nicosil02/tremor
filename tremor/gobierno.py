@@ -10,7 +10,7 @@ import json
 import re
 import sys
 import time
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import date
 
 import requests
@@ -89,42 +89,52 @@ def clases(titulo: str) -> list[str]:
     return salida
 
 
-def peruano_mes(anio, mes) -> list[list[str]]:
-    """Todas las resoluciones del JNE publicadas en el mes: [[id, título]]. Se guardan en crudos (solo títulos)."""
-    ruta = CRUDOS / "elperuano" / f"{anio}{mes:02d}.json"
-    if ruta.exists():
-        return json.loads(ruta.read_text(encoding="utf-8"))
-    fin = date(anio + mes // 12, mes % 12 + 1, 1).toordinal() - 1
+def peruano_dia(dia: date) -> dict:
+    """Resoluciones del JNE publicadas ese día: {id del dispositivo: título}. Se pide día por día porque la búsqueda
+    de un mes entero se corta: en agosto de 2026 perdía más de la mitad de las del JNE (comparado con el PDF del día)."""
     filas, inicio = {}, 0
     while True:
-        for espera in (0, 5, 20, 60):
+        for espera in (1, 10, 30, 90):  # pausa cortés; el servidor corta el SSL si se le pide muy seguido
             time.sleep(espera)
             try:
                 r = requests.get(PERUANO, headers=UA, timeout=120, params=dict(
-                    query="jurado nacional de elecciones", fechaIni=f"{anio}{mes:02d}01",
-                    fechaFin=date.fromordinal(fin).strftime("%Y%m%d"), tipoPublicacion="NL", ci="ONLY", start=inicio))
+                    query="jurado nacional de elecciones", fechaIni=dia.strftime("%Y%m%d"),
+                    fechaFin=dia.strftime("%Y%m%d"), tipoPublicacion="NL", ci="ONLY", start=inicio))
                 r.raise_for_status()
                 break
             except requests.RequestException:
                 r = None
         if r is None:
-            raise RuntimeError(f"El Peruano sin respuesta: {anio}-{mes}")
+            raise RuntimeError(f"El Peruano sin respuesta: {dia}")
         tarjetas = TARJETA.findall(r.content.decode("utf-8", "replace"))
         filas.update({i: html.unescape(t).strip() for e, i, t in tarjetas if "JURADO NACIONAL DE ELECCIONES" in e})
         if len(tarjetas) < 20:
-            break
+            return filas
         inicio += 20
-    salida = sorted(map(list, filas.items()))
+
+
+def peruano_mes(anio, mes) -> list[list[str]]:
+    """Todas las resoluciones del JNE publicadas en el mes: [[id, título]], sin repetir el id. Se guardan en crudos
+    (solo títulos). Junta lo leído día por día con la búsqueda mensual de una corrida anterior, si quedó en crudos."""
+    carpeta = CRUDOS / "elperuano"
+    ruta, mensual = carpeta / f"{anio}{mes:02d}_dias.json", carpeta / f"{anio}{mes:02d}.json"
+    filas = dict(json.loads(mensual.read_text(encoding="utf-8"))) if mensual.exists() else {}
+    if ruta.exists():
+        return sorted(map(list, (filas | dict(json.loads(ruta.read_text(encoding="utf-8")))).items()))
+    dias, d = {}, date(anio, mes, 1)
+    while d.month == mes and d < date.today():
+        dias |= peruano_dia(d)
+        d = date.fromordinal(d.toordinal() + 1)
     if (anio, mes) < (date.today().year, date.today().month):  # el mes en curso no se guarda: sigue creciendo
-        ruta.parent.mkdir(parents=True, exist_ok=True)
-        ruta.write_text(json.dumps(salida, ensure_ascii=False), encoding="utf-8")
-    return salida
+        carpeta.mkdir(parents=True, exist_ok=True)
+        ruta.write_text(json.dumps(sorted(map(list, dias.items())), ensure_ascii=False), encoding="utf-8")
+    return sorted(map(list, (filas | dias).items()))
 
 
-def jne(con, desde=2010):
+def jne(con, desde=2010, anios=None):
     hoy = date.today()
     sin_lugar = total = 0
-    for anio in range(desde, hoy.year + 1):
+    for anio in anios or range(desde, hoy.year + 1):
         cuenta = Counter()
         for mes in range(1, 13):
             if (anio, mes) > (hoy.year, hoy.month):
@@ -138,6 +148,8 @@ def jne(con, desde=2010):
                     continue
                 for v in c:
                     cuenta[(lugar[0], anio * 12 + mes - 1, v + "_provincial" * lugar[1])] += 1
+        con.execute(ESQUEMA)
+        con.execute("DELETE FROM distrito_mes WHERE variable LIKE 'jne_%' AND m / 12 = ?", (anio,))
         guardar(con, [(*k, n) for k, n in cuenta.items()], "JNE en El Peruano (busquedas.elperuano.pe)")
         print(f"  JNE {anio}: {sum(cuenta.values())} conteos en {len({k[0] for k in cuenta})} municipalidades")
     print(f"  {total} resoluciones del JNE leídas; {sin_lugar} con clase y sin municipalidad reconocible")
@@ -145,50 +157,74 @@ def jne(con, desde=2010):
 
 
 # --- ONPE: consultas populares de revocatoria (resultados por mesa en datosabiertos.gob.pe) ------------------------
-# Se guarda el mes de la votación por distrito y el % de SÍ a la revocatoria del alcalde (posición 1 de la cédula);
-# los nombres de las autoridades no se leen. La consulta provincial va al distrito capital con el sufijo _provincial.
-# Falta la provincial de 2013 (Lima Metropolitana, un zip de 217 MB). La fecha la fija el JNE (segundo domingo de junio
-# del tercer año de gestión, con excepciones).
+# Por distrito y mes de la votación: % de SÍ a la revocatoria del alcalde (posición 1 de la cédula) y de los regidores
+# (las demás posiciones, sumadas). Los nombres de las autoridades no se leen. La consulta provincial va al distrito
+# capital con el sufijo _provincial. Falta la segunda consulta de 2013 (7 de julio, Arequipa, Puno, Cusco, Tacna…):
+# su ficha en datosabiertos enlaza por error el archivo de las Nuevas Elecciones Municipales 2014.
 ARCHIVOS = "https://www.datosabiertos.gob.pe/sites/default/files/"
 REVOCATORIAS = {  # archivo → (anio, mes, provincial)
     "Resultados%20por%20mesa%20CPR2012%20Distrital.csv": (2012, 9, False),
     "Resultados%20por%20mesa%20CPR2012%20Provincial.csv": (2012, 9, True),
     "Resultados%20por%20mesa%20CPR2013%20Distrital.csv": (2013, 3, False),
+    "Resultados%20por%20mesa%20CPR2013%20Provincial.zip": (2013, 3, True),  # Lima Metropolitana, 217 MB sin comprimir
     "Resultados%20por%20mesa%20Consulta%20Popular%20de%20Revocatoria%20de%20Autoridades%20Municipales%202017.csv": (2017, 6, False),
     "Resultados%20por%20mesa%20Consulta%20Popular%20de%20Revocatorias%202021.csv": (2021, 10, False),
     "Resultados%20por%20mesa%20de%20la%20Consulta%20Popular%20de%20Revocatoria%202025%C2%A0.csv": (2025, 6, False)}
 
 
-def resultado_revocatoria(texto: str, provincial: bool) -> dict:
-    """CSV por mesa → {ubigeo INEI: % de SÍ (votos válidos) a la revocatoria del alcalde}."""
+def resultado_revocatoria(lineas, provincial: bool) -> dict:
+    """Líneas del CSV por mesa → {ubigeo INEI: (% SÍ alcalde, número de regidores, % SÍ regidores)}.
+    El % es sobre los votos válidos (SÍ + NO); None si no hubo alcalde o regidores en consulta."""
     import csv
-    votos = Counter()
-    for f in csv.DictReader(texto.splitlines(), delimiter=";"):
-        if f["UBICACION_EN_CEDULA"].strip() != "1":
-            continue
+    votos, regidores = Counter(), defaultdict(set)
+    for f in csv.DictReader(lineas, delimiter=";"):
         codigo, precision = resolver(region=f["DEPARTAMENTO"], provincia=f["PROVINCIA"],
                                      distrito=None if provincial else f["DISTRITO"])
         if precision != ("provincia" if provincial else "distrito"):
             continue
-        u = codigo + "01" if provincial else codigo
-        votos[(u, "si")] += int(f["VOTOS_SI"] or 0)
-        votos[(u, "no")] += int(f["VOTOS_NO"] or 0)
-    return {u: round(100 * votos[(u, "si")] / max(1, votos[(u, "si")] + votos[(u, "no")]), 1) for u, _ in votos}
+        u, quien = codigo + "01" if provincial else codigo, "alcalde" if f["UBICACION_EN_CEDULA"].strip() == "1" else "regidor"
+        if quien == "regidor":
+            regidores[u].add(f["UBICACION_EN_CEDULA"].strip())
+        votos[(u, quien, "si")] += int(f["VOTOS_SI"] or 0)
+        votos[(u, quien, "no")] += int(f["VOTOS_NO"] or 0)
+    def pct(u, q):
+        validos = votos[(u, q, "si")] + votos[(u, q, "no")]
+        return round(100 * votos[(u, q, "si")] / validos, 1) if validos else None
+    return {u: (pct(u, "alcalde"), len(regidores[u]), pct(u, "regidor")) for u in {k[0] for k in votos}}
+
+
+def lineas_onpe(archivo):
+    """Archivo de la ONPE (bajado una vez a crudos) → iterador de líneas de texto, también dentro de un zip."""
+    import codecs
+    import io
+    import zipfile
+    ruta = CRUDOS / "onpe" / requests.utils.unquote(archivo).replace(" ", "_").replace(chr(160), "")
+    if not ruta.exists():
+        ruta.parent.mkdir(parents=True, exist_ok=True)
+        ruta.with_suffix(".part").write_bytes(requests.get(ARCHIVOS + archivo, headers=UA, timeout=600).content)
+        ruta.with_suffix(".part").replace(ruta)
+    if ruta.suffix == ".zip":
+        z = zipfile.ZipFile(ruta)
+        abrir = lambda: z.open(next(n for n in z.namelist() if n.lower().endswith(".csv")))
+    else:
+        abrir = lambda: ruta.open("rb")
+    with abrir() as f:
+        bom = f.read(3) == codecs.BOM_UTF8  # desde 2017 vienen en UTF-8 con BOM; antes, en latin-1
+    return io.TextIOWrapper(abrir(), encoding="utf-8-sig" if bom else "latin-1")
 
 
 def revocatoria(con):
     filas = []
     for archivo, (anio, mes, provincial) in REVOCATORIAS.items():
-        crudo = requests.get(ARCHIVOS + archivo, headers=UA, timeout=300).content
-        try:
-            texto = crudo.decode("utf-8-sig")
-        except UnicodeDecodeError:  # hasta 2013 vienen en latin-1
-            texto = crudo.decode("latin-1")
         sufijo, m = "_provincial" * provincial, anio * 12 + mes - 1
-        for u, si in resultado_revocatoria(texto, provincial).items():
-            filas += [(u, m, "revocatoria_consulta" + sufijo, 1), (u, m, "revocatoria_si_alcalde" + sufijo, si)]
+        for u, (alcalde, n_reg, reg) in resultado_revocatoria(lineas_onpe(archivo), provincial).items():
+            filas += [(u, m, v + sufijo, x) for v, x in (("revocatoria_consulta", 1), ("revocatoria_si_alcalde", alcalde),
+                      ("revocatoria_regidores", n_reg), ("revocatoria_si_regidores", reg)) if x is not None]
+    con.execute(ESQUEMA)
+    con.execute("DELETE FROM distrito_mes WHERE variable LIKE 'revocatoria_%'")
     guardar(con, filas, "ONPE, resultados por mesa de las consultas de revocatoria (datosabiertos.gob.pe)")
-    print(f"  Revocatorias: {len(filas) // 2} consultas en {len({f[0] for f in filas})} distritos")
+    consultas = [f for f in filas if f[2].startswith("revocatoria_consulta")]
+    print(f"  Revocatorias: {len(consultas)} consultas, por año {dict(Counter(f[1] // 12 for f in consultas))}")
 
 
 # --- Contraloría: informes de servicios de control por municipalidad ----------------------------------------------
@@ -271,9 +307,9 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(prog="python -m tremor.gobierno")
     sub = ap.add_subparsers(dest="cmd", required=True)
     m = sub.add_parser("mef_mensual"); m.add_argument("--desde", type=int, default=2010)
-    j = sub.add_parser("jne"); j.add_argument("--desde", type=int, default=2010)
+    j = sub.add_parser("jne"); j.add_argument("--desde", type=int, default=2010); j.add_argument("--anios", type=int, nargs="*")
     c = sub.add_parser("contraloria"); c.add_argument("--desde", type=int, default=2017)
     a = ap.parse_args()
     sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
-    {"mef_mensual": lambda con: mef_mensual(con, a.desde), "jne": lambda con: jne(con, a.desde),
+    {"mef_mensual": lambda con: mef_mensual(con, a.desde), "jne": lambda con: jne(con, a.desde, a.anios),
      "contraloria": lambda con: contraloria(con, a.desde)}[a.cmd](conectar())
