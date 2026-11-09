@@ -83,7 +83,7 @@
   .detalle-op { padding: 6px 24px 22px; }
   .detalle-op .volver { margin-bottom: 16px; }
   .detalle-op h2 { margin: 0; font-size: 24px; font-weight: 720; font-variation-settings: var(--ancho); line-height: 1.15; }
-  .detalle-op .lugar-op { color: var(--tinta-3); margin: 2px 0 12px; font-size: 15px; }
+  .detalle-op .lugar-op { color: var(--tinta-2); margin: 2px 0 12px; font-size: 16px; }
   .riesgo-op { display: flex; align-items: center; gap: 12px; }
   .riesgo-op b { font-size: 48px; line-height: 1; font-weight: 750; font-variation-settings: var(--angosto); }
   .nivel { font-size: 15px; font-weight: 650; padding: 3px 9px; border-radius: 4px; }
@@ -116,7 +116,7 @@
   .marca { display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px; }
   .marca b { font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho); letter-spacing: -0.01em; }
   .marca span { font-size: 15px; color: var(--tinta-3); }
-  .elegir input { width: 100%; font: inherit; font-size: 17px; font-weight: 600; padding: 11px 14px; border: 1px solid var(--linea); border-radius: 8px;
+  .elegir input { width: 100%; font: inherit; font-size: 17px; font-weight: 600; padding: 11px 14px; border: 1px solid #8a9397; border-radius: 8px;
                   background: #fff; color: var(--tinta); }
   .elegir input::placeholder { color: var(--tinta-3); font-weight: 400; }
   .vistas { display: flex; gap: 20px; border-bottom: 1px solid var(--linea); margin-bottom: 14px; }
@@ -139,7 +139,7 @@
   .detalle-op .temas details b { color: var(--tinta); font-weight: 600; }
   .temas li small { color: var(--tinta-3); font-size: 15px; }
   .sugerencias { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-  .sugerencias button { font-size: 15px; padding: 9px 14px; border-radius: 6px; border: 1px solid var(--linea); background: transparent; cursor: pointer;
+  .sugerencias button { font-size: 16px; padding: 9px 14px; border-radius: 6px; border: 1px solid #8a9397; background: transparent; cursor: pointer;
                         color: var(--tinta-2); transition: transform 140ms var(--ease-out), border-color 140ms ease; }
   .sugerencias button:active { transform: scale(0.97); }
   .sugerencias button[aria-pressed="true"] { border-color: var(--tinta); color: var(--tinta); font-weight: 600; }
@@ -175,11 +175,24 @@
   .detalle-op ul.casos button::after { content: "›"; grid-column: 3; grid-row: 1 / span 2; align-self: center; font-size: 20px; color: var(--tinta-3); }
   .detalle-op ul.casos b { grid-column: 2; color: var(--tinta); font-weight: 650; }
   .detalle-op ul.casos span { grid-column: 2; color: var(--tinta-3); font-size: 15px; }
-  .detalle-op ul.casos span.res { color: var(--tinta-2); font-size: 15px; margin-top: 2px; }
+  .detalle-op ul.casos span.res { color: var(--tinta-2); font-size: 16px; margin-top: 2px; }
+  .detalle-op ul.casos li { padding-bottom: 10px; }
+  .detalle-op p.ultimo, .detalle-op p.segun { margin: 2px 0 0 22px; font-size: 16px; line-height: 1.4; }
+  .detalle-op p.ultimo .cuando { display: block; font-size: 14px; font-weight: 650; color: var(--patina); }
+  .detalle-op p.ultimo a { color: var(--tinta); }
+  .detalle-op p.segun { color: var(--tinta-2); } .detalle-op p.segun b { font-weight: 600; color: var(--tinta-2); }
+  .detalle-op p.situ { display: flex; align-items: center; gap: 8px; margin: 10px 0 4px; font-size: 16px; font-weight: 600; }
+  i.mk { display: inline-block; width: 11px; height: 11px; border-radius: 50%; background: var(--cobre-3); flex: none; }
+  i.mk.op { box-shadow: 0 0 0 2px #fff, 0 0 0 3px var(--linea); } i.mk.ex { box-shadow: 0 0 0 2.5px #3b2a20; width: 9px; height: 9px; margin: 0 1px; }
+  details.vecinas { font-size: 16px; margin: 0 0 8px; } details.vecinas summary { cursor: pointer; color: var(--tinta-2); }
+  details.vecinas ul { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 6px; }
+  details.vecinas li { display: flex; align-items: center; gap: 8px; } details.vecinas small { color: var(--tinta-2); font-size: 14px; }
+  .rutas-emp { padding: 8px 24px 12px; } .rutas-emp h3 { font-size: 18px; margin: 8px 0 6px; }
+  .rutas-emp ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .rutas-emp li { display: grid; font-size: 16px; } .rutas-emp li span { color: var(--tinta-2); } .rutas-emp li span.mal { color: #b3261e; font-weight: 600; }
   .detalle-op ul.casos button:hover b { text-decoration: underline; text-underline-offset: 3px; }
   .detalle-op ul.casos button:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
   .detalle-op ul.casos li.elegida button { background: rgb(255 112 67 / .08); }
-  .detalle-op ul.casos p { display: none; }
   .detalle-op .fuente { font-size: 15px; color: var(--tinta-3); margin: 6px 0 0; }
   .op .prob .delta { font-size: 15px; font-weight: 600; }
   .sube { color: var(--cobre-4); }
@@ -220,6 +233,7 @@
   .leyenda:not([open]) summary { margin-bottom: 0; }
   .leyenda .riesgo p { margin: 0 0 6px; line-height: 1.3; color: var(--tinta-2); }
   .maplibregl-ctrl-group button { width: 40px; height: 40px; }
+  .maplibregl-ctrl-group button:focus-visible { outline: 3px solid var(--cobre); outline-offset: 1px; }
   .leyenda { max-width: 230px; font-size: 14px; }
   .leyenda b { display: block; font-weight: 650; color: var(--tinta); margin-bottom: 6px; line-height: 1.25; }
   .leyenda .rampa { display: grid; grid-template-columns: repeat(4, 1fr); height: 10px; }
@@ -340,7 +354,7 @@
     <div class="seccion" id="alertas-sec" hidden>
       <ul class="alertas" id="alertas"></ul></div>
     <div class="detalle-op" id="detalle-op" hidden></div>
-    <div id="bloque-ops"><h2 class="t-ops" id="t-ops" hidden>Operaciones</h2>
+    <div id="bloque-ops"><div class="rutas-emp" id="rutas-emp" hidden></div><h2 class="t-ops" id="t-ops" hidden>Operaciones</h2>
     <div class="orden"><label for="ordenar">Ordenar por</label>
       <select id="ordenar"><option value="prob">Mayor probabilidad</option><option value="prob-asc">Menor probabilidad</option>
         <option value="nombre">Nombre</option><option value="region">Región</option></select></div>
@@ -607,11 +621,14 @@ function iniciar(D, G, H, C) {
   // Opera: todo lo que no figura como exploración, proyecto o paralizado (lo fiscalizado por OEFA cuenta como activo)
   const opera = o => o.tipo !== "proyecto" && !/exploración|proyecto|paraliz/.test(o.etapa || "");
   const titFila = f => enPais ? uni(f.os[0]).split(",")[0] : uni(f.os[0]);
-  const situ = o => o.tipo === "proyecto" ? "proyecto" : /^operación/.test(o.etapa || "") ? "en operación"
-    : /exploración/.test(o.etapa || "") ? "exploración" : "fiscalizada por OEFA";
+  const situ = o => o.tipo === "proyecto" || /proyecto/.test(o.etapa || "") ? "proyecto" : /paraliz/.test(o.etapa || "") ? "paralizada"
+    : /exploración/.test(o.etapa || "") ? "exploración" : "en operación";
+  // La situación con la misma marca del mapa; las unidades vecinas, plegadas y en lista (no en un párrafo)
+  const marcaOp = o => `<i class="mk ${opera(o) ? "op" : "ex"}" aria-hidden="true"></i>`;
   const otras = f => { const os = filas.filter(g => g !== f && g.u === f.u).map(g => g.os[0]);
-    return `<p class="lugar-op">${esc(situ(f.os[0])[0].toUpperCase() + situ(f.os[0]).slice(1))}.${os.length ? ` Comparte zona con ${os
-      .map(o => `${esc(o.unidad)} (${situ(o)})`).join(", ")}.` : ""}</p>`; };
+    return `<p class="situ">${marcaOp(f.os[0])}${esc(situ(f.os[0])[0].toUpperCase() + situ(f.os[0]).slice(1))}</p>` + (os.length
+      ? `<details class="vecinas"><summary>Comparte zona con ${os.length} ${os.length === 1 ? "unidad" : "unidades"}</summary><ul>${os
+        .map(o => `<li>${marcaOp(o)}${esc(o.unidad)}<small>${situ(o)}</small></li>`).join("")}</ul></details>` : ""); };
   function ordenarFilas() {
     const p = f => mesP(f.a) ?? -1, reg = f => `${f.a.lugar || ""} ${lugar(f.u)}`, v = sel.value;
     filas.sort(v === "prob-asc" ? (x, y) => p(x) - p(y) : v === "nombre" ? (x, y) => titFila(x).localeCompare(titFila(y), "es")
@@ -650,7 +667,7 @@ function iniciar(D, G, H, C) {
     document.getElementById("bajada").textContent = hayMes
       ? `Probabilidad de ${QUE} en la zona de influencia de cada operación, ${enMes.replace(/^en /, "")}.${conDatos}`
       : `Probabilidad de que haya un paro, un bloqueo o una toma en la zona de cada operación de aquí a ${hasta}. La zona es el distrito y los que lo rodean.`;
-    lista(!suyas);
+    lista(!suyas); rutasEmpresa(!suyas);
     listo.then(() => ["huella", "huella-borde", "huella-nombre"].forEach(c =>
       map.setFilter(c, suyas ? ["in", ["get", "empresa"], ["literal", empresas]] : ["==", ["get", "empresa"], ""])));
     marcar(null);
@@ -733,7 +750,7 @@ function iniciar(D, G, H, C) {
       <h2 tabindex="-1">${esc(titFila(f))}</h2><p class="lugar-op">${esc(lugar(f.u))}</p>
       <div class="cifra"><b class="c${n}">${pct(p)}</b>
         <div><span class="nv c${n}">Riesgo ${banda(p).toLowerCase()}</span><span class="frente">${esc(frente(a))}</span>${escala(p, true)}</div></div>
-      <p class="que">Probabilidad de ${esc(QUE)} en la zona de ${esc(lugar(f.u).split(",")[0])}, ${esc(enMes.replace(/^en /, ""))}.</p>
+      <p class="que">${EXT ? "Conflicto contra la operación en su zona" : "Paro o bloqueo en su zona"}, ${esc(enMes.replace(/^(en|entre) /, "").replace(" y ", " a "))}.</p>
       ${puesto(a) ? `<p class="puesto">${esc(puesto(a))}</p>` : ""}
       ${enPais ? "" : otras(f)}
       <div class="vistas pestanas">${[["resumen", "Resumen"], ["comunidades", `Comunidades${ncom ? `<span class="cuenta">${ncom}</span>` : ""}`],
@@ -1044,10 +1061,15 @@ function iniciar(D, G, H, C) {
   function quienes(u) {
     const cs = casosDe(u), n = comunidadesDe(new Set(zonaDe(u))).length;
     const coms = cs.filter(c => c.com), otros = cs.filter(c => !c.com);
+    // Cada dato dice de cuándo es: la Defensoría publica con uno o dos meses de rezago; los medios locales son de hoy
+    const hace = c => { const n = (new Date().getFullYear() - c.anio) * 12 + new Date().getMonth() + 1 - c.mes;
+      return `Defensoría, reporte de ${MESES_TXT[c.mes - 1]}${n >= 1 ? ` (hace ${n === 1 ? "un mes" : `${n} meses`})` : ""}`; };
     const fila = c => `<li data-u="${u}" data-k="${cs.indexOf(c)}"><button type="button"><b>${esc(tituloCaso(c))}</b>
-        <span>${esc(lugar(String(c.ubigeo)).split(", ")[0])}. ${esc(estadoCaso(c))}.</span>
-        ${c.resumen ? `<span class="res">${esc(c.resumen)}</span>` : ""}</button></li>`;
-    const fuente = cs.length ? `<p class="fuente">Defensoría del Pueblo, reporte de ${MESES_TXT[cs[0].mes - 1]} ${cs[0].anio}</p>` : "";
+        ${c.resumen ? `<span class="res">${esc(c.resumen)}</span>` : ""}</button>
+        ${(c.medios || []).slice(0, 1).map(m => `<p class="ultimo"><span class="cuando">${esc(dia(m.fecha))}, ${esc(m.medio)}</span>
+          <a href="${esc(m.enlace)}" target="_blank" rel="noopener">${esc(m.titular)}</a></p>`).join("")}
+        <p class="segun">${c.estado === "latente" ? "Latente" : "Activo"}${/NO HAY/i.test(c.dialogo || "") ? ", sin diálogo" : /HAY/i.test(c.dialogo || "") ? " y en diálogo" : ""} según la ${esc(hace(c))}.${(c.medios || []).length ? "" : " Sin noticias en medios en 60 días."}</p></li>`;
+    const fuente = "";
     return `<h3>Comunidades con conflicto</h3>
       <p style="margin:0 0 6px">${n ? `${n} comunidades registradas en la zona` : "En la zona"}${coms.length ? `, ${coms.length} con conflicto vigente ante la Defensoría.` : `${n ? ", ninguna" : ", ninguna comunidad"} con conflicto vigente ante la Defensoría.`}</p>
       ${coms.length ? `<ul class="casos">${coms.slice(0, 4).map(fila).join("")}</ul>` : ""}
@@ -1156,6 +1178,17 @@ function iniciar(D, G, H, C) {
   const GRUPO_S = { viene: "Lo que viene", alta: "Prioridad alta", media: "Pasó en las últimas semanas", dicen: "Lo que dicen los medios" };
   const hoyISO = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
   const TONO = t => t < 0 ? ["neg", "Crítico con la empresa"] : t > 0 ? ["pos", "Favorable a la empresa"] : ["neu", "Informativo"];
+  // Las rutas por donde sale su mineral también son activos: protestas en 45 días en los distritos que cruzan
+  function rutasEmpresa(pais) {
+    const box = document.getElementById("rutas-emp"); box.hidden = pais; if (pais) return;
+    const rs = [...new Set(filas.filter(f => opera(f.os[0])).flatMap(f => rutasDe(f.u)))];
+    const por = r => { const ds = new Set(Object.entries(D.rutas || {}).filter(([, v]) => v.includes(r)).map(([u]) => u));
+      return { r, ev: D.eventos.filter(e => ds.has(String(e.ubigeo))).length, bl: D.sutran.filter(s => s.via === r).length }; };
+    const xs = rs.map(por).sort((a, b) => b.bl - a.bl || b.ev - a.ev).slice(0, 4);
+    box.innerHTML = xs.length ? `<h3>Rutas de salida</h3><ul>${xs.map(x => `<li><b>${esc(nombreRuta(x.r))}</b><span class="${x.bl ? "mal" : ""}">${
+      x.bl ? `${x.bl} ${x.bl === 1 ? "bloqueo vigente" : "bloqueos vigentes"} según SUTRAN` : "Sin bloqueos vigentes"}${
+      x.ev ? `. ${x.ev} ${x.ev === 1 ? "protesta" : "protestas"} en 45 días en distritos de la ruta` : ""}.</span></li>`).join("")}</ul>` : "";
+  }
   function alertas(ev, vias) {
     const fuerza = s => /paro|bloqueo|huelga|toma|paraliz/i.test(s);
     const items = [

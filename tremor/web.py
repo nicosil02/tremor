@@ -4,6 +4,7 @@ a cada zona en 2024+, las señales en vivo y las métricas; y los límites distr
     python -m tremor.web            # escribe datos/exportes/web.json (viaja en la rama `datos`) y docs/distritos.json
 """
 import json
+import re
 import sys
 from datetime import date, timedelta
 
@@ -150,7 +151,40 @@ def casos_zona(con):
     if "resumen_prensa" in c:
         c["resumen"] = c.resumen.fillna(c.pop("resumen_prensa"))
         c["fuentes"] = [json.loads(x) if isinstance(x, str) else [] for x in c.fuentes]
+    c["medios"] = medios_recientes(con, c.nombre)
     return registros(c.drop(columns="id"))
+
+
+PREFIJO = re.compile(r"^(comunidad(es)? (campesinas?|nativas?)|comunidad(es)?|cc\.?|c\.c\.|cn|c\.n\.)\s+(de(l)?\s+)?", re.I)
+
+
+GENERICAS = {"minera", "minería", "mineria", "empresa", "compañía", "proyecto", "ilegal", "informal", "unidad", "comunidad", "campesina"}
+CONFLICTO = r"conflict|protest|\bparo\b|bloque|comunidad|minera|di[aá]logo|\bmesa\b|reclam|denunci"
+
+
+def medios_recientes(con, nombres, dias=60):
+    """Lo último que dijeron radio y medios de cada conflicto: la Defensoría publica con uno o dos meses de rezago, y
+    un caso "en diálogo" en su reporte puede haberse roto ayer. Se busca el nombre de la comunidad (o el del caso
+    hasta el guion) en titulares y resúmenes de los últimos 60 días."""
+    desde = (date.today() - timedelta(days=dias)).isoformat()
+    n = tabla(con, f"SELECT medio, substr(publicado, 1, 10) AS fecha, titular, resumen, enlace FROM nota WHERE publicado >= '{desde}' "
+                   "AND COALESCE(filtro, '') != 'medio_extranjero' ORDER BY publicado DESC")
+    texto = (n.titular.fillna("") + " " + n.resumen.fillna("")).str.lower()
+    out = []
+    for nom in nombres:
+        partes = [x.strip().lower() for x in re.split(r"\s*[-–]\s*", PREFIJO.sub("", nom or ""))]
+        clave = partes[0]
+        if len(clave) < 5:
+            out.append([]); continue
+        # el nombre solo engaña ("Independencia" trae notas del papa): con contraparte ("Raura"), la nota la nombra
+        # también; sin ella, la nota tiene que hablar de conflicto, minería o la comunidad
+        palabras = [w.strip("()") for w in (partes[1].split() if len(partes) > 1 else [])]
+        otra = max((w for w in palabras if len(w) >= 4 and w not in GENERICAS), key=len, default=None)
+        tiene = texto.str.contains(r"\b" + re.escape(clave) + r"\b", regex=True)
+        tiene &= texto.str.contains(re.escape(otra)) if otra else texto.str.contains(CONFLICTO)
+        m = n[tiene].drop_duplicates("titular").head(2)
+        out.append(m[["medio", "fecha", "titular", "enlace"]].to_dict("records"))
+    return out
 
 
 RESUMIR = ("Resume cada conflicto social en UNA oración de máximo 22 palabras, en castellano formal: quién reclama "
