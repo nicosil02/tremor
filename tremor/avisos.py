@@ -46,12 +46,14 @@ def zona(con, empresa, vecinos):
 
 def eventos(con, z, alias, desde):
     """Protestas de la prensa y la radio en la zona, o que nombran a la empresa."""
-    q = """SELECT e.id, e.estado, e.fecha_anuncio, e.fecha_evento, e.ubigeo, e.accion, e.empresa, e.operacion,
+    q = """SELECT e.id, e.estado, e.fecha_anuncio, e.fecha_evento, e.ubigeo, e.accion, e.empresa, e.operacion, e.tipo_conflicto,
                   (SELECT n.medio || '|' || n.enlace FROM evento_nota en JOIN nota n ON n.id = en.nota_id
                     WHERE en.evento_id = e.id LIMIT 1)
            FROM evento_prensa e WHERE coalesce(e.fecha_anuncio, e.fecha_evento) >= ?"""
-    for id_, est, fa, fe, ub, acc, emp, op, fuente in con.execute(q, (desde,)):
-        if ub in z or re.search(alias, f"{emp or ''} {op or ''}", re.I):
+    for id_, est, fa, fe, ub, acc, emp, op, tipo, fuente in con.execute(q, (desde,)):
+        nombra = re.search(alias, f"{emp or ''} {op or ''}", re.I)
+        # en la zona: lo extractivo, o una medida de fuerza que corta igual sus vías (una marcha política, no)
+        if nombra or (ub in z and (tipo not in (None, "otro") or re.search(LUCHA.replace("|marcha", ""), acc or "", re.I))):
             medio, _, enlace = (fuente or "|").partition("|")
             yield {"clave": f"evento:{id_}", "estado": est, "fecha": fe or fa, "ubigeo": ub, "accion": acc or "Protesta",
                    "unidad": z.get(ub), "medio": medio, "enlace": enlace}

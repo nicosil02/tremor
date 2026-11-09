@@ -67,7 +67,19 @@ def datos(con):
             "respaldo": registros(tabla(con, "SELECT * FROM modelo_respaldo")),
             "cobertura": cobertura(con),
             "vecinos": vecinos(con),
-            "casos": casos_zona(con)}
+            "casos": casos_zona(con),
+            "calibracion": calibracion(con)}
+
+
+def calibracion(con):
+    """Qué tan cierto es el porcentaje: en 2024-2026, por tramo de lo que dijo el modelo, en qué parte de las veces
+    hubo de verdad conflicto contra la operación en la zona (la página lo muestra junto a la cifra)."""
+    d = tabla(con, "SELECT puntaje, y FROM modelo_prediccion WHERE objetivo = 'z_extractivo' AND modelo = 'ensamble' AND y IS NOT NULL")
+    if not len(d):
+        return []
+    cortes = [0, 0.1, 0.25, 0.35, 0.5, 1]
+    g = d.groupby(pd.cut(d.puntaje, cortes, include_lowest=True), observed=True).y.agg(["size", "mean"])
+    return [{"desde": i.left if i.left > 0 else 0, "hasta": i.right, "n": int(r["size"]), "hubo": round(r["mean"], 3)} for i, r in g.iterrows()]
 
 
 def sutran(con):

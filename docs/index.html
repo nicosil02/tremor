@@ -101,7 +101,7 @@
   .orden select { font: inherit; font-size: 15px; color: var(--tinta); border: 1px solid var(--linea); border-radius: 6px; padding: 4px 8px; background: #fff; }
   @media (max-width: 900px) {
     .app { grid-template-columns: 1fr; height: auto; }
-    .mapa { height: 58dvh; order: -1; }
+    .mapa { height: 42dvh; order: -1; }
     .panel { border-right: 0; }
     .leyenda { right: 8px; bottom: 30px; padding: 6px 10px; font-size: 14px; }
     .leyenda[open] summary { margin-bottom: 6px; }
@@ -267,7 +267,9 @@
   .ops li.grupo i { width: 12px; height: 12px; flex: none; }
   .ops li.grupo span { font-weight: 700; }
   .ops.corta > li.extra { display: none; }
-  .resumen { margin: 8px 0 0; font-size: 17px; color: var(--tinta-2); }
+  .resumen { margin: 8px 0 0; font-size: 16px; color: var(--tinta-2); }
+  .respaldo { font-size: 14px; color: var(--tinta-2); margin: -4px 0 12px; }
+  .ops li.grupo:not(:has(i)) { font-weight: 700; color: var(--tinta); }
   .resumen b { font-weight: 750; }
   .panel.en-detalle .resumen, .panel.en-detalle .titular { display: none; }
   /* Alertas: un registro con la fecha en su columna, agrupado por prioridad */
@@ -324,8 +326,8 @@
     </div>
     <div class="titular"><h1 id="h1">Cargando</h1><p id="bajada" aria-live="polite"></p><p class="resumen" id="resumen" hidden></p></div>
     <div class="vistas pestanas" id="tabs-cliente" hidden>
-      <button type="button" data-c="alertas" aria-pressed="true">Alertas</button>
-      <button type="button" data-c="ops" aria-pressed="false">Operaciones</button>
+      <button type="button" data-c="alertas" aria-pressed="true">Qué pasó</button>
+      <button type="button" data-c="ops" aria-pressed="false">Sus operaciones</button>
       <button type="button" data-c="avisos" aria-pressed="false">Protestas recientes</button></div>
     <div class="seccion" id="alertas-sec" hidden>
       <ul class="alertas" id="alertas"></ul></div>
@@ -346,7 +348,7 @@
         <div class="rampa"><i style="background:var(--cobre-1)"></i><i style="background:var(--cobre-2)"></i><i style="background:var(--cobre-3)"></i><i style="background:var(--cobre-4)"></i></div>
         <div class="cortes"><span>Bajo</span><span>10%</span><span>25%</span><span>50%</span></div></div>
       <div class="punto"><i style="background:var(--cobre-3);box-shadow:0 0 0 2px #fff;width:12px;height:12px"></i>En operación</div>
-      <div class="punto"><i style="background:#fff;box-shadow:inset 0 0 0 3px var(--cobre-3);width:12px;height:12px"></i>Exploración o proyecto</div>
+      <div class="punto"><i style="background:var(--cobre-3);box-shadow:0 0 0 2.5px #3b2a20;width:10px;height:10px"></i>Exploración o proyecto</div>
       <div class="detalle">
         <div class="linea"><i class="l-unidad"></i>Área de la unidad</div>
         <div class="linea"><i class="l-zona"></i>Zona de influencia</div>
@@ -367,7 +369,17 @@ const PERU = [[-81.4, -18.4], [-68.6, 0.1]];
 const pct = v => v == null || isNaN(v) ? "sin dato" : v > 0.95 ? ">95%" : `${Math.round(v * 100)}%`;
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const nombre = s => String(s ?? "").toLowerCase().replace(/(^|[\s(-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase())
-  .replace(/ (De|Del|Y) /g, w => w.toLowerCase()).replace(/S\.(a|r)\.?(a|c|l)?\.?/gi, w => w.toUpperCase());
+  .replace(/ (De|Del|Y) /g, w => w.toLowerCase()).replace(/S\.(a|r)\.?(a|c|l)?\.?/gi, w => w.toUpperCase())
+  .replace(/\p{L}+/gu, w => TILDE[w] || w);
+const TILDE = Object.fromEntries(["Apurímac", "Áncash", "Junín", "Huánuco", "Tomás", "Compañía", "Perú", "Marañón", "Ucayali", "Chumbivilcas",
+  "Cajamarca", "Mollendo", "Ocoña", "Lucanas", "Andahuaylas", "Antabamba", "Huancavelica", "Matucana", "Mariátegui", "Sánchez", "Cerrón",
+  "Andrés", "Martín", "José", "Jesús", "María", "Ramón", "Hernández", "Pérez", "Rodríguez", "Ilabaya", "Tambobamba", "Haquira", "Mañazo",
+  "Pasco", "Espinar", "Coporaque", "Ayacucho", "Moquegua", "Tacna", "Cusco", "Arequipa", "Huaraz", "Chalhuanca", "Grau", "Aymaraes",
+  "Paucartambo", "Urubamba", "Quispicanchi", "Acomayo", "Canas", "Canchis", "Calca", "Anta", "Paruro", "Carhuaz", "Huari", "Bolognesi",
+  "Recuay", "Yungay", "Sihuas", "Pomabamba", "Ocros", "Aija", "Huarmey", "Casma", "Santa", "Pallasca", "Corongo", "Asunción", "Fitzcarrald",
+  "Antonio", "Raimondi", "Ascope", "Otuzco", "Pataz", "Bolívar", "Julcán", "Virú", "Chepén", "Pacasmayo", "Gran", "Chimú", "Celendín",
+  "Hualgayoc", "Cutervo", "Jaén", "Chota", "Contumazá", "Datem", "Leoncio", "Prado", "Pachitea", "Ambo", "Marañon", "Pucallpa"]
+  .filter(w => /[áéíóúñ]/i.test(w)).map(w => [w.normalize("NFD").replace(/[\u0300-\u036f]/g, ""), w]));
 const llano = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -526,11 +538,11 @@ function iniciar(D, G, H, C) {
       "circle-radius": 6, "circle-stroke-width": 1.5, "circle-stroke-color": "#fff",
       "circle-color": ["match", ["get", "k"], "anunciada", css("--patina"), "via", "#b3261e", css("--tinta-3")] } });
     map.addLayer({ id: "ops", type: "circle", source: "puntos", filter: ["==", ["get", "k"], "op"], paint: {
-      "circle-radius": ["case", ["==", ["get", "e"], 1], 9, 5],
-      // En operación: punto lleno. Exploración o proyecto: anillo del mismo color, hueco
-      "circle-color": ["case", ["==", ["get", "op"], 1], ["step", ["get", "p"], css("--cobre-1"), 0.1, css("--cobre-2"), 0.25, css("--cobre-3"), 0.5, css("--cobre-4")], "#fff"],
-      "circle-stroke-width": ["case", ["==", ["get", "op"], 1], 2.2, 3.5],
-      "circle-stroke-color": ["case", ["==", ["get", "op"], 1], "#fff", ["step", ["get", "p"], css("--cobre-1"), 0.1, css("--cobre-2"), 0.25, css("--cobre-3"), 0.5, css("--cobre-4")]] } });
+      "circle-radius": ["case", ["==", ["get", "e"], 1], 9, 6.5],
+      // En operación: borde blanco. Exploración o proyecto: borde oscuro (el color de riesgo va igual en el relleno)
+      "circle-color": ["step", ["get", "p"], css("--cobre-1"), 0.1, css("--cobre-2"), 0.25, css("--cobre-3"), 0.5, css("--cobre-4")],
+      "circle-stroke-width": ["case", ["==", ["get", "op"], 1], ["case", ["==", ["get", "e"], 1], 2.2, 1.5], 2.5],
+      "circle-stroke-color": ["case", ["==", ["get", "op"], 1], "#fff", "#3b2a20"] } });
     map.addLayer({ id: "ops-nombre", type: "symbol", source: "puntos", filter: ["all", ["==", ["get", "k"], "op"], ["==", ["get", "e"], 1]],
       layout: { ...TEXTO, "text-field": ["format", ["get", "t"], { "font-scale": 1 }, "\n", {}, ["coalesce", ["get", "pc"], ""], { "font-scale": 1.3 }],
                 "text-size": 15, "text-offset": [0, 1.1], "text-anchor": "top", "text-max-width": 14 },
@@ -560,7 +572,13 @@ function iniciar(D, G, H, C) {
   });
 
   // ---------- Elegir empresa, o todo el país ----------
-  let filas = [], puntosEventos = [];
+  let filas = [], puntosEventos = [], ALIAS = null;
+  // Cómo la nombra la prensa: "Minera Las Bambas S.A." → "Las Bambas"; "Southern Peru Copper" → "Southern"; y sus unidades que operan
+  const corto1 = e => { const w = llano(e).replace(/\b(minera|compania|sociedad|s\.?a\.?a?\.?|s\.?a\.?c\.?|peru|del|de)\b/g, " ").split(/\s+/).filter(Boolean);
+    return (/^(las|la|los|el)$/.test(w[0]) ? w.slice(0, 2) : w.slice(0, 1)).join(" "); };
+  const aliasDe = os => { const ps = [...new Set([...os.map(o => corto1(o.empresa)), ...os.filter(opera).map(o => llano(o.unidad))])]
+      .filter(p => p.length >= 5).map(p => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    return ps.length ? new RegExp(`\\b(${ps.join("|")})\\b`, "i") : null; };
   // La alerta del mes (modelo de un mes) si ya existe; si no, la de 3 meses
   // El número de la página: conflicto contra la actividad extractiva en la zona en 3 meses, el objetivo que el modelo
   // predice mejor que la regla ingenua en todas las ventanas. Con datos viejos, el de cualquier paro en el mes.
@@ -570,7 +588,10 @@ function iniciar(D, G, H, C) {
   const QUE = EXT ? "paro, bloqueo o toma contra la actividad extractiva" : "paro o bloqueo";
   const hayMes = D.alerta.some(a => a[K.p] != null);
   const mesP = a => hayMes ? a[K.p] : a.prob_zona;
-  const enMes = hayMes && !EXT ? `en ${mes(D.alerta.find(a => a.ventana_1m)?.ventana_1m)}` : `de aquí a ${hasta}`;
+  const [desdeV, hastaV] = (D.ventana || "").split(" a ");
+  const enMes = hayMes && !EXT ? `en ${mes(D.alerta.find(a => a.ventana_1m)?.ventana_1m)}`
+    : desdeV ? `entre ${mes(desdeV).replace(/ de \d+$/, "")} y ${mes(hastaV)}` : `de aquí a ${hasta}`;
+  const conDatos = D.mes_base ? ` Calculado con datos a ${mes(D.mes_base).replace(/ de \d+$/, "")}.` : "";
   document.getElementById("ley-riesgo").textContent = `Riesgo de ${EXT ? "conflicto" : "paro o bloqueo"} ${enMes}`;
   const sel = document.getElementById("ordenar");
   let enPais = false;
@@ -586,7 +607,8 @@ function iniciar(D, G, H, C) {
   function ordenarFilas() {
     const p = f => mesP(f.a) ?? -1, reg = f => `${f.a.lugar || ""} ${lugar(f.u)}`, v = sel.value;
     filas.sort(v === "prob-asc" ? (x, y) => p(x) - p(y) : v === "nombre" ? (x, y) => titFila(x).localeCompare(titFila(y), "es")
-      : v === "region" ? (x, y) => reg(x).localeCompare(reg(y), "es") || p(y) - p(x) : (x, y) => p(y) - p(x));
+      : v === "region" ? (x, y) => reg(x).localeCompare(reg(y), "es") || p(y) - p(x)
+      : (x, y) => (enPais ? 0 : opera(y.os[0]) - opera(x.os[0])) || p(y) - p(x) || opera(y.os[0]) - opera(x.os[0]));
   }
   sel.onchange = () => { cerrarFicha(); marcar(null); ordenarFilas(); lista(enPais); };
   function elegir(t) {
@@ -610,7 +632,7 @@ function iniciar(D, G, H, C) {
     filas = suyas ? [...d3.group(base, o => `${o.empresa}|${o.unidad}`).values()]
         .map(os => d3.greatest(os.map(o => fila(o.ubigeo, [o])), f => mesP(f.a) ?? -1))
       : d3.groups(base, o => o.ubigeo).map(([u, os]) => fila(u, os));
-    enPais = !suyas; ordenarFilas(); cerrarFicha();
+    enPais = !suyas; ALIAS = suyas ? aliasDe(suyas) : null; ordenarFilas(); cerrarFicha();
     // Una empresa aunque cada fuente la escriba distinto ("MINERA LAS BAMBAS S.A." y "Minera Las Bambas S.A.")
     const empresas = suyas ? [...d3.group(suyas, o => llano(o.empresa).replace(/[^a-z0-9]+/g, " ").trim()).values()].map(os => os[0].empresa) : [];
     const h1 = document.getElementById("h1");
@@ -618,7 +640,7 @@ function iniciar(D, G, H, C) {
       : empresas.length === 1 ? nombre(empresas[0]) : `${empresas.length} empresas`;
     h1.style.fontSize = h1.textContent.length > 28 ? "24px" : "";
     document.getElementById("bajada").textContent = hayMes
-      ? `Probabilidad de ${QUE} en la zona de influencia de cada operación, ${enMes.replace(/^en /, "")}.`
+      ? `Probabilidad de ${QUE} en la zona de influencia de cada operación, ${enMes.replace(/^en /, "")}.${conDatos}`
       : `Probabilidad de que haya un paro, un bloqueo o una toma en la zona de cada operación de aquí a ${hasta}. La zona es el distrito y los que lo rodean.`;
     lista(!suyas);
     listo.then(() => ["huella", "huella-borde", "huella-nombre"].forEach(c =>
@@ -629,7 +651,7 @@ function iniciar(D, G, H, C) {
     document.getElementById("tabs-cliente").hidden = false;
     document.getElementById("alertas-sec").hidden = document.getElementById("tabs-cliente").querySelector('[data-c="alertas"]').hidden = !suyas;
     document.getElementById("tabs-cliente").querySelector('[data-c="avisos"]').hidden = !!suyas;
-    document.getElementById("tabs-cliente").querySelector('[data-c="ops"]').textContent = suyas ? "Operaciones" : "Zonas con mayor riesgo";
+    document.getElementById("tabs-cliente").querySelector('[data-c="ops"]').textContent = suyas ? "Sus operaciones" : "Zonas con mayor riesgo";
     verCliente(suyas ? "alertas" : "ops");
     document.getElementById("avisos-sec").hidden = !!suyas;
     if (suyas) alertas(r.ev, r.vias);
@@ -640,24 +662,26 @@ function iniciar(D, G, H, C) {
   function lista(pais) {
     const mas = document.getElementById("mas-ops");
     document.getElementById("ops").classList.add("corta");
-    mas.hidden = filas.length <= 10; mas.textContent = `Ver las ${filas.length}`;
+    const plegada = (f, i) => pais ? i >= 10 : !opera(f.os[0]), nPleg = filas.filter(plegada).length;
+    mas.hidden = !nPleg; mas.textContent = pais ? `Ver las ${filas.length}` : `Ver exploración y proyectos (${nPleg})`;
     // Ordenada por probabilidad, la lista va en grupos por nivel: se ve de un golpe dónde se concentra el riesgo
     const grupos = sel.value === "prob", cuantos = d3.rollup(filas, v => v.length, f => nivelN(mesP(f.a)));
     const que = n => pais ? (n === 1 ? "zona" : "zonas") : (n === 1 ? "operación" : "operaciones");
     document.getElementById("ops").innerHTML = filas.map((f, i) => {
-      const a = f.a, n = nivelN(mesP(a)), extra = i >= 10 ? " extra" : "";
+      const a = f.a, n = nivelN(mesP(a)), extra = plegada(f, i) ? " extra" : "";
       const donde = pais ? lugar(f.u).split(", ").slice(1).join(", ") + ", " + nombre((a.lugar || "").split(" / ")[0]) : lugar(f.u);
-      const cab = grupos && (i === 0 || nivelN(mesP(filas[i - 1].a)) !== n)
-        ? `<li class="grupo${extra}" aria-hidden="true"><i style="background:var(--cobre-${n + 1})"></i><span class="c${n}">${banda(mesP(a)) || "Sin dato"}</span>${cuantos.get(n)} ${que(cuantos.get(n))}</li>` : "";
+      const cab = !pais ? (i === 0 || opera(filas[i - 1].os[0]) !== opera(f.os[0])
+          ? `<li class="grupo${extra}">${opera(f.os[0]) ? "En operación" : "Exploración y proyectos"}</li>` : "")
+        : grupos && (i === 0 || nivelN(mesP(filas[i - 1].a)) !== n)
+        ? `<li class="grupo${extra}"><i style="background:var(--cobre-${n + 1})"></i><span class="c${n}">${banda(mesP(a)) || "Sin dato"}</span>${cuantos.get(n)} ${que(cuantos.get(n))}</li>` : "";
       return `${cab}<li class="op${extra}" data-i="${i}"><button type="button" aria-expanded="false">
           <span class="nombre">${esc(titFila(f))}</span><span class="lugar">${esc(donde)}</span>
-          <span class="prob"><b class="c${n}">${pct(mesP(a))}</b><small>${grupos ? corto(a).replace(/^, /, "") : banda(mesP(a)) + corto(a)}</small></span></button></li>`; }).join("");
+          <span class="prob"><b class="c${n}">${pct(mesP(a))}</b><small>${grupos && pais ? corto(a).replace(/^, /, "") : banda(mesP(a)) + corto(a)}</small></span></button></li>`; }).join("");
     // Resumen bajo el título: cuántas zonas en los niveles altos
     const zs = d3.rollup(filas.filter((f, i) => filas.findIndex(g => g.u === f.u) === i), v => v.length, f => nivelN(mesP(f.a)));
     const res = document.getElementById("resumen"), c3 = zs.get(3) || 0, c2 = zs.get(2) || 0;
     res.hidden = !pais || !(c3 + c2);  // en la vista de una empresa ya lo dice la bajada
-    res.innerHTML = [c3 && `<b class="c3">${c3}</b> ${c3 === 1 ? "zona" : "zonas"} en nivel crítico`, c2 && `<b class="c2">${c2}</b> ${c2 === 1 ? "zona" : "zonas"} en alto`]
-      .filter(Boolean).join(" y ") + ".";
+    res.innerHTML = c3 ? `<b class="c3">${c3}</b> ${c3 === 1 ? "zona llega" : "zonas llegan"} a nivel crítico, 50% o más.` : "Ninguna zona llega a nivel crítico, 50% o más.";
     document.querySelectorAll(".op > button").forEach(b => b.onclick = () => abrir(+b.parentNode.dataset.i, true));
   }
   // Los factores del mes, en la dirección del cambio
@@ -678,9 +702,13 @@ function iniciar(D, G, H, C) {
       : `${Math.abs(d)} puntos ${d > 0 ? "más" : "menos"} que lo habitual en esta zona (${pct(n)}).`; };
   const puesto = a => a.puesto_zona_extractivo && a.puesto_zona_extractivo <= 20
     ? `Es la zona n.º ${a.puesto_zona_extractivo} del país con más riesgo de conflicto contra una operación.` : "";
+  // Lo que explica el nivel: la historia de conflicto de la zona y lo que hay en ella (la primera y segunda parte de las razones)
+  const nivelDe = a => (a.razones_zona_extractivo || a.razones_zona || "").replace(/^en la zona \(distrito y vecinos\): /, "")
+    .split(" · ").slice(0, 2).flatMap(g => g.split("; ")).filter(Boolean).slice(0, 4).map(r => r.charAt(0).toUpperCase() + r.slice(1) + ".");
   function factores(a) {
-    const sube = (a[K.c] ?? 0) >= 0, porque = razonesDe(a);
-    return porque.length ? `<h3 class="sub">${sube ? "Factores que lo elevan" : "Factores que lo reducen"}</h3><ul>${porque.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : "";
+    const sube = (a[K.c] ?? 0) >= 0, porque = razonesDe(a), base = EXT ? nivelDe(a) : [];
+    return (base.length ? `<h3 class="sub">Por qué está en este nivel</h3><ul>${base.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : "")
+      + (porque.length ? `<h3 class="sub">${sube ? "Qué lo sube frente a lo habitual" : "Qué lo baja frente a lo habitual"}</h3><ul>${porque.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : "");
   }
   const panel = document.querySelector(".panel"), det = document.getElementById("detalle-op");
   const nivelN = p => p == null ? 0 : p >= 0.5 ? 3 : p >= 0.25 ? 2 : p >= 0.1 ? 1 : 0;
@@ -773,7 +801,9 @@ function iniciar(D, G, H, C) {
   // El porcentaje en palabras: cuántos de cada 100 meses así tuvieron un paro, y frente a qué
   function cuanto(a) {
     const p = mesP(a); if (p == null) return "";
-    return `<p class="cuanto">En condiciones parecidas, ${Math.round(p * 100)} de cada 100 veces hubo un ${QUE} en la zona${EXT ? " en los tres meses siguientes" : ""}.</p>`;
+    const c = (D.calibracion || []).find(c => p > c.desde && p <= c.hasta);
+    return `<p class="cuanto">En condiciones parecidas, ${Math.round(p * 100)} de cada 100 veces hubo un ${QUE} en la zona${EXT ? " en los tres meses siguientes" : ""}.</p>`
+      + (c && EXT ? `<p class="respaldo">Comprobado en 2024–2026, meses que el modelo no vio: cuando dijo entre ${Math.round(c.desde * 100)}% y ${Math.round(c.hasta * 100)}%, hubo conflicto ${Math.round(c.hubo * 100)} de cada 100 veces (${c.n.toLocaleString("es-PE")} casos).</p>` : "");
   }
   // Qué reclaman en la zona: los temas de los conflictos abiertos y de las protestas recientes
   const TEMAS = [["Agua", /agua|h[ií]dric|r[ií]o\b|laguna|riego|cuenca|manantial/i], ["Contaminación", /contamina|metales|ars[eé]nico|relave|derrame|ambiental|plomo/i],
@@ -807,7 +837,8 @@ function iniciar(D, G, H, C) {
 
   // Lo que el modelo decía de esta zona cada mes desde 2024, con datos que no había visto, y cuándo hubo paro
   function linea(u) {
-    const x = D.zonas?.[u]?.z1_fuerza || D.zonas?.[u]?.z_fuerza;
+    const x = (EXT && D.zonas?.[u]?.z_extractivo) || D.zonas?.[u]?.z1_fuerza || D.zonas?.[u]?.z_fuerza;
+    const hecho = EXT ? "conflicto contra la operación en los tres meses siguientes" : "paro o bloqueo";
     if (!x || !x.pct.length) return "";
     // Una tira de meses: en cobre los que la zona estaba entre el 10% de mayor riesgo, con un punto donde hubo paro
     const n = x.pct.length, W = 300, Hh = 26, w = W / n;
@@ -817,9 +848,9 @@ function iniciar(D, G, H, C) {
       .map(m => `<text x="${((m - x.m0) * w).toFixed(1)}" y="${Hh + 16}" font-size="14" fill="var(--tinta-3)">${Math.floor(m / 12)}</text>`).join("");
     const vistos = x.y.filter((y, k) => y && x.pct[k] <= 0.1).length, total = x.y.filter(Boolean).length;
     return `<h3>Historial 2024–2026</h3>
-      ${total ? `<p class="hist-dato">En ${vistos} de los ${total} meses con paro o bloqueo, la zona ya figuraba entre el 10% de mayor riesgo del país.</p>` : `<p class="hist-dato">Sin paros ni bloqueos en la zona desde 2024.</p>`}
+      ${total ? `<p class="hist-dato">En ${vistos} de los ${total} meses que terminaron en ${hecho}, la zona ya figuraba entre el 10% de mayor riesgo del país.</p>` : `<p class="hist-dato">Sin ${hecho} en la zona desde 2024.</p>`}
       <svg viewBox="0 0 ${W} ${Hh + 20}" width="100%" role="img" aria-label="Meses de mayor riesgo y meses con paro, 2024 a 2026">${tira}${paros}${anios}</svg>
-      <p style="margin:4px 0 0;font-size:14px;color:var(--tinta-2)">En cobre, meses entre el 10% de mayor riesgo del país. Punto, mes con paro o bloqueo.</p>`;
+      <p style="margin:4px 0 0;font-size:14px;color:var(--tinta-2)">En cobre, meses entre el 10% de mayor riesgo del país. Punto, mes que terminó en ${hecho}.</p>`;
   }
 
   // Caja [oeste, sur, este, norte] de las huellas OEFA de las unidades de una fila. A mano: d3.geoBounds lee los
@@ -875,7 +906,8 @@ function iniciar(D, G, H, C) {
   // La contraparte solo si es una empresa: "Huarmey - contaminación por metales pesados" no es un conflicto "con" nadie
   const EMPRESA = /miner|s\.\s?a\.?|\bsac\b|compa[nñ]|\bc[ií]a\b|empresa|mining|corporation|resources|petro|oil\b|energ|southern|antamina|bambas|anglo|quellaveco|buenaventura|nexa|minsur|yanacocha|chinalco|hudbay|volcan|glencore|shougang|marcobre|perenco|pluspetrol|cnpc|repsol|raura|brocal|poderosa|horizonte|gold|copper/i;
   // Con quién es: la empresa y la unidad que nombra la ficha (tremor.contexto); si no, lo que dice el nombre del caso
-  const contra = c => c.contra_empresa ? `${nombre(c.contra_empresa)}${c.unidad ? `, unidad ${c.unidad}` : ""}` : contraNombre(c);
+  const unidadReal = c => c.unidad && llano(c.unidad) !== llano(c.com || "") && !/carretera|ruta|v[ií]a/i.test(c.unidad);
+  const contra = c => c.contra_empresa ? `${nombre(c.contra_empresa)}${unidadReal(c) ? `, unidad ${c.unidad}` : ""}` : contraNombre(c);
   const contraNombre = c => { const s = (c.nombre || c.caso || "").split(/\s+[-–]\s+|-(?=[A-ZÁÉÍÓÚ])/)[1]?.trim() || ""; return EMPRESA.test(s) ? s : ""; };
   // "Tumilaca - Anglo American Quellaveco" → "Tumilaca" (la empresa va en el estado); "Huarmey - Contaminación metales
   // pesados" → "Huarmey, contaminación metales pesados"; "Pumamarca - Asacasi" queda con mayúscula (es un nombre)
@@ -1056,7 +1088,8 @@ function iniciar(D, G, H, C) {
       return deps.has(u.slice(0, 2)) && extractivo(e); };
     const cuando = e => String(e.fecha_evento || e.fecha_anuncio || "");
     const esProtesta = e => /paro|bloqueo|huelga|toma|marcha|plant|moviliz|enfrent|protesta|vigilia|ayuno|encadena/i.test(e.accion || "");
-    const ev = D.eventos.filter(e => esProtesta(e) && toca(e)).sort((x, y) => (x.estado === "anunciada" ? 0 : 1) - (y.estado === "anunciada" ? 0 : 1) || cuando(y).localeCompare(cuando(x)));
+    const nombra = e => !pais && ALIAS && ALIAS.test(`${e.empresa || ""} ${e.operacion || ""} ${e.titular || ""}`);
+    const ev = D.eventos.filter(e => nombra(e) || (esProtesta(e) && toca(e))).sort((x, y) => (x.estado === "anunciada" ? 0 : 1) - (y.estado === "anunciada" ? 0 : 1) || cuando(y).localeCompare(cuando(x)));
     const suyas = new Set([...zonas].flatMap(rutasDe));
     const vias = D.sutran.filter(s => pais || provs.has(String(s.ubigeo || "").slice(0, 4)) || usanVia(s).some(o => zonas.has(String(o.ubigeo))));
     const capa = pais ? [] : [...suyas];
@@ -1114,16 +1147,17 @@ function iniciar(D, G, H, C) {
     const items = [
       ...ev.map(e => ({ f: String(e.fecha_evento || e.fecha_anuncio || "").slice(0, 10), i: opDe(e.ubigeo),
         s: e.estado === "anunciada" && fuerza(`${e.accion} ${e.titular}`) ? "alta" : "media",
-        t: `${corta(e)} ${e.estado === "anunciada" ? "anunciado" : "registrado"} en ${lugar(e.ubigeo).split(", ")[0]}`,
-        src: `<a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.medio)}</a>` })),
+        // El titular dice el hecho mejor que cualquier plantilla; debajo, si fue anuncio o hecho, dónde y quién lo publicó
+        t: e.titular || corta(e),
+        src: `${e.estado === "anunciada" ? "Anunciada" : "Ocurrió"} en ${esc(lugar(e.ubigeo).split(", ")[0])}. <a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.medio)}</a>` })),
       ...vias.map(s => { let i = filas.findIndex(f => usanVia(s).some(o => zonaDe(f.u).includes(String(o.ubigeo)))); if (i < 0) i = opDe(s.ubigeo);
         return { f: String(s.fecha_evento || "").slice(0, 10), i, s: "alta", via: s,
           t: `Vía ${s.via || ""} bloqueada por una protesta en ${nombre(s.distrito || "")}, ${s.region || ""}. Es una ruta de salida de la operación`, src: "SUTRAN" }; }),
-      ...filas.map((f, i) => ({ f, i })).filter(({ f, i }) => filas.findIndex(g => g.u === f.u) === i).map(({ f, i }) => { const p = mesP(f.a) ?? 0;
-        return { f: String(D.creado), i, zona: true, s: p >= 0.5 ? "alta" : p >= 0.25 ? "media" : null,
-                 pc: pct(p), n: nivelN(p), t: `Probabilidad de ${QUE}, ${enMes.replace(/^en /, "")}`,
-                 por: frente(f.a), mas: [propia(f.a), puesto(f.a)].filter(Boolean).join(" "),
-                 src: "" }; })
+      // Lo que dicen de ella radio y prensa esta semana (índice de ánimo por proyecto)
+      ...(D.animo || []).filter(m => ALIAS && ALIAS.test(llano(m.proyecto))).map(m => ({ f: String(D.creado), i: -1,
+        s: m.aviso || m.pct_negativo >= 0.5 ? "media" : null,
+        t: `${m.menciones_7d} ${m.menciones_7d === 1 ? "mención" : "menciones"} de ${m.proyecto} en radio y prensa en 7 días, ${Math.round(m.pct_negativo * 100)}% en tono negativo`
+           + (m.base_7d ? ` (lo habitual, ${Math.round(m.base_7d)})` : ""), src: "Tremor, radios y medios regionales" }))
     ].filter(x => x.s).sort((a, b) => (a.s === "alta" ? 0 : 1) - (b.s === "alta" ? 0 : 1) || b.f.localeCompare(a.f));
     // Un registro: agrupado por prioridad (el título lo dice en palabras), la fecha en su columna y la regleta del riesgo
     const fecha = f => { const d = new Date(String(f).slice(0, 10) + "T12:00"); return isNaN(d) ? "" :
@@ -1137,12 +1171,13 @@ function iniciar(D, G, H, C) {
           ${x.pc ? `<div class="a-pc"><b class="c${x.n}">${x.pc}</b><div><span class="nv c${x.n}">Riesgo ${banda(p).toLowerCase()}</span>${escala(p)}</div></div><div class="a-que">${esc(x.t)}</div>` : `<div class="a-tit">${esc(x.t)}</div>`}
           ${x.por ? `<div class="a-por">${esc(x.por)}${x.mas ? `<details><summary>Por qué</summary>${esc(x.mas)}</details>` : ""}</div>` : ""}${x.src ? `<div class="a-src">${x.src}</div>` : ""}
           ${x.i >= 0 ? `<button type="button" class="ver" data-i="${x.i}">Ver en el mapa</button>` : ""}</div></li>`; }).join("")
-      || `<li class="alerta"><span></span><div class="a-tit">Sin alertas en los últimos 45 días.</div></li>`;
+      || `<li class="alerta"><span></span><div class="a-tit">Sin protestas, bloqueos ni menciones en su zona en los últimos 45 días.</div></li>`;
     document.querySelectorAll("#alertas .ver").forEach(b => b.onclick = () => abrir(+b.dataset.i, true));
-    const altos = filas.filter(f => (mesP(f.a) ?? 0) >= 0.25).length, nAl = items.filter(x => x.s === "alta").length;
-    const hoy = new Date(String(D.creado) + "T12:00").toLocaleDateString("es-PE", { day: "numeric", month: "long", year: "numeric" });
-    document.getElementById("bajada").textContent = `Al ${hoy}. ${filas.length} ${filas.length === 1 ? "operación" : "operaciones"}, ` +
-      `${altos} con riesgo alto o crítico. ` + (nAl ? `${nAl} ${nAl === 1 ? "alerta" : "alertas"} de prioridad alta.` : "Sin alertas de prioridad alta.");
+    const op = filas.filter(f => opera(f.os[0])), altos = op.filter(f => (mesP(f.a) ?? 0) >= 0.25).length, nAl = items.filter(x => x.s === "alta").length;
+    const hoy = new Date(String(D.creado) + "T12:00").toLocaleDateString("es-PE", { day: "numeric", month: "long" });
+    document.getElementById("bajada").textContent = `Al ${hoy}. ${op.length} ${op.length === 1 ? "unidad en operación" : "unidades en operación"}, ${altos} con riesgo alto o crítico ${enMes}` +
+      `${filas.length > op.length ? `, y ${filas.length - op.length} en exploración o proyecto` : ""}. ` +
+      (nAl ? `${nAl} ${nAl === 1 ? "hecho" : "hechos"} de prioridad alta.` : items.length ? `${items.length} ${items.length === 1 ? "hecho" : "hechos"} en su zona.` : "Sin hechos nuevos en su zona.");
   }
 
 
@@ -1170,7 +1205,7 @@ function iniciar(D, G, H, C) {
     }
   }
 
-  document.getElementById("pie").insertAdjacentHTML("beforeend", ` Datos al ${esc(D.creado)}.`);
+  document.getElementById("pie").insertAdjacentHTML("beforeend", ` Datos al ${new Date(D.creado + "T12:00").toLocaleDateString("es-PE", { day: "numeric", month: "long", year: "numeric" })}.`);
   // Cobertura: qué parte de las protestas reales ve la Defensoría y qué parte se le escapa a todas las fuentes
   const cob = (D.cobertura || []).filter(c => c.anio >= 2019);
   verVista("pais");
