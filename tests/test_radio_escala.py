@@ -34,4 +34,4 @@ def test_catalogo_sin_repetidos():
     with open(CATALOGO, encoding="utf-8") as f:
         filas = list(csv.DictReader(f))
     assert len({f["stream"] for f in filas}) == len(filas)
-    assert all(len(f["ubigeo_provincia"]) == 4 for f in filas)
+    assert all(len(f["ubigeo_provincia"]) == 4 or f["medio"].startswith("TV:") for f in filas)  # la TV es nacional

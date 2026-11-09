@@ -363,8 +363,14 @@ def proyectos(con, desde=2021):
     suyas = {}
     for e, u, et in con.execute("SELECT empresa, ubigeo, etapa FROM operacion WHERE tipo != 'proyecto' AND length(ubigeo) = 6"):
         suyas.setdefault((e, u[:4]), []).append((not str(et or "").startswith("operación"), u))
-    t = [f._replace(ubigeo=min(suyas[(f.empresa, f.ubigeo)])[1]) if len(str(f.ubigeo)) == 4 and (f.empresa, f.ubigeo) in suyas else f
-         for f in t]
+    # Un proyecto que la cartera pone en dos provincias va a una sola unidad: la que está en operación, si la hay
+    # (Ferrobamba figuraba en Cotabambas y Grau y salía junto a Azulccacca).
+    mejor = {}
+    for f in t:
+        if len(str(f.ubigeo)) == 4 and (f.empresa, f.ubigeo) in suyas:
+            k = (f.empresa, f.unidad)
+            mejor[k] = min(mejor.get(k, (True, "999999")), min(suyas[(f.empresa, f.ubigeo)]))
+    t = [f._replace(ubigeo=mejor[(f.empresa, f.unidad)][1]) if (f.empresa, f.unidad) in mejor else f for f in t]
     t = list({(f.empresa, f.unidad, f.ubigeo): f for f in t}.values())
     pd.DataFrame(t).drop(columns="nuevo", errors="ignore").to_sql("operacion", con, if_exists="append", index=False)
     con.commit()

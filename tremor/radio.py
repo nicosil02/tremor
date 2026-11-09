@@ -45,13 +45,34 @@ def radios(grupo=None, grupos=1):
     return filas if grupo is None else filas[grupo - 1::grupos]
 
 
+def directo(url):
+    """La TV en vivo (canal de YouTube /live): el manifiesto HLS de menor calidad, solo se usa el audio. En Actions
+    YouTube bloquea las IP de datacenter: yt-dlp sale por WARP (YT_DLP_PROXY), como tv-en-vivo de Base_legislativa."""
+    if "youtube.com" not in url:
+        return url
+    import yt_dlp
+    opciones = {"quiet": True, "no_warnings": True, **({"proxy": p} if (p := os.environ.get("YT_DLP_PROXY")) else {})}
+    try:
+        with yt_dlp.YoutubeDL(opciones) as ydl:
+            info = ydl.extract_info(url, download=False)
+    except Exception as e:
+        print(f"  {url}: sin directo ({str(e)[:80]})", flush=True)
+        return None
+    hls = sorted((f for f in info.get("formats") or [] if "m3u8" in (f.get("protocol") or "")), key=lambda f: f.get("tbr") or 0)
+    return hls[0]["url"] if hls else info.get("url")
+
+
 def grabar(url, segundos, ruta):
     ffmpeg = os.environ.get("FFMPEG_BIN") or shutil.which("ffmpeg")
     if not ffmpeg:  # Windows sin ffmpeg instalado: el binario que trae imageio-ffmpeg
         import imageio_ffmpeg
         ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+    tv = "youtube.com" in url
+    if not (url := directo(url)):
+        return False
+    proxy = ["-http_proxy", os.environ["FFMPEG_HTTP_PROXY"]] if tv and os.environ.get("FFMPEG_HTTP_PROXY") else []
     try:
-        subprocess.run([ffmpeg, "-loglevel", "error", "-y", "-reconnect", "1", "-reconnect_streamed", "1",
+        subprocess.run([ffmpeg, "-loglevel", "error", "-y", *proxy, "-reconnect", "1", "-reconnect_streamed", "1",
                         "-i", url, "-t", str(segundos), "-vn", "-ac", "1", "-ar", str(SR), ruta],
                        stdin=subprocess.DEVNULL, timeout=segundos + 120, check=False)
     except subprocess.TimeoutExpired:
