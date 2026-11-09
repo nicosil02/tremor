@@ -43,10 +43,9 @@ def datos(con):
         zonas.setdefault(u, {})[o] = {"m0": int(mejor.m.iloc[0]), "y": mejor.y.astype(int).tolist(),
                                       "pct": mejor.pct.round(3).tolist(), "ingenuo": ing.round(3).tolist()}
     desde = (date.today() - timedelta(days=45)).isoformat()
-    con.execute("CREATE TABLE IF NOT EXISTS nota_tema (nota_id TEXT PRIMARY KEY, tema TEXT, p_tema REAL, tono INTEGER, p_tono REAL)")
     ev = tabla(con, "SELECT e.*, MIN(n.enlace) AS enlace, MIN(n.medio) AS medio, MIN(n.titular) AS titular "
                     "FROM evento_prensa e JOIN evento_nota en ON en.evento_id = e.id JOIN nota n ON n.id = en.nota_id "
-                    f"WHERE COALESCE(e.fecha_evento, e.fecha_anuncio) >= '{desde}' AND {ES_PROTESTA} GROUP BY e.id "
+                    f"WHERE COALESCE(e.fecha_evento, e.fecha_anuncio) >= '{desde}' GROUP BY e.id "
                     "ORDER BY COALESCE(e.fecha_evento, e.fecha_anuncio) DESC")
     met = tabla(con, "SELECT objetivo, modelo, metrica, valor FROM modelo_metrica WHERE metrica IN ('precision_top20', "
                      "'precision_top20_li', 'precision_top20_ls', 'captura_top10pct', 'tasa_base')")
@@ -162,8 +161,6 @@ def casos_zona(con):
 PREFIJO = re.compile(r"^(comunidad(es)? (campesinas?|nativas?)|comunidad(es)?|cc\.?|c\.c\.|cn|c\.n\.)\s+(de(l)?\s+)?", re.I)
 
 
-# un evento sale si alguna de sus notas puede ser protesta: sin clasificar, clasificada así o con duda (tremor.clasifica)
-ES_PROTESTA = "EXISTS (SELECT 1 FROM evento_nota x LEFT JOIN nota_tema t ON t.nota_id = x.nota_id WHERE x.evento_id = e.id AND (t.tema IS NULL OR t.tema = 'protesta' OR t.p_tema < 0.5))"
 GENERICAS = {"minera", "minería", "mineria", "empresa", "compañía", "proyecto", "ilegal", "informal", "unidad", "comunidad", "campesina"}
 CONFLICTO = r"conflict|protest|\bparo\b|bloque|comunidad|minera|di[aá]logo|\bmesa\b|reclam|denunci"
 

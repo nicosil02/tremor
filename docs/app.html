@@ -45,6 +45,13 @@
   .ruta b { font-weight: 650; } .ok { color: var(--verde); font-weight: 600; } .mal { color: var(--rojo); font-weight: 700; }
   details.mas { border-bottom: 1px solid var(--linea); } details.mas summary { cursor: pointer; padding: 12px 16px; color: var(--tinta-2); font-weight: 600; }
   details.mas li { padding: 6px 16px 6px 38px; color: var(--tinta-2); }
+  .foto { position: relative; height: 230px; display: flex; align-items: flex-end; padding: 16px; background: #6b5a4a center / cover;
+    color: #fff; }
+  .foto::before { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgb(20 16 12 / .78), rgb(20 16 12 / 0) 65%); }
+  .foto > * { position: relative; } .foto h3 { margin: 0; font-size: 30px; line-height: 1.05; font-weight: 750; font-variation-settings: var(--ancho); }
+  .foto p { margin: 4px 0 0; font-size: 16px; opacity: .9; }
+  .foto small { position: absolute; right: 8px; bottom: 6px; font-size: 11px; opacity: .75; }
+  @media (prefers-reduced-motion: no-preference) { .foto { transition: background-image 300ms ease; } }
   .grande { display: flex; align-items: center; gap: 14px; padding: 16px; }
   .grande b { font-size: 64px; line-height: .9; font-weight: 750; color: var(--cobre-4); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
   .grande span { font-size: 18px; font-weight: 650; } .grande small { display: block; font-size: 15px; font-weight: 400; color: var(--tinta-2); }
@@ -105,7 +112,9 @@ const accion = e => { const a = String(e.accion || "").toLowerCase();
 const guardado = k => { try { return localStorage.getItem(k); } catch { return null; } };
 const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 
-let D, A, E, empresa = EMPRESAS[guardado("tremor-empresa")] ? guardado("tremor-empresa") : "Las Bambas", pila = [];
+// Piloto con una sola minera; en ?admin se ven todas para revisar que cada una salga bien
+const PILOTO = "Las Bambas", ADMIN = /[?&]admin\b/.test(location.search);
+let D, A, E, empresa = ADMIN && EMPRESAS[guardado("tremor-empresa")] ? guardado("tremor-empresa") : PILOTO, pila = [];
 
 async function cargar() {
   for (const u of FUENTES) { try { const r = await fetch(u, { cache: "no-cache" }); if (r.ok) return r.json(); } catch {} }
@@ -155,7 +164,7 @@ const filaAviso = (x, k) => fila(x.urge ? "urge" : "", 0, x.t, x.w, x.s, `data-a
 function cabecera(atras, txt) {
   document.getElementById("cab").innerHTML = atras
     ? `<button type="button" class="atras" aria-label="Volver">‹</button><h1>${esc(txt)}</h1>`
-    : `<select id="emp" class="titulo" aria-label="Empresa">${Object.keys(EMPRESAS)
+    : !ADMIN ? `<h1>${esc(empresa)}</h1>` : `<select id="emp" class="titulo" aria-label="Empresa">${Object.keys(EMPRESAS)
         .map(n => `<option${n === empresa ? " selected" : ""}>${n}</option>`).join("")}</select>`;
   const at = document.querySelector("#cab .atras"); if (at) at.onclick = volver;
   const se = document.getElementById("emp"); if (se) se.onchange = () => { empresa = se.value; guardar("tremor-empresa", empresa); X = armar(); pila = []; ir(actual); };
@@ -167,7 +176,7 @@ const VISTAS = {
     cabecera(false);
     return (u.length ? `<h2>Atender</h2><ul>${u.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<h2>Atender</h2><p class="vacio">Nada anunciado en su zona ni en sus rutas.</p>`)
       + `<h2>Últimas semanas</h2>` + (r.length ? `<ul>${r.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas ni notas sobre la empresa.</p>`)
-      + `<p class="pie">Datos al ${dia(D.creado)}. <a href="index.html?web">Versión completa</a></p>`;
+      + `<p class="pie">Datos al ${dia(D.creado)}. <a href="index.html?web${ADMIN ? "&admin" : ""}">Versión completa</a></p>`;
   },
   operaciones() {
     cabecera(false);
@@ -183,13 +192,30 @@ const VISTAS = {
   mapa() { cabecera(false); return ""; },
 };
 
+// Imagen satelital del polígono de la unidad (Esri World Imagery, el mismo satélite del mapa de la versión completa)
+const POLIS = fetch("operaciones.json").then(r => r.json()).catch(() => ({ features: [] }));
+function foto(o) {
+  POLIS.then(g => {
+    const f = (g.features || []).find(f => f.properties.unidad === o.unidad && f.properties.empresa.toLowerCase().includes(EMPRESAS[empresa][0]));
+    const el = document.getElementById("foto"); if (!f || !el) return;
+    const cs = JSON.stringify(f.geometry.coordinates).match(/-?\d+\.\d+,-?\d+\.\d+/g).map(s => s.split(",").map(Number));
+    let [w, s, e, n] = [Math.min(...cs.map(c => c[0])), Math.min(...cs.map(c => c[1])), Math.max(...cs.map(c => c[0])), Math.max(...cs.map(c => c[1]))];
+    // proporción de la imagen (390 x 230) y un margen para ver lo que rodea al tajo
+    const cx = (w + e) / 2, cy = (s + n) / 2, kx = Math.cos(cy * Math.PI / 180);
+    let dx = (e - w) * 0.45 + 0.008, dy = (n - s) * 0.45 + 0.008;
+    if (dx * kx / dy < 390 / 230) dx = dy * 390 / 230 / kx; else dy = dx * kx * 230 / 390;
+    const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=${cx - dx},${cy - dy},${cx + dx},${cy + dy}&bboxSR=4326&imageSR=3857&size=780,460&format=jpg&f=image`;
+    const img = new Image(); img.onload = () => { el.style.backgroundImage = `url("${url}")`; el.classList.add("lista"); }; img.src = url;
+  });
+}
 function detalleOp(nom) {
   const o = X.unidades.find(x => x.unidad === nom), av = X.avisos.filter(x => (x.cerca && x.cerca.unidad === nom) || x.m || x.trans).slice(0, 3);
   const por = String(o.a.razones_zona_extractivo || "").replace(/^en la zona \(distrito y vecinos\): /, "").split(/ · |; /).slice(0, 3);
   const cs = X.casos.filter(c => o.zona.has(String(c.ubigeo))).slice(0, 4);
   const estado = c => `${c.estado === "latente" ? "latente" : /NO HAY/i.test(c.dialogo || "") ? "sin diálogo" : /HAY/i.test(c.dialogo || "") ? "en diálogo" : "activo"}`;
-  cabecera(true, o.unidad);
-  return `<div class="grande"><b>${o.p == null ? "–" : pct(o.p)}</b><span>${o.p == null ? "Sin cálculo" : `Riesgo ${nivel(o.p).toLowerCase()} ${flecha(o.p - (o.normal ?? o.p))}`}
+  cabecera(true, "Operaciones");
+  foto(o);
+  return `<div class="foto" id="foto"><div><h3>${esc(o.unidad)}</h3><p>${esc(lugar(o.ubigeo))}</p></div><small>Imagen Esri, Maxar</small></div><div class="grande"><b>${o.p == null ? "–" : pct(o.p)}</b><span>${o.p == null ? "Sin cálculo" : `Riesgo ${nivel(o.p).toLowerCase()} ${flecha(o.p - (o.normal ?? o.p))}`}
       <small>${o.normal != null ? `Lo habitual en la zona, ${pct(o.normal)}` : ""}</small><small>Octubre a diciembre</small></span></div>`
     + (por[0] ? `<h2>Por qué</h2><ul class="por">${por.map(p => `<li>${esc(p.replace(/\s*\(.*?\)/g, ""))}</li>`).join("")}</ul>` : "")
     + `<h2>Qué pasó</h2>` + (av.length ? `<ul>${av.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas cerca en 45 días.</p>`)

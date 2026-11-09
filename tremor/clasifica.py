@@ -3,7 +3,10 @@ clasificación sin entrenamiento (zero-shot): mDeBERTa-v3 base, local, sin cuota
 "Fiscalía pide prisión para defensores por las protestas del 2015" como crítica y la página la ponía junto a las
 protestas; con esto queda como proceso judicial que solo informa.
 
-    python -m tremor.clasifica        # notas de menciones (30 días) y de eventos (45 días) aún sin clasificar
+    python -m tremor.clasifica        # notas de menciones de los últimos 30 días aún sin clasificar
+
+Solo las menciones: si una nota es protesta ya lo decide el LLM al codificarla (tremor.prensa); las menciones no pasan
+por él y no hay etiquetas de tema, así que va zero-shot (sin etiquetas, el método que corresponde).
 
 El resultado queda en `nota_tema`: tremor.web lo lee sin necesitar transformers. Sin transformers, no hace nada."""
 from datetime import date, timedelta
@@ -25,15 +28,11 @@ TONOS = {-1: "la noticia cuestiona o denuncia a la empresa", 1: "la noticia dest
          0: "la noticia no juzga a la empresa"}
 
 
-def pendientes(con, dias_menciones=30, dias_eventos=45):
-    hoy = date.today()
+def pendientes(con, dias=30):
     return con.execute(
         """SELECT DISTINCT n.id, n.titular, substr(COALESCE(n.resumen, ''), 1, 300) FROM nota n
-           WHERE n.id NOT IN (SELECT nota_id FROM nota_tema) AND (
-             n.id IN (SELECT nota_id FROM mencion WHERE fecha >= ?) OR
-             n.id IN (SELECT en.nota_id FROM evento_nota en JOIN evento_prensa e ON e.id = en.evento_id
-                      WHERE COALESCE(e.fecha_evento, e.fecha_anuncio) >= ?))""",
-        ((hoy - timedelta(days=dias_menciones)).isoformat(), (hoy - timedelta(days=dias_eventos)).isoformat())).fetchall()
+           WHERE n.id NOT IN (SELECT nota_id FROM nota_tema) AND n.id IN (SELECT nota_id FROM mencion WHERE fecha >= ?)""",
+        ((date.today() - timedelta(days=dias)).isoformat(),)).fetchall()
 
 
 def main():

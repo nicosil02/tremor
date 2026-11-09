@@ -19,10 +19,8 @@ def test_eventos_en_la_zona_o_que_nombran_a_la_empresa():
                                          (2, 'ocurrida', NULL, '2026-11-08', '150101', 'Marcha', NULL, NULL, 'otro', NULL),
                                          (3, 'ocurrida', NULL, '2026-11-08', '04', 'Bloqueo', 'Minera Las Bambas', NULL, 'otro', NULL),
                                          (4, 'anunciada', '2026-10-01', '2026-10-02', '030506', 'Paro', NULL, NULL, 'otro', NULL);
-        CREATE TABLE evento_nota (evento_id, nota_id); CREATE TABLE nota (id, medio, enlace, titular); CREATE TABLE nota_tema (nota_id, tema, p_tema, tono, p_tono);
-        INSERT INTO evento_prensa VALUES (5, 'ocurrida', NULL, '2026-11-08', '030506', 'Paro', NULL, NULL, 'otro', NULL);
-        INSERT INTO evento_nota VALUES (1, 'a'), (2, 'b'), (3, 'c'), (4, 'd'), (5, 'e');
-        INSERT INTO nota_tema VALUES ('a', 'protesta', 0.9, 0, 0.5), ('e', 'judicial', 0.8, 0, 0.5);""")
+        CREATE TABLE evento_nota (evento_id, nota_id); CREATE TABLE nota (id, medio, enlace, titular);
+""")
     z = zona(con, "minera las bambas", {"030506": ["030501"]})
     assert z == {"030506": "Las Bambas", "030501": "Las Bambas"}
     assert [e["clave"] for e in eventos(con, z, r"las bambas", "2026-11-01")] == ["evento:1", "evento:3"]
