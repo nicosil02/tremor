@@ -48,6 +48,12 @@
   .a-meta b { color: var(--tinta-2); font-weight: 600; }
   .a-tit { font-weight: 600; color: var(--tinta); line-height: 1.3; margin-top: 2px; }
   .a-src { font-size: 15px; color: var(--tinta-3); margin-top: 2px; }
+  .a-dia { display: block; font-size: 14px; color: var(--tinta-3); }
+  .a-op { font-weight: 650; font-size: 16px; color: var(--tinta); line-height: 1.3; }
+  .a-pc { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+  .a-pc b { font-size: 34px; line-height: 1; font-weight: 750; font-variation-settings: var(--angosto); }
+  .a-pc .nivel { font-size: 14px; line-height: 1.3; }
+  .a-por { font-size: 15px; color: var(--tinta-2); margin-top: 4px; line-height: 1.4; }
   .a-src a { color: inherit; }
   .prioridad { display: flex; gap: 14px; font-size: 15px; color: var(--tinta-3); margin: 0 0 8px; }
   .prioridad .sev { width: 8px; height: 8px; margin: 0 5px 0 0; }
@@ -570,11 +576,25 @@ function iniciar(D, G, H, C) {
     document.querySelectorAll(".op > button").forEach(b => b.onclick = () => abrir(+b.parentNode.dataset.i, true));
   }
   // Los factores del mes, en la dirección del cambio
-  function factores(a) {
-    const sube = (a.cambio_zona_1m ?? 0) >= 0;
-    const porque = (a.razones_cambio_1m || "").split(" · ").filter(r => r.startsWith(sube ? "sube" : "baja"))
+  const razonesTodas = a => { const sube = (a.cambio_zona_1m ?? 0) >= 0;
+    return (a.razones_cambio_1m || "").split(" · ").filter(r => r.startsWith(sube ? "sube" : "baja"))
       .flatMap(r => coherente(sube ? "sube" : "baja", r.replace(/^(sube|baja): /, "")).split("; "))
-      .filter(r => r && !r.startsWith("cobre") && Math.abs(a.cambio_zona_1m) >= 0.015).map(oracion).slice(0, 3);  // el precio del cobre no es una señal local
+      .filter(r => r && !r.startsWith("cobre") && Math.abs(a.cambio_zona_1m) >= 0.015).map(oracion); };  // el precio del cobre no es una señal local
+  // Lo que pesa en casi todo el país (la elección municipal) no distingue a una zona: va al final
+  const clave = r => r.replace(/[\d,.%]+/g, "").trim();
+  let comunes; const COMUNES = { has: r => (comunes ??= (() => { const n = d3.rollup(D.alerta.flatMap(a => [...new Set(razonesTodas(a).map(clave))]), v => v.length, r => r);
+    return new Set([...n].filter(([, k]) => k > D.alerta.filter(a => a.razones_cambio_1m).length * 0.25).map(([r]) => r)); })()).has(r) };  // se calcula al usarse, con todo ya cargado
+  const razonesDe = a => { const rs = razonesTodas(a); return [...rs.filter(r => !COMUNES.has(clave(r))), ...rs.filter(r => COMUNES.has(clave(r))).map(r => r.replace(/\.$/, ", como en todo el país."))].slice(0, 3); };
+  const propia = a => razonesTodas(a).find(r => !COMUNES.has(clave(r))) || "";  // el precio del cobre no es una señal local
+  // El porcentaje solo no dice nada: frente a lo habitual de la zona y su puesto en el país
+  const frente = a => { const p = mesP(a), n = a.normal_zona_1m; if (p == null || n == null || !hayMes) return "";
+    const d = Math.round((p - n) * 100);
+    return Math.abs(d) < 2 ? `Igual que lo habitual en esta zona (${pct(n)}).`
+      : `${Math.abs(d)} puntos ${d > 0 ? "más" : "menos"} que lo habitual en esta zona (${pct(n)}).`; };
+  const puesto = a => a.puesto_zona_extractivo && a.puesto_zona_extractivo <= 20
+    ? `Es la zona n.º ${a.puesto_zona_extractivo} del país con más riesgo de conflicto contra una operación.` : "";
+  function factores(a) {
+    const sube = (a.cambio_zona_1m ?? 0) >= 0, porque = razonesDe(a);
     return porque.length ? `<h4>${sube ? "Factores que lo elevan" : "Factores que lo reducen"}</h4><ul>${porque.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : "";
   }
   const panel = document.querySelector(".panel"), det = document.getElementById("detalle-op");
@@ -656,8 +676,7 @@ function iniciar(D, G, H, C) {
   // El porcentaje en palabras: cuántos de cada 100 meses así tuvieron un paro, y frente a qué
   function cuanto(a) {
     const p = mesP(a); if (p == null) return "";
-    return `<p class="cuanto">En condiciones similares, ${Math.round(p * 100)} de cada 100 meses registraron un paro o bloqueo en la zona.` +
-      (a.normal_zona_1m != null ? ` Promedio de la zona en los últimos 12 meses: ${pct(a.normal_zona_1m)}.` : "") + `</p>`;
+    return `<p class="cuanto"><b>${esc(frente(a))}</b> ${esc(puesto(a))}</p><p class="cuanto">En condiciones parecidas, ${Math.round(p * 100)} de cada 100 meses tuvieron un paro o bloqueo en la zona.</p>`;
   }
   // Qué reclaman en la zona: los temas de los conflictos abiertos y de las protestas recientes
   const TEMAS = [["Agua", /agua|h[ií]dric|r[ií]o\b|laguna|riego|cuenca|manantial/i], ["Contaminación", /contamina|metales|ars[eé]nico|relave|derrame|ambiental|plomo/i],
@@ -1004,11 +1023,13 @@ function iniciar(D, G, H, C) {
           t: `Vía ${s.via || ""} bloqueada por una protesta en ${nombre(s.distrito || "")}, ${s.region || ""}. Es una ruta de salida de la operación`, src: "SUTRAN" }; }),
       ...filas.map((f, i) => ({ f, i })).filter(({ f, i }) => filas.findIndex(g => g.u === f.u) === i).map(({ f, i }) => { const p = mesP(f.a) ?? 0;
         return { f: String(D.creado), i, zona: true, s: p >= 0.5 ? "alta" : p >= 0.25 ? "media" : null,
-                 t: `Riesgo ${banda(p).toLowerCase()} de paro o bloqueo, ${pct(p)} ${enMes}`, src: "" }; })
+                 pc: pct(p), t: `Riesgo ${banda(p).toLowerCase()} de paro o bloqueo ${enMes}`,
+                 por: [frente(f.a), propia(f.a), puesto(f.a)].filter(Boolean).join(" "),
+                 src: "" }; })
     ].filter(x => x.s).sort((a, b) => (a.s === "alta" ? 0 : 1) - (b.s === "alta" ? 0 : 1) || b.f.localeCompare(a.f));
     document.getElementById("alertas").innerHTML = items.slice(0, 8).map(x => `<li class="alerta"><span class="sev ${x.s}"></span>
-        <div><div class="a-meta"><time>${dia(x.f)}</time>${x.i >= 0 ? `<b>${esc(x.zona ? filas.filter(g => g.u === filas[x.i].u).map(titFila).join(", ") : titFila(filas[x.i]))}</b>` : ""}</div>
-          <div class="a-tit">${esc(x.t)}</div>${x.src ? `<div class="a-src">${x.src}</div>` : ""}</div>
+        <div><time class="a-dia">${dia(x.f)}</time>${x.i >= 0 ? `<div class="a-op">${esc(x.zona ? filas.filter(g => g.u === filas[x.i].u).map(titFila).join(", ") : titFila(filas[x.i]))}</div>` : ""}
+          ${x.pc ? `<div class="a-pc"><b>${x.pc}</b><span class="nivel n${nivelN(mesP(filas[x.i].a))}">${esc(x.t)}</span></div>` : `<div class="a-tit">${esc(x.t)}</div>`}${x.por ? `<div class="a-por">${esc(x.por)}</div>` : ""}${x.src ? `<div class="a-src">${x.src}</div>` : ""}</div>
         ${x.i >= 0 ? `<button type="button" class="btn" data-i="${x.i}">Ver en el mapa</button>` : ""}</li>`).join("")
       || `<li class="alerta"><span></span><div class="a-tit">Sin alertas en los últimos 45 días.</div></li>`;
     document.querySelectorAll("#alertas .btn").forEach(b => b.onclick = () => abrir(+b.dataset.i, true));
