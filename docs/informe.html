@@ -286,6 +286,7 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
   function pintar(k) {
     chips.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.k === k));
     document.getElementById("pdf").href = `informes/informe-${k}.pdf`;
+    document.getElementById("pdf").download = `tremor-informe-${k}.pdf`;
     const ops = D.operaciones.filter(o => llano(`${o.empresa} ${o.unidad}`).includes(k));
     const empresas = [...new Set(ops.map(o => o.empresa))], emp = nombre(empresas[0] || "");
     const corto = emp.replace(/^(Minera|Compañia Minera|Compania Minera|Sociedad Minera)\s+/i, "").replace(/\s+S\.A\.?.*$/i, "").replace(/ Corporation.*| Copper.*| Sucursal.*/i, "");
@@ -537,6 +538,21 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
     if (!document.getElementById("alerta").hidden) reproducir();
   }
 })();
+</script>
+<script>
+// Si el PDF ya generado no está en este servidor (o la página se abrió como archivo), el navegador bajaría la página
+// de error: en ese caso se imprime la página misma, que tiene el diseño de impresión (Guardar como PDF).
+document.getElementById("pdf").addEventListener("click", async e => {
+  e.preventDefault();
+  const a = e.currentTarget;
+  try {
+    const r = await fetch(a.href, { method: "HEAD" });
+    if (r.ok && (r.headers.get("content-type") || "").includes("pdf")) {
+      const l = document.createElement("a"); l.href = a.href; l.download = a.download; l.click(); return;
+    }
+  } catch (_) {}
+  window.print();
+});
 </script>
 </body>
 </html>
