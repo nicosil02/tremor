@@ -310,7 +310,7 @@ function detalleAviso(k) {
 let actual = "avisos", mapa, PAIS = [], FOCO = null, SEL = null;  // SEL: distritos que el mapa resalta y encuadra
 const VER = `<button type="button" class="ir vermapa" data-vermapa>Ver en el mapa</button>`;
 const ley = () => (FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Riesgo en la vía, " + pct(X.via))
-  + `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`;
+  + (SEL ? "" : `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`);
 function ver(us, t) { SEL = us && us.length ? { us, t } : null; if (ANCHO.matches && mapa) verMapa(); }
 function marcar() {
   const s = SEL;
@@ -357,8 +357,25 @@ function verMapa() {
     mapa = new maplibregl.Map({ container: "mapa", style: "https://tiles.openfreemap.org/styles/positron", center: [-75, -10], zoom: 4.3, attributionControl: { compact: true } });
     mapa.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     // nombres del mapa base en castellano ("Arequipa", no "Department of Arequipa")
-    mapa.on("load", () => mapa.getStyle().layers.forEach(l => l.type === "symbol" && l.layout && l.layout["text-field"]
-      && mapa.setLayoutProperty(l.id, "text-field", ["coalesce", ["get", "name:es"], ["get", "name"]])));
+    mapa.on("load", () => {
+      mapa.getStyle().layers.forEach(l => l.type === "symbol" && l.layout && l.layout["text-field"]
+        && mapa.setLayoutProperty(l.id, "text-field", ["coalesce", ["get", "name:es"], ["get", "name"]]));
+      // relieve y satélite al acercarse, como en la versión completa (Esri World Imagery, Terrain Tiles de AWS)
+      const bajo = mapa.getStyle().layers.find(c => c.type === "symbol")?.id;
+      mapa.addSource("dem", { type: "raster-dem", encoding: "terrarium", tileSize: 256, maxzoom: 12, attribution: "Terrain Tiles (AWS, Mapzen)",
+        tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"] });
+      mapa.addLayer({ id: "sombra", type: "hillshade", source: "dem", paint: { "hillshade-exaggeration": 0.3,
+        "hillshade-shadow-color": "#56676c", "hillshade-highlight-color": "#ffffff", "hillshade-accent-color": "#56676c" } }, bajo);
+      mapa.addSource("sat", { type: "raster", tileSize: 256, maxzoom: 18, attribution: "Esri, Maxar",
+        tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"] });
+      mapa.addLayer({ id: "sat", type: "raster", source: "sat", minzoom: 6.5,
+        paint: { "raster-opacity": ["interpolate", ["linear"], ["zoom"], 6.5, 0, 8, 1], "raster-fade-duration": 0 } }, bajo);
+      for (const c of mapa.getStyle().layers) {  // mientras cargan las fotos, color de tierra en vez de blanco
+        if (c.id === "sat") break;
+        if (c.type === "background") mapa.setPaintProperty(c.id, "background-color", ["interpolate", ["linear"], ["zoom"], 7, mapa.getPaintProperty(c.id, "background-color") || "#f2f0eb", 8, "#7a6650"]);
+        if (c.type === "fill") mapa.setPaintProperty(c.id, "fill-opacity", ["interpolate", ["linear"], ["zoom"], 7, 1, 8, 0]);
+      }
+    });
     mapa.on("click", "ops", ev => { const n = ev.features[0].properties.unidad; if (!ANCHO.matches) ir("operaciones"); abrir(detalleOp(n)); });
     mapa.on("click", "tramos", ev => {
       if (mapa.queryRenderedFeatures(ev.point, { layers: ["ops"] }).length) return;
