@@ -105,8 +105,7 @@
     .panel { border-right: 0; }
     .leyenda { right: 8px; bottom: 30px; padding: 6px 10px; font-size: 14px; }
     .leyenda[open] summary { margin-bottom: 6px; }
-    .alerta { grid-template-columns: 10px 1fr; }
-    .alerta > .btn { grid-column: 2; justify-self: start; }
+
   }
 
   .cabeza { padding: 20px 24px 18px; border-bottom: 1px solid var(--linea); }
@@ -213,8 +212,9 @@
   .leyenda { position: absolute; right: 16px; bottom: 40px; background: var(--papel); border: 1px solid var(--linea); border-radius: 8px; padding: 10px 12px;
              font-size: 15px; color: var(--tinta-2); box-shadow: 0 6px 20px rgb(28 38 41 / .12); }
   .leyenda > .cuerpo { display: grid; gap: 6px; }
-  .leyenda summary { cursor: pointer; font-weight: 650; color: var(--tinta); }
-  @media (min-width: 901px) { .leyenda summary { display: none; } }
+  .leyenda summary { cursor: pointer; font-weight: 700; font-size: 16px; color: var(--tinta); margin-bottom: 8px; }
+  .leyenda:not([open]) summary { margin-bottom: 0; }
+  .leyenda .riesgo p { margin: 0 0 6px; line-height: 1.3; color: var(--tinta-2); }
   .maplibregl-ctrl-group button { width: 40px; height: 40px; }
   .leyenda { max-width: 300px; }
   .leyenda b { display: block; font-weight: 650; color: var(--tinta); margin-bottom: 6px; line-height: 1.25; }
@@ -251,44 +251,56 @@
   .tarjeta p { margin: 10px 0 0; }
   .tarjeta .fuente { margin-top: 8px; font-size: 14px; color: var(--tinta-3); }
   .maplibregl-popup-content b { font-weight: 650; }
-  /* Color del número según su nivel (texto grande: basta 3:1) */
-  b.c1 { color: #a8491f; } b.c2, b.c3 { color: var(--cobre-4); }
-  /* Lista agrupada por nivel, con una barra del color de la rampa */
-  .ops li.grupo { position: sticky; top: 0; z-index: 1; background: var(--papel); display: flex; align-items: center; gap: 10px; padding: 12px 12px 6px;
+  /* El nivel se dice con el color del texto, nunca con una caja */
+  .c0 { color: var(--tinta-2); } .c1 { color: #a8491f; } .c2, .c3 { color: var(--cobre-4); }
+  .nv { font-weight: 650; }
+  /* La regleta: los cuatro tramos de la leyenda del mapa y una marca donde cae la cifra */
+  .escala { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; width: 100%; max-width: 200px; height: 7px; margin-top: 7px; }
+  .escala i:nth-child(1) { background: var(--cobre-1); } .escala i:nth-child(2) { background: var(--cobre-2); }
+  .escala i:nth-child(3) { background: var(--cobre-3); } .escala i:nth-child(4) { background: var(--cobre-4); }
+  .escala b { position: absolute; top: -5px; width: 3px; height: 17px; margin-left: -1.5px; background: var(--tinta); box-shadow: 0 0 0 2px var(--papel); }
+  .escala.con-rotulos { max-width: 260px; margin-bottom: 22px; }
+  .escala span { position: absolute; top: 13px; font-size: 13px; color: var(--tinta-3); transform: translateX(-2px); white-space: nowrap; }
+  /* Lista por nivel: el título del grupo lleva la muestra de color, como en una leyenda */
+  .ops li.grupo { position: sticky; top: 0; z-index: 1; background: var(--papel); display: flex; align-items: center; gap: 8px; padding: 14px 12px 4px;
                   font-size: 15px; color: var(--tinta-2); }
+  .ops li.grupo i { width: 12px; height: 12px; flex: none; }
+  .ops li.grupo span { font-weight: 700; }
   .ops.corta > li.extra { display: none; }
-  .op > button { box-shadow: inset 4px 0 0 var(--c, transparent); border-radius: 0 8px 8px 0; }
   .resumen { margin: 8px 0 0; font-size: 17px; color: var(--tinta-2); }
   .resumen b { font-weight: 750; }
   .panel.en-detalle .resumen, .panel.en-detalle .titular { display: none; }
-  /* Alertas */
-  .a-cab { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
-  .a-prio { font-size: 13px; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; color: var(--cobre-4); }
-  .a-prio.alta { color: #b3261e; }
-  .a-cab time { font-size: 14px; color: var(--tinta-3); }
+  /* Alertas: un registro con la fecha en su columna, agrupado por prioridad */
+  .alertas li.a-grupo { display: block; font-size: 15px; font-weight: 700; padding: 16px 0 2px; border: 0; }
+  .alertas li.a-grupo.alta { color: #b3261e; } .alertas li.a-grupo.media { color: var(--cobre-4); }
+  .alertas li.a-grupo:first-child { padding-top: 0; }
+  .alerta { grid-template-columns: 44px 1fr; gap: 4px 14px; }
+  .a-fecha { display: grid; justify-items: start; line-height: 1; color: var(--tinta-2); padding-top: 2px; }
+  .a-fecha b { font-size: 26px; font-weight: 700; font-variation-settings: var(--angosto); color: var(--tinta); }
+  .a-fecha small { font-size: 14px; margin-top: 3px; }
   .a-uni { font-size: 15px; color: var(--tinta-2); line-height: 1.35; }
-  .a-pc > div { display: grid; gap: 3px; justify-items: start; }
-  .a-que { font-size: 14px; color: var(--tinta-2); line-height: 1.35; margin-top: 4px; }
+  .a-pc { align-items: flex-start; gap: 12px; margin-top: 8px; }
+  .a-pc > div { flex: 1; padding-top: 2px; }
+  .a-que { font-size: 14px; color: var(--tinta-2); line-height: 1.35; margin-top: 6px; }
   .a-por summary { cursor: pointer; color: var(--tinta); font-weight: 600; margin-top: 4px; }
-  .alerta.destacada { background: #fff; border: 1px solid var(--linea); border-left: 4px solid var(--c, var(--cobre)); border-radius: 10px; padding: 14px 16px;
-                      box-shadow: 0 1px 3px rgb(28 38 41 / .08); margin-bottom: 10px; }
-  .alerta.destacada .btn { background: var(--cobre); color: #fff; border-color: var(--cobre); }
-  .alerta.destacada .btn:hover { background: var(--cobre-4); }
-  /* Ficha: el riesgo primero */
+  .alerta .ver { all: unset; cursor: pointer; font-size: 15px; font-weight: 650; color: var(--cobre-4); text-decoration: underline; text-underline-offset: 3px;
+                 text-decoration-thickness: 1px; margin-top: 8px; display: inline-block; }
+  .alerta .ver:hover { text-decoration-thickness: 2px; }
+  .alerta .ver:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
+  /* Ficha: la cifra y la regleta, sin recuadro */
   .detalle-op .migas { all: unset; cursor: pointer; font-size: 15px; font-weight: 600; color: var(--tinta-2); display: inline-block; padding: 6px 0; margin-bottom: 6px; }
   .detalle-op .migas:hover { color: var(--tinta); text-decoration: underline; text-underline-offset: 3px; }
   .detalle-op .migas:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
   .detalle-op h2 { font-size: 28px; }
   .detalle-op h2:focus { outline: none; }
-  .hero { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; align-items: center; margin: 12px 0 14px; padding: 16px 18px; border-radius: 10px;
-          border-left: 4px solid var(--c); background: color-mix(in srgb, var(--c) 14%, var(--papel)); }
-  .hero > b { font-size: 64px; line-height: .95; font-weight: 750; font-variation-settings: var(--angosto); }
-  .hero > div { display: grid; gap: 4px; justify-items: start; }
-  .hero strong { font-size: 15px; font-weight: 650; color: var(--tinta); line-height: 1.35; }
-  .hero .que { font-size: 14px; color: var(--tinta-2); line-height: 1.35; }
-  .hero > p { grid-column: 1 / -1; margin: 4px 0 0; font-size: 15px; color: var(--tinta-2); }
-  .cuenta { display: inline-block; min-width: 20px; padding: 0 6px; margin-left: 4px; border-radius: 10px; background: #c4431c; color: #fff; font-size: 13px;
-            line-height: 20px; text-align: center; font-weight: 700; }
+  .cifra { display: grid; grid-template-columns: auto 1fr; gap: 0 18px; align-items: start; margin: 18px 0 4px; }
+  .cifra > b { font-size: 72px; line-height: .86; font-weight: 750; font-variation-settings: var(--angosto); letter-spacing: -0.02em; }
+  .cifra > div { padding-top: 2px; }
+  .cifra .nv { font-size: 19px; display: block; }
+  .cifra .frente { display: block; font-size: 15px; color: var(--tinta); margin-top: 2px; line-height: 1.35; }
+  .detalle-op p.que { font-size: 15px; color: var(--tinta-2); margin: 6px 0 0; max-width: 46ch; }
+  .detalle-op p.puesto { font-size: 15px; color: var(--tinta); margin: 6px 0 0; font-weight: 600; }
+  .cuenta { font-weight: 750; color: #c4431c; margin-left: 4px; }
   .detalle-op h3.sub { border-top: 0; padding-top: 0; margin-top: 14px; }
   .hist-dato { font-size: 17px; font-weight: 650; color: var(--tinta); margin: 0 0 8px; line-height: 1.35; }
   .cargando { position: absolute; inset: 0; display: grid; place-items: center; color: var(--tinta-3); font-size: 15px; }
@@ -330,13 +342,16 @@
     <div id="mapa"></div>
     <div class="cargando" id="cargando">Cargando el mapa</div>
     <details class="leyenda" id="leyenda" open hidden><summary>Leyenda</summary><div class="cuerpo">
-      <div class="riesgo"><b id="ley-riesgo">Probabilidad de paro o bloqueo en la zona de influencia</b>
+      <div class="riesgo"><p id="ley-riesgo">Probabilidad de paro o bloqueo en la zona de influencia</p>
         <div class="rampa"><i style="background:var(--cobre-1)"></i><i style="background:var(--cobre-2)"></i><i style="background:var(--cobre-3)"></i><i style="background:var(--cobre-4)"></i></div>
         <div class="cortes"><span>Bajo</span><span>10%</span><span>25%</span><span>50%</span></div></div>
-      <div class="detalle"><b>En el mapa</b>
-        <div class="linea"><i class="l-sel"></i>La unidad que mira</div>
-        <div class="linea"><i class="l-zona"></i>Su zona, donde se mide el riesgo</div>
-        <div class="linea"><i class="l-conf"></i>Comunidad en conflicto</div></div>
+      <div class="punto"><i style="background:var(--cobre-3);box-shadow:0 0 0 2px #fff;width:12px;height:12px"></i>Unidad en operación</div>
+      <div class="punto"><i style="background:#fff;box-shadow:inset 0 0 0 3px var(--cobre-3);width:12px;height:12px"></i>Unidad en exploración, proyecto o paralizada</div>
+      <div class="detalle">
+        <div class="linea"><i class="l-unidad"></i>Área de la unidad minera, según OEFA</div>
+        <div class="linea"><i class="l-sel"></i>Unidad que estás viendo</div>
+        <div class="linea"><i class="l-zona"></i>Zona de influencia, su distrito y los vecinos</div>
+        <div class="linea"><i class="l-conf"></i>Comunidad en conflicto con la operación</div></div>
       <div class="punto"><i style="background:var(--patina)"></i>Protesta anunciada</div>
       <div class="punto"><i style="background:var(--tinta-3)"></i>Protesta ocurrida</div>
       <div class="punto"><i style="background:#f4c35a;border-radius:2px;height:4px;width:16px"></i>Carretera de salida</div>
@@ -513,8 +528,10 @@ function iniciar(D, G, H, C) {
       "circle-color": ["match", ["get", "k"], "anunciada", css("--patina"), "via", "#b3261e", css("--tinta-3")] } });
     map.addLayer({ id: "ops", type: "circle", source: "puntos", filter: ["==", ["get", "k"], "op"], paint: {
       "circle-radius": ["case", ["==", ["get", "e"], 1], 9, 5],
-      "circle-color": ["step", ["get", "p"], css("--cobre-1"), 0.1, css("--cobre-2"), 0.25, css("--cobre-3"), 0.5, css("--cobre-4")],
-      "circle-stroke-width": 2.2, "circle-stroke-color": "#fff" } });
+      // En operación: punto lleno. Exploración o proyecto: anillo del mismo color, hueco
+      "circle-color": ["case", ["==", ["get", "op"], 1], ["step", ["get", "p"], css("--cobre-1"), 0.1, css("--cobre-2"), 0.25, css("--cobre-3"), 0.5, css("--cobre-4")], "#fff"],
+      "circle-stroke-width": ["case", ["==", ["get", "op"], 1], 2.2, 3.5],
+      "circle-stroke-color": ["case", ["==", ["get", "op"], 1], "#fff", ["step", ["get", "p"], css("--cobre-1"), 0.1, css("--cobre-2"), 0.25, css("--cobre-3"), 0.5, css("--cobre-4")]] } });
     map.addLayer({ id: "ops-nombre", type: "symbol", source: "puntos", filter: ["all", ["==", ["get", "k"], "op"], ["==", ["get", "e"], 1]],
       layout: { ...TEXTO, "text-field": ["format", ["get", "t"], { "font-scale": 1 }, "\n", {}, ["coalesce", ["get", "pc"], ""], { "font-scale": 1.3 }],
                 "text-size": 15, "text-offset": [0, 1.1], "text-anchor": "top", "text-max-width": 14 },
@@ -630,8 +647,8 @@ function iniciar(D, G, H, C) {
       const a = f.a, n = nivelN(mesP(a)), extra = i >= 10 ? " extra" : "";
       const donde = pais ? lugar(f.u).split(", ").slice(1).join(", ") + ", " + nombre((a.lugar || "").split(" / ")[0]) : lugar(f.u);
       const cab = grupos && (i === 0 || nivelN(mesP(filas[i - 1].a)) !== n)
-        ? `<li class="grupo${extra}" aria-hidden="true"><span class="nivel n${n}">${banda(mesP(a)) || "Sin dato"}</span>${cuantos.get(n)} ${que(cuantos.get(n))}</li>` : "";
-      return `${cab}<li class="op${extra}" data-i="${i}"><button type="button" aria-expanded="false" style="--c:var(--cobre-${n + 1})">
+        ? `<li class="grupo${extra}" aria-hidden="true"><i style="background:var(--cobre-${n + 1})"></i><span class="c${n}">${banda(mesP(a)) || "Sin dato"}</span>${cuantos.get(n)} ${que(cuantos.get(n))}</li>` : "";
+      return `${cab}<li class="op${extra}" data-i="${i}"><button type="button" aria-expanded="false">
           <span class="nombre">${esc(titFila(f))}</span><span class="lugar">${esc(donde)}</span>
           <span class="prob"><b class="c${n}">${pct(mesP(a))}</b><small>${grupos ? corto(a).replace(/^, /, "") : banda(mesP(a)) + corto(a)}</small></span></button></li>`; }).join("");
     // Resumen bajo el título: cuántas zonas en los niveles altos
@@ -666,16 +683,21 @@ function iniciar(D, G, H, C) {
   }
   const panel = document.querySelector(".panel"), det = document.getElementById("detalle-op");
   const nivelN = p => p == null ? 0 : p >= 0.5 ? 3 : p >= 0.25 ? 2 : p >= 0.1 ? 1 : 0;
+  // La regleta de riesgo: los tramos de la leyenda (iguales de anchos) y la marca dentro de su tramo
+  const escala = (p, rotulos) => { if (p == null) return ""; const k = nivelN(p), c = [0, 0.1, 0.25, 0.5, 1];
+    const x = (k + Math.min(1, (p - c[k]) / (c[k + 1] - c[k]))) * 25;
+    return `<span class="escala${rotulos ? " con-rotulos" : ""}" aria-hidden="true"><i></i><i></i><i></i><i></i><b style="left:${x.toFixed(1)}%"></b>${rotulos
+      ? ["Bajo", "10%", "25%", "50%"].map((r, j) => `<span style="left:${j * 25}%">${r}</span>`).join("") : ""}</span>`; };
   // La ficha de una operación, en el panel: riesgo, fechas, comunidades, temas e historial, en ese orden
   function llenarFicha(f) {
     const a = f.a, p = mesP(a);
     const n = nivelN(p), ncom = casosDe(f.u).filter(c => c.com).length;
     det.innerHTML = `<button type="button" class="migas volver">← ${enPais ? "Todas las zonas" : esc(nombre(f.os[0].empresa))}</button>
       <h2 tabindex="-1">${esc(titFila(f))}</h2><p class="lugar-op">${esc(lugar(f.u))}</p>
-      <div class="hero" style="--c:var(--cobre-${n + 1})"><b class="c${n}">${pct(p)}</b>
-        <div><span class="nivel n${n}">Riesgo ${banda(p).toLowerCase()}</span><strong>${esc(frente(a))}</strong>
-          <span class="que">Probabilidad de ${esc(QUE)} en la zona de ${esc(lugar(f.u).split(",")[0])}, ${esc(enMes.replace(/^en /, ""))}</span></div>
-        ${puesto(a) ? `<p>${esc(puesto(a))}</p>` : ""}</div>
+      <div class="cifra"><b class="c${n}">${pct(p)}</b>
+        <div><span class="nv c${n}">Riesgo ${banda(p).toLowerCase()}</span><span class="frente">${esc(frente(a))}</span>${escala(p, true)}</div></div>
+      <p class="que">Probabilidad de ${esc(QUE)} en la zona de ${esc(lugar(f.u).split(",")[0])}, ${esc(enMes.replace(/^en /, ""))}.</p>
+      ${puesto(a) ? `<p class="puesto">${esc(puesto(a))}</p>` : ""}
       ${enPais ? "" : otras(f)}
       <div class="vistas pestanas">${[["resumen", "Resumen"], ["comunidades", `Comunidades${ncom ? `<span class="cuenta">${ncom}</span>` : ""}`],
         ["fechas", "Fechas"], ["historial", "Historial"]].map(([k, n], j) => `<button type="button" data-p="${k}" aria-pressed="${!j}">${n}</button>`).join("")}</div>
@@ -1102,16 +1124,20 @@ function iniciar(D, G, H, C) {
                  por: frente(f.a), mas: [propia(f.a), puesto(f.a)].filter(Boolean).join(" "),
                  src: "" }; })
     ].filter(x => x.s).sort((a, b) => (a.s === "alta" ? 0 : 1) - (b.s === "alta" ? 0 : 1) || b.f.localeCompare(a.f));
-    // La primera, la más urgente, va destacada; cada alerta dice su prioridad en palabras, no solo con el color
-    document.getElementById("alertas").innerHTML = items.slice(0, 8).map((x, k) => `<li class="alerta${k ? "" : " destacada"}"${x.zona ? ` style="--c:var(--cobre-${x.n + 1})"` : ""}><span class="sev ${x.s}" aria-hidden="true"></span>
-        <div><div class="a-cab"><span class="a-prio ${x.s}">Prioridad ${x.s}</span><time>${dia(x.f)}</time></div>
-          ${x.i >= 0 ? (x.zona ? `<div class="a-op">Zona de ${esc(lugar(filas[x.i].u).split(",")[0])}</div><div class="a-uni">${esc(filas.filter(g => g.u === filas[x.i].u).map(titFila).join(", "))}</div>`
-                                : `<div class="a-op">${esc(titFila(filas[x.i]))}</div>`) : ""}
-          ${x.pc ? `<div class="a-pc"><b class="c${x.n}">${x.pc}</b><span class="nivel n${x.n}">${banda(mesP(filas[x.i].a))}</span></div><div class="a-que">${esc(x.t)}</div>` : `<div class="a-tit">${esc(x.t)}</div>`}
-          ${x.por ? `<div class="a-por">${esc(x.por)}${x.mas ? `<details><summary>Por qué</summary>${esc(x.mas)}</details>` : ""}</div>` : ""}${x.src ? `<div class="a-src">${x.src}</div>` : ""}</div>
-        ${x.i >= 0 ? `<button type="button" class="btn" data-i="${x.i}">Ver en el mapa</button>` : ""}</li>`).join("")
+    // Un registro: agrupado por prioridad (el título lo dice en palabras), la fecha en su columna y la regleta del riesgo
+    const fecha = f => { const d = new Date(String(f).slice(0, 10) + "T12:00"); return isNaN(d) ? "" :
+      `<time class="a-fecha" datetime="${String(f).slice(0, 10)}"><b>${d.getDate()}</b><small>${d.toLocaleDateString("es-PE", { month: "short" }).replace(".", "")}</small></time>`; };
+    document.getElementById("alertas").innerHTML = items.slice(0, 8).map((x, k, xs) => {
+      const p = x.i >= 0 ? mesP(filas[x.i].a) : null;
+      const grupo = !k || xs[k - 1].s !== x.s ? `<li class="a-grupo ${x.s}">Prioridad ${x.s}</li>` : "";
+      return `${grupo}<li class="alerta">${fecha(x.f)}
+        <div>${x.i >= 0 ? (x.zona ? `<div class="a-op">Zona de ${esc(lugar(filas[x.i].u).split(",")[0])}</div><div class="a-uni">${esc(filas.filter(g => g.u === filas[x.i].u).map(titFila).join(", "))}</div>`
+                                    : `<div class="a-op">${esc(titFila(filas[x.i]))}</div>`) : ""}
+          ${x.pc ? `<div class="a-pc"><b class="c${x.n}">${x.pc}</b><div><span class="nv c${x.n}">Riesgo ${banda(p).toLowerCase()}</span>${escala(p)}</div></div><div class="a-que">${esc(x.t)}</div>` : `<div class="a-tit">${esc(x.t)}</div>`}
+          ${x.por ? `<div class="a-por">${esc(x.por)}${x.mas ? `<details><summary>Por qué</summary>${esc(x.mas)}</details>` : ""}</div>` : ""}${x.src ? `<div class="a-src">${x.src}</div>` : ""}
+          ${x.i >= 0 ? `<button type="button" class="ver" data-i="${x.i}">Ver en el mapa</button>` : ""}</div></li>`; }).join("")
       || `<li class="alerta"><span></span><div class="a-tit">Sin alertas en los últimos 45 días.</div></li>`;
-    document.querySelectorAll("#alertas .btn").forEach(b => b.onclick = () => abrir(+b.dataset.i, true));
+    document.querySelectorAll("#alertas .ver").forEach(b => b.onclick = () => abrir(+b.dataset.i, true));
     const altos = filas.filter(f => (mesP(f.a) ?? 0) >= 0.25).length, nAl = items.filter(x => x.s === "alta").length;
     const hoy = new Date(String(D.creado) + "T12:00").toLocaleDateString("es-PE", { day: "numeric", month: "long", year: "numeric" });
     document.getElementById("bajada").textContent = `Al ${hoy}. ${filas.length} ${filas.length === 1 ? "operación" : "operaciones"}, ` +
@@ -1128,7 +1154,7 @@ function iniciar(D, G, H, C) {
     map.getSource("zonas").setData({ type: "FeatureCollection", features: feats });
     // En la vista de una empresa el color va en sus operaciones; la zona queda como un fondo tenue
     map.setPaintProperty("zonas", "fill-opacity", ["interpolate", ["linear"], ["zoom"], 9, 0.75, 10.5, 0]);  // el mismo color de riesgo en el país y en la empresa
-    const pts = [...filas.map((f, i) => ({ c: puntoOp(f), k: "op", i, p: mesP(f.a) ?? 0, e: !pais, t: titFila(f), pc: mesP(f.a) == null ? "" : pct(mesP(f.a)) })), ...puntosEventos].filter(p => p.c)
+    const pts = [...filas.map((f, i) => ({ c: puntoOp(f), k: "op", i, p: mesP(f.a) ?? 0, op: f.os[0].tipo === "proyecto" || /exploración|proyecto|paraliz/.test(f.os[0].etapa || "") ? 0 : 1, e: !pais, t: titFila(f), pc: mesP(f.a) == null ? "" : pct(mesP(f.a)) })), ...puntosEventos].filter(p => p.c)
       .map(p => ({ type: "Feature", geometry: { type: "Point", coordinates: p.c }, properties: { k: p.k, h: p.h || "", t: p.t || "", pc: p.pc || "", i: p.i ?? -1, p: p.p ?? 0, e: p.e ? 1 : 0 } }));
     map.getSource("puntos").setData({ type: "FeatureCollection", features: pts });
     const cs = filas.map(f => puntoOp(f) || centroDe(f.u)).filter(Boolean);
