@@ -109,9 +109,23 @@ def bajar_cartera(carpeta=CPIM.parent):
 
 
 CONTRATO = ("Te doy un decreto supremo del Perú que modifica el contrato de un lote de hidrocarburos. Di qué empresa queda "
-            "como operadora del lote y qué empresas tienen participación. Si el decreto no cambia al operador, "
+            "como operadora (contratista) del lote y qué empresas tienen participación. PERUPETRO S.A. firma por el Estado: "
+            "nunca es la operadora salvo que el decreto le asigne operar el lote. Si el decreto no cambia al operador, "
             'operador = null. Responde JSON {"lote": "<Lote N>", "operador": "<razón social o null>", '
             '"socios": "<empresa y % separados por coma>"}.')
+
+
+def lugar_lote(texto):
+    """"Lote 206, ubicado en la provincia de Talara del departamento de Piura" → ubigeo de la capital de provincia
+    (o el departamento si no hay provincia). Los lotes del zócalo continental no tienen provincia: None."""
+    import re
+    from tremor.lugares import resolver
+    m = re.search(r"ubicad[oa] en (?:la |las )?provincias? (?:de |del )?([^,.;]+?),? (?:del|en el) departamento (?:de |del )?"
+                  r"([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?: [A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)*)", texto)
+    if not m:
+        return None
+    codigo, precision = resolver(region=m.group(2), provincia=re.split(r",| y ", m.group(1))[0].strip())
+    return codigo + "01" if precision == "provincia" else None
 
 
 def contratos(con, dias=60):
@@ -127,7 +141,9 @@ def contratos(con, dias=60):
     from tremor.llm import chat_json, SinCuota, RespuestaInvalida
     from tremor.territorio import UA
     con.execute("""CREATE TABLE IF NOT EXISTS contrato_lote (id TEXT PRIMARY KEY, fecha TEXT, lote TEXT, titulo TEXT,
-                   operador TEXT, socios TEXT, leido INTEGER DEFAULT 0)""")
+                   operador TEXT, socios TEXT, leido INTEGER DEFAULT 0, ubigeo TEXT)""")
+    if "ubigeo" not in [c[1] for c in con.execute("PRAGMA table_info(contrato_lote)")]:
+        con.execute("ALTER TABLE contrato_lote ADD COLUMN ubigeo TEXT")
     hoy = date.today()
     for q in ("contrato de licencia lote", "contrato de servicios lote", "posición contractual lote"):
         r = None
@@ -154,19 +170,24 @@ def contratos(con, dias=60):
             texto = html.unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", r.content.decode("utf-8", "replace"))))
             fecha = re.search(r"Fecha de publicaci[oó]n: (\d\d/\d\d/20\d\d)", texto)
             k = max(texto.find("DECRETA:"), texto.find("DECRETA :"), 3000)  # los considerandos que citan la cesión y los artículos
-            out = chat_json(con, CONTRATO, f"{titulo}. {texto[k - 3000:k + 3000]}", "contrato-lote-1")
+            out = chat_json(con, CONTRATO, f"{titulo}. {texto[k - 3000:k + 3000]}", "contrato-lote-2")
         except (requests.RequestException, SinCuota, RespuestaInvalida):
             time.sleep(10)
             continue  # queda para la próxima corrida; en el informe el lote sale como "contrato modificado"
-        con.execute("UPDATE contrato_lote SET fecha = ?, operador = ?, socios = ?, leido = 1 WHERE id = ?",
-                    (fecha and fecha.group(1), out.get("operador"), out.get("socios"), i))
+        con.execute("UPDATE contrato_lote SET fecha = ?, operador = ?, socios = ?, ubigeo = ?, leido = 1 WHERE id = ?",
+                    (fecha and fecha.group(1), out.get("operador"), out.get("socios"), lugar_lote(texto), i))
         time.sleep(5)
-    for lote, operador, socios, titulo, leido in con.execute(
-            "SELECT lote, operador, socios, titulo, leido FROM contrato_lote ORDER BY id").fetchall():
+    for lote, operador, socios, titulo, leido, ubigeo, fecha in con.execute(
+            "SELECT lote, operador, socios, titulo, leido, ubigeo, fecha FROM contrato_lote ORDER BY id").fetchall():
         unidad = f"{lote} %"
+        if ubigeo and operador and not con.execute("SELECT 1 FROM operacion WHERE unidad = ? OR unidad LIKE ?", (lote, unidad)).fetchone():
+            # contrato nuevo, todavía sin producción ni registro en OEFA: entra como proyecto en la capital de la provincia
+            con.execute("INSERT INTO operacion (empresa, unidad, tipo, ubigeo, etapa) VALUES (?, ?, 'proyecto', ?, ?)",
+                        (operador.upper(), lote, ubigeo, f"proyecto, contrato de licencia aprobado el {fecha} (El Peruano)"))
+            continue
         if operador:
             con.execute("UPDATE operacion SET empresa = ?, etapa = ? WHERE unidad = ? OR unidad LIKE ?",
-                        (operador.upper(), f"operador según El Peruano; socios: {socios}" if socios else "operador según El Peruano", lote, unidad))
+                        (operador.upper(), f"operador según El Peruano; socios: {socios}" if socios and " 0%" not in socios and "," in socios else "operador según El Peruano", lote, unidad))
         elif not leido:
             con.execute("UPDATE operacion SET etapa = ? WHERE (unidad = ? OR unidad LIKE ?) AND etapa = 'operación'",
                         ("contrato modificado (El Peruano), titular por confirmar", lote, unidad))

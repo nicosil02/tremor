@@ -41,3 +41,9 @@ def test_unidad_que_no_tenemos_no_se_pega_a_otra_lejana():
     ops = [("REPSOL EXPLORACION PERU", "Lote 101", "160101"), ("MINERA LAS BAMBAS S.A.", "Bordebamba", "030506")]
     assert emparejar(ops, "Repsol", "Refinería La Pampilla", "070106") == (None, None, None)
     assert emparejar(ops, "MMG Las Bambas", "carretera (Ruta Nacional)", "030506")[1] == "Bordebamba"
+
+
+def test_lugar_lote():
+    from tremor.empresas import lugar_lote
+    assert lugar_lote("área inicial del Lote 206, ubicado en la provincia de Talara del departamento de Piura, adjudicándolo") == "200701"
+    assert lugar_lote("Lote Z-69, ubicado en el zócalo continental frente a Tumbes") is None
