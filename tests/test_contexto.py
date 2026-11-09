@@ -66,3 +66,21 @@ def test_produccion_lee_meses_abreviados():
     b = io.BytesIO(); pd.DataFrame(filas).to_excel(b, header=False, index=False)
     d = leer("x.xlsx", b.getvalue())
     assert sorted(d.mes) == [1, 3, 9] and d.anio.iloc[0] == 2023 and d.valor.sum() == 17
+
+
+def test_produccion_lee_formato_2002():
+    import pandas as pd
+    from tremor.produccion import leer_antiguo
+    v = [None] * 9
+    d = pd.DataFrame([["PRODUCCIÓN MINERA METÁLICA DE COBRE (TMF) - 2003"] + v[1:], v,
+                      ["EMPRESA MINERA", None, None, "UBICACIÓN", None, None, 2003, None, None],
+                      [None, None, "UNIDAD MINERA", "DISTRITO", "PROVINCIA", "REGION", "ENE", "SEP", "DIC"],
+                      ["1.- CONCENTRACIÓN", None, None, None, None, None, 9.0, 9.0, 9.0],
+                      [None, "GRAN MINERÍA", None, None, None, None, 9.0, 9.0, 9.0],
+                      [None, "COMPAÑÍA MINERA ANTAMINA S.A.", None, None, None, None, 3.0, 3.0, 3.0],
+                      [None, None, "ANTAMINA", "SAN MARCOS", "HUARI", "ANCASH", 1.0, 2.0, 0],
+                      ["2.- FUNDICIÓN", None, None, None, None, None, 5.0, 5.0, 5.0],
+                      [None, "OTRA S.A.", None, None, None, None, 5.0, 5.0, 5.0],
+                      [None, None, "ILO", "ILO", "ILO", "MOQUEGUA", 5.0, 5.0, 5.0]])
+    x = leer_antiguo("COBRE.XLS", d)  # la fundición no se suma: ese cobre ya se contó en la concentración
+    assert list(x.mes) == [1, 9] and set(x.titular) == {"COMPAÑÍA MINERA ANTAMINA S.A."} and x.anio.iloc[0] == 2003

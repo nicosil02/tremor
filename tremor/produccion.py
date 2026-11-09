@@ -68,14 +68,15 @@ def leer(nombre, datos) -> pd.DataFrame:
     valor). Los formatos cambian por año: se busca la fila de títulos (la que dice TITULAR)."""
     salida = []
     for hoja, d in pd.read_excel(io.BytesIO(datos), header=None, sheet_name=None).items():
-        # ponytail: 2001-2010 traen otro formato (empresa en una fila y sus unidades debajo, tres columnas por mes);
-        # se lee desde 2011, que cubre el entrenamiento del modelo con lo que hay.
         fila = next((i for i in range(min(len(d), 30)) if any(norm(x) == "titular" for x in d.iloc[i])), None)
         if fila is None:
+            antiguo = leer_antiguo(nombre, d)
+            if len(antiguo):
+                salida.append((False, antiguo))
             continue
         titulo = " ".join(str(x) for x in d.iloc[:fila].stack())
         anio = int(re.findall(r"(20\d\d)", titulo + " " + nombre)[-1])
-        mes = {m[:3]: m for m in MESES}  # 2020-2023 abrevian: ENE, FEB, SET
+        mes = {m[:3]: m for m in MESES} | {"sep": "setiembre"}  # 2020-2023 abrevian: ENE, FEB, SET
         cols = [MESES[x.month - 1] if hasattr(x, "month") else mes.get(norm(x), norm(x)) for x in d.iloc[fila]]
         d = d.iloc[fila + 1:].set_axis(cols, axis=1)
         col = lambda *ks: next((c for c in cols if c in ks), None)
@@ -104,6 +105,49 @@ def leer(nombre, datos) -> pd.DataFrame:
     completas = [x for c, x in salida if c]
     salida = completas or [x for _, x in salida]
     return pd.concat(salida) if salida else pd.DataFrame()
+
+
+def leer_antiguo(nombre, d) -> pd.DataFrame:
+    """2001-2010: una hoja por metal, la empresa en una fila y sus unidades debajo. 2006-2010 traen tres columnas por
+    mes (principal, subproducto, total: se toma el total); 2002-2005, una, con UNIDAD MINERA una fila más abajo."""
+    u = next((i for i in range(min(len(d), 30)) if any(norm(x) == "unidad minera" for x in d.iloc[i])), None)
+    if not u:
+        return pd.DataFrame()
+    titulo = " ".join(str(x) for x in d.iloc[:u].stack())
+    anio = int(re.findall(r"(20\d\d)", titulo)[-1])
+    metal = next((m for m in METALES if m in norm(titulo)), norm(Path(nombre).stem))
+    medida = re.search(r"\(([^)]+)\)", titulo)[1] if "(" in titulo else ""
+    sub = [norm(x) for x in d.iloc[u]]
+    pos = lambda *ks: next((i for i, x in enumerate(sub) if x in ks), None)
+    c = {"unidad": pos("unidad minera"), "distrito": pos("distrito"), "provincia": pos("provincia"),
+         "departamento": pos("departamento", "region")}
+    if None in c.values():
+        return pd.DataFrame()
+    meses = {}  # mes -> columna con el total de ese mes
+    for fila in (d.iloc[u - 1], d.iloc[u]):
+        for j, x in enumerate(norm(v) for v in fila):
+            x = ({m[:3]: m for m in MESES} | {"sep": "setiembre"}).get(x, x)  # 2003-2005 abrevian: ENE, SEP
+            if x in MESES:
+                meses[MESES.index(x) + 1] = next((k for k in range(j, min(j + 4, len(sub))) if sub[k] == "total"), j)
+    filas, empresa, seccion = [], None, ""
+    for _, r in d.iloc[u + 1:].iterrows():
+        if re.match(r"\s*\d\.-", str(r.iloc[0])):
+            seccion = norm(r.iloc[0])  # "2.- REFINACIÓN": el mismo metal ya contado en la concentración
+        if "refin" in seccion or "fundic" in seccion:
+            continue
+        uni, dist = r.iloc[c["unidad"]], r.iloc[c["distrito"]]
+        nombres = [str(x).strip() for x in r.iloc[1:c["unidad"]] if pd.notna(x) and str(x).strip()]
+        if nombres:  # la empresa (o un subtotal como GRAN MINERÍA, que pisa la siguiente empresa)
+            empresa = nombres[0]
+        if pd.isna(uni) or pd.isna(dist) or not empresa:
+            continue
+        for m, k in meses.items():
+            v = pd.to_numeric(r.iloc[k], errors="coerce")
+            if v and v > 0:
+                filas.append({"mineral": metal, "unidad_medida": medida, "etapa": "", "titular": empresa,
+                              "unidad": str(uni).strip(), "departamento": r.iloc[c["departamento"]],
+                              "provincia": r.iloc[c["provincia"]], "distrito": dist, "mes": m, "valor": v, "anio": anio})
+    return pd.DataFrame(filas)
 
 
 @lru_cache(maxsize=None)

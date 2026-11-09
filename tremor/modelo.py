@@ -247,7 +247,7 @@ def panel(con):
     PR3, PR12 = ventana(PR, 3), ventana(PR, 12)
     PRC = np.log1p(PR3) - np.log1p(np.roll(PR3, 12, axis=1))  # trimestre frente al mismo del año anterior
     for x in (PR12, PRC):
-        x[:, antes(2012)] = np.nan
+        x[:, antes(2006)] = np.nan
     nivel = np.select([K > 0, F > 0, (P > 0) | (A > 0), L > 0], [4, 3, 2, 1], 0)
     F3 = ventana(F, 3)
     W = vecinos(distritos)
