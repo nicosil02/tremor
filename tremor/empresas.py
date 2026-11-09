@@ -78,18 +78,61 @@ def limpiar_proyecto(s):
     return re.sub(r"\s+", " ", s.strip(q)).title()
 
 
+CPIM = RAIZ / "datos" / "crudos" / "minem_cartera" / "cpim-2026.pdf"  # Cartera de Proyectos de Inversión Minera 2026 (MINEM, jun 2026)
+ETAPAS = ("INGENIERÍA DE DETALLE", "PRE-FACTIBILIDAD", "FACTIBILIDAD", "CONSTRUCCIÓN", "EJECUTANDO", "EJECUCIÓN")
+
+
+def cartera_minem(pdf=CPIM):
+    """Las 66 fichas de la cartera minera del MINEM: proyecto, titular, lugar, etapa, inicio y puesta en marcha.
+    Cada ficha es una página en columnas: rótulo a la izquierda y valor a su derecha, a la misma altura."""
+    import re
+    import pymupdf
+    from tremor.lugares import resolver
+    filas = []
+    for p in pymupdf.open(pdf):
+        bl = [(l["bbox"][0], l["bbox"][1], " ".join("".join(s["text"] for s in l["spans"]).split()))
+              for bk in p.get_text("dict")["blocks"] for l in bk.get("lines", [])]
+        if not any(t == "Titular Minero" for _, _, t in bl):
+            continue
+        def campo(rotulo):
+            r = next(((x, y) for x, y, t in bl if t == rotulo), None)
+            if not r:
+                return None
+            v = sorted((y, t) for x, y, t in bl if r[0] + 90 < x < r[0] + 260 and -8 < y - r[1] < 14 and t)
+            return " ".join(t for _, t in v) or None
+        titulo = next((t for x, y, t in bl if y < 60 and t.isupper() and len(t) > 3), "")
+        r = next(((x, y) for x, y, t in bl if t == "Etapa de avance"), None)  # el valor va debajo: CONCEPTUAL, FACTIBILIDAD...
+        etapa = next((t for x, y, t in sorted(bl, key=lambda b: b[1]) if r and abs(x - r[0]) < 200 and 0 < y - r[1] < 30 and t), None)
+        deps, provs, dists = (re.split(r"\s*/\s*|\s+y\s+", campo(c) or "") for c in ("Departamento", "Provincia", "Distrito"))
+        inicio, _, fin = (campo("Inicio/ﬁn de ejecución") or "").partition(" / ")
+        for k, dist in enumerate(dists):
+            ub, _ = resolver(deps[min(k, len(deps) - 1)], provs[min(k, len(provs) - 1)], dist, None)
+            filas.append({"empresa": campo("Titular Minero"), "unidad": titulo.title(), "ubigeo": ub, "etapa_minem": etapa,
+                          "inicio": inicio.strip(), "puesta_en_marcha": campo("Puesta en marcha operativa"),
+                          "subtipo": campo("Subtipo de Proyecto"), "capex": campo("Inversión CAPEX")})
+    return pd.DataFrame(filas)
+
+
 def proyectos(con, desde=2021):
     """Lo que aún no opera pero se está por construir, que también puede encender un conflicto:
     la cartera de proyectos mineros del MINEM (GEOCATMIN, edición 2023, con etapa) y los proyectos nuevos con
     estudio ambiental aprobado por el SENACE desde `desde` (minería, hidrocarburos y electricidad).
-    ponytail: la cartera del GEOCATMIN es la de 2023; la de 2025 del MINEM está solo en PDF."""
+    La cartera 2026 viene del PDF del MINEM (datos/crudos/minem_cartera, se baja a mano de gob.pe); sin él, la de 2023."""
     import geopandas as gpd
     from tremor.distritos import CARTERA
     distritos = gpd.read_file(GEOJSON)[["ubigeo", "geometry"]]
-    c = gpd.GeoDataFrame.from_features(arcgis(f"{CARTERA}/1", "nom_proy,est_proy,emp_local,inicio_opr", geometria=True), crs=4326)
-    c = gpd.sjoin(c[c.est_proy.fillna("") != "Mina"], distritos, predicate="within")
-    a = pd.DataFrame({"empresa": c.emp_local.str.strip(), "unidad": c.nom_proy.str.strip(), "tipo": "proyecto",
-                      "ubigeo": c.ubigeo, "etapa": "proyecto, " + c.est_proy.str.lower() + " (cartera MINEM 2023)"})
+    if CPIM.exists():  # la cartera 2026 del MINEM (PDF, jun 2026), con etapa, inicio y puesta en marcha
+        c = cartera_minem().dropna(subset=["ubigeo"])
+        fase = c.etapa_minem.fillna("etapa sin dato").str.lower().replace({"ejecución": "en construcción", "ejecutando": "en construcción"})
+        cuando = [f", operaría en {p}" if p and p[:2] == "20" else "" for p in c.puesta_en_marcha.fillna("")]
+        a = pd.DataFrame({"empresa": c.empresa, "unidad": c.unidad, "tipo": "proyecto", "ubigeo": c.ubigeo,
+                          "etapa": ["proyecto, " + f + w + " (cartera MINEM 2026)" for f, w in zip(fase, cuando)],
+                          "nuevo": c.subtipo.fillna("").str.startswith("Nuevo")})
+    else:  # respaldo: la cartera 2023 del GEOCATMIN
+        c = gpd.GeoDataFrame.from_features(arcgis(f"{CARTERA}/1", "nom_proy,est_proy,emp_local,inicio_opr", geometria=True), crs=4326)
+        c = gpd.sjoin(c[c.est_proy.fillna("") != "Mina"], distritos, predicate="within")
+        a = pd.DataFrame({"empresa": c.emp_local.str.strip(), "unidad": c.nom_proy.str.strip(), "tipo": "proyecto",
+                          "ubigeo": c.ubigeo, "etapa": "proyecto, " + c.est_proy.str.lower() + " (cartera MINEM 2023)"})
     s = pd.read_sql("SELECT ubigeo, anio, actividad, tipo, proyecto, titular FROM senace_certificacion "
                     f"WHERE anio >= {desde} AND tipo IN {SENACE_NUEVOS}", con)
     b = pd.DataFrame({"empresa": s.titular.str.strip(), "unidad": s.proyecto.map(limpiar_proyecto), "tipo": "proyecto",
@@ -104,18 +147,22 @@ def proyectos(con, desde=2021):
     pal = lambda u: {w for w in norm(u).replace("-", " ").split() if w not in VACIAS}
     igual = lambda x, y: bool(x and y) and (x <= y or y <= x)
     oefa = [(e, u, str(ub), pal(u)) for e, u, ub in con.execute("SELECT empresa, unidad, ubigeo FROM operacion")]
-    t = []
+    t, ya = [], set()
     for f in pd.concat([a, b]).itertuples(index=False):
         p = pal(f.unidad)
-        cand = [(q == p, -len(q ^ p), e, u) for e, u, ub, q in oefa if ub == str(f.ubigeo) and igual(p, q)]
-        hay = max(cand)[2:] if cand else None  # "Michiquillay" es la unidad de Southern, no los pasivos de Activos Mineros
-        if hay:
-            if "ampliacion" not in p and "cartera" in f.etapa:
+        cand = [(q == p, ub == str(f.ubigeo), -len(q ^ p), e, u) for e, u, ub, q in oefa  # misma provincia basta: la
+                if ub[:4] == str(f.ubigeo)[:4] and igual(p, q)]                                # cartera da a veces solo la provincia
+        hay = max(cand)[3:] if cand else None  # "Michiquillay" es la unidad de Southern, no los pasivos de Activos Mineros
+        if hay or f.unidad in ya:
+            ya.add(f.unidad)
+            if not hay:
+                continue
+            if getattr(f, "nuevo", True) is True and "cartera" in f.etapa:  # una ampliación no vuelve proyecto a la mina
                 con.execute("UPDATE operacion SET etapa = ? WHERE empresa = ? AND unidad = ? AND etapa = 'operación'",
-                            ("unidad OEFA; " + f.etapa.replace("proyecto, ", "en "), *hay))
-        elif not any(str(g.ubigeo) == str(f.ubigeo) and igual(p, pal(g.unidad)) for g in t):
+                            (f"unidad OEFA; proyecto {f.unidad}: " + f.etapa.replace("proyecto, ", ""), *hay))
+        elif not any(str(g.ubigeo)[:4] == str(f.ubigeo)[:4] and igual(p, pal(g.unidad)) for g in t):
             t.append(f)
-    pd.DataFrame(t).to_sql("operacion", con, if_exists="append", index=False)
+    pd.DataFrame(t).drop(columns="nuevo", errors="ignore").to_sql("operacion", con, if_exists="append", index=False)
     con.commit()
     print(f"{len(t)} proyectos-distrito nuevos ({len(a)} filas de la cartera MINEM, {len(b)} con EIA del SENACE desde {desde})")
 

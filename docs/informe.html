@@ -194,6 +194,7 @@
   .pesas .hit { fill: transparent; }
   .pesas .fila:hover .hit { fill: rgb(19 48 74 / .04); }
   table.riesgo td, table.riesgo th { padding-top: 7px; padding-bottom: 7px; }
+  caption.rotulo { caption-side: top; text-align: left; }
   .rotulo { font-size: 13.5px; font-weight: 650; color: var(--tinta); margin: 0 0 8px; }
   table.cuadro { font-size: 13.5px; border-top: 1.5px solid var(--tinta); border-bottom: 1.5px solid var(--tinta); }
   table.cuadro th { background: #eef1f3; color: var(--tinta); font-size: 12.5px; font-weight: 650; padding: 6px 8px; border-bottom: 1px solid #c9d0d5; }
@@ -220,7 +221,7 @@
     h1 { font-size: 21pt; } .evaluacion { font-size: 11.5pt; max-width: none; }
     section { margin-top: 18px; padding-top: 14px; } h2 { font-size: 12.5pt; }
     table { font-size: 9.5pt; } table.cuadro { font-size: 8.8pt; } table.cuadro th { font-size: 8.5pt; } .rotulo { font-size: 9.5pt; }
-    tr, .pesas, .evaluacion, table.cuadro { break-inside: avoid; } h2 { break-after: avoid; }
+    tr, .pesas, .evaluacion, table.cuadro { break-inside: avoid; } h2, .rotulo { break-after: avoid; }
     .fuente, .para, .anexo { font-size: 8.5pt; } .seguir { font-family: Archivo, sans-serif; font-size: 10pt; } .enl { display: none; } .anexo { margin-top: 18px; padding-top: 8px; } .hoja .membrete { padding-bottom: 6px; } h1 { margin-bottom: 12px; }
     .pesas .fila:hover .hit { fill: transparent; }
     .vista-alerta { display: none !important; }
@@ -334,6 +335,11 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
     // Nombres largos en dos líneas, nunca cortados: "Fundición y Refinería de Cobre - Ilo / Ilo (Conchuelas)"
     const partir = (s, n = 30) => { const ls = [""]; for (const w of s.split(" ")) { const l = ls.length - 1;
       if (ls[l] && (ls[l] + " " + w).length > n) ls.push(w); else ls[l] = (ls[l] ? ls[l] + " " : "") + w; } return ls; };
+    // "proyecto, en construcción, operaría en 2027 (cartera MINEM 2026)" → "En construcción, operaría en 2027"
+    const situacion = z => { const e = (z.os.find(o => o.etapa && o.etapa !== "operación") || z.os[0]).etapa || "operación";
+      const s = e.replace(/^unidad OEFA; proyecto [^:]+: |^proyecto, |^lote en exploración.*/, m => m.startsWith("lote") ? "exploración" : "")
+        .replace(/ \((cartera|OEFA)[^)]*\)/, "").replace(/^(etapa sin dato|operación)$/, e === "operación" ? "En operación" : "Proyecto");
+      return s.charAt(0).toUpperCase() + s.slice(1); };
     const lugarC = u => { const [d, p] = lugar(u).split(", "); return d === p ? d : lugar(u); };
     // Gráfico de pesas: promedio de 12 meses (hueco) → probabilidad del mes (lleno). Un tono, dos intensidades.
     function pesas(zs) {
@@ -401,15 +407,15 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
       <section><h2>Riesgo por operación</h2>
         <p class="rotulo">Gráfico 1. Probabilidad de paro o bloqueo en la zona de cada operación, ${mesTxt} de ${hoy.slice(0, 4)}</p>
         ${pesas(top8)}
-        <table class="cuadro riesgo"><thead><tr><th>Operación</th><th>Distrito</th><th class="num">${mesTxt.charAt(0).toUpperCase() + mesTxt.slice(1)}</th><th class="num">Prom. 12 meses</th><th class="num">Var. (pp)</th><th>Nivel</th></tr></thead><tbody>
+        <table class="cuadro riesgo"><thead><tr><th>Operación</th><th>Distrito</th><th>Situación</th><th class="num">${mesTxt.charAt(0).toUpperCase() + mesTxt.slice(1)}</th><th class="num">Prom. 12 meses</th><th class="num">Var. (pp)</th><th>Nivel</th></tr></thead><tbody>
         ${top8.map(z => { const p = mesP(z.a), n = z.a.normal_zona_1m, d = Math.round((z.a.cambio_zona_1m ?? 0) * 100);
-          return `<tr><td>${esc(nombreZ(z))}</td><td>${esc(lugar(z.u).split(", ")[0])}</td><td class="num">${pct(p)}</td><td class="num">${pct(n)}</td><td class="num">${d > 0 ? "+" : ""}${d}</td><td>${BANDAS[nivel(p)]}</td></tr>`; }).join("")}</tbody></table>
+          return `<tr><td>${esc(nombreZ(z))}</td><td>${esc(lugar(z.u).split(", ")[0])}</td><td>${esc(situacion(z))}</td><td class="num">${pct(p)}</td><td class="num">${pct(n)}</td><td class="num">${d > 0 ? "+" : ""}${d}</td><td>${BANDAS[nivel(p)]}</td></tr>`; }).join("")}</tbody></table>
         <p class="fuente">Nota. ${zonas.length > 8 ? `Se muestran las ocho operaciones con mayor probabilidad de las ${zonas.length} de la empresa. ` : ""}La zona comprende el distrito de la operación y los distritos colindantes. Nivel bajo, menos de 10%. Medio, de 10% a 25%. Alto, de 25% a 50%. Crítico, más de 50%.<br>Fuente: Defensoría del Pueblo, Base de protestas EGPP-PUCP, INEI, MINEM y otras. Elaboración: Tremor.</p>
       </section>
 
       <section><h2>Hechos de la semana</h2>
-        ${hechos ? `<p class="rotulo">Cuadro ${"1"}. Protestas, anuncios y bloqueos en las provincias de sus operaciones</p>
-          <table class="cuadro"><thead><tr><th>Fecha</th><th>Hecho</th><th>Ubicación</th><th>Fuente</th></tr></thead><tbody>
+        ${hechos ? `
+          <table class="cuadro"><caption class="rotulo">Cuadro ${"1"}. Protestas, anuncios y bloqueos en las provincias de sus operaciones</caption><thead><tr><th>Fecha</th><th>Hecho</th><th>Ubicación</th><th>Fuente</th></tr></thead><tbody>
           ${vias.map(s => `<tr><td>${diaC(dia(s.fecha_evento))}</td><td>Bloqueo de la vía ${esc(s.via)}, vigente. ${esc(s.contexto || "")}</td><td>${esc(nombre(s.distrito))}</td><td>SUTRAN</td></tr>`).join("")}
           ${ev.map(e => `<tr><td>${diaC(dia(e.fecha_evento || e.fecha_anuncio))}</td><td>${esc(e.titular)}${e.estado === "anunciada" ? " (anunciada)" : ""}</td><td>${esc(lugar(e.ubigeo) || "s. d.")}</td><td>${esc(e.medio)}</td></tr>`).join("")}
           </tbody></table><p class="fuente">Fuente: prensa nacional y regional, radios locales y SUTRAN. Elaboración: Tremor.</p>`
@@ -417,8 +423,8 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
       </section>
 
       <section><h2>Conflictos registrados con la empresa</h2>
-        <p class="rotulo">Cuadro ${hechos ? 2 : 1}. Conflictos sociales vigentes que involucran a ${esc(corto)}</p>
-        <table class="cuadro"><thead><tr><th class="num">N.º</th><th>Caso</th><th>Ubicación</th><th>Asunto principal</th><th>Estado</th><th>Diálogo</th></tr></thead><tbody>
+        
+        <table class="cuadro"><caption class="rotulo">Cuadro ${hechos ? 2 : 1}. Conflictos sociales vigentes que involucran a ${esc(corto)}</caption><thead><tr><th class="num">N.º</th><th>Caso</th><th>Ubicación</th><th>Asunto principal</th><th>Estado</th><th>Diálogo</th></tr></thead><tbody>
         ${(deEmpresa.length ? deEmpresa : casos).slice(0, 8).map((c, k) => `<tr><td class="num">${k + 1}</td><td>${esc(c.nombre)}</td><td>${esc(lugar(c.ubigeo) || "s. d.")}</td>
           <td>${esc(asunto(c))}</td><td>${c.estado === "activo" ? "Activo" : "Latente"}</td><td>${/NO HAY/i.test(c.dialogo || "") ? "No" : /HAY/i.test(c.dialogo || "") ? "Sí" : "s. d."}</td></tr>`).join("")}
         </tbody></table>
