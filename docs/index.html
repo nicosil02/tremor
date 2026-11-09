@@ -216,7 +216,7 @@
   .leyenda:not([open]) summary { margin-bottom: 0; }
   .leyenda .riesgo p { margin: 0 0 6px; line-height: 1.3; color: var(--tinta-2); }
   .maplibregl-ctrl-group button { width: 40px; height: 40px; }
-  .leyenda { max-width: 300px; }
+  .leyenda { max-width: 230px; font-size: 14px; }
   .leyenda b { display: block; font-weight: 650; color: var(--tinta); margin-bottom: 6px; line-height: 1.25; }
   .leyenda .rampa { display: grid; grid-template-columns: repeat(4, 1fr); height: 10px; }
   .leyenda .cortes { display: grid; grid-template-columns: repeat(4, 1fr); font-size: 14px; color: var(--tinta-3); margin-top: 2px; }
@@ -345,13 +345,12 @@
       <div class="riesgo"><p id="ley-riesgo">Probabilidad de paro o bloqueo en la zona de influencia</p>
         <div class="rampa"><i style="background:var(--cobre-1)"></i><i style="background:var(--cobre-2)"></i><i style="background:var(--cobre-3)"></i><i style="background:var(--cobre-4)"></i></div>
         <div class="cortes"><span>Bajo</span><span>10%</span><span>25%</span><span>50%</span></div></div>
-      <div class="punto"><i style="background:var(--cobre-3);box-shadow:0 0 0 2px #fff;width:12px;height:12px"></i>Unidad en operación</div>
-      <div class="punto"><i style="background:#fff;box-shadow:inset 0 0 0 3px var(--cobre-3);width:12px;height:12px"></i>Unidad en exploración, proyecto o paralizada</div>
+      <div class="punto"><i style="background:var(--cobre-3);box-shadow:0 0 0 2px #fff;width:12px;height:12px"></i>En operación</div>
+      <div class="punto"><i style="background:#fff;box-shadow:inset 0 0 0 3px var(--cobre-3);width:12px;height:12px"></i>Exploración o proyecto</div>
       <div class="detalle">
-        <div class="linea"><i class="l-unidad"></i>Área de la unidad minera, según OEFA</div>
-        <div class="linea"><i class="l-sel"></i>Unidad que estás viendo</div>
-        <div class="linea"><i class="l-zona"></i>Zona de influencia, su distrito y los vecinos</div>
-        <div class="linea"><i class="l-conf"></i>Comunidad en conflicto con la operación</div></div>
+        <div class="linea"><i class="l-unidad"></i>Área de la unidad</div>
+        <div class="linea"><i class="l-zona"></i>Zona de influencia</div>
+        <div class="linea"><i class="l-conf"></i>Comunidad en conflicto</div></div>
       <div class="punto"><i style="background:var(--patina)"></i>Protesta anunciada</div>
       <div class="punto"><i style="background:var(--tinta-3)"></i>Protesta ocurrida</div>
       <div class="punto"><i style="background:#f4c35a;border-radius:2px;height:4px;width:16px"></i>Carretera de salida</div>
@@ -572,10 +571,12 @@ function iniciar(D, G, H, C) {
   const hayMes = D.alerta.some(a => a[K.p] != null);
   const mesP = a => hayMes ? a[K.p] : a.prob_zona;
   const enMes = hayMes && !EXT ? `en ${mes(D.alerta.find(a => a.ventana_1m)?.ventana_1m)}` : `de aquí a ${hasta}`;
-  document.getElementById("ley-riesgo").textContent = `Probabilidad de ${QUE} en la zona de influencia, ${enMes}`;
+  document.getElementById("ley-riesgo").textContent = `Riesgo de ${EXT ? "conflicto" : "paro o bloqueo"} ${enMes}`;
   const sel = document.getElementById("ordenar");
   let enPais = false;
   const uni = o => o.unidad + (o.tipo === "proyecto" ? " (proyecto)" : "");
+  // Opera: todo lo que no figura como exploración, proyecto o paralizado (lo fiscalizado por OEFA cuenta como activo)
+  const opera = o => o.tipo !== "proyecto" && !/exploración|proyecto|paraliz/.test(o.etapa || "");
   const titFila = f => enPais ? uni(f.os[0]).split(",")[0] : uni(f.os[0]);
   const situ = o => o.tipo === "proyecto" ? "proyecto" : /^operación/.test(o.etapa || "") ? "en operación"
     : /exploración/.test(o.etapa || "") ? "exploración" : "fiscalizada por OEFA";
@@ -1154,8 +1155,8 @@ function iniciar(D, G, H, C) {
     map.getSource("zonas").setData({ type: "FeatureCollection", features: feats });
     // En la vista de una empresa el color va en sus operaciones; la zona queda como un fondo tenue
     map.setPaintProperty("zonas", "fill-opacity", ["interpolate", ["linear"], ["zoom"], 9, 0.75, 10.5, 0]);  // el mismo color de riesgo en el país y en la empresa
-    const pts = [...filas.map((f, i) => ({ c: puntoOp(f), k: "op", i, p: mesP(f.a) ?? 0, op: f.os[0].tipo === "proyecto" || /exploración|proyecto|paraliz/.test(f.os[0].etapa || "") ? 0 : 1, e: !pais, t: titFila(f), pc: mesP(f.a) == null ? "" : pct(mesP(f.a)) })), ...puntosEventos].filter(p => p.c)
-      .map(p => ({ type: "Feature", geometry: { type: "Point", coordinates: p.c }, properties: { k: p.k, h: p.h || "", t: p.t || "", pc: p.pc || "", i: p.i ?? -1, p: p.p ?? 0, e: p.e ? 1 : 0 } }));
+    const pts = [...filas.map((f, i) => ({ c: puntoOp(f), k: "op", i, p: mesP(f.a) ?? 0, op: (pais ? D.operaciones.filter(o => o.ubigeo === f.u) : f.os).some(opera) ? 1 : 0, e: !pais, t: titFila(f), pc: mesP(f.a) == null ? "" : pct(mesP(f.a)) })), ...puntosEventos].filter(p => p.c)
+      .map(p => ({ type: "Feature", geometry: { type: "Point", coordinates: p.c }, properties: { k: p.k, h: p.h || "", t: p.t || "", pc: p.pc || "", i: p.i ?? -1, p: p.p ?? 0, e: p.e ? 1 : 0, op: p.op ?? 1 } }));
     map.getSource("puntos").setData({ type: "FeatureCollection", features: pts });
     const cs = filas.map(f => puntoOp(f) || centroDe(f.u)).filter(Boolean);
     if (cs.length && !pais) {
