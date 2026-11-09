@@ -76,7 +76,7 @@ paro. Es ordenar todas las zonas por riesgo con razones verificables y avisar cu
   regla obvia, "donde hubo, habrá", acierta 19%, y la tasa base es 11%. El modelo le gana a esa regla en las cuatro
   ventanas probadas desde 2016.
 - En el [expediente de casos](docs/casos.md), de 132 medidas de fuerza contra operaciones desde 2024, el modelo
-  tenía la zona entre el 5% más riesgoso antes del 47%. Con la regla obvia, juntos llegan a 59%. Hay 20 casos que
+  tenía la zona entre el 5% más riesgoso antes del 48%. Con la regla obvia, juntos llegan a 61%. Hay 23 casos que
   el modelo vio y la regla no, como Velille (Constancia) y Pallpata (Antapaccay).
 - No predice crisis con víctimas mejor que la regla obvia, y no lo prometemos.
 
