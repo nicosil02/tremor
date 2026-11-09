@@ -42,6 +42,8 @@ QUECHUA_SUR = {"CUSCO", "PUNO", "AREQUIPA", "MOQUEGUA", "TACNA"}  # quechua Cusc
 def radios(grupo=None, grupos=1):
     with open(CATALOGO, encoding="utf-8") as f:
         filas = list(csv.DictReader(f))
+    if os.environ.get("GITHUB_ACTIONS") and not os.environ.get("YT_DLP_PROXY"):  # YouTube bloquea las IP de GitHub:
+        filas = [f for f in filas if "youtube.com" not in f["stream"]]      # sin proxy, la TV se graba desde una PC
     return filas if grupo is None else filas[grupo - 1::grupos]
 
 

@@ -271,12 +271,17 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
     try { const r = await fetch(u, { cache: "no-cache" }); if (r.ok) { D = await r.json(); break; } } catch (e) {}
   }
   const A = new Map(D.alerta.map(a => [String(a.ubigeo), a]));
-  const mesP = a => a?.prob_zona_1m ?? a?.prob_zona;
+  // El mismo número que la página: conflicto contra la actividad extractiva en 3 meses (con datos viejos, paro en el mes)
+  const EXT = D.alerta.some(a => a.normal_zona_ext != null);
+  const K = EXT ? { p: "prob_zona_extractivo", n: "normal_zona_ext", c: "cambio_zona_ext", r: "razones_cambio_ext" }
+                : { p: "prob_zona_1m", n: "normal_zona_1m", c: "cambio_zona_1m", r: "razones_cambio_1m" };
+  const PARO = EXT ? "conflicto" : "paro";
+  const mesP = a => a?.[K.p] ?? a?.prob_zona;
   const zonaDe = u => [u, ...((D.vecinos || {})[u] || [])];
   const lugar = u => { const a = A.get(String(u)); const [, prov, dist] = (a?.lugar || "").split(" / ").map(nombre); return dist ? `${dist}, ${prov}` : ""; };
   const hoy = String(D.creado).slice(0, 10), desde = new Date(new Date(hoy + "T12:00") - 29 * 864e5).toISOString().slice(0, 10);
-  const mesTxt = new Date((D.alerta.find(a => a.ventana_1m)?.ventana_1m || hoy.slice(0, 7)) + "-15").toLocaleDateString("es-PE", { month: "long" }).toLowerCase();
-  const subidas = a => String(a?.razones_cambio_1m || "").split(" · ").filter(s => s.startsWith("sube")).map(s => s.replace(/^sube:\s*/, ""));
+  const mesTxt = EXT ? "los próximos tres meses" : new Date((D.alerta.find(a => a.ventana_1m)?.ventana_1m || hoy.slice(0, 7)) + "-15").toLocaleDateString("es-PE", { month: "long" }).toLowerCase();
+  const subidas = a => String(a?.[K.r] || "").split(" · ").filter(s => s.startsWith("sube")).map(s => s.replace(/^sube:\s*/, ""));
 
   const chips = document.getElementById("chips"), vistas = document.getElementById("vistas");
   chips.innerHTML = EMPRESAS.map(([n, k]) => `<button type="button" data-k="${k}">${n}</button>`).join("");
@@ -310,7 +315,7 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
     const activos = casos.filter(c => c.estado === "activo"), sinDialogo = casos.filter(c => /NO HAY/i.test(c.dialogo || ""));
     const altos = zonas.filter(z => nivel(mesP(z.a)) >= 2), top = zonas[0];
     const niv = Math.max(0, ...zonas.map(z => nivel(mesP(z.a))));
-    const media = zonas.reduce((s, z) => s + (z.a?.cambio_zona_1m ?? 0), 0) / Math.max(1, zonas.length);
+    const media = zonas.reduce((s, z) => s + (z.a?.[K.c] ?? 0), 0) / Math.max(1, zonas.length);
     const tendencia = media > 0.02 ? ["sube", "En alza frente a su promedio de 12 meses"] : media < -0.02 ? ["baja", "A la baja frente a su promedio de 12 meses"] : ["igual", "Estable frente a su promedio de 12 meses"];
     // Motores: las razones que más se repiten entre sus operaciones
     const motores = MOTOR.map(([re, corto_, largo_]) => ({ corto: corto_, largo: largo_, n: zonas.filter(z => subidas(z.a).some(s => re.test(s))).length })).filter(m => m.n).sort((a, b) => b.n - a.n);
@@ -357,15 +362,15 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
       const filas = zs.map(z => ({ nom: partir(nombreZ(z)), lug: partir(lugarC(z.u), 36) }));
       const alto = filas.map(f => Math.max(40, (f.nom.length + f.lug.length) * linea + 10));
       const ys = alto.map((h, i) => arriba + alto.slice(0, i).reduce((a, b) => a + b, 0) + h / 2), H = arriba + alto.reduce((a, b) => a + b, 0) + 6;
-      const tope = Math.max(0.5, Math.ceil(Math.max(...zs.map(z => Math.max(mesP(z.a) ?? 0, z.a.normal_zona_1m ?? 0))) * 10) / 10);
+      const tope = Math.max(0.5, Math.ceil(Math.max(...zs.map(z => Math.max(mesP(z.a) ?? 0, z.a[K.n] ?? 0))) * 10) / 10);
       const x = v => izq + (W - izq - der) * Math.min(v, tope) / tope;
       const marcas = [[0, "0%"], [0.1, "10%"], [0.25, "25%"], [0.5, "50%"]].filter(m => m[0] <= tope);
       const tramos = [[0.1, 0.25, "medio"], [0.25, 0.5, "alto"], [0.5, tope, "crítico"]].filter(r => r[0] < tope);
       return `<div class="pesas"><div class="clave"><span><i class="pt lleno"></i>${mesTxt.charAt(0).toUpperCase() + mesTxt.slice(1)}</span><span><i class="pt hueco"></i>Promedio de los últimos 12 meses</span></div>
-        <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Probabilidad de paro por operación en ${mesTxt} frente a su promedio de 12 meses">
+        <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Probabilidad de ${PARO} por operación en ${mesTxt} frente a su promedio de 12 meses">
         ${tramos.map(([a, b, n]) => `<text x="${(x(a) + x(b)) / 2}" y="16" class="tramo">${n}</text>`).join("")}
         ${marcas.map(([v, l]) => `<line x1="${x(v)}" x2="${x(v)}" y1="${arriba - 14}" y2="${H}" class="grilla"/><text x="${x(v)}" y="${arriba - 20}" class="eje">${l}</text>`).join("")}
-        ${zs.map((z, i) => { const y = ys[i], fila = alto[i], p = mesP(z.a) ?? 0, n = z.a.normal_zona_1m ?? p, f = filas[i];
+        ${zs.map((z, i) => { const y = ys[i], fila = alto[i], p = mesP(z.a) ?? 0, n = z.a[K.n] ?? p, f = filas[i];
           const y0 = y - ((f.nom.length + f.lug.length) * linea) / 2 + 11;
           return `<g class="fila"><title>${esc(nombreZ(z))}: ${pct(p)} en ${mesTxt}, promedio de 12 meses ${pct(n)}</title>
             <rect x="0" y="${y - fila / 2}" width="${W}" height="${fila}" class="hit"/>
@@ -382,14 +387,14 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
     const asunto = c => { const s = `${c.resumen || ""} ${c.nombre}`, xs = ASUNTOS.filter(([re]) => re.test(s)).map(x => x[1]).slice(0, 3);
       const r = xs.length ? xs.join(", ") : (c.tema || "sin dato").replace(/_/g, " "); return r.charAt(0).toUpperCase() + r.slice(1); };
     const titular = altos.length
-      ? `Riesgo alto de paro en ${num(altos.length)} de sus ${num(zonas.length)} zonas de ${provsOp} durante ${mesTxt}`
-      : `Riesgo ${BANDAS[niv].toLowerCase()} de paro en las operaciones de ${provsOp} durante ${mesTxt}`;
+      ? `Riesgo alto de ${PARO} en ${num(altos.length)} de sus ${num(zonas.length)} zonas de ${provsOp} durante ${mesTxt}`
+      : `Riesgo ${BANDAS[niv].toLowerCase()} de ${PARO} en las operaciones de ${provsOp} durante ${mesTxt}`;
     const motor = motores[0] ? MOTOR_TXT[motores[0].corto] : "";
     const evaluacion = [
       hechos ? `En los últimos 30 días se registraron ${num(hechos, false) === "un" ? "una" : num(hechos)} ${hechos === 1 ? "protesta o bloqueo" : "protestas o bloqueos"} en las provincias de sus operaciones o en sus rutas, que se detallan más adelante.`
              : `En los últimos 30 días no se registraron protestas ni bloqueos en ${provsOp} ni en ${corredor}.`,
-      altos.length ? `${hechos ? "La" : "No obstante, la"} probabilidad de paro para ${mesTxt} se mantiene en nivel alto en ${altos.length > 3 ? `${altos.slice(0, 3).map(z => `${nombreZ(z)} (${pct(mesP(z.a))})`).join(", ")} y otras ${num(altos.length - 3)} zonas` : lista(altos.map(z => `${nombreZ(z)} (${pct(mesP(z.a))})`))}.`
-                   : `La operación con mayor exposición es ${nombreZ(top)}, con una probabilidad de paro de ${pct(mesP(top.a))} para ${mesTxt}.`,
+      altos.length ? `${hechos ? "La" : "No obstante, la"} probabilidad de ${PARO} para ${mesTxt} se mantiene en nivel alto en ${altos.length > 3 ? `${altos.slice(0, 3).map(z => `${nombreZ(z)} (${pct(mesP(z.a))})`).join(", ")} y otras ${num(altos.length - 3)} zonas` : lista(altos.map(z => `${nombreZ(z)} (${pct(mesP(z.a))})`))}.`
+                   : `La operación con mayor exposición es ${nombreZ(top)}, con una probabilidad de ${PARO} de ${pct(mesP(top.a))} para ${mesTxt}.`,
       motor ? `El principal factor es ${motor}.` : "",
       deEmpresa.length ? `La Defensoría del Pueblo registra ${num(deEmpresa.length, false)} conflictos vigentes con la empresa, de los cuales ${num(activosE.length, false)} se encuentran activos. ${(() => { const con = deEmpresa.filter(c => /HAY/i.test(c.dialogo || "") && !/NO HAY/i.test(c.dialogo || "")).length;
         const s = sinDialogoE.length, uno = n => n === 1 ? "uno" : num(n, false);
@@ -415,10 +420,10 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
       <p class="evaluacion">${esc(evaluacion)}</p>
 
       <section><h2>Riesgo por operación</h2>
-        <p class="rotulo">Gráfico 1. Probabilidad de paro o bloqueo en la zona de cada operación, ${mesTxt} de ${hoy.slice(0, 4)}</p>
+        <p class="rotulo">Gráfico 1. Probabilidad de ${EXT ? "paro, bloqueo o toma contra la actividad extractiva" : "paro o bloqueo"} en la zona de cada operación, ${mesTxt}${EXT ? "" : ` de ${hoy.slice(0, 4)}`}</p>
         ${pesas(top8)}
         <table class="cuadro riesgo"><thead><tr><th>Operación</th><th>Distrito</th><th>Situación</th><th class="num">${mesTxt.charAt(0).toUpperCase() + mesTxt.slice(1)}</th><th class="num">Prom. 12 meses</th><th class="num">Var. (pp)</th><th>Nivel</th></tr></thead><tbody>
-        ${top8.map(z => { const p = mesP(z.a), n = z.a.normal_zona_1m, d = Math.round((z.a.cambio_zona_1m ?? 0) * 100);
+        ${top8.map(z => { const p = mesP(z.a), n = z.a[K.n], d = Math.round((z.a[K.c] ?? 0) * 100);
           return `<tr><td>${esc(nombreZ(z))}</td><td>${esc(lugar(z.u).split(", ")[0])}</td><td>${esc(situacion(z))}</td><td class="num">${pct(p)}</td><td class="num">${pct(n)}</td><td class="num">${d > 0 ? "+" : ""}${d}</td><td>${BANDAS[nivel(p)]}</td></tr>`; }).join("")}</tbody></table>
         <p class="fuente">Nota. ${zonas.length > 8 ? `Se muestran las ocho zonas con mayor probabilidad de las ${zonas.length} de la empresa. ` : ""}La zona comprende el distrito de la operación y los distritos colindantes. Nivel bajo, menos de 10%. Medio, de 10% a 25%. Alto, de 25% a 50%. Crítico, más de 50%.<br>Fuente: Defensoría del Pueblo, Base de protestas EGPP-PUCP, INEI, MINEM y otras. Elaboración: Tremor.</p>
       </section>
@@ -449,7 +454,7 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
     const radiosZona = [...provs].flatMap(p => (D.radios || {})[p] || []);
     const radio = radiosZona.find(r => /radio/i.test(r)) || radiosZona[0] || "una radio local";
     const radioCorto = nombre(radio.replace(/\s+\d{2,3}([.,]\d)?\s*(fm|am)?.*$/i, "")).replace(/^Radio Radio/, "Radio");
-    const sub = zonas.filter(z => z.a.cambio_zona_1m != null).sort((x, y) => y.a.cambio_zona_1m - x.a.cambio_zona_1m)[0];
+    const sub = zonas.filter(z => z.a[K.c] != null).sort((x, y) => y.a[K.c] - x.a[K.c])[0];
     const prov = z => lugar(z.u).split(", ")[1], dist = z => lugar(z.u).split(", ")[0];
     const enProv = p => zonas.filter(z => prov(z) === p).map(nombreZ);
     const via = corredor === "el Corredor Minero del Sur" ? "la vía PE-3SG (Corredor Minero del Sur)" : corredor;
@@ -466,9 +471,9 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
         p: `En asamblea, comunidades de ${dist(otra)} acordaron evaluar medidas de lucha si no hay respuesta a sus reclamos por ${temas[0] ? temas[0][0] : "compromisos"}.`,
         a: `${lista(enProv(prov(otra)))}.`,
         f: `${radioCorto} y prensa regional` },
-      ...(sub ? [{ sev: "media", hora: "7:42", c: `${nombreZ(sub)}: riesgo de paro sube a ${pct(mesP(sub.a))}`, pv: `${Math.round(sub.a.cambio_zona_1m * 100)} puntos sobre lo normal para ${mesTxt}`,
-        t: `Riesgo de paro en ${nombreZ(sub)} sube a ${pct(mesP(sub.a))} en ${mesTxt}`,
-        p: `Pasa a nivel ${BANDAS[nivel(mesP(sub.a))].toLowerCase()}, ${Math.round(sub.a.cambio_zona_1m * 100)} puntos sobre su promedio del último año. ${motores[0] ? `Lo empuja ${MOTOR_TXT[motores[0].corto].split(",")[0]}.` : ""}`,
+      ...(sub ? [{ sev: "media", hora: "7:42", c: `${nombreZ(sub)}: riesgo de ${PARO} sube a ${pct(mesP(sub.a))}`, pv: `${Math.round(sub.a[K.c] * 100)} puntos sobre lo normal para ${mesTxt}`,
+        t: `Riesgo de ${PARO} en ${nombreZ(sub)} sube a ${pct(mesP(sub.a))} en ${mesTxt}`,
+        p: `Pasa a nivel ${BANDAS[nivel(mesP(sub.a))].toLowerCase()}, ${Math.round(sub.a[K.c] * 100)} puntos sobre su promedio del último año. ${motores[0] ? `Lo empuja ${MOTOR_TXT[motores[0].corto].split(",")[0]}.` : ""}`,
         a: `${nombreZ(sub)} y los distritos vecinos de ${dist(sub)}.`,
         f: "Modelo Tremor" }] : [])];
     // ---- Simulación de la pantalla bloqueada de un teléfono: llegan, se apilan y se abren como notificaciones reales
