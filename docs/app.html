@@ -87,6 +87,7 @@
     #mapa, #mapa[hidden] { display: block; inset: 0 0 0 440px; }
     .leyenda-via { left: 452px; top: 12px; }
     .fila:hover { background: #eef2f1; }
+    button.vermapa.ir { display: none; }
   }
   nav { position: fixed; z-index: 6; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr);
     height: calc(60px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); background: var(--papel); border-top: 1px solid var(--linea); }
@@ -177,7 +178,7 @@ function armar() {
     if (!nombra && !(trans && u === "00") && !zona.has(u) && !tramoDe(u, e)) continue;
     const anun = e.estado === "anunciada", viene = anun && f >= HOY;
     const cerca = unidades.find(x => x.zona.has(u));
-    avisos.push({ f, urge: viene || (anun && dias(f) > -3), tipo: "Protesta", e, cerca, trans, tramo: tramoDe(u, e),
+    avisos.push({ f, urge: viene || (anun && dias(f) > -3), tipo: "Protesta", e, cerca, trans, tramo: tramoDe(u, e), tramos: tramos.filter(r => toca(r, u, e)),
       t: `${accion(e)}${e.actor ? ` de ${e.actor.toLowerCase()}` : ""}`,
       w: viene ? cuando(f) : dia(f),
       s: [u === "00" ? (trans ? "Puede frenar sus despachos" : "Lugar sin precisar") : !zona.has(u) && tramoDe(u, e) ? `${lugar(u)}, en su ruta` : lugar(u), viene ? "" : anun ? "anunciada" : "ocurrió"].filter(Boolean).join(", ") });
@@ -215,7 +216,7 @@ function cabecera(atras, txt) {
     : `<select id="emp" class="titulo" aria-label="Empresa">${LISTA
         .map(n => `<option${n === empresa ? " selected" : ""}>${n}</option>`).join("")}</select>`;
   const at = document.querySelector("#cab .atras"); if (at) at.onclick = volver;
-  const se = document.getElementById("emp"); if (se) se.onchange = () => { empresa = se.value; guardar("tremor-empresa", empresa); X = armar(); pila = []; ir(actual); };
+  const se = document.getElementById("emp"); if (se) se.onchange = () => { SEL = null; empresa = se.value; guardar("tremor-empresa", empresa); X = armar(); pila = []; ir(actual); };
 }
 
 const VISTAS = {
@@ -238,7 +239,7 @@ const VISTAS = {
           `<li class="${r.estado[0]}"><button type="button" data-tramo="${i}"><b>${esc(r.nombre)}</b><span class="modo">${esc(r.modo)}, más expuesto ${esc(lugar(r.peor))}</span>${r.estado[0] !== "ok" ? `<span class="aviso-t">${esc(r.estado[1])}${r.vago ? ` en ${esc(r.vago.split(" en ")[1].replace(" sin distrito", ""))}` : ""}</span>` : ""}<span class="est">${pct(r.p)}</span></button></li>`).join("")}</ol>`
         : X.rutas.length ? `<h2>Rutas de salida</h2>${X.rutas.map(r => { const b = (D.sutran || []).filter(s => s.via === r).length;
           return `<div class="ruta"><b>${esc(r === "PE-3SG" ? "Corredor Minero del Sur" : r)}</b><span class="${b ? "mal" : "ok"}">${b ? "Bloqueada" : "Libre"}</span></div>`; }).join("")}` : "")
-      + (op.length && otras.length ? `<details class="mas"><summary>Exploración y proyectos (${otras.length})</summary><ul>${otras.map(o => `<li>${esc(o.unidad)}</li>`).join("")}</ul></details>` : "");
+      + (op.length && otras.length ? `<details class="mas"><summary>Exploración y proyectos (${otras.length})</summary><ul>${otras.map(filaOp).join("")}</ul></details>` : "");
   },
   pais() {
     cabecera(false);
@@ -249,7 +250,7 @@ const VISTAS = {
     const ls = xs => `<ul>${xs.map(x => fila(x.urge ? "urge" : "", 0, x.t, x.w, x.s, `data-pais="${PAIS.indexOf(x)}"`)).join("")}</ul>`;
     return `<h2>Anunciado en el país</h2>${v.length ? ls(v) : `<p class="vacio">Nada anunciado.</p>`}<h2>Última semana</h2>${r.length ? ls(r) : `<p class="vacio">Sin protestas registradas.</p>`}`;
   },
-  mapa() { cabecera(false); return X.cadena.length ? `<p class="leyenda-via">${FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : "Riesgo en la vía, " + pct(X.via)}</p>` : ""; },
+  mapa() { cabecera(false); return X.cadena.length ? `<p class="leyenda-via">${FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Riesgo en la vía, " + pct(X.via)}</p>` : ""; },
 };
 
 // Imagen satelital del polígono de la unidad (Esri World Imagery, el mismo satélite del mapa de la versión completa)
@@ -274,9 +275,9 @@ function detalleOp(nom) {
   const cs = X.casos.filter(c => o.zona.has(String(c.ubigeo))).slice(0, 4);
   const estado = c => `${c.estado === "latente" ? "latente" : /NO HAY/i.test(c.dialogo || "") ? "sin diálogo" : /HAY/i.test(c.dialogo || "") ? "en diálogo" : "activo"}`;
   cabecera(true, "Operaciones");
-  foto(o);
+  foto(o); ver([o.ubigeo], o.unidad);
   return `<div class="foto" id="foto"><div><h3>${esc(o.unidad)}</h3><p>${esc(lugar(o.ubigeo))}</p></div><small>Imagen Esri, Maxar</small></div><div class="grande"><b>${o.p == null ? "–" : pct(o.p)}</b><span>${o.p == null ? "Sin cálculo" : `Riesgo ${nivel(o.p).toLowerCase()} ${flecha(o.p - (o.normal ?? o.p))}`}
-      <small>${o.normal != null ? `Lo habitual en la zona, ${pct(o.normal)}` : ""}</small><small>Octubre a diciembre</small></span></div>`
+      <small>${o.normal != null ? `Lo habitual en la zona, ${pct(o.normal)}` : ""}</small><small>Octubre a diciembre</small></span></div>${VER}`
     + (por[0] ? `<h2>Por qué</h2><ul class="por">${por.map(p => `<li>${esc(p.replace(/\s*\(.*?\)/g, ""))}</li>`).join("")}</ul>` : "")
     + `<h2>Qué pasó</h2>` + (av.length ? `<ul>${av.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas cerca en 45 días.</p>`)
     + `<h2>Comunidades</h2>` + (cs.length ? `<ul>${cs.map(c => fila("", 0, titulo(String(c.nombre).replace(/^(comunidad(es)? (campesinas?|nativas?)|cc\.?|c\.c\.)\s+(de(l)?\s+)?/i, "").split(/\s+[-–]\s+/)[0]),
@@ -286,21 +287,43 @@ function detalleOp(nom) {
 function detalleAviso(k) {
   const x = typeof k === "number" ? X.avisos[k] : k;
   cabecera(true, x.tipo);
+  if (x.m || x.sutran) ver(null);
   if (x.m) { const m = x.m, tono = m.tono < 0 ? ["tono-neg", "Crítico con la empresa"] : m.tono > 0 ? ["tono-pos", "Favorable a la empresa"] : null;
     return `<div class="nota"><h3>${esc(m.titular)}</h3><p class="meta">${esc(m.medio)}, ${dia(m.fecha)}${tono && m.tema !== "judicial" ? `. <b class="${tono[0]}">${tono[1]}</b>` : ""}</p>
       ${m.resumen ? `<p class="cita">${esc(m.resumen)}${m.resumen.length >= 300 ? "…" : ""}</p>` : ""}<a class="ir" href="${esc(m.enlace)}" target="_blank" rel="noopener">Leer en ${esc(m.medio)}</a></div>`; }
   if (x.sutran) { const s = x.sutran;
     return `<div class="nota"><h3>${esc(x.t)}</h3><p class="meta">${esc(titulo(s.distrito || ""))}, ${esc(titulo(s.region || ""))}${s.km ? `, km ${esc(s.km)}` : ""}. Según SUTRAN.</p>
       ${s.contexto ? `<p class="cita">${esc(s.contexto)}</p>` : ""}</div>`; }
-  const e = x.e, f = x.f;
+  const e = x.e, f = x.f, u = String(e.ubigeo), ts = x.tramos || [], y = xs => xs.length > 1 ? xs.slice(0, -1).join(", ") + " y " + xs.at(-1) : xs[0] || "";
+  ver(ts.length ? ts.flatMap(r => r.ubigeos) : u === "00" ? null : [u], x.t);
   return `<div class="nota"><h3>${esc(x.t)}</h3><p class="meta">${esc(largo(f))}${e.estado === "anunciada" && f >= HOY ? `, ${cuando(f)}` : e.estado === "anunciada" ? ", anunciada" : ""}</p>
     <span class="etq">Dónde</span>${esc(String(e.ubigeo) === "00" ? (x.trans ? "La nota no lo dice. Suelen ser en Lima" : "La nota no lo dice") : lugar(String(e.ubigeo)))}${x.cerca ? `, zona de ${esc(x.cerca.unidad)}` : ""}
-    ${x.tramo ? `<span class="etq">Qué puede tocar</span>Sus despachos, tramo ${esc(x.tramo.nombre)} (${esc(x.tramo.modo.toLowerCase())})` : ""}
+    ${ts.length ? `<span class="etq">Qué puede tocar</span>${ts.length > 1 ? "Los tramos" : "El tramo"} ${esc(y(ts.map(r => r.nombre)))} de su ruta${ts.some(r => r.via) ? `, por la ${esc(y([...new Set(ts.map(r => r.via).filter(Boolean))]))}` : ""}.${u.length < 6 ? ` La nota no dice en qué parte de ${esc(lugar(u))}, así que se marcan todos los tramos que pasan por ahí.` : ""}` : ""}
     ${x.trans && !x.tramo ? `<span class="etq">Qué puede tocar</span>El traslado de concentrado e insumos${X.rutas.length ? ` por ${esc(X.rutas.join(" y "))}` : ""}` : ""}
-    <span class="etq">La nota</span>${esc(e.titular)}<br><a class="ir" href="${esc(e.enlace)}" target="_blank" rel="noopener">Leer en ${esc(e.medio)}</a></div>`;
+    <span class="etq">La nota</span>${esc(e.titular)}<br><a class="ir" href="${esc(e.enlace)}" target="_blank" rel="noopener">Leer en ${esc(e.medio)}</a>${SEL ? VER : ""}</div>`;
 }
 
-let actual = "avisos", mapa, PAIS = [], FOCO = null;
+let actual = "avisos", mapa, PAIS = [], FOCO = null, SEL = null;  // SEL: distritos que el mapa resalta y encuadra
+const VER = `<button type="button" class="ir vermapa" data-vermapa>Ver en el mapa</button>`;
+function ver(us, t) { SEL = us && us.length ? { us, t } : null; if (ANCHO.matches && mapa) verMapa(); }
+function marcar() {
+  const s = SEL;
+  DISTRITOS().then(g => {
+    const fs = s ? g.features.filter(f => s.us.some(u => f.properties.u.startsWith(u))) : [];
+    const poner = () => {
+      const fc = { type: "FeatureCollection", features: fs };
+      if (mapa.getSource("sel")) mapa.getSource("sel").setData(fc);
+      else { mapa.addSource("sel", { type: "geojson", data: fc });
+        mapa.addLayer({ id: "sel-f", type: "fill", source: "sel", paint: { "fill-color": "#1c2629", "fill-opacity": 0.1 } }, "ops");
+        mapa.addLayer({ id: "sel", type: "line", source: "sel", paint: { "line-color": "#1c2629", "line-width": 2.5 } }, "ops"); }
+      const b = new maplibregl.LngLatBounds();
+      fs.forEach(f => JSON.stringify(f.geometry.coordinates).match(/-?\d+\.?\d*,-?\d+\.?\d*/g).forEach(c => b.extend(c.split(",").map(Number))));
+      if (!b.isEmpty()) mapa.fitBounds(b, { padding: 60, maxZoom: 11, duration: 800 });
+    };
+    const espera = () => mapa.getLayer("ops") ? poner() : setTimeout(espera, 200);
+    espera();
+  });
+}
 const ANCHO = matchMedia("(min-width: 900px)");  // en el computador el mapa está siempre a la vista
 const DISTRITOS = () => (DISTRITOS.p ||= fetch("distritos.json").then(r => r.json()));
 const RUTAS = () => (RUTAS.p ||= fetch("rutas.geojson").then(r => r.json()));
@@ -313,19 +336,27 @@ function ir(v) {
   scrollTo(0, 0); conectar();
 }
 function abrir(html) { pila.push(document.getElementById("vista").innerHTML); document.getElementById("vista").innerHTML = html; scrollTo(0, 0); conectar(); }
-function volver() { const h = pila.pop(); if (h == null) return ir(actual); document.getElementById("vista").innerHTML = h; if (!pila.length) cabecera(false); conectar(); }
+function volver() { ver(null); const h = pila.pop(); if (h == null) return ir(actual); document.getElementById("vista").innerHTML = h; if (!pila.length) cabecera(false); conectar(); }
 function conectar() {
   document.querySelectorAll("[data-aviso]").forEach(b => b.onclick = () => abrir(detalleAviso(+b.dataset.aviso)));
   document.querySelectorAll("[data-pais]").forEach(b => b.onclick = () => abrir(detalleAviso(PAIS[+b.dataset.pais])));
-  document.querySelectorAll("[data-tramo]").forEach(b => b.onclick = () => { FOCO = +b.dataset.tramo; ANCHO.matches ? verMapa() : ir("mapa"); });
+  document.querySelectorAll("[data-tramo]").forEach(b => b.onclick = () => { SEL = null; FOCO = +b.dataset.tramo; ANCHO.matches ? verMapa() : ir("mapa"); });
   document.querySelectorAll("[data-op]").forEach(b => b.onclick = () => abrir(detalleOp(b.dataset.op)));
+  document.querySelectorAll("[data-vermapa]").forEach(b => b.onclick = () => ir("mapa"));
 }
-document.querySelector("nav").onclick = e => { const b = e.target.closest("button"); if (b) ir(b.dataset.v); };
+document.querySelector("nav").onclick = e => { const b = e.target.closest("button"); if (b) { SEL = null; ir(b.dataset.v); } };
 
 function verMapa() {
   if (!mapa) {
     mapa = new maplibregl.Map({ container: "mapa", style: "https://tiles.openfreemap.org/styles/positron", center: [-75, -10], zoom: 4.3, attributionControl: { compact: true } });
     mapa.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    mapa.on("click", "ops", ev => { const n = ev.features[0].properties.unidad; if (!ANCHO.matches) ir("operaciones"); abrir(detalleOp(n)); });
+    mapa.on("click", "tramos", ev => {
+      if (mapa.queryRenderedFeatures(ev.point, { layers: ["ops"] }).length) return;
+      const { u, i } = ev.features[0].properties, r = X.cadena[i], p = (A.get(u) || {}).prob ?? 0;
+      new maplibregl.Popup({ maxWidth: "260px" }).setLngLat(ev.lngLat).setHTML(`<b>${esc(lugar(u))}</b><br>Tramo ${esc(r.nombre)}${r.via ? `, ${esc(r.via)}` : ""}<br>
+        Probabilidad de paro o bloqueo hasta diciembre, ${pct(p)}${u === r.peor ? `<br>Es el distrito más expuesto del tramo y da su ${pct(r.p)}` : ""}`).addTo(mapa); });
+    ["ops", "tramos"].forEach(c => { mapa.on("mouseenter", c, () => mapa.getCanvas().style.cursor = "pointer"); mapa.on("mouseleave", c, () => mapa.getCanvas().style.cursor = ""); });
   } else mapa.resize();
   fetch("operaciones.json").then(r => r.json()).then(g => {
     const [oefa] = EMPRESAS[empresa];
@@ -346,7 +377,7 @@ function verMapa() {
           "text-offset": [0, 1.4], "text-anchor": "top", "text-font": ["Noto Sans Bold"] }, paint: { "text-halo-color": "#fff", "text-halo-width": 1.5 } });
       }
       const b = new maplibregl.LngLatBounds(); fs.forEach(f => b.extend(f.geometry.coordinates));
-      if (!b.isEmpty()) mapa.fitBounds(b, { padding: 60, maxZoom: 11, duration: 0 });
+      if (!b.isEmpty() && !SEL && !X.cadena.length) mapa.fitBounds(b, { padding: 60, maxZoom: 11, duration: 0 });
     };
     mapa.loaded() ? pintar() : mapa.once("load", pintar);
   }).catch(() => {});
@@ -375,11 +406,12 @@ function verMapa() {
       const b = new maplibregl.LngLatBounds();
       fc.features.filter(f => foco == null || f.properties.i === foco).forEach(f =>
         JSON.stringify(f.geometry.coordinates).match(/-?\d+\.?\d*,-?\d+\.?\d*/g).forEach(s => b.extend(s.split(",").map(Number))));
-      if (!b.isEmpty()) mapa.fitBounds(b, { padding: 40, duration: 0 });
+      if (!b.isEmpty() && !SEL) mapa.fitBounds(b, { padding: 40, duration: foco == null ? 0 : 800 });
     };
     const listo = () => mapa.getLayer("ops") ? poner() : setTimeout(listo, 200);
     listo();
   });
+  marcar();
 }
 
 Promise.all([cargar(), CADENA]).then(([d, c]) => {
