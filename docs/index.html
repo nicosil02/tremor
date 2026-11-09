@@ -15,7 +15,7 @@
   /* Paleta del cobre. El riesgo va del mineral claro al cobre oscuro; lo que la prensa anuncia va en el verde
      de la pátina. Fondo de piedra fría, tinta pizarra. Una herramienta de trabajo: un solo modo, claro. */
   :root {
-    --piedra: #e8ecec; --papel: #f8faf9; --linea: #d3dad9; --tinta: #1c2629; --tinta-2: #4f5d61; --tinta-3: #77868a;
+    --piedra: #e8ecec; --papel: #f8faf9; --linea: #d3dad9; --tinta: #1c2629; --tinta-2: #4f5d61; --tinta-3: #5e6b6f;
     --cobre: #b4542a; --cobre-1: #f3e1d3; --cobre-2: #e3a67c; --cobre-3: #c96a3a; --cobre-4: #8a3213;
     --patina: #1d7468; --vacio: #dfe5e4;
     --ancho: "wdth" 118; --angosto: "wdth" 72;
@@ -35,15 +35,16 @@
   .mapa { position: relative; }
   #mapa { position: absolute; inset: 0; }
   [hidden] { display: none !important; }
-  .vigente { font-size: 13px; font-weight: 650; color: #fff; background: #b3261e; padding: 1px 6px; border-radius: 4px; margin-left: 4px; }
+  .vigente { font-size: 14px; font-weight: 650; color: #fff; background: #b3261e; padding: 1px 6px; border-radius: 4px; margin-left: 4px; }
   .ir-via { all: unset; cursor: pointer; font-weight: 600; color: var(--tinta); }
+  .ir-via:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
   .ir-via:hover { text-decoration: underline; text-underline-offset: 3px; }
   .alertas { list-style: none; margin: 0; padding: 0; }
   .alerta { display: grid; grid-template-columns: 10px 1fr auto; gap: 12px; align-items: start; padding: 12px 0; border-top: 1px solid var(--linea); }
   .alerta:first-child { border-top: 0; padding-top: 4px; }
   .sev { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; display: inline-block; }
   .sev.alta { background: #b3261e; }
-  .sev.media { background: var(--cobre-2); }
+  .sev.media { background: var(--cobre-3); }
   .a-meta { display: flex; gap: 8px; font-size: 15px; color: var(--tinta-3); }
   .a-meta b { color: var(--tinta-2); font-weight: 600; }
   .a-tit { font-weight: 600; color: var(--tinta); line-height: 1.3; margin-top: 2px; }
@@ -83,8 +84,8 @@
   .riesgo-op b { font-size: 48px; line-height: 1; font-weight: 750; font-variation-settings: var(--angosto); }
   .nivel { font-size: 15px; font-weight: 650; padding: 3px 9px; border-radius: 4px; }
   .nivel.n0 { background: #e3ebe7; color: #3c5a4c; }
-  .nivel.n1 { background: var(--cobre-1); color: var(--cobre-4); }
-  .nivel.n2 { background: #f2c9b0; color: #7a2a0e; }
+  .nivel.n1 { background: var(--cobre-2); color: #4a1a06; }
+  .nivel.n2 { background: var(--cobre); color: #fff; }
   .nivel.n3 { background: var(--cobre-4); color: #fff; }
   .detalle-op h3 { font-size: 16px; font-weight: 650; color: var(--tinta); margin: 18px 0 8px; padding-top: 14px; border-top: 1px solid var(--linea); }
   .detalle-op h4 { font-size: 15px; font-weight: 650; color: var(--tinta); margin: 12px 0 4px; }
@@ -102,8 +103,10 @@
     .app { grid-template-columns: 1fr; height: auto; }
     .mapa { height: 58dvh; order: -1; }
     .panel { border-right: 0; }
-    .leyenda { left: 8px; bottom: 8px; padding: 6px 8px; font-size: 13px; gap: 3px; }
-    .leyenda b { font-size: 13px; }
+    .leyenda { right: 8px; bottom: 30px; padding: 6px 10px; font-size: 14px; }
+    .leyenda[open] summary { margin-bottom: 6px; }
+    .alerta { grid-template-columns: 10px 1fr; }
+    .alerta > .btn { grid-column: 2; justify-self: start; }
   }
 
   .cabeza { padding: 20px 24px 18px; border-bottom: 1px solid var(--linea); }
@@ -114,10 +117,10 @@
                   background: #fff; color: var(--tinta); }
   .elegir input::placeholder { color: var(--tinta-3); font-weight: 400; }
   .vistas { display: flex; gap: 20px; border-bottom: 1px solid var(--linea); margin-bottom: 14px; }
-  .vistas button { border: 0; background: none; padding: 6px 0 9px; margin-bottom: -1px; font-size: 15px; font-weight: 600; color: var(--tinta-3);
+  .vistas button { border: 0; background: none; padding: 10px 0 11px; margin-bottom: -1px; font-size: 15px; font-weight: 600; color: var(--tinta-3);
                   border-bottom: 2px solid transparent; cursor: pointer; transition: color 140ms ease, border-color 140ms ease; }
   .vistas button:hover { color: var(--tinta); }
-  .vistas button[aria-selected="true"] { color: var(--tinta); border-bottom-color: var(--cobre); }
+  .vistas button[aria-pressed="true"] { color: var(--tinta); border-bottom-color: var(--cobre); }
   .cuanto { margin: 0 0 4px; font-size: 16px; }
   .cuanto b { font-weight: 650; }
   .detalle-op ul.temas { list-style: none; padding: 0 !important; margin: 4px 0 0; display: grid; gap: 4px; }
@@ -133,7 +136,7 @@
   .detalle-op .temas details b { color: var(--tinta); font-weight: 600; }
   .temas li small { color: var(--tinta-3); font-size: 15px; }
   .sugerencias { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-  .sugerencias button { font-size: 15px; padding: 5px 11px; border-radius: 6px; border: 1px solid var(--linea); background: transparent; cursor: pointer;
+  .sugerencias button { font-size: 15px; padding: 9px 14px; border-radius: 6px; border: 1px solid var(--linea); background: transparent; cursor: pointer;
                         color: var(--tinta-2); transition: transform 140ms var(--ease-out), border-color 140ms ease; }
   .sugerencias button:active { transform: scale(0.97); }
   .sugerencias button[aria-pressed="true"] { border-color: var(--tinta); color: var(--tinta); font-weight: 600; }
@@ -207,12 +210,16 @@
   .pie { margin-top: auto; padding: 18px 24px 24px; font-size: 15px; color: var(--tinta-3); border-top: 1px solid var(--linea); }
   .pie a { color: var(--tinta-2); }
 
-  .leyenda { position: absolute; left: 16px; bottom: 16px; background: var(--papel); border: 1px solid var(--linea); border-radius: 8px; padding: 10px 12px;
-             font-size: 15px; color: var(--tinta-2); display: grid; gap: 6px; box-shadow: 0 6px 20px rgb(28 38 41 / .12); }
+  .leyenda { position: absolute; right: 16px; bottom: 40px; background: var(--papel); border: 1px solid var(--linea); border-radius: 8px; padding: 10px 12px;
+             font-size: 15px; color: var(--tinta-2); box-shadow: 0 6px 20px rgb(28 38 41 / .12); }
+  .leyenda > .cuerpo { display: grid; gap: 6px; }
+  .leyenda summary { cursor: pointer; font-weight: 650; color: var(--tinta); }
+  @media (min-width: 901px) { .leyenda summary { display: none; } }
+  .maplibregl-ctrl-group button { width: 40px; height: 40px; }
   .leyenda { max-width: 300px; }
   .leyenda b { display: block; font-weight: 650; color: var(--tinta); margin-bottom: 6px; line-height: 1.25; }
   .leyenda .rampa { display: grid; grid-template-columns: repeat(4, 1fr); height: 10px; }
-  .leyenda .cortes { display: grid; grid-template-columns: repeat(4, 1fr); font-size: 13px; color: var(--tinta-3); margin-top: 2px; }
+  .leyenda .cortes { display: grid; grid-template-columns: repeat(4, 1fr); font-size: 14px; color: var(--tinta-3); margin-top: 2px; }
   .leyenda .cortes span:not(:first-child) { margin-left: -10px; }
   .leyenda .detalle { display: none; }
   .leyenda.cerca .riesgo { display: none; }
@@ -242,19 +249,59 @@
   .tarjeta dt { font-weight: 650; font-variant-numeric: tabular-nums; text-align: right; }
   .tarjeta dd { margin: 0; color: var(--tinta-2, var(--tinta)); }
   .tarjeta p { margin: 10px 0 0; }
-  .tarjeta .fuente { margin-top: 8px; font-size: 13px; color: var(--tinta-3); }
+  .tarjeta .fuente { margin-top: 8px; font-size: 14px; color: var(--tinta-3); }
   .maplibregl-popup-content b { font-weight: 650; }
+  /* Color del número según su nivel (texto grande: basta 3:1) */
+  b.c1 { color: #a8491f; } b.c2, b.c3 { color: var(--cobre-4); }
+  /* Lista agrupada por nivel, con una barra del color de la rampa */
+  .ops li.grupo { position: sticky; top: 0; z-index: 1; background: var(--papel); display: flex; align-items: center; gap: 10px; padding: 12px 12px 6px;
+                  font-size: 15px; color: var(--tinta-2); }
+  .ops.corta > li.extra { display: none; }
+  .op > button { box-shadow: inset 4px 0 0 var(--c, transparent); border-radius: 0 8px 8px 0; }
+  .resumen { margin: 8px 0 0; font-size: 17px; color: var(--tinta-2); }
+  .resumen b { font-weight: 750; }
+  .panel.en-detalle .resumen, .panel.en-detalle .titular { display: none; }
+  /* Alertas */
+  .a-cab { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .a-prio { font-size: 13px; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; color: var(--cobre-4); }
+  .a-prio.alta { color: #b3261e; }
+  .a-cab time { font-size: 14px; color: var(--tinta-3); }
+  .a-uni { font-size: 15px; color: var(--tinta-2); line-height: 1.35; }
+  .a-pc > div { display: grid; gap: 3px; justify-items: start; }
+  .a-que { font-size: 14px; color: var(--tinta-2); line-height: 1.35; margin-top: 4px; }
+  .a-por summary { cursor: pointer; color: var(--tinta); font-weight: 600; margin-top: 4px; }
+  .alerta.destacada { background: #fff; border: 1px solid var(--linea); border-left: 4px solid var(--c, var(--cobre)); border-radius: 10px; padding: 14px 16px;
+                      box-shadow: 0 1px 3px rgb(28 38 41 / .08); margin-bottom: 10px; }
+  .alerta.destacada .btn { background: var(--cobre); color: #fff; border-color: var(--cobre); }
+  .alerta.destacada .btn:hover { background: var(--cobre-4); }
+  /* Ficha: el riesgo primero */
+  .detalle-op .migas { all: unset; cursor: pointer; font-size: 15px; font-weight: 600; color: var(--tinta-2); display: inline-block; padding: 6px 0; margin-bottom: 6px; }
+  .detalle-op .migas:hover { color: var(--tinta); text-decoration: underline; text-underline-offset: 3px; }
+  .detalle-op .migas:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
+  .detalle-op h2 { font-size: 28px; }
+  .detalle-op h2:focus { outline: none; }
+  .hero { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; align-items: center; margin: 12px 0 14px; padding: 16px 18px; border-radius: 10px;
+          border-left: 4px solid var(--c); background: color-mix(in srgb, var(--c) 14%, var(--papel)); }
+  .hero > b { font-size: 64px; line-height: .95; font-weight: 750; font-variation-settings: var(--angosto); }
+  .hero > div { display: grid; gap: 4px; justify-items: start; }
+  .hero strong { font-size: 15px; font-weight: 650; color: var(--tinta); line-height: 1.35; }
+  .hero .que { font-size: 14px; color: var(--tinta-2); line-height: 1.35; }
+  .hero > p { grid-column: 1 / -1; margin: 4px 0 0; font-size: 15px; color: var(--tinta-2); }
+  .cuenta { display: inline-block; min-width: 20px; padding: 0 6px; margin-left: 4px; border-radius: 10px; background: #c4431c; color: #fff; font-size: 13px;
+            line-height: 20px; text-align: center; font-weight: 700; }
+  .detalle-op h3.sub { border-top: 0; padding-top: 0; margin-top: 14px; }
+  .hist-dato { font-size: 17px; font-weight: 650; color: var(--tinta); margin: 0 0 8px; line-height: 1.35; }
   .cargando { position: absolute; inset: 0; display: grid; place-items: center; color: var(--tinta-3); font-size: 15px; }
 </style>
 </head>
 <body>
 <div class="app">
-  <div class="panel">
+  <main class="panel" aria-label="Panel de riesgo">
     <div class="cabeza">
       <div class="marca"><b>Tremor</b><span>alerta temprana de paros y bloqueos</span></div>
-      <div class="vistas" role="tablist">
-        <button type="button" role="tab" data-v="pais" aria-selected="true">Todo el país</button>
-        <button type="button" role="tab" data-v="empresa" aria-selected="false">Por empresa</button>
+      <div class="vistas">
+        <button type="button" data-v="pais" aria-pressed="true">Todo el país</button>
+        <button type="button" data-v="empresa" aria-pressed="false">Por empresa</button>
       </div>
       <div class="elegir" hidden>
         <label for="empresa" class="oculto">Empresa o mina</label>
@@ -263,13 +310,12 @@
       </div>
       <div class="sugerencias" id="sugerencias" hidden></div>
     </div>
-    <div class="titular"><h1 id="h1">Cargando</h1><p id="bajada"></p></div>
-    <div class="vistas pestanas" id="tabs-cliente" role="tablist" hidden>
-      <button type="button" role="tab" data-c="alertas" aria-selected="true">Alertas</button>
-      <button type="button" role="tab" data-c="ops" aria-selected="false">Operaciones</button>
-      <button type="button" role="tab" data-c="avisos" aria-selected="false">Protestas recientes</button></div>
+    <div class="titular"><h1 id="h1">Cargando</h1><p id="bajada" aria-live="polite"></p><p class="resumen" id="resumen" hidden></p></div>
+    <div class="vistas pestanas" id="tabs-cliente" hidden>
+      <button type="button" data-c="alertas" aria-pressed="true">Alertas</button>
+      <button type="button" data-c="ops" aria-pressed="false">Operaciones</button>
+      <button type="button" data-c="avisos" aria-pressed="false">Protestas recientes</button></div>
     <div class="seccion" id="alertas-sec" hidden>
-      <div class="prioridad"><span><i class="sev alta"></i>Prioridad alta</span><span><i class="sev media"></i>Prioridad media</span></div>
       <ul class="alertas" id="alertas"></ul></div>
     <div class="detalle-op" id="detalle-op" hidden></div>
     <div id="bloque-ops"><h2 class="t-ops" id="t-ops" hidden>Operaciones</h2>
@@ -279,11 +325,11 @@
     <ol class="ops" id="ops"></ol><button type="button" class="btn mas" id="mas-ops" hidden></button></div>
     <div class="seccion" id="avisos-sec"><h2>Protestas y anuncios recientes</h2><p id="nota-avisos"></p><ul class="avisos" id="avisos"></ul></div>
     <div class="pie" id="pie">Con datos de la Defensoría del Pueblo, la base de protestas de la PUCP y unas 60 variables por distrito. <a href="metodo.html">Cómo se calcula y qué tan bien avisa</a>. <a href="informe.html">Informe mensual para clientes</a>.</div>
-  </div>
-  <div class="mapa">
+  </main>
+  <div class="mapa" role="region" aria-label="Mapa">
     <div id="mapa"></div>
     <div class="cargando" id="cargando">Cargando el mapa</div>
-    <div class="leyenda" id="leyenda" hidden>
+    <details class="leyenda" id="leyenda" open hidden><summary>Leyenda</summary><div class="cuerpo">
       <div class="riesgo"><b id="ley-riesgo">Probabilidad de paro o bloqueo en la zona de influencia</b>
         <div class="rampa"><i style="background:var(--cobre-1)"></i><i style="background:var(--cobre-2)"></i><i style="background:var(--cobre-3)"></i><i style="background:var(--cobre-4)"></i></div>
         <div class="cortes"><span>Bajo</span><span>10%</span><span>25%</span><span>50%</span></div></div>
@@ -295,7 +341,7 @@
       <div class="punto"><i style="background:var(--tinta-3)"></i>Protesta ocurrida</div>
       <div class="punto"><i style="background:#f4c35a;border-radius:2px;height:4px;width:16px"></i>Carretera de salida</div>
       <div class="punto"><i style="background:#b3261e"></i>Carretera bloqueada hoy</div>
-    </div>
+    </div></details>
   </div>
 </div>
 
@@ -350,7 +396,7 @@ function iniciar(D, G, H, C) {
   input.addEventListener("change", () => elegir(llano(input.value)));
   const vistas = document.querySelector(".vistas");
   function verVista(v) {
-    vistas.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", b.dataset.v === v));
+    vistas.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === v));
     document.querySelector(".elegir").hidden = sug.hidden = v === "pais";
     if (v === "pais") { input.value = ""; elegir(""); }
     else { input.value = ejemplos[0][0]; elegir(ejemplos[0][1]); }
@@ -379,6 +425,8 @@ function iniciar(D, G, H, C) {
     // De cerca, los nombres del mapa base se apagan: sobre el satélite solo quedan los de Tremor
     for (const c of map.getStyle().layers) if (c.type === "symbol") map.setLayerZoomRange(c.id, c.minzoom ?? 0, 10);
     document.getElementById("leyenda").hidden = false;
+    if (matchMedia("(max-width: 900px)").matches) document.getElementById("leyenda").open = false;  // en el celular tapa el mapa
+    document.querySelector(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show");
     // Relieve de los Andes (Terrain Tiles abiertos de AWS) y satélite al acercarse, bajo los nombres
     const bajoNombres = map.getStyle().layers.find(c => c.type === "symbol")?.id;
     const DEM = { type: "raster-dem", encoding: "terrarium", tileSize: 256, maxzoom: 12, attribution: "Terrain Tiles (AWS, Mapzen)",
@@ -570,16 +618,28 @@ function iniciar(D, G, H, C) {
     dibujar(zonas, !suyas);
   }
 
-  document.getElementById("mas-ops").onclick = () => { document.getElementById("ops").classList.remove("corta"); mas.hidden = true; };
+  document.getElementById("mas-ops").onclick = e => { document.getElementById("ops").classList.remove("corta"); e.currentTarget.hidden = true; };
   function lista(pais) {
     const mas = document.getElementById("mas-ops");
     document.getElementById("ops").classList.add("corta");
     mas.hidden = filas.length <= 10; mas.textContent = `Ver las ${filas.length}`;
+    // Ordenada por probabilidad, la lista va en grupos por nivel: se ve de un golpe dónde se concentra el riesgo
+    const grupos = sel.value === "prob", cuantos = d3.rollup(filas, v => v.length, f => nivelN(mesP(f.a)));
+    const que = n => pais ? (n === 1 ? "zona" : "zonas") : (n === 1 ? "operación" : "operaciones");
     document.getElementById("ops").innerHTML = filas.map((f, i) => {
-      const a = f.a, donde = pais ? lugar(f.u).split(", ").slice(1).join(", ") + ", " + nombre((a.lugar || "").split(" / ")[0]) : lugar(f.u);
-      return `<li class="op" data-i="${i}"><button type="button" aria-expanded="false">
+      const a = f.a, n = nivelN(mesP(a)), extra = i >= 10 ? " extra" : "";
+      const donde = pais ? lugar(f.u).split(", ").slice(1).join(", ") + ", " + nombre((a.lugar || "").split(" / ")[0]) : lugar(f.u);
+      const cab = grupos && (i === 0 || nivelN(mesP(filas[i - 1].a)) !== n)
+        ? `<li class="grupo${extra}" aria-hidden="true"><span class="nivel n${n}">${banda(mesP(a)) || "Sin dato"}</span>${cuantos.get(n)} ${que(cuantos.get(n))}</li>` : "";
+      return `${cab}<li class="op${extra}" data-i="${i}"><button type="button" aria-expanded="false" style="--c:var(--cobre-${n + 1})">
           <span class="nombre">${esc(titFila(f))}</span><span class="lugar">${esc(donde)}</span>
-          <span class="prob"><b>${pct(mesP(a))}</b><small>${banda(mesP(a))}${corto(a)}</small></span></button></li>`; }).join("");
+          <span class="prob"><b class="c${n}">${pct(mesP(a))}</b><small>${grupos ? corto(a).replace(/^, /, "") : banda(mesP(a)) + corto(a)}</small></span></button></li>`; }).join("");
+    // Resumen bajo el título: cuántas zonas en los niveles altos
+    const zs = d3.rollup(filas.filter((f, i) => filas.findIndex(g => g.u === f.u) === i), v => v.length, f => nivelN(mesP(f.a)));
+    const res = document.getElementById("resumen"), c3 = zs.get(3) || 0, c2 = zs.get(2) || 0;
+    res.hidden = !pais || !(c3 + c2);  // en la vista de una empresa ya lo dice la bajada
+    res.innerHTML = [c3 && `<b class="c3">${c3}</b> ${c3 === 1 ? "zona" : "zonas"} en nivel crítico`, c2 && `<b class="c2">${c2}</b> ${c2 === 1 ? "zona" : "zonas"} en alto`]
+      .filter(Boolean).join(" y ") + ".";
     document.querySelectorAll(".op > button").forEach(b => b.onclick = () => abrir(+b.parentNode.dataset.i, true));
   }
   // Los factores del mes, en la dirección del cambio
@@ -602,34 +662,41 @@ function iniciar(D, G, H, C) {
     ? `Es la zona n.º ${a.puesto_zona_extractivo} del país con más riesgo de conflicto contra una operación.` : "";
   function factores(a) {
     const sube = (a[K.c] ?? 0) >= 0, porque = razonesDe(a);
-    return porque.length ? `<h4>${sube ? "Factores que lo elevan" : "Factores que lo reducen"}</h4><ul>${porque.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : "";
+    return porque.length ? `<h3 class="sub">${sube ? "Factores que lo elevan" : "Factores que lo reducen"}</h3><ul>${porque.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : "";
   }
   const panel = document.querySelector(".panel"), det = document.getElementById("detalle-op");
   const nivelN = p => p == null ? 0 : p >= 0.5 ? 3 : p >= 0.25 ? 2 : p >= 0.1 ? 1 : 0;
   // La ficha de una operación, en el panel: riesgo, fechas, comunidades, temas e historial, en ese orden
   function llenarFicha(f) {
     const a = f.a, p = mesP(a);
-    det.innerHTML = `<button type="button" class="btn volver">← ${enPais ? "Volver a la lista" : "Alertas y operaciones"}</button>
-      <h2>${esc(titFila(f))}</h2><p class="lugar-op">${esc(lugar(f.u))}${enPais ? "" : `. ${esc(nombre(f.os[0].empresa))}`}</p>${enPais ? "" : otras(f)}
-      <div class="vistas pestanas" role="tablist">${[["resumen", "Resumen"], ["comunidades", `Comunidades (${casosDe(f.u).filter(c => c.com).length})`],
-        ["fechas", "Fechas"], ["historial", "Historial"]].map(([k, n], j) => `<button type="button" role="tab" data-p="${k}" aria-selected="${!j}">${n}</button>`).join("")}</div>
-      <div class="pest" data-p="resumen"><div class="riesgo-op"><b>${pct(p)}</b><span class="nivel n${nivelN(p)}">Riesgo ${banda(p).toLowerCase()}${enPais ? "" : ` en la zona de ${esc(lugar(f.u).split(",")[0])}`}, ${esc(enMes.replace(/^en /, ""))}</span></div>
-        ${cuanto(a)}${factores(a)}${rutasFicha(f.u)}${vigilar(f.u)}</div>
+    const n = nivelN(p), ncom = casosDe(f.u).filter(c => c.com).length;
+    det.innerHTML = `<button type="button" class="migas volver">← ${enPais ? "Todas las zonas" : esc(nombre(f.os[0].empresa))}</button>
+      <h2 tabindex="-1">${esc(titFila(f))}</h2><p class="lugar-op">${esc(lugar(f.u))}</p>
+      <div class="hero" style="--c:var(--cobre-${n + 1})"><b class="c${n}">${pct(p)}</b>
+        <div><span class="nivel n${n}">Riesgo ${banda(p).toLowerCase()}</span><strong>${esc(frente(a))}</strong>
+          <span class="que">Probabilidad de ${esc(QUE)} en la zona de ${esc(lugar(f.u).split(",")[0])}, ${esc(enMes.replace(/^en /, ""))}</span></div>
+        ${puesto(a) ? `<p>${esc(puesto(a))}</p>` : ""}</div>
+      ${enPais ? "" : otras(f)}
+      <div class="vistas pestanas">${[["resumen", "Resumen"], ["comunidades", `Comunidades${ncom ? `<span class="cuenta">${ncom}</span>` : ""}`],
+        ["fechas", "Fechas"], ["historial", "Historial"]].map(([k, n], j) => `<button type="button" data-p="${k}" aria-pressed="${!j}">${n}</button>`).join("")}</div>
+      <div class="pest" data-p="resumen">${cuanto(a)}${factores(a)}${rutasFicha(f.u)}${vigilar(f.u)}</div>
       <div class="pest" data-p="comunidades" hidden>${quienes(f.u)}</div>
       <div class="pest" data-p="fechas" hidden>${agenda(f.u)}</div>
       <div class="pest" data-p="historial" hidden>${linea(f.u) || "<p>Sin historial para esta zona.</p>"}</div>`;
     det.querySelector(".pestanas").onclick = e => { const b = e.target.closest("button"); if (b) pestana(b.dataset.p); };
     det.hidden = false; panel.classList.add("en-detalle"); panel.scrollTop = 0;
-    det.querySelector(".volver").onclick = () => { const li = document.querySelector(".op.abierta"); if (li) abrir(+li.dataset.i, true); };
+    det.querySelector(".volver").onclick = () => { const li = document.querySelector(".op.abierta"); if (!li) return;
+      abrir(+li.dataset.i, true); li.querySelector("button").focus({ preventScroll: true }); };
+    det.querySelector("h2").focus({ preventScroll: true });  // quien usa teclado o lector llega a la ficha
     det.querySelectorAll(".casos button").forEach(b => b.onclick = () => elegirCaso(b.parentNode, true));
   }
   function pestana(p) {
-    det.querySelectorAll(".pestanas button").forEach(b => b.setAttribute("aria-selected", b.dataset.p === p));
+    det.querySelectorAll(".pestanas button").forEach(b => b.setAttribute("aria-pressed", b.dataset.p === p));
     det.querySelectorAll(".pest").forEach(x => x.hidden = x.dataset.p !== p);
   }
   // En la vista de una empresa, alertas y operaciones van en dos pestañas: nada queda abajo
   function verCliente(c) {
-    document.getElementById("tabs-cliente").querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", b.dataset.c === c));
+    document.getElementById("tabs-cliente").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.c === c));
     document.querySelector(".panel").dataset.ver = c;
   }
   document.getElementById("tabs-cliente").onclick = e => { const b = e.target.closest("button"); if (b) verCliente(b.dataset.c); };
@@ -683,7 +750,7 @@ function iniciar(D, G, H, C) {
   // El porcentaje en palabras: cuántos de cada 100 meses así tuvieron un paro, y frente a qué
   function cuanto(a) {
     const p = mesP(a); if (p == null) return "";
-    return `<p class="cuanto"><b>${esc(frente(a))}</b> ${esc(puesto(a))}</p><p class="cuanto">En condiciones parecidas, ${Math.round(p * 100)} de cada 100 veces hubo un ${QUE} en la zona${EXT ? " en los tres meses siguientes" : ""}.</p>`;
+    return `<p class="cuanto">En condiciones parecidas, ${Math.round(p * 100)} de cada 100 veces hubo un ${QUE} en la zona${EXT ? " en los tres meses siguientes" : ""}.</p>`;
   }
   // Qué reclaman en la zona: los temas de los conflictos abiertos y de las protestas recientes
   const TEMAS = [["Agua", /agua|h[ií]dric|r[ií]o\b|laguna|riego|cuenca|manantial/i], ["Contaminación", /contamina|metales|ars[eé]nico|relave|derrame|ambiental|plomo/i],
@@ -719,17 +786,17 @@ function iniciar(D, G, H, C) {
   function linea(u) {
     const x = D.zonas?.[u]?.z1_fuerza || D.zonas?.[u]?.z_fuerza;
     if (!x || !x.pct.length) return "";
-    const n = x.pct.length, W = 300, Hh = 46, w = W / n;
-    const barras = x.pct.map((p, k) => { const h = Math.max(2, (1 - p) * (Hh - 12));
-      return `<rect x="${(k * w + 1).toFixed(1)}" y="${(Hh - h).toFixed(1)}" width="${Math.max(w - 2, 1).toFixed(1)}" height="${h.toFixed(1)}" fill="${p <= 0.1 ? "var(--cobre)" : "var(--linea)"}"/>`; }).join("");
-    const paros = x.y.map((y, k) => y ? `<circle cx="${(k * w + w / 2).toFixed(1)}" cy="4" r="3" fill="var(--tinta)"/>` : "").join("");
-    const anio = m => Math.floor(m / 12);
+    // Una tira de meses: en cobre los que la zona estaba entre el 10% de mayor riesgo, con un punto donde hubo paro
+    const n = x.pct.length, W = 300, Hh = 26, w = W / n;
+    const tira = x.pct.map((p, k) => `<rect x="${(k * w + 0.5).toFixed(1)}" y="0" width="${Math.max(w - 1, 1).toFixed(1)}" height="${Hh}" rx="1.5" fill="${p <= 0.1 ? "var(--cobre)" : "var(--vacio)"}"/>`).join("");
+    const paros = x.y.map((y, k) => y ? `<circle cx="${(k * w + w / 2).toFixed(1)}" cy="${Hh / 2}" r="${Math.min(4, w / 2.4).toFixed(1)}" fill="var(--tinta)" stroke="#fff" stroke-width="1.2"/>` : "").join("");
+    const anios = x.pct.map((_, k) => x.m0 + k).filter(m => m % 12 === 0)
+      .map(m => `<text x="${((m - x.m0) * w).toFixed(1)}" y="${Hh + 16}" font-size="14" fill="var(--tinta-3)">${Math.floor(m / 12)}</text>`).join("");
     const vistos = x.y.filter((y, k) => y && x.pct[k] <= 0.1).length, total = x.y.filter(Boolean).length;
     return `<h3>Historial 2024–2026</h3>
-      <svg viewBox="0 0 ${W} ${Hh + 14}" width="100%" role="img" aria-label="Riesgo mensual de la zona y meses con paro">${barras}${paros}
-        <text x="0" y="${Hh + 12}" font-size="12" fill="var(--tinta-3)">${anio(x.m0 + 1)}</text>
-        <text x="${W}" y="${Hh + 12}" font-size="12" fill="var(--tinta-3)" text-anchor="end">${anio(x.m0 + n - 1)}</text></svg>
-      <p style="margin:4px 0 0;font-size:14px;color:var(--tinta-3)">Barras en cobre, meses en que la zona figuró entre el 10% de mayor riesgo del país. Puntos, meses con paro o bloqueo.${total ? ` Coincidencias, ${vistos} de ${total}.` : ""}</p>`;
+      ${total ? `<p class="hist-dato">En ${vistos} de los ${total} meses con paro o bloqueo, la zona ya figuraba entre el 10% de mayor riesgo del país.</p>` : `<p class="hist-dato">Sin paros ni bloqueos en la zona desde 2024.</p>`}
+      <svg viewBox="0 0 ${W} ${Hh + 20}" width="100%" role="img" aria-label="Meses de mayor riesgo y meses con paro, 2024 a 2026">${tira}${paros}${anios}</svg>
+      <p style="margin:4px 0 0;font-size:14px;color:var(--tinta-2)">En cobre, meses entre el 10% de mayor riesgo del país. Punto, mes con paro o bloqueo.</p>`;
   }
 
   // Caja [oeste, sur, este, norte] de las huellas OEFA de las unidades de una fila. A mano: d3.geoBounds lee los
@@ -943,6 +1010,7 @@ function iniciar(D, G, H, C) {
       if (vista) map.flyTo({ ...vista, duration: quieto ? 0 : 1400, essential: true });
       return;
     }
+    if (matchMedia("(max-width: 900px)").matches) document.querySelector(".mapa").scrollIntoView({ behavior: quieto ? "auto" : "smooth" });  // en el celular el mapa está arriba
     const caja = cajaHuella(filas[i]), c = centroDe(filas[i].u);
     if (caja) {  // la huella de la mina, inclinada, para ver el tajo, la vía y quién vive al lado
       const [o, s, e, n] = caja;
@@ -1030,13 +1098,17 @@ function iniciar(D, G, H, C) {
           t: `Vía ${s.via || ""} bloqueada por una protesta en ${nombre(s.distrito || "")}, ${s.region || ""}. Es una ruta de salida de la operación`, src: "SUTRAN" }; }),
       ...filas.map((f, i) => ({ f, i })).filter(({ f, i }) => filas.findIndex(g => g.u === f.u) === i).map(({ f, i }) => { const p = mesP(f.a) ?? 0;
         return { f: String(D.creado), i, zona: true, s: p >= 0.5 ? "alta" : p >= 0.25 ? "media" : null,
-                 pc: pct(p), t: `Riesgo ${banda(p).toLowerCase()} de ${QUE} ${enMes}`,
-                 por: [frente(f.a), propia(f.a), puesto(f.a)].filter(Boolean).join(" "),
+                 pc: pct(p), n: nivelN(p), t: `Probabilidad de ${QUE}, ${enMes.replace(/^en /, "")}`,
+                 por: frente(f.a), mas: [propia(f.a), puesto(f.a)].filter(Boolean).join(" "),
                  src: "" }; })
     ].filter(x => x.s).sort((a, b) => (a.s === "alta" ? 0 : 1) - (b.s === "alta" ? 0 : 1) || b.f.localeCompare(a.f));
-    document.getElementById("alertas").innerHTML = items.slice(0, 8).map(x => `<li class="alerta"><span class="sev ${x.s}"></span>
-        <div><time class="a-dia">${dia(x.f)}</time>${x.i >= 0 ? `<div class="a-op">${esc(x.zona ? filas.filter(g => g.u === filas[x.i].u).map(titFila).join(", ") : titFila(filas[x.i]))}</div>` : ""}
-          ${x.pc ? `<div class="a-pc"><b>${x.pc}</b><span class="nivel n${nivelN(mesP(filas[x.i].a))}">${esc(x.t)}</span></div>` : `<div class="a-tit">${esc(x.t)}</div>`}${x.por ? `<div class="a-por">${esc(x.por)}</div>` : ""}${x.src ? `<div class="a-src">${x.src}</div>` : ""}</div>
+    // La primera, la más urgente, va destacada; cada alerta dice su prioridad en palabras, no solo con el color
+    document.getElementById("alertas").innerHTML = items.slice(0, 8).map((x, k) => `<li class="alerta${k ? "" : " destacada"}"${x.zona ? ` style="--c:var(--cobre-${x.n + 1})"` : ""}><span class="sev ${x.s}" aria-hidden="true"></span>
+        <div><div class="a-cab"><span class="a-prio ${x.s}">Prioridad ${x.s}</span><time>${dia(x.f)}</time></div>
+          ${x.i >= 0 ? (x.zona ? `<div class="a-op">Zona de ${esc(lugar(filas[x.i].u).split(",")[0])}</div><div class="a-uni">${esc(filas.filter(g => g.u === filas[x.i].u).map(titFila).join(", "))}</div>`
+                                : `<div class="a-op">${esc(titFila(filas[x.i]))}</div>`) : ""}
+          ${x.pc ? `<div class="a-pc"><b class="c${x.n}">${x.pc}</b><span class="nivel n${x.n}">${banda(mesP(filas[x.i].a))}</span></div><div class="a-que">${esc(x.t)}</div>` : `<div class="a-tit">${esc(x.t)}</div>`}
+          ${x.por ? `<div class="a-por">${esc(x.por)}${x.mas ? `<details><summary>Por qué</summary>${esc(x.mas)}</details>` : ""}</div>` : ""}${x.src ? `<div class="a-src">${x.src}</div>` : ""}</div>
         ${x.i >= 0 ? `<button type="button" class="btn" data-i="${x.i}">Ver en el mapa</button>` : ""}</li>`).join("")
       || `<li class="alerta"><span></span><div class="a-tit">Sin alertas en los últimos 45 días.</div></li>`;
     document.querySelectorAll("#alertas .btn").forEach(b => b.onclick = () => abrir(+b.dataset.i, true));
