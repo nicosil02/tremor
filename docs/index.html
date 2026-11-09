@@ -246,6 +246,7 @@
   details.vecinas li { display: flex; align-items: center; gap: 8px; } details.vecinas small { color: var(--tinta-2); font-size: 14px; }
   .rutas-emp { padding: 8px 24px 12px; } .rutas-emp h3 { font-size: 18px; margin: 8px 0 6px; }
   .rutas-emp ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .rutas-emp small.peor { color: var(--tinta-2); font-size: 14px; }
   .rutas-emp .via-sub { margin: 0 0 8px; color: var(--tinta-2); font-size: 15px; }
   .rutas-emp button.tramo { all: unset; cursor: pointer; display: flex; justify-content: space-between; gap: 12px; }
   .rutas-emp button.tramo em { font-style: normal; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -1287,14 +1288,31 @@ function iniciar(D, G, H, C) {
       // Riesgo en la vía: el distrito más expuesto de cada tramo; tramos tratados como independientes (un techo)
       // ponytail: fuera del número las capitales de departamento y Lima-Callao; su protesta urbana rara vez corta la carga,
       // y la EGPP pone ahí lo que no sabe ubicar. Siguen contando para los avisos. Mejor: protestas sobre la vía misma.
-      const pt = r => Math.max(0, ...r.ubigeos.filter(u => !/0101$/.test(u) && !/^(1501|0701)/.test(u)).map(u => (A.get(u) || {}).prob ?? 0));
+      // el tramo vale lo que su distrito más expuesto: probabilidad de paro o bloqueo ahí entre octubre y diciembre
+      const peor = r => r.ubigeos.filter(u => !/0101$/.test(u) && !/^(1501|0701)/.test(u)).map(u => [(A.get(u) || {}).prob ?? 0, u]).sort((a, b) => b[0] - a[0])[0] || [0, ""];
+      const pt = r => peor(r)[0];
       const via = 1 - cad.tramos.reduce((q, r) => q * (1 - pt(r)), 1);
-      box.innerHTML = `<h3>Riesgo en la vía, ${Math.round(via * 100)}%</h3><p class="via-sub">Que se corte algún tramo de su ruta de salida, octubre a diciembre. Toque un tramo para verlo en el mapa.</p><ul>${cad.tramos.map((r, i) => { const ev = D.eventos.filter(e => toca(r, e)
+      box.innerHTML = `<h3>Riesgo en la vía, ${Math.round(via * 100)}%</h3><p class="via-sub">Que se corte algún tramo de su ruta de salida entre octubre y diciembre. Cada tramo vale lo que su distrito más expuesto. Toque un tramo para verlo en el mapa.</p><ul>${cad.tramos.map((r, i) => { const ev = D.eventos.filter(e => toca(r, e)
           && Math.abs(new Date(String(e.fecha_evento || e.fecha_anuncio).slice(0, 10)) - new Date(hoyISO())) <= 14 * 864e5);
-        return `<li><button type="button" class="tramo" data-tramo="${i}"><b>${esc(r.nombre)}, ${esc(r.modo.toLowerCase())}</b><em>${Math.round(pt(r) * 100)}%</em></button><span class="${ev.length ? "mal" : ""}">${ev.length
+        return `<li><button type="button" class="tramo" data-tramo="${i}"><b>${esc(r.nombre)}, ${esc(r.modo.toLowerCase())}</b><em>${Math.round(pt(r) * 100)}%</em></button><small class="peor">Más expuesto: ${esc(lugar(peor(r)[1]).split(",")[0])}</small><span class="${ev.length ? "mal" : ""}">${ev.length
           ? ev.map(e => `${esc(corta(e))} ${e.estado === "anunciada" ? "anunciado para el" : "el"} ${esc(dia(String(e.fecha_evento || e.fecha_anuncio).slice(0, 10)))} en ${esc(lugar(e.ubigeo))}`).join(". ") : "Sin avisos"}.</span></li>`; }).join("")}</ul>`;
-      box.querySelectorAll(".tramo").forEach(b => b.onclick = () => { const us = new Set(cad.tramos[+b.dataset.tramo].ubigeos), bb = new maplibregl.LngLatBounds();
-        G.features.filter(f => us.has(f.properties.u)).forEach(f => JSON.stringify(f.geometry.coordinates).match(/-?\d+\.?\d*,-?\d+\.?\d*/g).forEach(s => bb.extend(s.split(",").map(Number))));
+      box.querySelectorAll(".tramo").forEach(b => b.onclick = () => { const r = cad.tramos[+b.dataset.tramo], us = new Set(r.ubigeos), bb = new maplibregl.LngLatBounds();
+        const fs = G.features.filter(f => us.has(f.properties.u));
+        fs.forEach(f => JSON.stringify(f.geometry.coordinates).match(/-?\d+\.?\d*,-?\d+\.?\d*/g).forEach(s => bb.extend(s.split(",").map(Number))));
+        // el tramo: sus distritos, sus carreteras y el distrito que da el porcentaje
+        const [p, u] = peor(r), c = centroDe(u);
+        const datos = { type: "FeatureCollection", features: [...fs.map(f => ({ ...f, properties: { ...f.properties, peor: f.properties.u === u ? 1 : 0 } })),
+          ...(c ? [{ type: "Feature", properties: { t: `${lugar(u).split(",")[0]}\n${Math.round(p * 100)}%` }, geometry: { type: "Point", coordinates: c } }] : [])] };
+        if (map.getSource("tramo")) map.getSource("tramo").setData(datos);
+        else {
+          map.addSource("tramo", { type: "geojson", data: datos });
+          map.addLayer({ id: "tramo-f", type: "fill", source: "tramo", filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": ["case", ["==", ["get", "peor"], 1], "#c2552b", "#f4c35a"], "fill-opacity": ["case", ["==", ["get", "peor"], 1], 0.35, 0.12] } });
+          map.addLayer({ id: "tramo-l", type: "line", source: "tramo", filter: ["==", ["geometry-type"], "Polygon"], paint: { "line-color": "#fff", "line-width": 1.2, "line-dasharray": [2, 2] } });
+          map.addLayer({ id: "tramo-t", type: "symbol", source: "tramo", filter: ["==", ["geometry-type"], "Point"],
+            layout: { "text-field": ["get", "t"], "text-font": ["Noto Sans Bold"], "text-size": 15 }, paint: { "text-color": "#fff", "text-halo-color": "rgb(28 38 41 / .9)", "text-halo-width": 2 } });
+        }
+        const vias = [...new Set(cad.tramos.map(x => x.via).filter(Boolean))];
+        ["rutas", "rutas-nombre"].forEach(k => map.setFilter(k, ["in", ["get", "r"], ["literal", vias]]));
         if (!bb.isEmpty()) map.fitBounds(bb, { padding: pad(80), pitch: 0, duration: 900 }); });
       return;
     }

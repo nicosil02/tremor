@@ -63,6 +63,7 @@
   .via { display: flex; align-items: center; gap: 12px; padding: 4px 16px 6px; }
   .via b { font-size: 44px; line-height: 1; font-weight: 750; color: var(--cobre-4); font-variant-numeric: tabular-nums; }
   .via span { font-size: 15px; color: var(--tinta-2); } ol.cadena .modo { grid-column: 1; font-size: 14px; color: var(--tinta-2); }
+  ol.cadena .aviso-t { grid-column: 1; font-size: 14px; color: var(--rojo); font-weight: 600; }
   ol.cadena .est { grid-row: 1 / 3; grid-column: 2; align-self: center; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--tinta); }
   .leyenda-via { position: fixed; z-index: 3; left: 12px; top: 64px; margin: 0; padding: 6px 10px; border-radius: 8px; background: rgb(248 250 249 / .92); font-weight: 650; }
   .grande { display: flex; align-items: center; gap: 14px; padding: 16px; }
@@ -221,9 +222,9 @@ const VISTAS = {
       <span class="t">${esc(o.unidad)}</span><span class="pct">${o.p == null ? "–" : pct(o.p)}<small>${o.p == null ? "" : `${nivel(o.p)} ${flecha(o.p - (o.normal ?? o.p))}`}</small></span>
       <span class="s" style="grid-column:2">${esc(lugar(o.ubigeo))}</span></button></li>`;
     return `<h2>Riesgo en la operación</h2><ul>${(op.length ? op : otras).map(filaOp).join("")}</ul>`
-      + (X.cadena.length ? `<h2>Riesgo en la vía</h2><div class="via"><b>${pct(X.via)}</b><span>Que se corte algún tramo de su ruta de salida, octubre a diciembre</span></div>
+      + (X.cadena.length ? `<h2>Riesgo en la vía</h2><div class="via"><b>${pct(X.via)}</b><span>Que se corte algún tramo de su ruta, octubre a diciembre</span></div>
         <ol class="cadena">${X.cadena.map((r, i) =>
-          `<li class="${r.estado[0]}"><button type="button" data-tramo="${i}"><b>${esc(r.nombre)}</b><span class="modo">${esc(r.modo)}. ${esc(r.estado[1] + r.vago)}</span><span class="est">${pct(r.p)}</span></button></li>`).join("")}</ol>`
+          `<li class="${r.estado[0]}"><button type="button" data-tramo="${i}"><b>${esc(r.nombre)}</b><span class="modo">${esc(r.modo)}, más expuesto ${esc(lugar(r.peor))}</span>${r.estado[0] !== "ok" ? `<span class="aviso-t">${esc(r.estado[1])}${r.vago ? ` en ${esc(r.vago.split(" en ")[1].replace(" sin distrito", ""))}` : ""}</span>` : ""}<span class="est">${pct(r.p)}</span></button></li>`).join("")}</ol>`
         : X.rutas.length ? `<h2>Rutas de salida</h2>${X.rutas.map(r => { const b = (D.sutran || []).filter(s => s.via === r).length;
           return `<div class="ruta"><b>${esc(r === "PE-3SG" ? "Corredor Minero del Sur" : r)}</b><span class="${b ? "mal" : "ok"}">${b ? "Bloqueada" : "Libre"}</span></div>`; }).join("")}` : "")
       + (op.length && otras.length ? `<details class="mas"><summary>Exploración y proyectos (${otras.length})</summary><ul>${otras.map(o => `<li>${esc(o.unidad)}</li>`).join("")}</ul></details>` : "");
@@ -341,6 +342,11 @@ function verMapa() {
   if (X.cadena.length) Promise.all([DISTRITOS(), RUTAS()]).then(([g, rg]) => {
     const de = new Map(X.cadena.flatMap((r, i) => r.ubigeos.map(u => [u, { i, p: r.p }])));
     const fc = { type: "FeatureCollection", features: g.features.filter(f => de.has(f.properties.u)).map(f => ({ ...f, properties: { ...f.properties, ...de.get(f.properties.u) } })) };
+    // rótulo en el distrito que da el porcentaje de cada tramo
+    const centro = f => { const cs = JSON.stringify(f.geometry.coordinates).match(/-?\d+\.?\d*,-?\d+\.?\d*/g).map(s => s.split(",").map(Number));
+      return [cs.reduce((a, c) => a + c[0], 0) / cs.length, cs.reduce((a, c) => a + c[1], 0) / cs.length]; };
+    const rotulos = { type: "FeatureCollection", features: X.cadena.map((r, i) => { const f = fc.features.find(f => f.properties.u === r.peor);
+      return f && { type: "Feature", properties: { i, t: `${lugar(r.peor)}\n${pct(r.p)}` }, geometry: { type: "Point", coordinates: centro(f) } }; }).filter(Boolean) };
     const vias = new Set(X.cadena.map(r => r.via).filter(Boolean).concat(X.rutas));
     const lineas = { type: "FeatureCollection", features: rg.features.filter(f => vias.has(f.properties.r)) };
     const foco = FOCO; FOCO = null;
@@ -350,7 +356,10 @@ function verMapa() {
         mapa.addLayer({ id: "tramos", type: "fill", source: "tramos", paint: { "fill-color": ["interpolate", ["linear"], ["get", "p"], 0, "#f3e1d3", 0.3, "#d98a5c", 0.6, "#8a3213"], "fill-opacity": 0.45 } }, "ops");
         mapa.addLayer({ id: "tramos-l", type: "line", source: "tramos", paint: { "line-color": "#8a3213", "line-width": 0.6 } }, "ops");
         mapa.addLayer({ id: "vias", type: "line", source: "vias", paint: { "line-color": "#e0a32e", "line-width": 3 } }, "ops");
-      } else { mapa.getSource("tramos").setData(fc); mapa.getSource("vias").setData(lineas); }
+        mapa.addSource("rotulos", { type: "geojson", data: rotulos });
+        mapa.addLayer({ id: "rotulos", type: "symbol", source: "rotulos", layout: { "text-field": ["get", "t"], "text-font": ["Noto Sans Bold"], "text-size": 13 },
+          paint: { "text-color": "#5c2410", "text-halo-color": "#fff", "text-halo-width": 1.8 } });
+      } else { mapa.getSource("tramos").setData(fc); mapa.getSource("vias").setData(lineas); mapa.getSource("rotulos").setData(rotulos); }
       const b = new maplibregl.LngLatBounds();
       fc.features.filter(f => foco == null || f.properties.i === foco).forEach(f =>
         JSON.stringify(f.geometry.coordinates).match(/-?\d+\.?\d*,-?\d+\.?\d*/g).forEach(s => b.extend(s.split(",").map(Number))));
