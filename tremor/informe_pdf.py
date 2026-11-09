@@ -1,4 +1,4 @@
-"""El informe semanal en PDF, igual para todos: se imprime con Chromium (Playwright) en vez de depender de la
+"""El informe mensual en PDF, igual para todos: se imprime con Chromium (Playwright) en vez de depender de la
 impresora y los márgenes del navegador de cada usuario. Deja docs/informes/informe-<empresa>.pdf.
 `python -m tremor.informe_pdf`"""
 import functools

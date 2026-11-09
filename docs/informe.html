@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tremor. Informe semanal</title>
+<title>Tremor. Informe mensual</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Source+Serif+4:opsz,wght@8..60,400..700&display=swap" rel="stylesheet">
 <style>
@@ -24,6 +24,7 @@
   .barra button:hover { background: #1d4061; }
   .barra button:active { transform: scale(0.97); }
   .barra button[aria-pressed="true"] { background: #fff; color: var(--marino); border-color: #fff; }
+  .hoja[contenteditable="true"] { outline: 2px dashed #c9a27a; outline-offset: 8px; }
   .hoja { max-width: 900px; margin: 28px auto 60px; background: #fff; box-shadow: 0 2px 12px rgb(20 33 43 / .10); padding: 44px 64px 40px; }
   /* Membrete */
   .membrete { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; border-bottom: 3px solid var(--marino); padding-bottom: 10px; }
@@ -212,7 +213,7 @@
     .barrita { display: none; }
   }
   @page { size: A4; margin: 16mm 16mm 18mm;
-    @bottom-left { content: "Tremor. Informe semanal de riesgo social. Uso interno."; font: 8pt Archivo, sans-serif; color: #66737c; }
+    @bottom-left { content: "Tremor. Informe mensual de riesgo social. Uso interno."; font: 8pt Archivo, sans-serif; color: #66737c; }
     @bottom-right { content: "Página " counter(page) " de " counter(pages); font: 8pt Archivo, sans-serif; color: #66737c; } }
   @media print {
     body { background: #fff; font-size: 10pt; }
@@ -232,8 +233,9 @@
 <body>
 <div class="barra">
   <b>TREMOR</b>
-  <div class="grupo" id="vistas"><button type="button" data-v="informe" aria-pressed="true">Informe semanal</button><button type="button" data-v="alerta" aria-pressed="false">Alerta inmediata</button></div>
+  <div class="grupo" id="vistas"><button type="button" data-v="informe" aria-pressed="true">Informe mensual</button><button type="button" data-v="alerta" aria-pressed="false">Alerta inmediata</button></div>
   <div class="grupo der" id="chips"></div>
+  <button type="button" class="boton" id="editar" aria-pressed="false">Editar texto</button>
   <a class="boton" id="pdf" href="informes/informe-bambas.pdf" download>Descargar PDF</a>
 </div>
 <main class="hoja" id="hoja"><p>Cargando…</p></main>
@@ -272,8 +274,7 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
   const mesP = a => a?.prob_zona_1m ?? a?.prob_zona;
   const zonaDe = u => [u, ...((D.vecinos || {})[u] || [])];
   const lugar = u => { const a = A.get(String(u)); const [, prov, dist] = (a?.lugar || "").split(" / ").map(nombre); return dist ? `${dist}, ${prov}` : ""; };
-  const hoy = String(D.creado).slice(0, 10), desde = new Date(new Date(hoy + "T12:00") - 6 * 864e5).toISOString().slice(0, 10);
-  const semana = Math.ceil(((new Date(hoy) - new Date(hoy.slice(0, 4) + "-01-01")) / 864e5 + 1) / 7);
+  const hoy = String(D.creado).slice(0, 10), desde = new Date(new Date(hoy + "T12:00") - 29 * 864e5).toISOString().slice(0, 10);
   const mesTxt = new Date((D.alerta.find(a => a.ventana_1m)?.ventana_1m || hoy.slice(0, 7)) + "-15").toLocaleDateString("es-PE", { month: "long" }).toLowerCase();
   const subidas = a => String(a?.razones_cambio_1m || "").split(" · ").filter(s => s.startsWith("sube")).map(s => s.replace(/^sube:\s*/, ""));
 
@@ -385,8 +386,8 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
       : `Riesgo ${BANDAS[niv].toLowerCase()} de paro en las operaciones de ${provsOp} durante ${mesTxt}`;
     const motor = motores[0] ? MOTOR_TXT[motores[0].corto] : "";
     const evaluacion = [
-      hechos ? `Durante la semana se registraron ${num(hechos, false) === "un" ? "una" : num(hechos)} ${hechos === 1 ? "protesta o bloqueo" : "protestas o bloqueos"} en las provincias de sus operaciones o en sus rutas, que se detallan más adelante.`
-             : `Durante la semana no se registraron protestas ni bloqueos en ${provsOp} ni en ${corredor}.`,
+      hechos ? `En los últimos 30 días se registraron ${num(hechos, false) === "un" ? "una" : num(hechos)} ${hechos === 1 ? "protesta o bloqueo" : "protestas o bloqueos"} en las provincias de sus operaciones o en sus rutas, que se detallan más adelante.`
+             : `En los últimos 30 días no se registraron protestas ni bloqueos en ${provsOp} ni en ${corredor}.`,
       altos.length ? `${hechos ? "La" : "No obstante, la"} probabilidad de paro para ${mesTxt} se mantiene en nivel alto en ${altos.length > 3 ? `${altos.slice(0, 3).map(z => `${nombreZ(z)} (${pct(mesP(z.a))})`).join(", ")} y otras ${num(altos.length - 3)} zonas` : lista(altos.map(z => `${nombreZ(z)} (${pct(mesP(z.a))})`))}.`
                    : `La operación con mayor exposición es ${nombreZ(top)}, con una probabilidad de paro de ${pct(mesP(top.a))} para ${mesTxt}.`,
       motor ? `El principal factor es ${motor}.` : "",
@@ -405,10 +406,10 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
       ...(motores.some(m => /poselectoral/.test(m.corto)) ? ["La instalación de las nuevas autoridades municipales en enero de 2027. Las nuevas gestiones suelen revisar los acuerdos vigentes con las empresas de su jurisdicción."] : []),
       ...(temas[0] ? [`Los reclamos por ${temas[0][0]}, presentes en ${num(temas[0][1], false)} de los ${num(deEmpresa.length || casos.length, false)} conflictos vigentes ${deEmpresa.length ? "con la empresa" : "en las zonas de sus operaciones"}.`] : [])].slice(0, 4);
 
-    document.title = `Tremor. Informe semanal, ${emp}`;
+    document.title = `Tremor. Informe mensual, ${emp}`;
     document.getElementById("hoja").innerHTML = `
       <div class="membrete"><div class="marca">TREMOR<span>Riesgo social en operaciones</span></div>
-        <div class="num">Informe semanal n.º ${semana}<br>${largo(hoy)}</div></div>
+        <div class="num">Informe mensual<br>${largo(hoy)}</div></div>
       <p class="para">Preparado para ${esc(emp.replace(/\.$/, ""))}. Periodo del ${periodo}. Documento de uso interno.</p>
       <h1>${esc(titular)}</h1>
       <p class="evaluacion">${esc(evaluacion)}</p>
@@ -422,7 +423,7 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
         <p class="fuente">Nota. ${zonas.length > 8 ? `Se muestran las ocho zonas con mayor probabilidad de las ${zonas.length} de la empresa. ` : ""}La zona comprende el distrito de la operación y los distritos colindantes. Nivel bajo, menos de 10%. Medio, de 10% a 25%. Alto, de 25% a 50%. Crítico, más de 50%.<br>Fuente: Defensoría del Pueblo, Base de protestas EGPP-PUCP, INEI, MINEM y otras. Elaboración: Tremor.</p>
       </section>
 
-      <section><h2>Hechos de la semana</h2>
+      <section><h2>Hechos del periodo</h2>
         ${hechos ? `
           <table class="cuadro"><caption class="rotulo">Cuadro ${"1"}. Protestas, anuncios y bloqueos en las provincias de sus operaciones</caption><thead><tr><th>Fecha</th><th>Hecho</th><th>Ubicación</th><th>Fuente</th></tr></thead><tbody>
           ${vias.map(s => `<tr><td>${diaC(dia(s.fecha_evento))}</td><td>Bloqueo de la vía ${esc(s.via)}, vigente. ${esc(s.contexto || "")}</td><td>${esc(nombre(s.distrito))}</td><td>SUTRAN</td></tr>`).join("")}
@@ -550,9 +551,19 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
 <script>
 // Si el PDF ya generado no está en este servidor (o la página se abrió como archivo), el navegador bajaría la página
 // de error: en ese caso se imprime la página misma, que tiene el diseño de impresión (Guardar como PDF).
+// Administración: el informe se revisa y corrige aquí antes de enviarlo. Con cambios, el PDF ya generado no los
+// tiene: se imprime la página editada.
+let editado = false;
+const hojaE = document.getElementById("hoja"), botonE = document.getElementById("editar");
+botonE.addEventListener("click", () => { const on = hojaE.isContentEditable; hojaE.contentEditable = String(!on);
+  botonE.setAttribute("aria-pressed", String(!on)); botonE.textContent = on ? "Editar texto" : "Terminar edición"; if (!on) hojaE.focus(); });
+hojaE.addEventListener("input", () => { editado = true; });
+document.getElementById("chips").addEventListener("click", () => { editado = false; hojaE.contentEditable = "false";
+  botonE.setAttribute("aria-pressed", "false"); botonE.textContent = "Editar texto"; }, true);
 document.getElementById("pdf").addEventListener("click", async e => {
   e.preventDefault();
   const a = e.currentTarget;
+  if (editado) { window.print(); return; }
   try {
     const r = await fetch(a.href, { method: "HEAD" });
     if (r.ok && (r.headers.get("content-type") || "").includes("pdf")) {

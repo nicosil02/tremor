@@ -207,7 +207,7 @@
   .leyenda b { display: block; font-weight: 650; color: var(--tinta); margin-bottom: 6px; line-height: 1.25; }
   .leyenda .rampa { display: grid; grid-template-columns: repeat(4, 1fr); height: 10px; }
   .leyenda .cortes { display: grid; grid-template-columns: repeat(4, 1fr); font-size: 13px; color: var(--tinta-3); margin-top: 2px; }
-  .leyenda .cortes span:not(:first-child) { margin-left: -10px; }
+  .leyenda .cortes span { line-height: 1.25; }
   .leyenda .detalle { display: none; }
   .leyenda.cerca .riesgo { display: none; }
   .leyenda.cerca .detalle { display: grid; gap: 6px; }
@@ -272,7 +272,7 @@
         <option value="nombre">Nombre</option><option value="region">Región</option></select></div>
     <ol class="ops" id="ops"></ol><button type="button" class="btn mas" id="mas-ops" hidden></button></div>
     <div class="seccion" id="avisos-sec"><h2>Protestas y anuncios recientes</h2><p id="nota-avisos"></p><ul class="avisos" id="avisos"></ul></div>
-    <div class="pie" id="pie">Con datos de la Defensoría del Pueblo, la base de protestas de la PUCP y unas 60 variables por distrito. <a href="metodo.html">Cómo se calcula y qué tan bien avisa</a>. <a href="informe.html">Informe semanal para clientes</a>.</div>
+    <div class="pie" id="pie">Con datos de la Defensoría del Pueblo, la base de protestas de la PUCP y unas 60 variables por distrito. <a href="metodo.html">Cómo se calcula y qué tan bien avisa</a>. <a href="informe.html">Informe mensual para clientes</a>.</div>
   </div>
   <div class="mapa">
     <div id="mapa"></div>
@@ -280,7 +280,7 @@
     <div class="leyenda" id="leyenda" hidden>
       <div class="riesgo"><b>Probabilidad de paro o bloqueo en la zona de influencia</b>
         <div class="rampa"><i style="background:var(--cobre-1)"></i><i style="background:var(--cobre-2)"></i><i style="background:var(--cobre-3)"></i><i style="background:var(--cobre-4)"></i></div>
-        <div class="cortes"><span>Bajo</span><span>10%</span><span>25%</span><span>50%</span></div></div>
+        <div class="cortes"><span>Bajo<br>&lt;10%</span><span>Medio<br>10–25%</span><span>Alto<br>25–50%</span><span>Crítico<br>&gt;50%</span></div></div>
       <div class="detalle"><b>En el mapa</b>
         <div class="linea"><i class="l-sel"></i>Unidad abierta</div>
         <div class="linea"><i class="l-unidad"></i>Otras unidades (OEFA)</div>
@@ -302,7 +302,7 @@
 const FUENTES = ["https://raw.githubusercontent.com/nicosil02/tremor/datos/web.json", "web.json"];
 const BASE = "https://tiles.openfreemap.org/styles/positron";
 const PERU = [[-81.4, -18.4], [-68.6, 0.1]];
-const pct = v => v == null || isNaN(v) ? "s/d" : v > 0.95 ? ">95%" : `${Math.round(v * 100)}%`;
+const pct = v => v == null || isNaN(v) ? "sin dato" : v > 0.95 ? ">95%" : `${Math.round(v * 100)}%`;
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const nombre = s => String(s ?? "").toLowerCase().replace(/(^|[\s(-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase())
   .replace(/ (De|Del|Y) /g, w => w.toLowerCase()).replace(/S\.(a|r)\.?(a|c|l)?\.?/gi, w => w.toUpperCase());
@@ -389,7 +389,7 @@ function iniciar(D, G, H, C) {
     map.addSource("sat", { type: "raster", tileSize: 256, maxzoom: 18, attribution: "Esri, Maxar",
       tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"] });
     map.addLayer({ id: "sat", type: "raster", source: "sat", minzoom: 6.5,  // de cerca, la tierra: el satélite entra al acercarse a una región
-      paint: { "raster-opacity": ["interpolate", ["linear"], ["zoom"], 6.5, 0, 8, 1] } }, bajoNombres);
+      paint: { "raster-opacity": ["interpolate", ["linear"], ["zoom"], 6.5, 0, 8, 1], "raster-fade-duration": 0 } }, bajoNombres);
     const rampa = ["step", ["get", "p"], css("--cobre-1"), 0.1, css("--cobre-2"), 0.25, css("--cobre-3"), 0.5, css("--cobre-4")];
     map.addSource("zonas", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     // Sobre el satélite la zona se vuelve transparente: manda la huella de la operación
@@ -457,7 +457,9 @@ function iniciar(D, G, H, C) {
       "circle-color": ["case", ["==", ["get", "e"], 1], ["step", ["get", "p"], css("--cobre-1"), 0.1, css("--cobre-2"), 0.25, css("--cobre-3"), 0.5, css("--cobre-4")], "#fff"],
       "circle-stroke-width": 2.2, "circle-stroke-color": ["case", ["==", ["get", "e"], 1], "#fff", css("--tinta")] } });
     map.addLayer({ id: "ops-nombre", type: "symbol", source: "puntos", filter: ["all", ["==", ["get", "k"], "op"], ["==", ["get", "e"], 1]],
-      layout: { ...TEXTO, "text-field": ["get", "t"], "text-size": 13, "text-offset": [0, 1.3], "text-anchor": "top" }, paint: HALO });
+      layout: { ...TEXTO, "text-field": ["format", ["get", "t"], { "font-scale": 1 }, "\n", {}, ["coalesce", ["get", "pc"], ""], { "font-scale": 1.3 }],
+                "text-size": 15, "text-offset": [0, 1.1], "text-anchor": "top", "text-max-width": 14 },
+      paint: { ...HALO, "text-halo-width": 2 } });
     map.addLayer({ id: "eventos-nombre", type: "symbol", source: "puntos", minzoom: 7.5, filter: ["!=", ["get", "k"], "op"],
       layout: { ...TEXTO, "text-field": ["get", "t"], "text-size": 12, "text-offset": [0, 1.1], "text-anchor": "top" }, paint: HALO });
     for (const capa of ["eventos", "ops", "ops-nombre", "zonas", "com-fondo", "com-punto", "huella"]) {
@@ -986,11 +988,11 @@ function iniciar(D, G, H, C) {
           t: `Vía ${s.via || ""} bloqueada por una protesta en ${nombre(s.distrito || "")}, ${s.region || ""}. Es una ruta de salida de la operación`, src: "SUTRAN" }; }),
       ...filas.map((f, i) => { const p = mesP(f.a) ?? 0;
         return { f: String(D.creado), i, s: p >= 0.5 ? "alta" : p >= 0.25 ? "media" : null,
-                 t: `Riesgo ${banda(p).toLowerCase()} de paro o bloqueo, ${pct(p)} ${enMes}`, src: "Modelo Tremor" }; })
+                 t: `Riesgo ${banda(p).toLowerCase()} de paro o bloqueo, ${pct(p)} ${enMes}`, src: "" }; })
     ].filter(x => x.s).sort((a, b) => (a.s === "alta" ? 0 : 1) - (b.s === "alta" ? 0 : 1) || b.f.localeCompare(a.f));
     document.getElementById("alertas").innerHTML = items.slice(0, 8).map(x => `<li class="alerta"><span class="sev ${x.s}"></span>
         <div><div class="a-meta"><time>${dia(x.f)}</time>${x.i >= 0 ? `<b>${esc(titFila(filas[x.i]))}</b>` : ""}</div>
-          <div class="a-tit">${esc(x.t)}</div><div class="a-src">${x.src}</div></div>
+          <div class="a-tit">${esc(x.t)}</div>${x.src ? `<div class="a-src">${x.src}</div>` : ""}</div>
         ${x.i >= 0 ? `<button type="button" class="btn" data-i="${x.i}">Ver en el mapa</button>` : ""}</li>`).join("")
       || `<li class="alerta"><span></span><div class="a-tit">Sin alertas en los últimos 45 días.</div></li>`;
     document.querySelectorAll("#alertas .btn").forEach(b => b.onclick = () => abrir(+b.dataset.i, true));
@@ -1010,8 +1012,8 @@ function iniciar(D, G, H, C) {
     map.getSource("zonas").setData({ type: "FeatureCollection", features: feats });
     // En la vista de una empresa el color va en sus operaciones; la zona queda como un fondo tenue
     map.setPaintProperty("zonas", "fill-opacity", ["interpolate", ["linear"], ["zoom"], 9, pais ? 0.8 : 0.22, 10.5, 0]);
-    const pts = [...filas.map((f, i) => ({ c: puntoOp(f), k: "op", i, p: mesP(f.a) ?? 0, e: !pais, t: `${titFila(f)}\n${pct(mesP(f.a))}` })), ...puntosEventos].filter(p => p.c)
-      .map(p => ({ type: "Feature", geometry: { type: "Point", coordinates: p.c }, properties: { k: p.k, h: p.h || "", t: p.t || "", i: p.i ?? -1, p: p.p ?? 0, e: p.e ? 1 : 0 } }));
+    const pts = [...filas.map((f, i) => ({ c: puntoOp(f), k: "op", i, p: mesP(f.a) ?? 0, e: !pais, t: titFila(f), pc: mesP(f.a) == null ? "" : pct(mesP(f.a)) })), ...puntosEventos].filter(p => p.c)
+      .map(p => ({ type: "Feature", geometry: { type: "Point", coordinates: p.c }, properties: { k: p.k, h: p.h || "", t: p.t || "", pc: p.pc || "", i: p.i ?? -1, p: p.p ?? 0, e: p.e ? 1 : 0 } }));
     map.getSource("puntos").setData({ type: "FeatureCollection", features: pts });
     const cs = filas.map(f => puntoOp(f) || centroDe(f.u)).filter(Boolean);
     if (cs.length && !pais) {
