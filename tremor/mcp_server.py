@@ -1,0 +1,206 @@
+"""Servidor MCP de Tremor: un asistente (Claude, por ejemplo) consulta la base y la Consulta Amigable del MEF.
+
+`python -m tremor.mcp_server` (stdio). Registrado en `.mcp.json` del repo.
+"""
+import sqlite3
+
+from mcp.server.mcpserver import MCPServer
+
+from tremor import territorio
+from tremor.db import RUTA_DB, conectar
+from tremor.lugares import catalogo, nombre, norm
+
+mcp = MCPServer("tremor", instructions=(
+    "Conflictos sociales en el Perú por distrito (ubigeo INEI): historia de protestas de la EGPP PUCP (1980-2025), "
+    "acciones de protesta de la Defensoría, protestas en la prensa (incluidas las anunciadas), bloqueos de la SUTRAN, "
+    "presupuesto municipal del MEF, pobreza departamental de la ENAHO, y precios y producción minera del BCRP. "
+    "Primero ubica el lugar con buscar_lugar y usa su ubigeo. Cita la fuente de cada cifra; para el MEF, la URL que "
+    "devuelve consulta_amigable."))
+
+
+def _sql(q, args=()):
+    con = sqlite3.connect(f"file:{RUTA_DB}?mode=ro", uri=True)
+    con.row_factory = sqlite3.Row
+    try:
+        return [dict(r) for r in con.execute(q, args)]
+    finally:
+        con.close()
+
+
+@mcp.tool()
+def buscar_lugar(texto: str, limite: int = 10) -> list[dict]:
+    """Distritos, provincias o departamentos cuyo nombre contiene el texto, con su ubigeo (sin tildes ni mayúsculas)."""
+    t, nombres = norm(texto), catalogo()[3]
+    salida = [{"ubigeo": u, "nombre": n, "nivel": {2: "departamento", 4: "provincia", 6: "distrito"}[len(u)],
+               "en": " / ".join(x for x in (nombres.get(u[:2]), nombres.get(u[:4])) if x and len(u) > 2)}
+              for u, n in nombres.items() if t in norm(n)]
+    return sorted(salida, key=lambda x: (norm(x["nombre"]) != t, len(x["ubigeo"])))[:limite]
+
+
+@mcp.tool()
+def perfil_distrito(ubigeo: str) -> dict:
+    """Todo lo que Tremor sabe de un distrito: perfil histórico de la EGPP, últimas acciones de protesta de la
+    Defensoría y eventos de prensa en su provincia, alertas viales de la SUTRAN, canon municipal por año, y las
+    variables distritales (IDH y pobreza, concesiones y pasivos mineros, unidades mineras y lotes de hidrocarburos,
+    resultados de las elecciones municipales)."""
+    prov = ubigeo[:4]
+    return {
+        "lugar": " / ".join(x for x in (nombre(ubigeo[:2]), nombre(prov), nombre(ubigeo)) if x),
+        "egpp": _sql("SELECT * FROM perfil_distrito WHERE ubigeo = ?", (ubigeo,)),
+        "defensoria_ultimas_acciones": _sql(
+            "SELECT reporte_num, fecha, medida, actores, lugar, demanda, ubigeo FROM accion_protesta "
+            "WHERE ubigeo LIKE ? ORDER BY reporte_num DESC, n LIMIT 15", (prov + "%",)),
+        "prensa_eventos": _sql("SELECT * FROM evento_prensa WHERE ubigeo LIKE ? ORDER BY fecha_evento DESC LIMIT 15",
+                               (prov + "%",)),
+        "sutran_alertas": _sql("SELECT codigo, motivo, submotivo, estado_via, titulo, descripcion, fecha_evento, "
+                               "visto_ultimo FROM sutran_alerta WHERE ubigeo LIKE ? ORDER BY fecha_evento DESC LIMIT 15",
+                               (prov + "%",)),
+        "mef_canon": _sql("SELECT anio, municipalidad, devengado_total, devengado_canon FROM mef_municipal "
+                          "WHERE ubigeo = ? ORDER BY anio", (ubigeo,)),
+        "enaho_pobreza_departamento": _sql("SELECT anio, pobreza, pobreza_extrema FROM enaho_departamento "
+                                           "WHERE ccdd = ? ORDER BY anio", (ubigeo[:2],)),
+        "bcrp_produccion_minera_departamento": _mineria(ubigeo[:2]),
+        "variables_distritales": _variables(ubigeo),
+        "fuentes": "EGPP PUCP (Arce 2024; actualización dic. 2025); Defensoría del Pueblo, reportes mensuales; "
+                   "prensa (enlaces en eventos_prensa.csv); SUTRAN alertasviales.sutran.gob.pe; MEF Consulta Amigable; "
+                   "INEI ENAHO módulo 34 (pobreza monetaria, % de personas); BCRP series RD129xx (producción minera "
+                   "por departamento); variables distritales con su fuente en variables_distritales.",
+    }
+
+
+@mcp.tool()
+def ranking_variable(variable: str, anio: int | None = None, n: int = 15, mayor_primero: bool = True) -> dict:
+    """Distritos ordenados por una variable distrital. Variables: idh, esperanza_vida, secundaria_completa,
+    anios_educacion, ingreso_pc, poblacion (PNUD 2017-2024); pobreza_inf, pobreza_sup, pobreza_grupo (INEI 2018);
+    concesiones, concesiones_ha, concesiones_metalicas_ha y sus *_nuevas* (INGEMMET, por año); pasivos_mineros,
+    unidades_mineras, lote_explotacion, lote_exploracion, oleoducto_norperuano (año 0, foto actual);
+    margen_victoria, listas, nep_listas, voto_ganador, participacion (ONPE, elecciones municipales distritales
+    2006, 2010, 2014, 2018, 2022).
+    Sin año usa el más reciente de esa variable."""
+    if anio is None:
+        anio = (_sql("SELECT MAX(anio) AS a FROM distrito_variable WHERE variable = ?", (variable,)) or [{}])[0].get("a")
+    filas = _sql(f"SELECT ubigeo, valor, fuente FROM distrito_variable WHERE variable = ? AND anio = ? "
+                 f"ORDER BY valor {'DESC' if mayor_primero else 'ASC'} LIMIT ?", (variable, anio, n))
+    return {"variable": variable, "anio": anio, "fuente": filas[0]["fuente"] if filas else None,
+            "distritos": [{"ubigeo": f["ubigeo"], "lugar": " / ".join(x for x in (nombre(f["ubigeo"][:2]),
+                          nombre(f["ubigeo"][:4]), nombre(f["ubigeo"])) if x), "valor": f["valor"]} for f in filas]}
+
+
+def _variables(ubigeo):
+    """distrito_variable → {variable: {"serie": {año: valor}, "fuente": url}}. Año 0 = foto actual, sin serie."""
+    salida = {}
+    for r in _sql("SELECT variable, anio, valor, fuente FROM distrito_variable WHERE ubigeo = ? ORDER BY variable, "
+                  "anio", (ubigeo,)):
+        v = salida.setdefault(r["variable"], {"serie": {}, "fuente": r["fuente"]})
+        v["serie"][r["anio"]] = r["valor"]
+    return salida
+
+
+def _mineria(ccdd):
+    """Producción minera anual del departamento por metal: las series del BCRP se llaman 'Cobre - Apurimac (tm.f)'."""
+    depto = norm(nombre(ccdd))
+    filas = _sql("SELECT nombre, substr(periodo, 1, 4) AS anio, SUM(valor) AS produccion, COUNT(*) AS meses "
+                 "FROM bcrp_mensual WHERE serie LIKE 'RD%' GROUP BY serie, anio ORDER BY nombre, anio")
+    return [f for f in filas if norm(f["nombre"].split(" - ")[1].split(" (")[0]) == depto]
+
+
+@mcp.tool()
+def serie_bcrp(texto: str, desde: str = "2020-01", hasta: str = "2100-12") -> list[dict]:
+    """Series mensuales del BCRP guardadas en Tremor cuyo nombre contiene el texto: precios del cobre, el oro y el
+    petróleo ("Cobre - LME", "Oro - LME", "WTI") y producción minera por departamento ("Oro - Cajamarca").
+    Periodos "AAAA-MM". Cita el código de la serie."""
+    t = norm(texto)
+    codigos = {r["serie"]: r["nombre"] for r in _sql("SELECT DISTINCT serie, nombre FROM bcrp_mensual")
+               if t in norm(r["nombre"])}
+    return [{"serie": c, "nombre": n, "datos": _sql("SELECT periodo, valor FROM bcrp_mensual WHERE serie = ? AND "
+                                                     "periodo BETWEEN ? AND ? ORDER BY periodo", (c, desde, hasta)),
+             "fuente": f"https://estadisticas.bcrp.gob.pe/estadisticas/series/mensuales/resultados/{c}/html"}
+            for c, n in list(codigos.items())[:5]]
+
+
+@mcp.tool()
+def pobreza_enaho(departamento: str | None = None, anio: int | None = None, desde: int = 2004,
+                  hasta: int = 2100) -> dict:
+    """Pobreza monetaria y extrema (% de personas) por departamento, ENAHO del INEI 2004-2025 (módulo 34, factor07 ×
+    mieperho, el método oficial). departamento: nombre ("Apurímac") → su serie; anio solo → los 25 ordenados de mayor
+    a menor. La ENAHO es representativa por departamento, no por distrito: para el distrito usa ranking_variable
+    con "pobreza_inf"/"pobreza_sup" (mapa de pobreza INEI 2018)."""
+    sql = "SELECT ccdd, anio, pobreza, pobreza_extrema, hogares, fuente FROM enaho_departamento WHERE anio BETWEEN ? AND ?"
+    filas = _sql(sql, (anio or desde, anio or hasta))
+    if departamento:
+        ccdd = next((u for u, n in catalogo()[3].items() if len(u) == 2 and norm(n) == norm(departamento)), None)
+        if not ccdd:
+            return {"error": f"No conozco el departamento {departamento!r}; usa buscar_lugar."}
+        filas = [f for f in filas if f["ccdd"] == ccdd]
+    for f in filas:
+        f["departamento"] = nombre(f["ccdd"])
+    filas.sort(key=lambda f: (f["anio"], -f["pobreza"]) if anio else (f["ccdd"], f["anio"]))
+    return {"filas": filas, "fuente": "INEI, ENAHO módulo 34 (sumaria), srienaho; cálculo de Tremor"}
+
+
+@mcp.tool()
+def empresa(nombre: str) -> dict:
+    """Vista de una empresa extractiva ("Southern", "Las Bambas", "Antamina"): cada operación suya (unidades
+    fiscalizables de OEFA), la probabilidad de una medida de fuerza en su zona (distrito y vecinos) en los 3 meses
+    siguientes, sus razones y señales en vivo; y cómo le habría ido en 2024+ (de sus meses con medida de fuerza en
+    la zona, cuántos tuvo en alerta antes, frente a la regla ingenua)."""
+    from tremor.empresas import historial, vista
+    con = conectar()
+    v = vista(con, nombre)
+    if v.empty:
+        return {"error": f"No hay operaciones de OEFA que coincidan con {nombre!r}."}
+    h = historial(con, nombre) if con.execute("SELECT 1 FROM sqlite_master WHERE name = 'modelo_prediccion'").fetchone() else None
+    return {"operaciones": v.where(v.notna(), None).to_dict("records"),
+            "como_le_habria_ido_2024": None if h is None else h.to_dict("records"),
+            "como_leer": "alerta = la zona está en el 10% de zonas con operación más riesgosas ese mes; pct_vistos = de "
+                         "los meses con medida de fuerza en la zona, cuántos tuvo en alerta; acierto_alertas = de sus "
+                         "alertas, cuántas acertaron."}
+
+
+@mcp.tool()
+def alerta(n: int = 20, extractiva: bool = True, ubigeo: str | None = None) -> dict:
+    """Alerta del modelo (specs/005-modelo): probabilidad de una medida de fuerza (paro, bloqueo, toma...) en los
+    3 meses siguientes al último reporte, por distrito, con sus razones. extractiva=True ordena por la de tema
+    minero, de hidrocarburos o ambiental; ubigeo da un solo distrito. Incluye cómo le fue al modelo en 2024+."""
+    orden = "puesto_extractivo" if extractiva else "puesto"
+    filtro, args = ("WHERE ubigeo = ?", (ubigeo,)) if ubigeo else ("", ())
+    filas = _sql(f"SELECT * FROM alerta {filtro} ORDER BY {orden} LIMIT ?", (*args, n))
+    prueba = _sql("SELECT objetivo, modelo, metrica, ROUND(valor, 3) AS valor FROM modelo_metrica WHERE metrica IN "
+                  "('precision_top20', 'precision_top20_nuevos', 'pr_auc', 'tasa_base') ORDER BY objetivo, modelo")
+    return {"distritos": filas, "desempeno_2024_en_adelante": prueba,
+            "como_leer": "prob = probabilidad de nivel ≥ 3 en la ventana; precision_top20 = de los 20 distritos más "
+                         "riesgosos de cada mes, qué fracción tuvo de verdad una medida de fuerza (prueba 2024+)."}
+
+
+@mcp.tool()
+def ranking(tipo: str = "socioambiental", n: int = 15, sin_capitales: bool = True) -> list[dict]:
+    """Distritos con más protestas en la EGPP. tipo: "socioambiental", "laboral_minero" o "todos". Sin capitales
+    por defecto: cuando la EGPP no sabe el distrito codifica la capital, que entonces queda inflada."""
+    col = {"socioambiental": "socioambiental", "laboral_minero": "laboral_minero", "todos": "eventos"}[tipo]
+    filtro = "WHERE capital_por_defecto = 0" if sin_capitales else ""
+    return _sql(f"SELECT ubigeo, region, provincia, distrito, {col} AS protestas, operaciones, top_subreclamos "
+                f"FROM perfil_distrito {filtro} ORDER BY {col} DESC LIMIT ?", (n,))
+
+
+@mcp.tool()
+def consulta_amigable(desglose: str, anio: int, filtros: dict[str, str] | None = None, buscar: str | None = None,
+                      limite: int = 30) -> dict:
+    """Presupuesto público del Perú (Consulta Amigable del MEF, desde 2012, en soles): PIA, PIM, devengado y avance %.
+    desglose y llaves de filtros: nivel (E nacional, R regional, M local), sector, pliego, ejecutora, municipalidad,
+    funcion, fuente, rubro (18 = canon, sobrecanon y regalías), departamento, mes, generica, categoria_presupuestal,
+    producto_proyecto, division_funcional. El valor de un filtro es el «codigo» de una fila anterior; para una
+    municipalidad también vale su ubigeo de 6 dígitos. Ejemplo: desglose="rubro", filtros={"nivel": "M",
+    "municipalidad": "030506"} = el gasto de Challhuahuacho por fuente."""
+    filtros = dict(filtros or {})
+    if len(filtros.get("municipalidad", "")) == 6:  # ubigeo → código de la ejecutora
+        _, munis = territorio.consulta("municipalidad", {"nivel": "M"}, anio)
+        filtros["municipalidad"] = next(m["codigo"] for m in munis if m["nombre"].startswith(filtros["municipalidad"]))
+    url, filas = territorio.consulta(desglose, filtros, anio)
+    if buscar:
+        filas = [f for f in filas if norm(buscar) in norm(f["nombre"])]
+    filas = sorted(filas, key=lambda f: f["pim"], reverse=True)
+    return {"anio": anio, "filas_total": len(filas), "filas": filas[:limite], "fuente": url}
+
+
+if __name__ == "__main__":
+    mcp.run()

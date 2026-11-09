@@ -1,0 +1,71 @@
+# Módulo 005: reentrena el modelo de alerta una vez al mes, cuando la Defensoría ya publicó su reporte mensual
+# (sale a mediados de mes), y publica la alerta y las métricas en la rama `datos`.
+# ACLED no viaja en `datos` (sus condiciones no permiten redistribuirlo): se baja de su API con la cuenta del autor
+# (secretos ACLED_EMAIL y ACLED_PASSWORD) y se borra de la base antes de publicar.
+# Tarda ~2 h; GitHub da hasta 6. Corre solo desde `main`.
+name: modelo
+
+on:
+  schedule:
+    - cron: "0 12 20 * *"   # día 20 de cada mes, 7:00 Lima
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:            # comparte la rama `datos` con defensoria.yml y radio.yml
+  group: datos
+  cancel-in-progress: false
+
+jobs:
+  modelo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Traer la base anterior
+        run: |
+          mkdir -p datos
+          git fetch --depth 1 origin datos
+          git show origin/datos:tremor.db.gz | gunzip > datos/tremor.db
+          mkdir -p datos/exportes && git archive origin/datos | tar -x -C datos/exportes --wildcards "*.csv"  # conserva los CSV de los otros workflows (la alerta del modelo)
+          git show origin/datos:distritos.geojson > datos/distritos.geojson
+
+      - name: ACLED (solo para validar; no se publica)
+        env:
+          ACLED_EMAIL: ${{ secrets.ACLED_EMAIL }}
+          ACLED_PASSWORD: ${{ secrets.ACLED_PASSWORD }}
+        run: python -m tremor.distritos acled_api
+
+      - name: Producción minera del MINEM (el archivo del año se actualiza cada mes) y qué unidades operan
+        run: |
+          python -m tremor.produccion
+          python -m tremor.empresas proyectos
+
+      - name: Modelo
+        run: python -u -m tremor.modelo
+
+      - name: Publicar en la rama datos (sin ACLED)
+        run: |
+          rm -rf datos/crudos/acled
+          sqlite3 datos/tremor.db "DROP TABLE IF EXISTS acled_evento; VACUUM;"
+          python -m tremor.web   # web.json: lo que lee la página (docs/index.html)
+          mkdir -p /tmp/datos && gzip -9 -c datos/tremor.db > /tmp/datos/tremor.db.gz && cp datos/exportes/*.csv /tmp/datos/
+          cp datos/exportes/web.json /tmp/datos/
+          cp datos/distritos.geojson /tmp/datos/
+          git config user.name "tremor-bot"
+          git config user.email "tremor-bot@users.noreply.github.com"
+          git checkout --orphan datos-nueva
+          git rm -rq --cached . && git clean -fdq -e datos
+          cp /tmp/datos/* .
+          git add tremor.db.gz *.csv *.geojson web.json
+          git commit -qm "Modelo al $(date -u +'%F %H:%M') UTC"
+          git push -f origin datos-nueva:datos

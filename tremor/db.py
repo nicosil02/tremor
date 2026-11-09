@@ -77,6 +77,44 @@ CREATE TABLE IF NOT EXISTS victimas (
     fallecidos INTEGER, heridos INTEGER,
     pagina INTEGER
 );
+-- 002: base de protestas de la EGPP PUCP (Arce 2024; actualización dic. 2025), sin Comentar_t.
+CREATE TABLE IF NOT EXISTS egpp_evento (
+    id INTEGER PRIMARY KEY,
+    fecha TEXT NOT NULL, ubigeo TEXT NOT NULL, precision TEXT, capital_por_defecto INTEGER,
+    periodico TEXT, sector TEXT, actor TEXT, actor_t TEXT,
+    accion_1 TEXT, accion_2 TEXT, accion_3 TEXT, accion_4 TEXT, accion_t TEXT,
+    adversario TEXT, institucion_1 TEXT, institucion_2 TEXT,
+    reclamo TEXT, sub_reclamo TEXT, reclamo_t TEXT,
+    participantes REAL, duracion_h REAL, heridos REAL, muertos REAL, detenidos REAL, fuerza_estatal INTEGER,
+    tipo_conflicto TEXT, operacion TEXT, duplicado_de INTEGER, version TEXT
+);
+CREATE INDEX IF NOT EXISTS egpp_fecha_lugar ON egpp_evento (fecha, ubigeo);
+-- 002: prensa (specs/002-prensa-egpp/data-model.md)
+CREATE TABLE IF NOT EXISTS nota (
+    id TEXT PRIMARY KEY, medio TEXT, titular TEXT NOT NULL, resumen TEXT, publicado TEXT, enlace TEXT,
+    consulta TEXT, departamento_consulta TEXT, descargado TEXT NOT NULL, filtro TEXT
+);
+CREATE TABLE IF NOT EXISTS codificacion (
+    nota_id TEXT NOT NULL, version TEXT NOT NULL,
+    es_protesta INTEGER, estado TEXT, fecha_evento TEXT,
+    region TEXT, provincia TEXT, distrito TEXT, localidad TEXT, ubigeo TEXT, precision TEXT,
+    sector TEXT, actor TEXT, accion TEXT, adversario TEXT, empresa TEXT, operacion TEXT,
+    reclamo TEXT, sub_reclamo TEXT, heridos INTEGER, muertos INTEGER, detenidos INTEGER, tipo_conflicto TEXT,
+    PRIMARY KEY (nota_id, version)
+);
+CREATE TABLE IF NOT EXISTS evento_prensa (
+    id INTEGER PRIMARY KEY, estado TEXT, fecha_anuncio TEXT, fecha_evento TEXT, ubigeo TEXT, precision TEXT,
+    accion TEXT, actor TEXT, reclamo TEXT, tipo_conflicto TEXT, empresa TEXT, operacion TEXT,
+    n_notas INTEGER, n_medios INTEGER
+);
+CREATE TABLE IF NOT EXISTS evento_nota (evento_id INTEGER NOT NULL, nota_id TEXT NOT NULL, PRIMARY KEY (evento_id, nota_id));
+CREATE TABLE IF NOT EXISTS sutran_alerta (     -- alertas viales de la SUTRAN; la API solo da las vigentes: se acumulan
+    id TEXT PRIMARY KEY, codigo TEXT, motivo TEXT, submotivo TEXT, estado_via TEXT, titulo TEXT, descripcion TEXT,
+    situacion TEXT, lat REAL, lng REAL, region TEXT, provincia TEXT, distrito TEXT, ubigeo TEXT, precision TEXT,
+    via TEXT, km TEXT, fecha_evento TEXT, vigente_desde TEXT, vigente_hasta TEXT, fuente TEXT,
+    visto_primero TEXT NOT NULL, visto_ultimo TEXT NOT NULL, interrumpido_alguna_vez INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS llm_cache (clave TEXT PRIMARY KEY, respuesta TEXT NOT NULL, modelo TEXT, creado TEXT);
 CREATE TABLE IF NOT EXISTS corrida (
     id INTEGER PRIMARY KEY,
     paso TEXT NOT NULL,
@@ -93,7 +131,7 @@ def ahora() -> str:
 
 def conectar(ruta: Path = RUTA_DB) -> sqlite3.Connection:
     Path(ruta).parent.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(ruta)
+    con = sqlite3.connect(ruta, timeout=120)  # varios procesos (modelo, prensa, radio) escriben a la vez
     con.row_factory = sqlite3.Row
     con.executescript(ESQUEMA)
     # Columnas añadidas después de la primera versión (bases ya creadas).
@@ -103,4 +141,7 @@ def conectar(ruta: Path = RUTA_DB) -> sqlite3.Connection:
             con.execute(f"ALTER TABLE documento ADD COLUMN {col} {tipo}")
     if "ingreso" not in {f[1] for f in con.execute("PRAGMA table_info(caso)")}:
         con.execute("ALTER TABLE caso ADD COLUMN ingreso TEXT")
+    if "resumen" not in {f[1] for f in con.execute("PRAGMA table_info(nota)")}:  # nota se creó sin resumen (vacía)
+        con.execute("DROP TABLE nota")
+        con.executescript(ESQUEMA)
     return con

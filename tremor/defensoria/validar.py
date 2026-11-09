@@ -150,10 +150,13 @@ def puntaje(f, c, idf):
         return 0.0
     p = (PESOS[0] * _parecido(f["_d"], c["_d"], idf) + PESOS[1] * _parecido(f["_u"], c["_u"], idf)
          + PESOS[2] * _parecido(f["_a"], c["_a"], idf))
-    return p + BONO_INGRESO if f["_ing"] and f["_ing"] == c["_ing"] else p
+    # El bono confirma un parecido, no lo reemplaza: en enero de 2026 entraron decenas de casos y el bono solo
+    # pegaba "Minera Chaska II" (Junín) al caso de Pasto Grande (Puno/Moquegua).
+    return p + BONO_INGRESO if f["_ing"] and f["_ing"] == c["_ing"] and p >= PISO_TEXTO else p
 
 
 BONO_INGRESO = 0.3
+PISO_TEXTO = 0.1
 UMBRAL_OTRO_DEP = 0.6
 COMODIN = {"nacional", "multirregional"}
 
@@ -385,14 +388,14 @@ def exportar(con):
     consultas = {
         "reportes.csv": "SELECT num, anio, mes, total, activos, latentes, en_dialogo, acciones_declaradas,"
                         " estado, detalle_validacion FROM reporte ORDER BY num",
-        "casos.csv": "SELECT id, codigo, nombre, tipo, departamento FROM caso ORDER BY id",
+        "casos.csv": "SELECT id, codigo, nombre, tipo, departamento, ubigeo FROM caso ORDER BY id",
         "caso_mes.csv": "SELECT cm.reporte_num, r.anio, r.mes, cm.caso_id, c.codigo, c.tipo, c.departamento,"
                         " cm.fase, cm.dialogo, cm.competencia, cm.actores_primarios, cm.actores_secundarios,"
                         " cm.actores_terciarios, cm.hechos_mes, cm.pagina, cm.enlace_confianza"
                         " FROM caso_mes cm JOIN caso c ON c.id = cm.caso_id JOIN reporte r ON r.num = cm.reporte_num"
                         " ORDER BY cm.reporte_num, cm.caso_id",
         "acciones_protesta.csv": "SELECT a.reporte_num, r.anio, r.mes, a.n, a.fecha, a.medida, a.actores, a.lugar,"
-                                 " a.demanda, a.pagina FROM accion_protesta a JOIN reporte r ON r.num = a.reporte_num"
+                                 " a.demanda, a.pagina, a.ubigeo FROM accion_protesta a JOIN reporte r ON r.num = a.reporte_num"
                                  " ORDER BY a.reporte_num, a.n",
         "victimas.csv": "SELECT v.reporte_num, r.anio, r.mes, v.lugar_caso, v.fallecidos, v.heridos, v.pagina"
                         " FROM victimas v JOIN reporte r ON r.num = v.reporte_num ORDER BY v.reporte_num",

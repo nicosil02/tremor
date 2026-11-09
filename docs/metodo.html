@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tremor. Cómo funciona</title>
+<meta name="description" content="Cómo calcula Tremor el riesgo de paro o bloqueo cerca de cada operación, y qué tan bien avisa.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='%23b4542a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<style>
+  /* La misma paleta del mapa: piedra fría, tinta pizarra, el riesgo en cobre y lo que llega en vivo en pátina */
+  :root { --piedra: #e8ecec; --papel: #f8faf9; --linea: #d3dad9; --tinta: #1c2629; --tinta-2: #4f5d61; --tinta-3: #77868a;
+          --cobre: #b4542a; --cobre-1: #f3e1d3; --cobre-2: #e3a67c; --cobre-3: #c96a3a; --cobre-4: #8a3213; --patina: #1d7468; --vacio: #dfe5e4;
+          --ancho: "wdth" 118; --ease-out: cubic-bezier(0.23, 1, 0.32, 1); color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--papel); color: var(--tinta); font: 17px/1.5 "Archivo", system-ui, sans-serif;
+         -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
+  main { max-width: 980px; margin: 0 auto; padding: 28px 20px 72px; }
+  a { color: inherit; }
+  .volver { font-size: 15px; color: var(--tinta-3); text-decoration: none; }
+  .volver:hover { color: var(--tinta); }
+  h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.05; font-weight: 780; font-variation-settings: var(--ancho); letter-spacing: -0.015em; margin: 18px 0 10px; }
+  .bajada { font-size: 19px; color: var(--tinta-2); max-width: 54ch; margin: 0; }
+  section { margin-top: 64px; }
+  h2 { font-size: 24px; line-height: 1.15; font-weight: 720; font-variation-settings: var(--ancho); margin: 0 0 6px; }
+  .lead { color: var(--tinta-2); margin: 0 0 22px; max-width: 60ch; }
+  .nota { font-size: 14px; color: var(--tinta-3); margin-top: 12px; }
+
+  /* 1. El mecanismo: fuentes → modelo → alerta, con el flujo de datos en movimiento */
+  .flujo { display: grid; grid-template-columns: 1fr 56px 1.1fr 56px 1fr; align-items: center; }
+  .col h3 { font-size: 13px; font-weight: 650; color: var(--tinta-3); margin: 0 0 8px; }
+  .fuentes { display: grid; gap: 6px; }
+  .fuente { background: #fff; border: 1px solid var(--linea); border-radius: 8px; padding: 8px 11px; font-size: 15px; line-height: 1.25; }
+  .fuente small { display: block; color: var(--tinta-3); font-size: 13px; }
+  .fuente.vivo { border-color: var(--patina); }
+  .fuente.vivo small { color: var(--patina); }
+  .tubo { height: 3px; background: repeating-linear-gradient(90deg, var(--cobre-2) 0 6px, transparent 6px 14px); background-size: 14px 3px; animation: fluir 0.7s linear infinite; }
+  @keyframes fluir { to { background-position: 14px 0; } }
+  .motor { background: var(--tinta); color: #fff; border-radius: 12px; padding: 18px; }
+  .motor h3 { color: #a9b6b9; }
+  .motor ol { margin: 0; padding: 0; list-style: none; counter-reset: paso; display: grid; gap: 12px; }
+  .motor li { counter-increment: paso; display: grid; grid-template-columns: 26px 1fr; gap: 8px; font-size: 15px; line-height: 1.35; }
+  .motor li::before { content: counter(paso); width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--cobre-2); color: var(--cobre-2);
+                      display: grid; place-items: center; font-size: 13px; font-weight: 700; }
+  .motor li b { font-weight: 650; }
+  .modelos { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+  .modelos span { font-size: 12px; padding: 2px 7px; border-radius: 4px; background: rgb(255 255 255 / .08); color: #c7d1d3; }
+  .modelos span.gana { background: var(--cobre); color: #fff; }
+  .salida { background: #fff; border: 1px solid var(--linea); border-radius: 12px; padding: 14px 16px; box-shadow: 0 8px 24px rgb(28 38 41 / .08); }
+  .salida .op { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .salida .op b { font-size: 17px; }
+  .salida .op span { font-size: 30px; font-weight: 750; font-variation-settings: var(--ancho); }
+  .salida .sub { color: var(--tinta-3); font-size: 14px; }
+  .salida .sube { display: inline-block; margin: 8px 0 10px; font-size: 14px; font-weight: 600; color: var(--cobre-4); background: var(--cobre-1); border-radius: 4px; padding: 2px 7px; }
+  .salida ul { margin: 0; padding: 10px 0 0; border-top: 1px solid var(--linea); list-style: none; display: grid; gap: 6px; font-size: 14px; color: var(--tinta-2); }
+  .salida ul b { color: var(--tinta); font-weight: 650; }
+
+  /* 2. El porcentaje como 100 meses */
+  .leer { display: grid; grid-template-columns: 280px 1fr; gap: 36px; align-items: center; }
+  .reticula { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+  .reticula i { aspect-ratio: 1; border-radius: 3px; background: var(--vacio); transition: background-color 220ms ease, transform 220ms var(--ease-out); }
+  .reticula i.si { background: var(--cobre); }
+  .reticula i.normal { box-shadow: 0 0 0 2px var(--tinta); }
+  .cifra { font-size: 64px; line-height: 1; font-weight: 780; font-variation-settings: var(--ancho); }
+  .cifra small { font-size: 22px; font-weight: 650; color: var(--cobre); margin-left: 8px; }
+  .leer p { margin: 10px 0 0; color: var(--tinta-2); max-width: 44ch; }
+  input[type=range] { width: 100%; max-width: 420px; margin-top: 20px; accent-color: var(--cobre); }
+  .escala { display: grid; grid-template-columns: 10fr 15fr 25fr 50fr; max-width: 420px; margin-top: 18px; font-size: 13px; color: var(--tinta-3); }
+  .escala div { border-top: 6px solid; padding-top: 4px; }
+  .escala div + div { border-left: 2px solid var(--papel); padding-left: 4px; }
+  .leyenda-ret { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--tinta-3); margin-top: 10px; }
+  .leyenda-ret i { display: inline-block; width: 11px; height: 11px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; }
+
+  /* 3. Barras de la prueba y de la cobertura, que crecen al entrar en pantalla */
+  .barras { display: grid; gap: 14px; max-width: 720px; }
+  .barra { display: grid; grid-template-columns: 210px 1fr 54px; gap: 12px; align-items: center; font-size: 15px; }
+  .barra .riel { height: 28px; background: var(--vacio); border-radius: 5px; overflow: hidden; }
+  .barra .lleno { height: 100%; width: 0; background: var(--tinta-3); border-radius: 5px; transition: width 1100ms var(--ease-out); }
+  .barra.tremor .lleno { background: var(--cobre); }
+  .barra.tremor { font-weight: 650; }
+  .barra b { font-size: 20px; font-weight: 720; text-align: right; }
+  .anos { display: grid; gap: 6px; max-width: 720px; }
+  .ano { display: grid; grid-template-columns: 44px 1fr; gap: 10px; align-items: center; font-size: 14px; color: var(--tinta-3); }
+  .ano .riel { display: flex; height: 20px; border-radius: 4px; overflow: hidden; background: var(--vacio); }
+  .ano .riel i { width: 0; transition: width 1000ms var(--ease-out); }
+  .ano .def { background: var(--tinta); }
+  .ano .otr { background: var(--cobre-2); }
+  .claves { display: flex; gap: 16px; flex-wrap: wrap; font-size: 14px; color: var(--tinta-2); margin-top: 12px; }
+  .claves i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 6px; }
+
+  /* 4. El rezago, como línea de tiempo */
+  .tiempo { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); max-width: 760px; margin-top: 8px; }
+  .tiempo::before { content: ""; position: absolute; left: 6px; right: 6px; top: 7px; height: 2px; background: var(--linea); }
+  .hito { position: relative; padding-top: 24px; font-size: 14px; color: var(--tinta-2); line-height: 1.3; padding-right: 10px; }
+  .hito::before { content: ""; position: absolute; top: 0; left: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--papel); border: 2px solid var(--tinta-3); }
+  .hito b { display: block; color: var(--tinta); font-size: 15px; }
+  .hito.hoy::before { border-color: var(--patina); background: var(--patina); }
+  .hito.alerta::before { border-color: var(--cobre); background: var(--cobre); }
+  .limites { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 28px; }
+  .limites div { border-top: 2px solid var(--tinta); padding-top: 10px; font-size: 15px; color: var(--tinta-2); line-height: 1.4; }
+  .limites b { display: block; color: var(--tinta); margin-bottom: 2px; }
+
+  @media (max-width: 760px) {
+    .flujo { grid-template-columns: 1fr; }
+    .tubo { width: 3px; height: 34px; margin: 4px auto; background: repeating-linear-gradient(180deg, var(--cobre-2) 0 6px, transparent 6px 14px);
+            background-size: 3px 14px; animation-name: bajar; }
+    @keyframes bajar { to { background-position: 0 14px; } }
+    .fuentes { grid-template-columns: 1fr 1fr; }
+    .leer { grid-template-columns: 1fr; gap: 20px; }
+    .reticula { max-width: 280px; }
+    .barra { grid-template-columns: 1fr 48px; }
+    .barra .riel { grid-column: 1 / -1; grid-row: 2; }
+    .tiempo { grid-template-columns: 1fr 1fr; row-gap: 18px; }
+    .limites { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tubo { animation: none; }
+    .barra .lleno, .ano .riel i, .reticula i { transition: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <a class="volver" href="./">← Volver al mapa</a>
+  <h1>Cómo funciona</h1>
+  <p class="bajada">Tremor junta lo que se sabe de cada zona minera o petrolera, lo compara con lo que pasó antes de cada paro desde 2004 y devuelve una probabilidad por operación.</p>
+
+  <section aria-labelledby="t-mec">
+    <h2 id="t-mec" class="oculto" hidden>El mecanismo</h2>
+    <div class="flujo">
+      <div class="col">
+        <h3>Entra</h3>
+        <div class="fuentes">
+          <div class="fuente">Defensoría del Pueblo<small>Conflictos y protestas desde 2004</small></div>
+          <div class="fuente">Base de protestas PUCP<small>25 mil eventos, 1980–2025</small></div>
+          <div class="fuente">OEFA<small>Unidades mineras y lotes</small></div>
+          <div class="fuente">60 variables por distrito<small>Canon, pobreza, comunidades, elecciones</small></div>
+          <div class="fuente vivo">Prensa regional y radio<small>En vivo, cada 4 horas</small></div>
+          <div class="fuente vivo">SUTRAN<small>Vías bloqueadas hoy</small></div>
+        </div>
+      </div>
+      <div class="tubo" aria-hidden="true"></div>
+      <div class="col motor">
+        <h3>El modelo</h3>
+        <ol>
+          <li><span><b>Arma la zona.</b> El distrito de la operación y los que limitan con él.</span></li>
+          <li><span><b>Mira la historia.</b> 380 mil meses de 1 892 distritos, y qué los antecedió cuando hubo un paro.</span></li>
+          <li><span><b>Compiten cinco modelos.</b> Gana el que mejor avisó en 2021–2023.
+            <span class="modelos"><span>Logística</span><span id="m-lasso">Lasso</span><span>Árbol</span><span id="m-bosque">Bosque</span><span>Boosting</span></span></span></li>
+          <li><span><b>Explica.</b> Quita cada grupo de variables y mide cuánto cambia el riesgo.</span></li>
+        </ol>
+      </div>
+      <div class="tubo" aria-hidden="true"></div>
+      <div class="col">
+        <h3>Sale, por cada operación</h3>
+        <div class="salida">
+          <div class="op"><b>Sallahue Norte</b><span>33%</span></div>
+          <div class="sub">Las Bambas, Tambobamba</div>
+          <span class="sube">+8 puntos sobre lo normal</span>
+          <ul>
+            <li><b>Qué cambió.</b> Pasó la elección municipal</li>
+            <li><b>Qué vigilar.</b> Acuerdos incumplidos, vías</li>
+            <li><b>Quiénes.</b> Huancuire, Chuicuni, Fuerabamba</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-leer">
+    <h2 id="t-leer">Cómo leer el porcentaje</h2>
+    <div class="leer">
+      <div>
+        <div class="reticula" id="reticula" role="img" aria-label="100 meses parecidos"></div>
+        <div class="leyenda-ret"><span><i style="background:var(--cobre)"></i>Hubo paro o bloqueo</span><span><i style="box-shadow:inset 0 0 0 2px var(--tinta-3)"></i>Lo normal en la zona</span></div>
+      </div>
+      <div>
+        <div class="cifra"><span id="n">33</span>%<small id="banda">Alto</small></div>
+        <p id="frase"></p>
+        <input type="range" id="desliza" min="2" max="70" value="33" aria-label="Probabilidad de ejemplo">
+        <div class="escala">
+          <div style="border-color:var(--cobre-1)">Bajo</div><div style="border-color:var(--cobre-2)">Medio</div>
+          <div style="border-color:var(--cobre-3)">Alto</div><div style="border-color:var(--cobre-4)">Crítico</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-prueba">
+    <h2 id="t-prueba">Qué tan bien avisa</h2>
+    <p class="lead">Se entrenó hasta 2023 y se probó en 2024–2026, meses que no había visto. Cada mes se tomaron las 20 zonas que marcaba como más riesgosas y se vio en cuántas hubo un paro o bloqueo.</p>
+    <div class="barras" id="barras"></div>
+  </section>
+
+  <section aria-labelledby="t-oculto" id="s-oculto" hidden>
+    <h2 id="t-oculto">Lo que nadie registra</h2>
+    <p class="lead" id="oculto-lead"></p>
+    <div class="anos" id="anos"></div>
+    <div class="claves"><span><i style="background:var(--tinta)"></i>Defensoría</span><span><i style="background:var(--cobre-2)"></i>Solo otras fuentes</span><span><i style="background:var(--vacio)"></i>Estimado sin registro</span></div>
+  </section>
+
+  <section aria-labelledby="t-lim">
+    <h2 id="t-lim">Cuándo llega el aviso</h2>
+    <div class="tiempo" id="tiempo"></div>
+    <div class="limites">
+      <div><b>Es una probabilidad</b>Complementa la gestión social y las encuestas de percepción, no las reemplaza.</div>
+      <div><b>El primer paro cuesta</b>Donde no hubo protestas en años, no anticipa mejor que el historial.</div>
+      <div><b>La prensa avisa antes</b>Las protestas anunciadas se muestran aparte y no cambian el porcentaje.</div>
+    </div>
+  </section>
+  <p class="nota" style="margin-top:56px">Código y datos en <a href="https://github.com/nicosil02/tremor">github.com/nicosil02/tremor</a>. La base de la PUCP es de uso académico.</p>
+</main>
+<script>
+const pct = v => v == null || isNaN(v) ? "s/d" : `${Math.round(v * 100)}%`;
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const banda = p => p >= 50 ? "Crítico" : p >= 25 ? "Alto" : p >= 10 ? "Medio" : "Bajo";
+
+// La retícula: cada cuadro es un mes parecido; los de cobre tuvieron paro
+const ret = document.getElementById("reticula"), NORMAL = 25;
+ret.innerHTML = Array.from({ length: 100 }, () => "<i></i>").join("");
+const celdas = [...ret.children];
+function pintar(n) {
+  celdas.forEach((c, k) => { c.classList.toggle("si", k < n); c.classList.toggle("normal", k === NORMAL - 1); });
+  document.getElementById("n").textContent = n;
+  document.getElementById("banda").textContent = banda(n);
+  document.getElementById("frase").textContent = `De cada 100 meses con una situación parecida, en ${n} hubo un paro o bloqueo en la zona. ` +
+    (n > NORMAL ? `Si lo normal ahí es ${NORMAL}%, este mes está ${n - NORMAL} puntos por encima. Eso es lo que pide actuar.` : n < NORMAL ? `Está por debajo de lo normal de la zona, ${NORMAL}%.` : `Es lo normal de la zona.`);
+}
+document.getElementById("desliza").oninput = e => pintar(+e.target.value);
+pintar(33);
+
+// Lo que crece al aparecer en pantalla
+const verAlEntrar = (el, fn) => new IntersectionObserver((es, o) => es.forEach(x => { if (x.isIntersecting) { fn(); o.disconnect(); } }), { threshold: 0.3 }).observe(el);
+
+(async () => {
+  let D = null;
+  for (const u of ["https://raw.githubusercontent.com/nicosil02/tremor/datos/web.json", "web.json"]) {
+    try { const r = await fetch(u, { cache: "no-cache" }); if (r.ok) { D = await r.json(); break; } } catch (e) {}
+  }
+  if (!D) return;
+  const gana = D.mejor?.z1_fuerza;
+  ({ lasso: "m-lasso", bosque: "m-bosque" })[gana] && document.getElementById(({ lasso: "m-lasso", bosque: "m-bosque" })[gana]).classList.add("gana");
+
+  const cifra = (o, m, k) => D.metricas?.find(x => x.objetivo === o && x.modelo === m && x.metrica === k)?.valor;
+  const o = "z1_fuerza", filas = [["Tremor", cifra(o, gana, "precision_top20"), "tremor"],
+    ["Mirar solo el historial reciente", cifra(o, "ingenuo", "precision_top20"), ""], ["Al azar", cifra(o, "ingenuo", "tasa_base"), ""]];
+  if (filas[0][1] != null) {
+    const b = document.getElementById("barras");
+    b.innerHTML = filas.map(([n, v, c]) => `<div class="barra ${c}"><span>${n}</span><div class="riel"><div class="lleno" data-w="${(v * 100).toFixed(1)}"></div></div><b>${pct(v)}</b></div>`).join("");
+    verAlEntrar(b, () => b.querySelectorAll(".lleno").forEach(x => x.style.width = x.dataset.w + "%"));
+  }
+
+  const cob = D.cobertura || [];
+  if (cob.length) {
+    const real = c => c.vistas + c.no_vistas, def = c => c.defensoria * c.vistas / real(c), otr = c => c.vistas / real(c) - def(c);
+    const prom = cob.reduce((s, c) => s + def(c), 0) / cob.length;
+    document.getElementById("s-oculto").hidden = false;
+    document.getElementById("oculto-lead").textContent = `La Defensoría registra cerca de ${pct(prom)} de los meses con protesta en un distrito. Tremor cruza sus registros con la PUCP, ACLED y la prensa, y estima lo que ninguna vio.`;
+    const a = document.getElementById("anos");
+    a.innerHTML = cob.map(c => `<div class="ano"><span>${c.anio}</span><div class="riel"><i class="def" data-w="${(def(c) * 100).toFixed(1)}"></i><i class="otr" data-w="${(otr(c) * 100).toFixed(1)}"></i></div></div>`).join("");
+    verAlEntrar(a, () => a.querySelectorAll("i").forEach(x => x.style.width = x.dataset.w + "%"));
+  }
+
+  // El rezago: último reporte, hoy y el mes de la alerta
+  const [y, m] = (D.mes_base || "").split("-").map(Number);
+  if (y && m) {
+    const mes = k => { const d = new Date(y, m - 1 + k); return `${MESES[d.getMonth()]} ${d.getFullYear()}`; };
+    const hoy = D.creado ? new Date(D.creado + "T12:00") : new Date();
+    document.getElementById("tiempo").innerHTML = `
+      <div class="hito"><b>${mes(0)}</b>Último reporte de la Defensoría</div>
+      <div class="hito"><b>${mes(1)}</b>La Defensoría lo publica, con un mes de rezago</div>
+      <div class="hito hoy"><b>${hoy.getDate()} de ${MESES[hoy.getMonth()]}</b>Hoy. Prensa, radio y SUTRAN llegan cada 4 horas</div>
+      <div class="hito alerta"><b>${mes(2)}</b>El mes para el que avisa la alerta</div>`;
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+# Módulo 003: escucha las radios de las zonas de influencia extractiva en franjas de noticieros, transcribe con
+# faster-whisper en máquinas de GitHub (sin cuota; como tv-en-vivo.yml de Base_legislativa), codifica los fragmentos
+# como notas de prensa, mide el ánimo hacia cada proyecto (tremor.animo) y publica en la rama `datos`.
+# Lima = UTC-5. Corre solo desde `main`.
+# shortcut: el cron de GitHub puede arrancar 10-30 min tarde; si hace falta puntualidad, dispararlo desde cron-job.org.
+name: radio
+
+# Franjas: los noticieros regionales van de 5 a 8, de 12 a 14 y de 18 a 19 (p. ej. Marañón de Jaén: 6-8 y 12-14;
+# Pachamama de Puno: 5:10 y 19:15 bilingüe). Lunes a sábado: el domingo es música y misa.
+# Graba 45 min a la vez y transcribe después: el reloj de la franja solo cuenta para la grabación.
+on:
+  schedule:
+    - cron: "45 10 * * 1-6"   # 5:45 Lima (el cron de GitHub llega 10-30 min tarde): ~6:00-7:00
+    - cron: "45 16 * * 1-6"   # 11:45 Lima: ~12:00-13:00
+    - cron: "45 22 * * 1-6"   # 17:45 Lima: ~18:00-19:00
+  workflow_dispatch:
+    inputs:
+      minutos:
+        description: "Minutos de escucha por radio"
+        required: false
+        default: "45"
+
+permissions:
+  contents: write
+
+jobs:
+  escuchar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330   # tope de GitHub: 360. Peor caso: 45 grabando + ~120 Whisper + ~110 MMS (15 min por radio)
+    strategy:
+      fail-fast: false
+      max-parallel: 18   # el plan gratis da 20 trabajos a la vez: quedan 2 para defensoria.yml y para publicar
+      matrix:
+        grupo: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]   # 1/18 de tremor/radios.csv (~16 radios)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Caché de los modelos (Whisper small, MMS-1b-all y NLLB-200 600M, ~7 GB)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: radio-modelos-v2
+
+      - run: |
+          pip install -r requirements.txt faster-whisper transformers sentencepiece
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          sudo apt-get install -y -qq ffmpeg
+
+      - name: Escuchar y transcribir
+        run: |
+          MIN="${{ github.event.inputs.minutos }}"
+          if [ -z "$MIN" ]; then MIN=45; fi
+          python -m tremor.radio escuchar --minutos "$MIN" --grupo ${{ matrix.grupo }} --grupos 18 --indigena \
+            --salida notas_${{ matrix.grupo }}.jsonl || echo "[aviso] terminó con error; se sube lo que haya"
+          touch notas_${{ matrix.grupo }}.jsonl
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: notas-${{ matrix.grupo }}
+          path: notas_${{ matrix.grupo }}.jsonl
+          retention-days: 3
+
+  publicar:
+    needs: escuchar
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    concurrency:            # comparte la rama `datos` con defensoria.yml
+      group: datos
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: notas-*
+          merge-multiple: true
+          path: radio
+
+      - name: Traer la base anterior
+        run: |
+          mkdir -p datos
+          git fetch --depth 1 origin datos
+          git show origin/datos:tremor.db.gz | gunzip > datos/tremor.db
+          mkdir -p datos/exportes && git archive origin/datos | tar -x -C datos/exportes --wildcards "*.csv"  # conserva los CSV de los otros workflows (la alerta del modelo)
+          git show origin/datos:distritos.geojson > datos/distritos.geojson || true
+
+      - name: Cargar, codificar y medir el ánimo
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python -m tremor.radio cargar radio/*.jsonl
+          python -m tremor.prensa codificar
+          python -m tremor.prensa agrupar
+          python -m tremor.prensa exportar
+          python -m tremor.animo
+
+      - name: Publicar en la rama datos
+        run: |
+          python -m tremor.web   # web.json: lo que lee la página (docs/index.html)
+          mkdir -p /tmp/datos && gzip -9 -c datos/tremor.db > /tmp/datos/tremor.db.gz && cp datos/exportes/*.csv /tmp/datos/
+          cp datos/exportes/web.json /tmp/datos/
+          cp datos/distritos.geojson /tmp/datos/ || true
+          git config user.name "tremor-bot"
+          git config user.email "tremor-bot@users.noreply.github.com"
+          git checkout --orphan datos-nueva
+          git rm -rq --cached . && git clean -fdq -e datos
+          cp /tmp/datos/* .
+          git add tremor.db.gz *.csv *.geojson web.json
+          if git fetch --depth 1 origin datos && git diff --quiet origin/datos -- *.csv; then
+            echo "Sin datos nuevos: no se publica."
+            exit 0
+          fi
+          git commit -qm "Radio al $(date -u +'%F %H:%M') UTC"
+          git push -f origin datos-nueva:datos

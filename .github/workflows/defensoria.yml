@@ -1,14 +1,18 @@
-# T027: corre el recolector una vez al día y guarda la base y los CSV en la rama `datos`.
-# Si no hubo reporte nuevo, no hace commit.
+# T027 (001) y T026 (002): Defensoría + prensa cada 4 horas; guarda la base y los CSV en la rama `datos`.
+# Si nada cambió, no hace commit. La EGPP se carga una sola vez desde la máquina del autor y viaja dentro de la base.
 name: defensoria
 
 on:
   schedule:
-    - cron: "0 13 * * *"   # 8:00 a. m. en Lima
+    - cron: "0 * * * *"     # cada hora: una protesta anunciada debe aparecer pronto (el LLM codifica lo que su cupo alcance)
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:            # dos corridas a la vez se pisarían la rama `datos`
+  group: datos
+  cancel-in-progress: false
 
 jobs:
   recolectar:
@@ -25,29 +29,62 @@ jobs:
       - run: pip install -r requirements.txt
 
       # La base de la corrida anterior vive en la rama `datos`, comprimida (sin comprimir pasa los 100 MB que
-      # GitHub acepta por archivo); sin ella, se arma desde cero.
+      # GitHub acepta por archivo). Sin ella no se sigue: la EGPP no se puede reconstruir aquí.
       - name: Traer la base anterior
         run: |
           mkdir -p datos
-          if git fetch --depth 1 origin datos; then
-            git show origin/datos:tremor.db.gz | gunzip > datos/tremor.db || rm -f datos/tremor.db
-          fi
+          git fetch --depth 1 origin datos
+          git show origin/datos:tremor.db.gz | gunzip > datos/tremor.db
+          mkdir -p datos/exportes && git archive origin/datos | tar -x -C datos/exportes --wildcards "*.csv"  # conserva los CSV de los otros workflows (la alerta del modelo)
+          git show origin/datos:distritos.geojson > datos/distritos.geojson || true  # límites (tremor.distritos pnud)
 
-      - name: Recolectar
+      - name: Defensoría
         run: python -m tremor.defensoria todo
+
+      - name: Operaciones y proyectos (una vez al día; OEFA, cartera del MINEM, SENACE y decretos de El Peruano)
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          [ "$(date -u +%H)" = "11" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] || exit 0
+          python -m tremor.empresas cargar
+
+      - name: SUTRAN (alertas viales vigentes, y qué dicen los medios de cada bloqueo)
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python -m tremor.sutran
+
+      - name: Conflictos (con quién es cada uno; prensa para los que no tienen descripción)
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python -m tremor.contexto
+
+      - name: Prensa
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python -m tremor.prensa todo
+
+      - name: Perfil por distrito (EGPP)
+        run: python -m tremor.egpp perfil
 
       - name: Publicar en la rama datos
         run: |
+          python -m tremor.web   # web.json: lo que lee la página (docs/index.html)
           mkdir -p /tmp/datos && gzip -9 -c datos/tremor.db > /tmp/datos/tremor.db.gz && cp datos/exportes/*.csv /tmp/datos/
+          cp datos/exportes/web.json /tmp/datos/
+          cp datos/distritos.geojson /tmp/datos/ || true
           git config user.name "tremor-bot"
           git config user.email "tremor-bot@users.noreply.github.com"
           git checkout --orphan datos-nueva
           git rm -rq --cached . && git clean -fdq -e datos
           cp /tmp/datos/* .
-          git add tremor.db.gz *.csv
+          git add tremor.db.gz *.csv *.geojson web.json
           if git fetch --depth 1 origin datos && git diff --quiet origin/datos -- *.csv; then
-            echo "Sin reporte nuevo: no se publica."
+            echo "Sin datos nuevos: no se publica."
             exit 0
           fi
-          git commit -qm "Datos de la Defensoría al $(date -u +%F)"
+          git commit -qm "Datos al $(date -u +'%F %H:%M') UTC"
           git push -f origin datos-nueva:datos

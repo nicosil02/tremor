@@ -1,0 +1,86 @@
+from tremor.contexto import claves, emparejar
+
+OPS = [("SOUTHERN PERU COPPER CORPORATION", "Regional - Atico", "040101"), ("SOUTHERN PERU COPPER CORPORATION", "Cuajone", "180106"),
+       ("MINERA AGUILA DE ORO SOCIEDAD", "Planta de Beneficio Río Seco", "190101"), ("ALTURAS MINERALS S.A.", "Baños del Indio", "230101"),
+       ("CORPORACION ACEROS AREQUIPA S.A.", "Coribeni", "080101"), ("ARUNTANI S.A.C.", "Florencia - Tucari", "180201"),
+       ("LA ARENA S.A.", "Corral Grande", "130101"), ("CERRO DE PASCO RESOURCES", "Quiulacocha", "190101")]
+
+
+def test_claves():
+    assert claves("Comunidad Campesina de Maure – Penal de Challapalca / INPE")[:3] == ["Maure", "Penal", "Challapalca"]
+
+
+def test_emparejar_rechaza_parecidos():
+    assert emparejar(OPS, None, "Hospital Regional II-2 JAMO") == (None, None, None)
+    for empresa, unidad, ub in [("Minera Oro Negro", None, "120101"), ("Korimallco Minerals S.A.C.", "Minera Korimallko", "030101"),
+                                ("Municipalidad Provincial de Arequipa", "tarifa de pasaje", "040101"), ("Cerro S.A.C.", "planta de oxígeno", "200101")]:
+        assert emparejar(OPS, empresa, unidad, ub) == (None, None, None), empresa
+
+
+def test_emparejar_acepta_y_elige_unidad():
+    assert emparejar(OPS, "Aruntani", "Pasto Grande", "180101")[0] == "ARUNTANI S.A.C."
+    assert emparejar(OPS, "Southern Perú Copper Corporation", None, "180105")[1] == "Cuajone"
+    assert emparejar(OPS, "Tía María", "proyecto minero Tía María", "180101") == (None, None, None)
+
+
+def test_unidad_sola_exige_nombre_entero():
+    ops = [("MINERA PEÑOLES DE PERU S.A.", "Santa Cruz", "020101"), ("MINERA CHINALCO PERÚ S.A.", "Casaracra", "120801"),
+           ("MINERA CHINALCO PERÚ S.A.", "Toromocho", "120806")]
+    assert emparejar(ops, "MTC", "Valle Santa Lacramarca", "021801") == (None, None, None)
+    assert emparejar(ops, "Chinalco", None, "120806")[1] == "Toromocho"
+
+
+def test_limpiar_proyecto():
+    from tremor.empresas import limpiar_proyecto
+    assert limpiar_proyecto('EIA-SD DEL PROYECTO "PARQUE EÓLICO URANI Y SU INTERCONEXION AL SEIN"') == "Parque Eólico Urani"
+    assert limpiar_proyecto('EIA-SD DEL PROYECTO DE EXPLORACIÓN MINERA "SUMAC WAYRA"') == "Sumac Wayra"
+    assert limpiar_proyecto("ESTUDIO DE IMPACTO AMBIENTAL DETALLADO (EIAD) DEL PROYECTO TRAPICHE") == "Trapiche"
+
+
+def test_unidad_que_no_tenemos_no_se_pega_a_otra_lejana():
+    ops = [("REPSOL EXPLORACION PERU", "Lote 101", "160101"), ("MINERA LAS BAMBAS S.A.", "Bordebamba", "030506")]
+    assert emparejar(ops, "Repsol", "Refinería La Pampilla", "070106") == (None, None, None)
+    assert emparejar(ops, "MMG Las Bambas", "carretera (Ruta Nacional)", "030506")[1] == "Bordebamba"
+
+
+def test_lugar_lote():
+    from tremor.empresas import lugar_lote
+    assert lugar_lote("área inicial del Lote 206, ubicado en la provincia de Talara del departamento de Piura, adjudicándolo") == "200701"
+    assert lugar_lote("Lote Z-69, ubicado en el zócalo continental frente a Tumbes") is None
+
+
+def test_lote_urbano_no_es_extractivo():
+    from tremor.egpp import tipo_conflicto
+    assert tipo_conflicto("Pobladores", "Servicios", "Ciudadanía", None, "antena en avenida Los Robles, manzana A, lote 20") == "otro"
+    assert tipo_conflicto("Pobladores", "Ambientales", "Ciudadanía", None, "derrame en el Lote 192") == "socioambiental_extractivo"
+
+
+def test_produccion_lee_meses_abreviados():
+    import io
+    import pandas as pd
+    from tremor.produccion import leer
+    filas = [["PRODUCCIÓN METÁLICA - ENERO A DICIEMBRE 2023"] + [None] * 11, [None] * 12,
+             ["METAL", "UNIDAD DE MEDIDA", "ETAPA", "TITULAR", "UNIDAD", "REGIÓN", "PROVINCIA", "DISTRITO", "ENE", "FEB", "MAR", "SET"],
+             ["COBRE", "TMF", "CONCENTRACIÓN", "MINERA LAS BAMBAS S.A.", "LAS BAMBAS", "APURÍMAC", "COTABAMBAS",
+              "CHALLHUAHUACHO", 10.0, 0, 5.0, 2.0]]
+    b = io.BytesIO(); pd.DataFrame(filas).to_excel(b, header=False, index=False)
+    d = leer("x.xlsx", b.getvalue())
+    assert sorted(d.mes) == [1, 3, 9] and d.anio.iloc[0] == 2023 and d.valor.sum() == 17
+
+
+def test_produccion_lee_formato_2002():
+    import pandas as pd
+    from tremor.produccion import leer_antiguo
+    v = [None] * 9
+    d = pd.DataFrame([["PRODUCCIÓN MINERA METÁLICA DE COBRE (TMF) - 2003"] + v[1:], v,
+                      ["EMPRESA MINERA", None, None, "UBICACIÓN", None, None, 2003, None, None],
+                      [None, None, "UNIDAD MINERA", "DISTRITO", "PROVINCIA", "REGION", "ENE", "SEP", "DIC"],
+                      ["1.- CONCENTRACIÓN", None, None, None, None, None, 9.0, 9.0, 9.0],
+                      [None, "GRAN MINERÍA", None, None, None, None, 9.0, 9.0, 9.0],
+                      [None, "COMPAÑÍA MINERA ANTAMINA S.A.", None, None, None, None, 3.0, 3.0, 3.0],
+                      [None, None, "ANTAMINA", "SAN MARCOS", "HUARI", "ANCASH", 1.0, 2.0, 0],
+                      ["2.- FUNDICIÓN", None, None, None, None, None, 5.0, 5.0, 5.0],
+                      [None, "OTRA S.A.", None, None, None, None, 5.0, 5.0, 5.0],
+                      [None, None, "ILO", "ILO", "ILO", "MOQUEGUA", 5.0, 5.0, 5.0]])
+    x = leer_antiguo("COBRE.XLS", d)  # la fundición no se suma: ese cobre ya se contó en la concentración
+    assert list(x.mes) == [1, 9] and set(x.titular) == {"COMPAÑÍA MINERA ANTAMINA S.A."} and x.anio.iloc[0] == 2003

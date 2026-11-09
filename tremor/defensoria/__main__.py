@@ -83,6 +83,35 @@ def estado(con):
     return 0
 
 
+def base_abierta(con):
+    """Desde el n.° 271 (HTML) las acciones de protesta no vienen en el reporte sino en una hoja de Google enlazada
+    ("Abrir detalle"). Se lee para los reportes HTML que aún no tienen acciones."""
+    import io
+    import re
+    import pandas as pd
+    from tremor.prensa.eventos import ubicar_defensoria
+    pendientes = con.execute("SELECT r.num, d.url FROM reporte r JOIN documento d ON d.huella = r.huella "
+                             "WHERE d.formato = 'html' AND NOT EXISTS (SELECT 1 FROM accion_protesta a "
+                             "WHERE a.reporte_num = r.num)").fetchall()
+    for num, url in pendientes:
+        m = re.search(r"docs\.google\.com/spreadsheets/d/([\w-]+)", catalogo._get(url).text)
+        if not m:
+            print(f"  n.° {num}: sin enlace a la base abierta")
+            continue
+        x = pd.read_excel(io.BytesIO(catalogo._get(
+            f"https://docs.google.com/spreadsheets/d/{m[1]}/export?format=xlsx").content), sheet_name=0)
+        x = x.rename(columns=str.strip).dropna(subset=["Medida"])
+        con.executemany("INSERT INTO accion_protesta (reporte_num, n, fecha, medida, actores, lugar, demanda) "
+                        "VALUES (?,?,?,?,?,?,?)",
+                        [(num, k, str(r.Fecha)[:10], r.Medida, r.Actores, r["Ubicación"], r.Demandas)
+                         for k, (_, r) in enumerate(x.iterrows(), 1)])
+        print(f"  n.° {num}: {len(x)} acciones de la base abierta")
+    con.commit()
+    if pendientes:
+        ubicar_defensoria(con)
+    return 0
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(prog="python -m tremor.defensoria")
     sub = p.add_subparsers(dest="comando", required=True)
@@ -93,6 +122,7 @@ def main(argv=None):
     e = sub.add_parser("extraer", help="secciones, totales y fichas de los reportes nuevos")
     e.add_argument("--num", type=int, help="reprocesar solo este reporte")
     sub.add_parser("validar", help="resultado de comparar cada reporte con sus totales")
+    sub.add_parser("abierta", help="acciones de protesta de la hoja enlazada en los reportes HTML (n.° 271+)")
     sub.add_parser("exportar", help="CSV en datos/exportes/")
     sub.add_parser("estado", help="resumen del catálogo")
     t = sub.add_parser("todo", help="todos los pasos en orden")
@@ -110,12 +140,14 @@ def main(argv=None):
         return extraer(con, a.num)
     if a.comando == "validar":
         return validar(con)
+    if a.comando == "abierta":
+        return base_abierta(con)
     if a.comando == "exportar":
         return exportar(con)
     if a.comando == "estado":
         return estado(con)
     if a.comando == "todo":
-        codigo = descubrir(con, a.completo) | descargar(con) | identificar(con) | extraer(con)
+        codigo = descubrir(con, a.completo) | descargar(con) | identificar(con) | extraer(con) | base_abierta(con)
         exportar(con)
         estado(con)
         return codigo
