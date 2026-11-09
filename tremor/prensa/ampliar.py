@@ -11,7 +11,7 @@ import json
 import re
 import time
 from datetime import date
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 
 import requests
 
@@ -47,7 +47,7 @@ def _limpio(s):
     return " ".join(html.unescape(re.sub(r"<[^>]+>", " ", s)).split())
 
 
-def lead(pagina: str, n=600) -> str:
+def lead(pagina: str, n=1500) -> str:
     """og:description + primeros párrafos con texto, hasta n caracteres."""
     partes = re.findall(r'<meta[^>]+(?:property|name)="(?:og:)?description"[^>]+content="([^"]*)"', pagina)[:1]
     partes += [p for p in map(_limpio, re.findall(r"<p[^>]*>(.*?)</p>", pagina, re.S)) if len(p) > 60]
@@ -68,32 +68,56 @@ def fecha_pagina(pagina: str) -> str | None:
     return m[1] if m else None
 
 
+def _palabras(s):
+    return set(re.findall(r"\w{4,}", html.unescape(s).lower()))
+
+
+def elegir_bing(rss: str, titular: str) -> str | None:
+    """Del RSS de búsqueda de Bing News, el enlace al medio cuyo título se parece al titular (≥60% de sus palabras)."""
+    meta, mejor = _palabras(titular), (0.0, None)
+    for t, l in re.findall(r"<item>.*?<title>(.*?)</title>.*?<link>(.*?)</link>", rss, re.S):
+        m = re.search(r"[?&]url=([^&]+)", html.unescape(l))
+        if not m or not meta:
+            continue
+        k = len(meta & _palabras(t)) / len(meta)
+        if k > mejor[0]:
+            mejor = (k, unquote(m[1]))
+    return mejor[1] if mejor[0] >= 0.6 else None
+
+
+def por_bing(titular: str) -> str | None:
+    """Respaldo cuando Google News pide captcha: buscar el titular en Bing News, que enlaza directo al medio."""
+    r = requests.get(f"https://www.bing.com/news/search?q={quote(titular)}&format=rss", headers=UA, timeout=30)
+    return elegir_bing(r.text, titular) if r.ok else None
+
+
 def ampliar(con, version: str, limite=200, pausa=8.0) -> tuple[int, int]:
     """Protestas sin resumen que están sin lugar preciso o marcadas como anunciadas → lead del medio. Primero los
     enlaces directos al medio (sin cupo), después los de Google News (con pausa)."""
-    filas = con.execute("""SELECT n.id, n.enlace, substr(n.publicado, 1, 10) FROM nota n JOIN codificacion c ON c.nota_id = n.id AND c.version = ?
-        WHERE c.es_protesta = 1 AND (c.precision IS NULL OR c.precision = 'departamento' OR c.estado = 'anunciada')
-          AND coalesce(n.resumen, '') = ''
+    filas = con.execute("""SELECT n.id, n.enlace, n.titular, substr(n.publicado, 1, 10), c.precision IS NULL OR c.precision = 'departamento' FROM nota n JOIN codificacion c ON c.nota_id = n.id AND c.version = ?
+        WHERE c.es_protesta = 1 AND coalesce(n.resumen, '') = '' AND n.publicado >= date('now', '-30 day')
         ORDER BY n.enlace LIKE '%news.google.com%' LIMIT ?""", (version, limite)).fetchall()
-    hechas = 0
-    for id_, url, publicado in filas:
+    hechas, bing = 0, False
+    for id_, url, titular, publicado, sin_lugar in filas:
         if "news.google.com" in url:
-            time.sleep(pausa)  # sin pausa Google corta con captcha a las ~15 consultas
+            time.sleep(2 if bing else pausa)  # sin pausa Google corta con captcha a las ~15 consultas
         try:
-            real = enlace_real(url)
+            real = por_bing(titular) if bing and "news.google.com" in url else enlace_real(url)
             pagina = requests.get(real, headers=UA, timeout=30).text if real else ""
             texto = lead(pagina)
         except requests.RequestException:
             continue
         except Limite as e:
-            print(f"  {e}")
-            break
+            print(f"  {e}; sigo por Bing News")  # sin saltarse el captcha: se busca el titular en otro buscador
+            bing = True
+            continue
         f = fecha_pagina(pagina)
         if f and publicado and f < publicado and (date.fromisoformat(publicado) - date.fromisoformat(f)).days > 3:
             con.execute("UPDATE nota SET publicado = ? WHERE id = ?", (f, id_))  # la fecha real manda
         if texto:
             con.execute("UPDATE nota SET resumen = ?, enlace = ? WHERE id = ?", (texto, real, id_))
-            con.execute("DELETE FROM codificacion WHERE nota_id = ? AND version = ?", (id_, version))
+            if sin_lugar:  # solo se recodifica lo que no tenía lugar; lo demás guarda el texto para leer adhesiones
+                con.execute("DELETE FROM codificacion WHERE nota_id = ? AND version = ?", (id_, version))
             con.commit()  # nota por nota: no bloquear la base durante las pausas
             hechas += 1
     return len(filas), hechas

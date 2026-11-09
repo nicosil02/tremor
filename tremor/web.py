@@ -3,6 +3,7 @@ a cada zona en 2024+, las señales en vivo y las métricas; y los límites distr
 
     python -m tremor.web            # escribe datos/exportes/web.json (viaja en la rama `datos`) y docs/distritos.json
 """
+import functools
 import json
 import re
 import sys
@@ -47,6 +48,12 @@ def datos(con):
                     "FROM evento_prensa e JOIN evento_nota en ON en.evento_id = e.id JOIN nota n ON n.id = en.nota_id "
                     f"WHERE COALESCE(e.fecha_evento, e.fecha_anuncio) >= '{desde}' GROUP BY e.id "
                     "ORDER BY COALESCE(e.fecha_evento, e.fecha_anuncio) DESC")
+    if len(ev):  # lo que dice el cuerpo de las notas: quién se suma, quién se retira, si se suspendió, si es transporte urbano
+        texto = dict(con.execute("""SELECT en.evento_id, group_concat(n.titular || '. ' || coalesce(n.resumen, ''), ' ')
+                                    FROM evento_nota en JOIN nota n ON n.id = en.nota_id GROUP BY 1"""))
+        leido = [leer(texto.get(i, "")) for i in ev.id]
+        for k in ("adhieren", "retiran", "suspendido", "urbano"):
+            ev[k] = [x[k] for x in leido]
     met = tabla(con, "SELECT objetivo, modelo, metrica, valor FROM modelo_metrica WHERE metrica IN ('precision_top20', "
                      "'precision_top20_li', 'precision_top20_ls', 'captura_top10pct', 'tasa_base')")
     ventana = tabla(con, "SELECT ventana, mes_base FROM alerta LIMIT 1")
@@ -72,6 +79,42 @@ def datos(con):
             "calibracion": calibracion(con),
             "menciones": menciones(con),
             "focos": focos(con)}
+
+
+def _norm(s):
+    import unicodedata
+    return unicodedata.normalize("NFKD", s.lower()).encode("ascii", "ignore").decode()
+
+
+@functools.lru_cache
+def _lugares():
+    """nombre normalizado → ubigeos de provincia (4) y distrito (6); nombres cortos o repetidos en más de 2 sitios, fuera."""
+    import csv
+    prov, dist = {}, {}
+    for r in csv.DictReader(open(RAIZ / "tremor" / "ubigeo.csv", encoding="utf-8")):
+        prov.setdefault(_norm(r["provincia"]), set()).add(r["ubigeo"][:4])
+        dist.setdefault(_norm(r["distrito"]), set()).add(r["ubigeo"])
+    # "Barranca" es provincia de Lima y también distrito en Loreto: manda la provincia
+    idx = {k: v for k, v in dist.items() if len(v) <= 2} | prov
+    return {k: sorted(v) for k, v in idx.items() if len(k) >= 4}
+
+
+SUMA = re.compile(r"se suma|sumar[aá]n|sumarse|acatar|respald|adhie|adhes|plegar|participar|bases? de|gremios? de")
+NO = re.compile(r"no (se )?(suma|acata|participa|pleg)|deslig|se retira|se bajan?|desist|no acatar|no se plegar")
+SUSPENDE = re.compile(r"(suspend|levant|desconvoc|posterg|aplaz|cancel)\w*\s+(el |la |su |del )?(paro|huelga|bloqueo|medida|paralizaci)")
+URBANO = re.compile(r"extorsi|transporte (publico|urbano)|combis?\b|colectiver|mototaxi|choferes asesinad|asesinatos? de chofer")
+
+
+def leer(texto):
+    """Reglas sobre el cuerpo de las notas de un evento: lugares que anuncian sumarse o retirarse (por oración),
+    si la medida se suspendió y si es transporte urbano (no frena la carga)."""
+    t, idx = _norm(texto), _lugares()
+    adh, ret = set(), set()
+    for o in re.split(r"[.;\n]", t):
+        destino = ret if NO.search(o) else adh if SUMA.search(o) else None
+        if destino is not None:
+            destino.update(u for k, us in idx.items() if re.search(rf"\b{re.escape(k)}\b", o) for u in us)
+    return {"adhieren": sorted(adh - ret), "retiran": sorted(ret), "suspendido": bool(SUSPENDE.search(t)), "urbano": bool(URBANO.search(t))}
 
 
 def focos(con, n=5):

@@ -34,3 +34,15 @@ def test_focos():
     con.executemany("INSERT INTO egpp_evento VALUES (?,?,?)", [("040108", "Transportistas de carga", 0)] * 3
                     + [("040128", "Transportistas de carga", 0), ("040101", "Transportistas de carga", 1)])
     assert focos(con) == {"04|Transportistas de carga": [["040108", 3], ["040128", 1]]}
+
+
+def test_leer_adhesiones():
+    from tremor.web import leer
+    x = leer("Paro nacional de carga. La convocatoria tiene el respaldo de bases de Huacho, Barranca y Chiclayo. "
+             "El gremio de Sullana no se sumará a la medida.")
+    assert "150801" in x["adhieren"] and "1502" in x["adhieren"] and "1401" in x["adhieren"]
+    assert "2006" in x["retiran"] and "2006" not in x["adhieren"]
+    assert not x["suspendido"] and not x["urbano"]
+    assert leer("Transportistas suspenden el paro tras acuerdo con el MTC")["suspendido"]
+    assert leer("Movilización contra la extorsión y asesinatos de choferes")["urbano"]
+    assert not leer("Alza de combustibles afecta a transportistas")["urbano"]

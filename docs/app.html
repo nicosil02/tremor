@@ -204,14 +204,14 @@ function armar() {
   const avisos = [];
   for (const e of D.eventos) {
     const f = String(e.fecha_evento || e.fecha_anuncio || "").slice(0, 10), u = String(e.ubigeo);
-    const trans = /transportista/i.test(e.actor || ""), nombra = alias.test(`${e.empresa || ""} ${e.operacion || ""}`);
+    const trans = /transportista/i.test(e.actor || "") && !e.urbano, nombra = alias.test(`${e.empresa || ""} ${e.operacion || ""}`);
     if (!nombra && !(trans && u === "00") && !zona.has(u) && !tramoDe(u, e)) continue;
-    const anun = e.estado === "anunciada", viene = anun && f >= HOY;
+    const anun = e.estado === "anunciada" && !e.suspendido, viene = anun && f >= HOY;
     const cerca = unidades.find(x => x.zona.has(u));
     avisos.push({ f, urge: viene || (anun && dias(f) > -3), tipo: "Protesta", e, cerca, trans, tramo: tramoDe(u, e), tramos: tramos.filter(r => toca(r, u, e)),
       t: `${accion(e)}${e.actor ? ` de ${e.actor.toLowerCase()}` : ""}`,
       w: viene ? cuando(f) : dia(f),
-      s: [u === "00" ? (trans ? "Puede frenar sus despachos" : "Lugar sin precisar") : !zona.has(u) && tramoDe(u, e) ? `${lugar(u)}, en su ruta` : lugar(u), viene ? "" : anun ? "anunciada" : "ocurrió"].filter(Boolean).join(", ") });
+      s: [u === "00" ? (trans ? "Puede frenar sus despachos" : "Lugar sin precisar") : !zona.has(u) && tramoDe(u, e) ? `${lugar(u)}, en su ruta` : lugar(u), e.suspendido ? "suspendida" : viene ? "" : anun ? "anunciada" : "ocurrió"].filter(Boolean).join(", ") });
   }
   for (const s of D.sutran || []) if (rutas.includes(s.via))
     avisos.push({ f: String(s.fecha_evento || HOY).slice(0, 10), urge: true, tipo: "Bloqueo", sutran: s, t: `Vía ${s.via} bloqueada`, w: "ahora",
@@ -224,7 +224,7 @@ function armar() {
   // Estado de cada tramo: lo anunciado manda; si no, lo ocurrido en los últimos 14 días
   const cadena = tramos.map(r => { const ev = avisos.filter(x => x.e && toca(r, String(x.e.ubigeo), x.e));
     const bl = (D.sutran || []).filter(s => r.via && s.via === r.via).length;
-    const prox = ev.filter(x => x.e.estado === "anunciada" && x.f >= HOY).sort((a, b) => a.f.localeCompare(b.f))[0];
+    const prox = ev.filter(x => x.e.estado === "anunciada" && !x.e.suspendido && x.f >= HOY).sort((a, b) => a.f.localeCompare(b.f))[0];
     const rec = ev.filter(x => dias(x.f) >= -14 && x.f <= HOY).sort((a, b) => b.f.localeCompare(a.f))[0];
     const vago = (prox || rec) && String((prox || rec).e.ubigeo).length < 6 ? `, en ${lugar(String((prox || rec).e.ubigeo))} sin distrito` : "";
     // ponytail: fuera del número las capitales de departamento y Lima-Callao; su protesta urbana rara vez corta la carga,
@@ -255,7 +255,7 @@ const VISTAS = {
     cabecera(false);
     return (u.length ? `<h2>Atender</h2><ul>${u.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<h2>Atender</h2><p class="vacio">Nada anunciado en su zona ni en sus rutas.</p>`)
       + `<h2>Últimas semanas</h2>` + (r.length ? `<ul>${r.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas ni notas sobre la empresa.</p>`)
-      + `<p class="pie">Datos al ${dia(D.creado)}. <a href="index.html?web${ADMIN ? "&admin" : ""}">Versión completa</a></p>`;
+      + `<p class="pie">Datos al ${dia(D.creado)}.</p>`;
   },
   operaciones() {
     cabecera(false);
@@ -273,14 +273,18 @@ const VISTAS = {
   },
   pais() {
     cabecera(false);
-    PAIS = D.eventos.map(e => { const f = String(e.fecha_evento || e.fecha_anuncio || "").slice(0, 10), viene = e.estado === "anunciada" && f >= HOY;
+    PAIS = D.eventos.map(e => { const f = String(e.fecha_evento || e.fecha_anuncio || "").slice(0, 10), viene = e.estado === "anunciada" && f >= HOY && !e.suspendido;
       return { f, e, viene, tipo: "Protesta", urge: viene, t: `${accion(e)}${e.actor ? ` de ${e.actor.toLowerCase()}` : ""}`, w: viene ? cuando(f) : dia(f),
         s: lugar(String(e.ubigeo)) }; });
     const v = PAIS.filter(x => x.viene).sort((a, b) => a.f.localeCompare(b.f)), r = PAIS.filter(x => !x.viene && x.f <= HOY && dias(x.f) >= -7).sort((a, b) => b.f.localeCompare(a.f));
     const ls = xs => `<ul>${xs.map(x => fila(x.urge ? "urge" : "", 0, x.t, x.w, x.s, `data-pais="${PAIS.indexOf(x)}"`)).join("")}</ul>`;
-    return `<h2>Anunciado en el país</h2>${v.length ? ls(v) : `<p class="vacio">Nada anunciado.</p>`}<h2>Última semana</h2>${r.length ? ls(r) : `<p class="vacio">Sin protestas registradas.</p>`}`;
+    // ponytail: sin capitales de departamento ni Lima-Callao, donde la EGPP pone lo que no sabe ubicar
+    const top = D.alerta.filter(a => a.prob != null && !/0101$/.test(a.ubigeo) && !/^(1501|0701)/.test(a.ubigeo)).sort((a, b) => b.prob - a.prob).slice(0, 10);
+    return `<h2>Anunciado en el país</h2>${v.length ? ls(v) : `<p class="vacio">Nada anunciado.</p>`}<h2>Última semana</h2>${r.length ? ls(r) : `<p class="vacio">Sin protestas registradas.</p>`}
+      <h2>Distritos con más riesgo de paro o bloqueo, octubre a diciembre</h2><ul>${top.map(a => `<li><button type="button" class="fila" data-distrito="${a.ubigeo}"><i style="background:var(--cobre-4)"></i>
+        <span class="t">${esc(lugar(a.ubigeo))}</span><span class="pct">${pct(a.prob)}</span><span class="s" style="grid-column:2">${esc(String(a.razones || "").split(/ \(| · |; /)[0])}</span></button></li>`).join("")}</ul>${ANCHO.matches ? "" : VER}`;
   },
-  mapa() { cabecera(false); return X.cadena.length ? `<p class="leyenda-via">${ley()}</p>` : ""; },
+  mapa() { cabecera(false); return X.cadena.length || PAIS_VISTA ? `<p class="leyenda-via">${ley()}</p>` : ""; },
 };
 
 // Imagen satelital del polígono de la unidad (Esri World Imagery, el mismo satélite del mapa de la versión completa)
@@ -339,31 +343,62 @@ function detalleAviso(k) {
   const deps = u === "00" ? [...new Set(X.cadena.flatMap(r => r.ubigeos.map(v => v.slice(0, 2))))] : [u.slice(0, 2)];
   const antes = u.length === 6 ? [] : deps.flatMap(d => (D.focos || {})[`${d}|${e.actor}`] || [])
     .filter(([v]) => (u === "00" || v.startsWith(u)) && ts.some(r => r.ubigeos.includes(v))).sort((a, b) => b[1] - a[1]);
-  const prob = new Set(ts.filter(r => antes.some(([v]) => r.ubigeos.includes(v))).map(r => r.nombre));
+  const pasa = (r, us) => r.ubigeos.some(v => us.some(a => v.startsWith(a)));
+  const adh = (e.adhieren || []).filter(a => ts.some(r => pasa(r, [a]))), ret = (e.retiran || []).filter(a => ts.some(r => pasa(r, [a])));
+  const suman = new Set(ts.filter(r => pasa(r, adh)).map(r => r.nombre)), fuera = new Set(ts.filter(r => !suman.has(r.nombre) && pasa(r, ret)).map(r => r.nombre));
+  const hist = new Set(ts.filter(r => !fuera.has(r.nombre) && antes.some(([v]) => r.ubigeos.includes(v))).map(r => r.nombre));
+  const prob = suman.size ? suman : hist, porque = suman.size ? "prensa" : hist.size ? "historia" : "";
   const idx = rs => rs.map(t => X.cadena.findIndex(r => r.nombre === t.nombre)).filter(i => i >= 0);
-  ver(antes.length ? [antes[0][0]] : u === "00" ? [] : [u], x.t, idx(prob.size ? ts.filter(r => prob.has(r.nombre)) : ts),
-    idx(prob.size ? ts.filter(r => !prob.has(r.nombre)) : []), antes.length ? `${lugar(antes[0][0])}, donde más bloquearon antes` : "");
+  const punto = suman.size ? adh[0] : hist.size ? antes[0][0] : null;
+  ver(punto ? [punto] : u === "00" ? [] : [u], x.t, idx(prob.size ? ts.filter(r => prob.has(r.nombre)) : ts.filter(r => !fuera.has(r.nombre))),
+    idx(prob.size ? ts.filter(r => !prob.has(r.nombre) && !fuera.has(r.nombre)) : []),
+    suman.size ? `${lugar(punto)}, anunció que se suma` : hist.size ? `${lugar(punto)}, donde más bloquearon antes` : "");
   // Menos texto: cuándo en grande, dos datos, su ruta pintada (lo que puede cortarse en rojo) y la nota como tarjeta
-  const viene = e.estado === "anunciada" && f >= HOY, toca = new Set(ts.map(r => r.nombre));
-  return `<div class="cuando${viene ? "" : " paso"}"><b>${esc(viene ? cuando(f) : dia(f))}</b><span>${esc(viene ? largo(f) : e.estado === "anunciada" ? "anunciada" : "ocurrió")}</span></div>
+  const viene = e.estado === "anunciada" && f >= HOY && !e.suspendido, toca = new Set(ts.map(r => r.nombre));
+  return `<div class="cuando${viene ? "" : " paso"}"><b>${esc(e.suspendido ? "Suspendida" : viene ? cuando(f) : dia(f))}</b><span>${esc(e.suspendido ? "según la prensa, " + largo(f) : viene ? largo(f) : e.estado === "anunciada" ? "anunciada" : "ocurrió")}</span></div>
     <h3 class="titulo-av">${esc(x.t)}</h3>
     <dl class="datos"><dt>Dónde</dt><dd>${esc(u === "00" ? (x.trans ? "Todo el país" : "La nota no lo dice") : lugar(u))}${x.cerca ? `, zona de ${esc(x.cerca.unidad)}` : ""}</dd>
       ${e.reclamo ? `<dt>Reclamo</dt><dd>${esc(e.reclamo)}</dd>` : ""}</dl>
     ${toca.size && X.cadena.length ? `<h2>Su ruta</h2><ol class="cadena">${X.cadena.map((r, i) => { const k = !toca.has(r.nombre) ? ["nada", "Fuera de esta protesta"]
-        : !prob.size ? ["mal", "Puede cortarse"] : prob.has(r.nombre) ? ["mal", "Más probable"] : ["ojo", "Posible"];
+        : fuera.has(r.nombre) ? ["nada", "Se desligaron, según la prensa"] : !prob.size ? ["mal", "Puede cortarse"]
+        : prob.has(r.nombre) ? ["mal", porque === "prensa" ? "Anunciaron que se suman" : "Más probable, por protestas pasadas"] : ["ojo", "Posible"];
       return `<li class="${k[0]}"><button type="button" data-tramo="${i}"><b>${esc(r.nombre)}</b><span class="modo">${k[1]}${r.via ? `, ${esc(r.via)}` : ""}</span><span class="est">${pct(r.p)}</span></button></li>`; }).join("")}</ol>
-      <p class="aclara">${u === "00" ? "Paro nacional, puede cortar cualquier tramo por carretera." : u.length < 6 ? `La nota solo dice ${esc(lugar(u))}.` : ""}${antes.length
+      <p class="aclara">${u === "00" ? "Paro nacional, puede cortar cualquier tramo por carretera." : u.length < 6 ? `La nota solo dice ${esc(lugar(u))}.` : ""}${adh.length
+        ? ` Según la prensa, en su ruta se suman ${esc(y(adh.map(lugar)))}.` : ""}${ret.length ? ` Se desligaron ${esc(y(ret.map(lugar)))}.` : ""}${!suman.size && antes.length
         ? ` En protestas pasadas de ${esc(String(e.actor).toLowerCase())} en su ruta, bloquearon en ${esc(y(antes.slice(0, 3).map(([v, k]) => `${lugar(v)} (${k} ${k > 1 ? "veces" : "vez"})`)))}. Fuente, base de protestas EGPP.` : ""}</p>` : ""}
     <h2>La nota</h2><a class="fuente" href="${esc(e.enlace)}" target="_blank" rel="noopener"><small>${esc(e.medio)}</small>${esc(e.titular)}</a>${SEL ? VER : ""}`;
 }
 
 let actual = "avisos", mapa, PAIS = [], FOCO = null, SEL = null;  // SEL: distritos que el mapa resalta y encuadra
 const VER = `<button type="button" class="ir vermapa" data-vermapa>Ver en el mapa</button>`;
-const ley = () => (FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Riesgo en la vía, " + pct(X.via))
-  + (SEL ? (SEL.tr.length ? `<small><i class="rojo"></i>${SEL.tr2.length ? "Más probable" : "Tramos que puede cortar"}${SEL.tr2.length ? `<br><i class="naranja"></i>Posible` : ""}<br><i class="punto"></i>${SEL.etq ? "Donde más bloquearon antes" : "Dónde es la protesta"}</small>` : "")
+const ley = () => (actual === "pais" || PAIS_VISTA) && !SEL
+  ? `Riesgo de paro o bloqueo por distrito<small>Octubre a diciembre. Más oscuro es más riesgo. Toque un distrito para ver su porcentaje</small>`
+  : (FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Riesgo en la vía, " + pct(X.via))
+  + (SEL ? (SEL.tr.length ? `<small><i class="rojo"></i>${/se suma/.test(SEL.etq) ? "Anunciaron que se suman" : SEL.tr2.length ? "Más probable" : "Tramos que puede cortar"}${SEL.tr2.length ? `<br><i class="naranja"></i>Posible` : ""}<br><i class="punto"></i>${/se suma/.test(SEL.etq) ? "Base que se suma" : SEL.etq ? "Donde más bloquearon antes" : "Dónde es la protesta"}</small>` : "")
     : `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`);
 function ver(us, t, tr = [], tr2 = [], etq = "") { SEL = (us && us.length) || tr.length ? { us: us || [], t, tr, tr2, etq } : null; if (ANCHO.matches && mapa) verMapa(); }
-let PULSO;
+let PULSO, PAIS_VISTA = false;
+function peru() {
+  const on = actual === "pais" || (actual === "mapa" && PAIS_VISTA);
+  DISTRITOS().then(g => {
+    const poner = () => {
+      if (!mapa.getSource("peru")) {
+        const fc = { type: "FeatureCollection", features: g.features.map(f => ({ ...f, properties: { ...f.properties, p: (A.get(f.properties.u) || {}).prob ?? 0 } })) };
+        mapa.addSource("peru", { type: "geojson", data: fc });
+        mapa.addLayer({ id: "peru", type: "fill", source: "peru", layout: { visibility: "none" }, paint: { "fill-opacity": 0.7,
+          "fill-color": ["step", ["get", "p"], "#f3e1d3", 0.1, "#e3a67c", 0.25, "#c2552b", 0.5, "#8a3213"] } }, "ops");
+        mapa.addLayer({ id: "peru-l", type: "line", source: "peru", layout: { visibility: "none" }, paint: { "line-color": "#fff", "line-width": 0.3 } }, "ops");
+        mapa.on("click", "peru", ev => { if (!(actual === "pais" || PAIS_VISTA)) return; const u = ev.features[0].properties.u;
+          new maplibregl.Popup({ maxWidth: "240px" }).setLngLat(ev.lngLat).setHTML(`<b>${esc(lugar(u))}</b><br>Probabilidad de paro o bloqueo hasta diciembre, ${pct(ev.features[0].properties.p)}`).addTo(mapa); });
+      }
+      ["peru", "peru-l"].forEach(c => mapa.setLayoutProperty(c, "visibility", on ? "visible" : "none"));
+      ["ops", "ops-t", "tramos", "tramos-l", "vias", "rotulos"].forEach(c => mapa.getLayer(c) && mapa.setLayoutProperty(c, "visibility", on ? "none" : "visible"));
+      if (on && !SEL) mapa.fitBounds([[-81.4, -18.4], [-68.6, -0.03]], { padding: 30, duration: 900 });
+    };
+    const espera = () => mapa.getLayer("ops") ? poner() : setTimeout(espera, 200);
+    espera();
+  });
+}
 const RIESGO = ["interpolate", ["linear"], ["get", "p"], 0, "#f3e1d3", 0.3, "#d98a5c", 0.6, "#8a3213"];
 function marcar() {
   const s = SEL;
@@ -435,9 +470,10 @@ function conectar() {
   document.querySelectorAll("[data-tramo]").forEach(b => b.onclick = () => { SEL = null; FOCO = +b.dataset.tramo; ANCHO.matches ? verMapa() : ir("mapa"); });
   document.querySelectorAll("[data-op]").forEach(b => b.onclick = () => abrir(detalleOp(b.dataset.op)));
   document.querySelectorAll("[data-caso]").forEach(b => b.onclick = () => abrir(detalleCaso(+b.dataset.caso)));
-  document.querySelectorAll("[data-vermapa]").forEach(b => b.onclick = () => ir("mapa"));
+  document.querySelectorAll("[data-distrito]").forEach(b => b.onclick = () => { ver([b.dataset.distrito], lugar(b.dataset.distrito)); if (!ANCHO.matches) { PAIS_VISTA = true; ir("mapa"); } });
+  document.querySelectorAll("[data-vermapa]").forEach(b => b.onclick = () => { PAIS_VISTA = actual === "pais"; ir("mapa"); });
 }
-document.querySelector("nav").onclick = e => { const b = e.target.closest("button"); if (b) { SEL = null; ir(b.dataset.v); } };
+document.querySelector("nav").onclick = e => { const b = e.target.closest("button"); if (b) { SEL = null; PAIS_VISTA = false; ir(b.dataset.v); } };
 
 function verMapa() {
   if (!mapa) {
@@ -471,6 +507,7 @@ function verMapa() {
         Probabilidad de paro o bloqueo hasta diciembre, ${pct(p)}${u === r.peor ? `<br>Es el distrito más expuesto del tramo y da su ${pct(r.p)}` : ""}`).addTo(mapa); });
     ["ops", "tramos"].forEach(c => { mapa.on("mouseenter", c, () => mapa.getCanvas().style.cursor = "pointer"); mapa.on("mouseleave", c, () => mapa.getCanvas().style.cursor = ""); });
   } else mapa.resize();
+  peru();
   if (ANCHO.matches) { const l = document.getElementById("ley") || document.body.appendChild(Object.assign(document.createElement("p"), { id: "ley", className: "leyenda-via" }));
     l.hidden = !X.cadena.length; if (X.cadena.length) l.innerHTML = ley(); }
   fetch("operaciones.json").then(r => r.json()).then(g => {
