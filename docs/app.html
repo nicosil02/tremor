@@ -449,7 +449,7 @@ function marcar() {
         mapa.setPaintProperty("tramos", "fill-opacity", hay ? ["case", en("i", tr), 0.55, en("i", tr2), 0.4, 0.25] : 0.45);
         mapa.setPaintProperty("vias", "line-color", hay ? ["case", en("r", vias), "#d7261e", en("r", vias2), "#e8962e", "#9aa5a3"] : "#e0a32e");
         mapa.setPaintProperty("vias", "line-width", hay ? ["case", en("r", vias), 5, en("r", vias2), 4, 2] : 3);
-        mapa.setLayoutProperty("rotulos", "text-field", hay ? ["case", en("i", tr), ["concat", ["get", "t"], tr2.length ? "\nMás probable" : "\nPuede cortarse"], ""] : ["get", "t"]);
+        mapa.setLayoutProperty("rotulos", "text-field", hay ? ["case", en("i", tr), ["concat", ["get", "t"], /se suma/.test(s.etq) ? "\nSe suman al paro" : tr2.length ? "\nMás probable" : "\nPuede cortarse"], ""] : ["get", "t"]);
       }
       PULSO?.remove(); PULSO = null;
       if (s && lugar6.length) {
