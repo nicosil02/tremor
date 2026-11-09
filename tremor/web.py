@@ -70,7 +70,21 @@ def datos(con):
             "vecinos": vecinos(con),
             "casos": casos_zona(con),
             "calibracion": calibracion(con),
-            "menciones": menciones(con)}
+            "menciones": menciones(con),
+            "focos": focos(con)}
+
+
+def focos(con, n=5):
+    """Dónde protestó antes cada actor en cada departamento (EGPP, solo eventos con distrito conocido, no la capital
+    por defecto). Sirve cuando una nota dice solo "paro en Arequipa": los transportistas de carga de Arequipa
+    bloquearon 6 veces en La Joya, así que ese tramo es el más probable. {"04|Transportistas de carga": [[ubigeo, veces], ...]}"""
+    out = {}
+    for d, actor, u, k in con.execute("""SELECT substr(ubigeo, 1, 2), actor, ubigeo, count(*) FROM egpp_evento
+            WHERE capital_por_defecto = 0 AND length(ubigeo) = 6 AND actor IS NOT NULL GROUP BY 1, 2, 3 ORDER BY 4 DESC"""):
+        xs = out.setdefault(f"{d}|{actor}", [])
+        if len(xs) < n:
+            xs.append([u, k])
+    return out
 
 
 def menciones(con):

@@ -89,7 +89,7 @@
   .pulso span { position: absolute; left: 50%; top: 22px; transform: translateX(-50%); white-space: nowrap; padding: 3px 8px; border-radius: 6px; background: #fff; font-weight: 700; font-size: 13px;
     box-shadow: 0 2px 8px rgb(28 38 41 / .2); }
   .leyenda-via i { display: inline-block; width: 18px; height: 4px; margin: 0 6px 3px 0; vertical-align: middle; }
-  .leyenda-via i.rojo { background: #d7261e; } .leyenda-via i.punto { width: 10px; height: 10px; border-radius: 50%; background: var(--rojo); margin-left: 4px; }
+  .leyenda-via i.rojo { background: #d7261e; } .leyenda-via i.naranja { background: #e8962e; } .leyenda-via i.punto { width: 10px; height: 10px; border-radius: 50%; background: var(--rojo); margin-left: 4px; }
   .leyenda-via small { display: block; font-weight: 400; font-size: 13px; color: var(--tinta-2); max-width: 240px; }
   .cuando { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; padding: 18px 16px 0; }
   .cuando b { font-size: 34px; line-height: 1; font-weight: 750; font-variation-settings: var(--ancho); color: var(--rojo); }
@@ -336,25 +336,33 @@ function detalleAviso(k) {
     return `<div class="nota"><h3>${esc(x.t)}</h3><p class="meta">${esc(titulo(s.distrito || ""))}, ${esc(titulo(s.region || ""))}${s.km ? `, km ${esc(s.km)}` : ""}. Según SUTRAN.</p>
       ${s.contexto ? `<p class="cita">${esc(s.contexto)}</p>` : ""}</div>`; }
   const e = x.e, f = x.f, u = String(e.ubigeo), ts = (x.tramos || []).length ? x.tramos : x.trans && u === "00" ? X.cadena.filter(r => r.via) : [], y = xs => xs.length > 1 ? xs.slice(0, -1).join(", ") + " y " + xs.at(-1) : xs[0] || "";
-  ver(u === "00" ? [] : [u], x.t, ts.map(t => X.cadena.findIndex(r => r.nombre === t.nombre)).filter(i => i >= 0));
+  const deps = u === "00" ? [...new Set(X.cadena.flatMap(r => r.ubigeos.map(v => v.slice(0, 2))))] : [u.slice(0, 2)];
+  const antes = u.length === 6 ? [] : deps.flatMap(d => (D.focos || {})[`${d}|${e.actor}`] || [])
+    .filter(([v]) => (u === "00" || v.startsWith(u)) && ts.some(r => r.ubigeos.includes(v))).sort((a, b) => b[1] - a[1]);
+  const prob = new Set(ts.filter(r => antes.some(([v]) => r.ubigeos.includes(v))).map(r => r.nombre));
+  const idx = rs => rs.map(t => X.cadena.findIndex(r => r.nombre === t.nombre)).filter(i => i >= 0);
+  ver(antes.length ? [antes[0][0]] : u === "00" ? [] : [u], x.t, idx(prob.size ? ts.filter(r => prob.has(r.nombre)) : ts),
+    idx(prob.size ? ts.filter(r => !prob.has(r.nombre)) : []), antes.length ? `${lugar(antes[0][0])}, donde más bloquearon antes` : "");
   // Menos texto: cuándo en grande, dos datos, su ruta pintada (lo que puede cortarse en rojo) y la nota como tarjeta
   const viene = e.estado === "anunciada" && f >= HOY, toca = new Set(ts.map(r => r.nombre));
   return `<div class="cuando${viene ? "" : " paso"}"><b>${esc(viene ? cuando(f) : dia(f))}</b><span>${esc(viene ? largo(f) : e.estado === "anunciada" ? "anunciada" : "ocurrió")}</span></div>
     <h3 class="titulo-av">${esc(x.t)}</h3>
     <dl class="datos"><dt>Dónde</dt><dd>${esc(u === "00" ? (x.trans ? "Todo el país" : "La nota no lo dice") : lugar(u))}${x.cerca ? `, zona de ${esc(x.cerca.unidad)}` : ""}</dd>
       ${e.reclamo ? `<dt>Reclamo</dt><dd>${esc(e.reclamo)}</dd>` : ""}</dl>
-    ${toca.size && X.cadena.length ? `<h2>Su ruta</h2><ol class="cadena">${X.cadena.map((r, i) => `<li class="${toca.has(r.nombre) ? "mal" : "nada"}"><button type="button" data-tramo="${i}">
-      <b>${esc(r.nombre)}</b><span class="modo">${toca.has(r.nombre) ? "Puede cortarse" : "Fuera de esta protesta"}${r.via ? `, ${esc(r.via)}` : ""}</span><span class="est">${pct(r.p)}</span></button></li>`).join("")}</ol>
-      ${u === "00" ? `<p class="aclara">Paro nacional, puede cortar cualquier tramo por carretera.</p>` : u.length < 6 ? `<p class="aclara">La nota solo dice ${esc(lugar(u))}, por eso se marcan sus tramos en todo el departamento.</p>` : ""}` : ""}
+    ${toca.size && X.cadena.length ? `<h2>Su ruta</h2><ol class="cadena">${X.cadena.map((r, i) => { const k = !toca.has(r.nombre) ? ["nada", "Fuera de esta protesta"]
+        : !prob.size ? ["mal", "Puede cortarse"] : prob.has(r.nombre) ? ["mal", "Más probable"] : ["ojo", "Posible"];
+      return `<li class="${k[0]}"><button type="button" data-tramo="${i}"><b>${esc(r.nombre)}</b><span class="modo">${k[1]}${r.via ? `, ${esc(r.via)}` : ""}</span><span class="est">${pct(r.p)}</span></button></li>`; }).join("")}</ol>
+      <p class="aclara">${u === "00" ? "Paro nacional, puede cortar cualquier tramo por carretera." : u.length < 6 ? `La nota solo dice ${esc(lugar(u))}.` : ""}${antes.length
+        ? ` En protestas pasadas de ${esc(String(e.actor).toLowerCase())} en su ruta, bloquearon en ${esc(y(antes.slice(0, 3).map(([v, k]) => `${lugar(v)} (${k} ${k > 1 ? "veces" : "vez"})`)))}. Fuente, base de protestas EGPP.` : ""}</p>` : ""}
     <h2>La nota</h2><a class="fuente" href="${esc(e.enlace)}" target="_blank" rel="noopener"><small>${esc(e.medio)}</small>${esc(e.titular)}</a>${SEL ? VER : ""}`;
 }
 
 let actual = "avisos", mapa, PAIS = [], FOCO = null, SEL = null;  // SEL: distritos que el mapa resalta y encuadra
 const VER = `<button type="button" class="ir vermapa" data-vermapa>Ver en el mapa</button>`;
 const ley = () => (FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Riesgo en la vía, " + pct(X.via))
-  + (SEL ? (SEL.tr.length ? `<small><i class="rojo"></i>Tramos que puede cortar<br><i class="punto"></i>Dónde es la protesta</small>` : "")
+  + (SEL ? (SEL.tr.length ? `<small><i class="rojo"></i>${SEL.tr2.length ? "Más probable" : "Tramos que puede cortar"}${SEL.tr2.length ? `<br><i class="naranja"></i>Posible` : ""}<br><i class="punto"></i>${SEL.etq ? "Donde más bloquearon antes" : "Dónde es la protesta"}</small>` : "")
     : `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`);
-function ver(us, t, tr = []) { SEL = (us && us.length) || tr.length ? { us: us || [], t, tr } : null; if (ANCHO.matches && mapa) verMapa(); }
+function ver(us, t, tr = [], tr2 = [], etq = "") { SEL = (us && us.length) || tr.length ? { us: us || [], t, tr, tr2, etq } : null; if (ANCHO.matches && mapa) verMapa(); }
 let PULSO;
 const RIESGO = ["interpolate", ["linear"], ["get", "p"], 0, "#f3e1d3", 0.3, "#d98a5c", 0.6, "#8a3213"];
 function marcar() {
@@ -365,19 +373,21 @@ function marcar() {
     const fs = s && s.us.some(u => u.length >= 4) ? lugar6 : [];
     const afect = s ? new Set(s.tr.flatMap(i => X.cadena[i].ubigeos)) : new Set();
     const poner = () => {
-      const tr = s ? s.tr : [], hay = tr.length > 0, vias = [...new Set(tr.map(i => X.cadena[i].via).filter(Boolean))];
+      const tr = s ? s.tr : [], tr2 = s ? s.tr2 : [], hay = tr.length > 0, vias = [...new Set(tr.map(i => X.cadena[i].via).filter(Boolean))],
+        vias2 = [...new Set(tr2.map(i => X.cadena[i].via).filter(v => v && !vias.includes(v)))];
       if (mapa.getLayer("tramos")) {
-        mapa.setPaintProperty("tramos", "fill-color", hay ? ["case", ["in", ["get", "i"], ["literal", tr]], "#c8321f", "#cfd6d4"] : RIESGO);
-        mapa.setPaintProperty("tramos", "fill-opacity", hay ? ["case", ["in", ["get", "i"], ["literal", tr]], 0.55, 0.25] : 0.45);
-        mapa.setPaintProperty("vias", "line-color", hay ? ["case", ["in", ["get", "r"], ["literal", vias]], "#d7261e", "#9aa5a3"] : "#e0a32e");
-        mapa.setPaintProperty("vias", "line-width", hay ? ["case", ["in", ["get", "r"], ["literal", vias]], 5, 2] : 3);
-        mapa.setLayoutProperty("rotulos", "text-field", hay ? ["case", ["in", ["get", "i"], ["literal", tr]], ["concat", ["get", "t"], "\nPuede cortarse"], ""] : ["get", "t"]);
+        const en = (k, xs) => ["in", ["get", k], ["literal", xs]];
+        mapa.setPaintProperty("tramos", "fill-color", hay ? ["case", en("i", tr), "#c8321f", en("i", tr2), "#e8962e", "#cfd6d4"] : RIESGO);
+        mapa.setPaintProperty("tramos", "fill-opacity", hay ? ["case", en("i", tr), 0.55, en("i", tr2), 0.4, 0.25] : 0.45);
+        mapa.setPaintProperty("vias", "line-color", hay ? ["case", en("r", vias), "#d7261e", en("r", vias2), "#e8962e", "#9aa5a3"] : "#e0a32e");
+        mapa.setPaintProperty("vias", "line-width", hay ? ["case", en("r", vias), 5, en("r", vias2), 4, 2] : 3);
+        mapa.setLayoutProperty("rotulos", "text-field", hay ? ["case", en("i", tr), ["concat", ["get", "t"], tr2.length ? "\nMás probable" : "\nPuede cortarse"], ""] : ["get", "t"]);
       }
       PULSO?.remove(); PULSO = null;
       if (s && lugar6.length) {
         const cs = lugar6.flatMap(f => JSON.stringify(f.geometry.coordinates).match(/-?\d+\.?\d*,-?\d+\.?\d*/g).map(c => c.split(",").map(Number)));
         const el = document.createElement("div"); el.className = "pulso";
-        el.innerHTML = `<span>${esc(s.us[0].length < 6 ? `${lugar(s.us[0])}, sin lugar exacto` : lugar(s.us[0]))}</span>`;
+        el.innerHTML = `<span>${esc(s.etq || (s.us[0].length < 6 ? `${lugar(s.us[0])}, sin lugar exacto` : lugar(s.us[0])))}</span>`;
         PULSO = new maplibregl.Marker({ element: el }).setLngLat([cs.reduce((a, c) => a + c[0], 0) / cs.length, cs.reduce((a, c) => a + c[1], 0) / cs.length]).addTo(mapa);
       }
       const fc = { type: "FeatureCollection", features: fs };
