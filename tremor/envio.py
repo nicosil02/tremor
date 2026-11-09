@@ -1,34 +1,20 @@
-"""Manda el informe en PDF de cada empresa del piloto: por Telegram (el mismo bot y chat de los avisos) y por correo
-si hay cuenta SMTP. Sin claves, solo genera los PDF y dice qué mandaría.
+"""Manda por correo el informe en PDF de cada empresa del piloto, si hay cuenta SMTP. Sin claves, solo genera los PDF.
+Telegram queda solo para los avisos de la operación del cliente (tremor.avisos), no para el informe.
 
     python -m tremor.envio
 
-Secretos: TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID; para el correo SMTP_USER, SMTP_PASSWORD (en Gmail, una contraseña de
+Secretos: SMTP_USER, SMTP_PASSWORD (en Gmail, una contraseña de
 aplicación), CORREO_PARA (uno o varios, separados por coma) y, si no es Gmail, SMTP_HOST.
-ponytail: un solo chat y una sola lista de correo para todo el piloto; con clientes reales, uno por empresa."""
+ponytail: una sola lista de correo para todo el piloto; con clientes reales, una por empresa. Falta diseñar el correo."""
 import os
 import smtplib
 from datetime import date
 from email.message import EmailMessage
 
-import requests
-
 from tremor import informe_pdf
 
 PILOTO = {"bateas": "Bateas", "raura": "Raura", "poderosa": "Poderosa", "bambas": "Las Bambas"}
 ENLACE = "https://nicosil02.github.io/tremor/"
-
-
-def telegram(pdf, texto):
-    token, chat = os.environ.get("TELEGRAM_BOT_TOKEN"), os.environ.get("TELEGRAM_CHAT_ID")
-    if not (token and chat):
-        print(f"(sin Telegram) mandaría {pdf.name}: {texto}")
-        return False
-    with open(pdf, "rb") as f:
-        r = requests.post(f"https://api.telegram.org/bot{token}/sendDocument", timeout=60,
-                          data={"chat_id": chat, "caption": texto}, files={"document": (pdf.name, f, "application/pdf")})
-    print(f"Telegram {pdf.name}: {'enviado' if r.ok else r.status_code}")
-    return r.ok
 
 
 def correo(pdfs, hoy):
@@ -52,8 +38,6 @@ def main():
     informe_pdf.main()
     hoy = date.today().strftime("%d/%m/%Y")
     pdfs = [informe_pdf.DOCS / "informes" / f"informe-{k}.pdf" for k in PILOTO]
-    for k, p in zip(PILOTO, pdfs):
-        telegram(p, f"Tremor, informe de riesgo social de {PILOTO[k]} al {hoy}. Avisos al día en {ENLACE}")
     correo(pdfs, hoy)
 
 
