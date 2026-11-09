@@ -2,12 +2,13 @@
 impresora y los márgenes del navegador de cada usuario. Deja docs/informes/informe-<empresa>.pdf.
 `python -m tremor.informe_pdf`"""
 import functools
+import os
 import http.server
 import threading
 from pathlib import Path
 
 DOCS = Path(__file__).resolve().parent.parent / "docs"
-EMPRESAS = ("bambas", "southern", "antamina", "yanacocha")  # las mismas de docs/informe.html
+EMPRESAS = ("bateas", "raura", "poderosa", "bambas", "southern", "antamina", "yanacocha")  # las mismas de docs/informe.html
 
 
 def main():
@@ -22,7 +23,8 @@ def main():
     with sync_playwright() as p:
         b = p.chromium.launch()
         pag = b.new_page()
-        pag.route("https://raw.githubusercontent.com/**", lambda r: r.abort())  # usa docs/web.json
+        if not os.environ.get("GITHUB_ACTIONS"):  # en la PC usa docs/web.json; en Actions, los datos del día (rama datos)
+            pag.route("https://raw.githubusercontent.com/**", lambda r: r.abort())
         for k in EMPRESAS:
             pag.goto(f"http://127.0.0.1:{srv.server_port}/informe.html?e={k}")
             pag.wait_for_selector(".evaluacion", timeout=60_000)
