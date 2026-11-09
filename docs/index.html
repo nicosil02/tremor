@@ -282,17 +282,13 @@
         <div class="rampa"><i style="background:var(--cobre-1)"></i><i style="background:var(--cobre-2)"></i><i style="background:var(--cobre-3)"></i><i style="background:var(--cobre-4)"></i></div>
         <div class="cortes"><span>Bajo</span><span>10%</span><span>25%</span><span>50%</span></div></div>
       <div class="detalle"><b>En el mapa</b>
-        <div class="linea"><i class="l-sel"></i>Unidad abierta</div>
-        <div class="linea"><i class="l-unidad"></i>Otras unidades (OEFA)</div>
-        <div class="linea"><i class="l-zona"></i>Zona de influencia</div>
-        <div class="linea"><i class="l-conf"></i>Comunidad con conflicto</div>
-        <div class="linea"><i class="l-com"></i>Otras comunidades</div>
-        <div class="linea"><i class="l-lazo"></i>Su conflicto es con esta unidad</div></div>
+        <div class="linea"><i class="l-sel"></i>La unidad que mira</div>
+        <div class="linea"><i class="l-zona"></i>Su zona, donde se mide el riesgo</div>
+        <div class="linea"><i class="l-conf"></i>Comunidad en conflicto</div></div>
       <div class="punto"><i style="background:var(--patina)"></i>Protesta anunciada</div>
-      <div class="punto"><i style="background:var(--tinta-3)"></i>Protesta reciente</div>
-      <div class="punto"><i style="background:var(--cobre-3);border:2px solid #fff;box-shadow:0 0 0 1px var(--tinta-3)"></i>Operación, con el color de su riesgo</div>
-      <div class="punto"><i style="background:#f4c35a;border-radius:2px;height:4px;width:16px"></i>Ruta nacional de salida (MTC)</div>
-      <div class="punto"><i style="background:#b3261e"></i>Vía bloqueada, vigente (SUTRAN)</div>
+      <div class="punto"><i style="background:var(--tinta-3)"></i>Protesta ocurrida</div>
+      <div class="punto"><i style="background:#f4c35a;border-radius:2px;height:4px;width:16px"></i>Carretera de salida</div>
+      <div class="punto"><i style="background:#b3261e"></i>Carretera bloqueada hoy</div>
     </div>
   </div>
 </div>
@@ -379,7 +375,7 @@ function iniciar(D, G, H, C) {
     document.getElementById("leyenda").hidden = false;
     // Relieve de los Andes (Terrain Tiles abiertos de AWS) y satélite al acercarse, bajo los nombres
     const bajoNombres = map.getStyle().layers.find(c => c.type === "symbol")?.id;
-    const DEM = { type: "raster-dem", encoding: "terrarium", tileSize: 256, maxzoom: 13, attribution: "Terrain Tiles (AWS, Mapzen)",
+    const DEM = { type: "raster-dem", encoding: "terrarium", tileSize: 256, maxzoom: 12, attribution: "Terrain Tiles (AWS, Mapzen)",
                   tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"] };
     map.addSource("dem", DEM);
     map.addSource("dem-3d", DEM);
@@ -448,11 +444,13 @@ function iniciar(D, G, H, C) {
     map.addLayer({ id: "com-nombre-resto", type: "symbol", source: "com", minzoom: 12.5, filter: ["!", conf], layout: NOMBRE_COM, paint: { ...HALO, "text-opacity": 0.8 } });
     map.addLayer({ id: "com-punto-nombre", type: "symbol", source: "com-punto", layout: { ...NOMBRE_COM, "text-offset": [0, 1.2], "text-anchor": "top" }, paint: HALO_COM });
     // Un nombre por unidad, en el centro de su área (sobre el polígono saldría uno por cada pedazo)
-    map.addSource("huellas-centro", { type: "geojson", data: { type: "FeatureCollection", features: H.features.map(f => {
-      const k = cajaDe([f]); return { type: "Feature", geometry: { type: "Point", coordinates: [(k[0] + k[2]) / 2, (k[1] + k[3]) / 2] },
-        properties: f.properties }; }) } });
-    map.addLayer({ id: "huella-nombre", type: "symbol", source: "huellas-centro", minzoom: 11, filter: ["==", ["get", "empresa"], ""],
-      layout: { ...TEXTO, "text-field": ["get", "unidad"], "text-offset": [0, 0.9], "text-anchor": "top" }, paint: HALO });
+    map.addSource("huellas-centro", { type: "geojson", data: { type: "FeatureCollection", features:
+      [...d3.group(H.features, f => `${f.properties.empresa}|${f.properties.unidad}`).values()].map(fs => {
+      const k = cajaDe(fs); return { type: "Feature", geometry: { type: "Point", coordinates: [(k[0] + k[2]) / 2, (k[1] + k[3]) / 2] },
+        properties: fs[0].properties }; }) } });
+    map.addLayer({ id: "huella-nombre", type: "symbol", source: "huellas-centro", minzoom: 12, filter: ["==", ["get", "empresa"], ""],
+      layout: { ...TEXTO, "text-field": ["get", "unidad"], "text-size": 16, "text-offset": [0, 0.9], "text-anchor": "top" },
+      paint: { ...HALO, "text-halo-width": 2.2 } });
     const modo = () => document.getElementById("leyenda").classList.toggle("cerca", map.getZoom() >= 10);
     map.on("zoomend", modo); modo();
     map.addSource("puntos", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
@@ -500,7 +498,12 @@ function iniciar(D, G, H, C) {
   const sel = document.getElementById("ordenar");
   let enPais = false;
   const uni = o => o.unidad + (o.tipo === "proyecto" ? " (proyecto)" : "");
-  const titFila = f => enPais ? uni(f.os[0]).split(",")[0] : f.os.map(uni).join(", ");
+  const titFila = f => enPais ? uni(f.os[0]).split(",")[0] : uni(f.os[0]);
+  const situ = o => o.tipo === "proyecto" ? "proyecto" : /^operación/.test(o.etapa || "") ? "en operación"
+    : /exploración/.test(o.etapa || "") ? "exploración" : "fiscalizada por OEFA";
+  const otras = f => { const os = filas.filter(g => g !== f && g.u === f.u).map(g => g.os[0]);
+    return `<p class="lugar-op">${esc(situ(f.os[0])[0].toUpperCase() + situ(f.os[0]).slice(1))}.${os.length ? ` Comparte zona con ${os
+      .map(o => `${esc(o.unidad)} (${situ(o)})`).join(", ")}.` : ""}</p>`; };
   function ordenarFilas() {
     const p = f => mesP(f.a) ?? -1, reg = f => `${f.a.lugar || ""} ${lugar(f.u)}`, v = sel.value;
     filas.sort(v === "prob-asc" ? (x, y) => p(x) - p(y) : v === "nombre" ? (x, y) => titFila(x).localeCompare(titFila(y), "es")
@@ -522,7 +525,12 @@ function iniciar(D, G, H, C) {
     const base = suyas || D.alerta.filter(a => mesP(a) != null).sort((x, y) => mesP(y) - mesP(x)).slice(0, 25)
       .map(a => ({ unidad: lugar(a.ubigeo), ubigeo: a.ubigeo }));
     const dePROV = u => d3.greatest([...A.values()].filter(x => String(x.ubigeo).startsWith(String(u).slice(0, 4)) && mesP(x) != null), mesP);
-    filas = d3.groups(base, o => o.ubigeo).map(([u, os]) => ({ u, os, a: A.get(u) || dePROV(u) || {} }));
+    const fila = (u, os) => ({ u, os, a: A.get(u) || dePROV(u) || {} });
+    // En la empresa, una fila y un punto por unidad (si OEFA la registra en varios distritos, la zona de más riesgo);
+    // el riesgo es de la zona, así que unidades vecinas comparten porcentaje
+    filas = suyas ? [...d3.group(base, o => `${o.empresa}|${o.unidad}`).values()]
+        .map(os => d3.greatest(os.map(o => fila(o.ubigeo, [o])), f => mesP(f.a) ?? -1))
+      : d3.groups(base, o => o.ubigeo).map(([u, os]) => fila(u, os));
     enPais = !suyas; ordenarFilas(); cerrarFicha();
     // Una empresa aunque cada fuente la escriba distinto ("MINERA LAS BAMBAS S.A." y "Minera Las Bambas S.A.")
     const empresas = suyas ? [...d3.group(suyas, o => llano(o.empresa).replace(/[^a-z0-9]+/g, " ").trim()).values()].map(os => os[0].empresa) : [];
@@ -575,10 +583,10 @@ function iniciar(D, G, H, C) {
   function llenarFicha(f) {
     const a = f.a, p = mesP(a);
     det.innerHTML = `<button type="button" class="btn volver">← ${enPais ? "Volver a la lista" : "Alertas y operaciones"}</button>
-      <h2>${esc(titFila(f))}</h2><p class="lugar-op">${esc(lugar(f.u))}${enPais ? "" : `. ${esc(nombre(f.os[0].empresa))}`}</p>
+      <h2>${esc(titFila(f))}</h2><p class="lugar-op">${esc(lugar(f.u))}${enPais ? "" : `. ${esc(nombre(f.os[0].empresa))}`}</p>${enPais ? "" : otras(f)}
       <div class="vistas pestanas" role="tablist">${[["resumen", "Resumen"], ["comunidades", `Comunidades (${casosDe(f.u).filter(c => c.com).length})`],
         ["fechas", "Fechas"], ["historial", "Historial"]].map(([k, n], j) => `<button type="button" role="tab" data-p="${k}" aria-selected="${!j}">${n}</button>`).join("")}</div>
-      <div class="pest" data-p="resumen"><div class="riesgo-op"><b>${pct(p)}</b><span class="nivel n${nivelN(p)}">Riesgo ${banda(p).toLowerCase()}, ${esc(enMes.replace(/^en /, ""))}</span></div>
+      <div class="pest" data-p="resumen"><div class="riesgo-op"><b>${pct(p)}</b><span class="nivel n${nivelN(p)}">Riesgo ${banda(p).toLowerCase()}${enPais ? "" : ` en la zona de ${esc(lugar(f.u).split(",")[0])}`}, ${esc(enMes.replace(/^en /, ""))}</span></div>
         ${cuanto(a)}${factores(a)}${rutasFicha(f.u)}${vigilar(f.u)}</div>
       <div class="pest" data-p="comunidades" hidden>${quienes(f.u)}</div>
       <div class="pest" data-p="fechas" hidden>${agenda(f.u)}</div>
@@ -994,12 +1002,12 @@ function iniciar(D, G, H, C) {
       ...vias.map(s => { let i = filas.findIndex(f => usanVia(s).some(o => zonaDe(f.u).includes(String(o.ubigeo)))); if (i < 0) i = opDe(s.ubigeo);
         return { f: String(s.fecha_evento || "").slice(0, 10), i, s: "alta", via: s,
           t: `Vía ${s.via || ""} bloqueada por una protesta en ${nombre(s.distrito || "")}, ${s.region || ""}. Es una ruta de salida de la operación`, src: "SUTRAN" }; }),
-      ...filas.map((f, i) => { const p = mesP(f.a) ?? 0;
-        return { f: String(D.creado), i, s: p >= 0.5 ? "alta" : p >= 0.25 ? "media" : null,
+      ...filas.map((f, i) => ({ f, i })).filter(({ f, i }) => filas.findIndex(g => g.u === f.u) === i).map(({ f, i }) => { const p = mesP(f.a) ?? 0;
+        return { f: String(D.creado), i, zona: true, s: p >= 0.5 ? "alta" : p >= 0.25 ? "media" : null,
                  t: `Riesgo ${banda(p).toLowerCase()} de paro o bloqueo, ${pct(p)} ${enMes}`, src: "" }; })
     ].filter(x => x.s).sort((a, b) => (a.s === "alta" ? 0 : 1) - (b.s === "alta" ? 0 : 1) || b.f.localeCompare(a.f));
     document.getElementById("alertas").innerHTML = items.slice(0, 8).map(x => `<li class="alerta"><span class="sev ${x.s}"></span>
-        <div><div class="a-meta"><time>${dia(x.f)}</time>${x.i >= 0 ? `<b>${esc(titFila(filas[x.i]))}</b>` : ""}</div>
+        <div><div class="a-meta"><time>${dia(x.f)}</time>${x.i >= 0 ? `<b>${esc(x.zona ? filas.filter(g => g.u === filas[x.i].u).map(titFila).join(", ") : titFila(filas[x.i]))}</b>` : ""}</div>
           <div class="a-tit">${esc(x.t)}</div>${x.src ? `<div class="a-src">${x.src}</div>` : ""}</div>
         ${x.i >= 0 ? `<button type="button" class="btn" data-i="${x.i}">Ver en el mapa</button>` : ""}</li>`).join("")
       || `<li class="alerta"><span></span><div class="a-tit">Sin alertas en los últimos 45 días.</div></li>`;
