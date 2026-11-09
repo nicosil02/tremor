@@ -167,17 +167,24 @@ presupuesto ya paga monitoreo de medios y reportes de consultoras.
 
 Un solo día de paralización evitado o acortado en una mina mediana paga varios años del plan.
 
-**Cuánto cuesta cada cliente.** Casi todo el costo es fijo y se reparte entre todos, porque las radios y la prensa
-se leen para el país entero.
+**Cuánto cuesta operarlo.** La demo corre gratis para probar la idea. Con un contrato, el costo sube a propósito
+para que el servicio no falle ni se pierda nada. Casi todo es fijo y se reparte entre los clientes, porque las radios y
+la prensa se leen para el país entero.
 
-- **LLM.** Unas 200 notas al día, de unos 1 000 tokens cada una, son cerca de 6 millones de tokens al mes. Hoy
-  entra en el cupo gratuito de Groq. A precio de lista de `gpt-oss-120b` serían menos de US$5 al mes.
-- **Radio.** Es lo más pesado: unas 100 horas de máquina al día (18 máquinas, tres veces al día). En un repositorio público de GitHub no cuesta. En
-  uno privado, a la tarifa de Linux de GitHub, serían cerca de US$1 500 al mes, o un servidor propio de unos US$150
-  al mes.
-- **Página y datos.** GitHub Pages y la rama `datos`, sin costo.
+| Pieza | Demo de hoy | Con contrato |
+|---|---|---|
+| LLM | Groq en cupo gratuito: unas 200 notas al día, el resto espera al día siguiente | Todas las notas el mismo día, unas 3 000 al día. Con Claude Sonnet 5.5 (US$2 por millón de tokens de entrada y US$10 de salida) son unos 135 millones de entrada y 27 de salida al mes, cerca de **US$540 al mes**, o la mitad en lote. Un modelo más grande puede escribir el informe de cada cliente por unos pocos dólares más |
+| Radio | Máquinas de GitHub en CPU, tres franjas al día, de lunes a sábado. Gratis porque el repo es público | Servidor con GPU propio, más radios, más horas y quechua y aimara completos: **US$500 a 800 al mes** |
+| Página, datos y alertas | GitHub Pages, sin costo | Servidor propio con acceso por cliente y avisos por correo o WhatsApp: **US$50 a 100 al mes** |
+| **Total** | **US$0** | **US$1 100 a 1 500 al mes** |
 
-El costo adicional por cliente es casi cero: su informe y sus alertas salen de los mismos datos.
+**Por qué la radio cuesta.** No hay forma de leer una radio más rápido de lo que habla: hay que grabarla mientras
+transmite y luego pasar el audio a texto, que es lo que más cálculo consume. Con tres franjas de una hora en 280
+radios son unas 840 horas de audio al día. En CPU eso ocupa decenas de máquinas. Una GPU lo transcribe varias decenas
+de veces más rápido, y por eso conviene pagarla cuando hay contrato.
+
+Con 2 clientes en el plan Operación ya se cubre el costo. Desde ahí, cada cliente adicional es casi todo margen,
+porque su informe y sus alertas salen de los mismos datos.
 
 **Cómo llegamos a los primeros clientes.** Pilotos con 3 a 5 mineras medianas del sur andino, empezando por las
 que tienen operaciones en el Corredor Minero del Sur. La prueba de valor es el [expediente de casos](docs/casos.md)
