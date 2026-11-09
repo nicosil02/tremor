@@ -246,6 +246,10 @@
   details.vecinas li { display: flex; align-items: center; gap: 8px; } details.vecinas small { color: var(--tinta-2); font-size: 14px; }
   .rutas-emp { padding: 8px 24px 12px; } .rutas-emp h3 { font-size: 18px; margin: 8px 0 6px; }
   .rutas-emp ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .rutas-emp .via-sub { margin: 0 0 8px; color: var(--tinta-2); font-size: 15px; }
+  .rutas-emp button.tramo { all: unset; cursor: pointer; display: flex; justify-content: space-between; gap: 12px; }
+  .rutas-emp button.tramo em { font-style: normal; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .rutas-emp button.tramo:hover b { text-decoration: underline; } .rutas-emp button.tramo:focus-visible { outline: 3px solid var(--cobre); outline-offset: 2px; }
   .rutas-emp li { display: grid; font-size: 16px; } .rutas-emp li span { color: var(--tinta-2); } .rutas-emp li span.mal { color: #b3261e; font-weight: 600; }
   .detalle-op ul.casos button:hover b { text-decoration: underline; text-underline-offset: 3px; }
   .detalle-op ul.casos button:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
@@ -1280,10 +1284,16 @@ function iniciar(D, G, H, C) {
     const cad = CADENA[Object.keys(CADENA).find(k => filas.some(f => f.os[0].unidad === k))];
     if (cad) {
       const toca = (r, e) => { const u = String(e.ubigeo); return r.ubigeos.includes(u) || (u.length < 6 && u !== "00" && /paro|bloque|huelga/i.test(e.accion || "") && r.ubigeos.some(x => x.startsWith(u))); };
-      box.innerHTML = `<h3>Traslado del concentrado</h3><ul>${cad.tramos.map(r => { const ev = D.eventos.filter(e => toca(r, e)
+      // Riesgo en la vía: el distrito más expuesto de cada tramo; tramos tratados como independientes (un techo)
+      const pt = r => Math.max(0, ...r.ubigeos.map(u => (A.get(u) || {}).prob ?? 0));
+      const via = 1 - cad.tramos.reduce((q, r) => q * (1 - pt(r)), 1);
+      box.innerHTML = `<h3>Riesgo en la vía, ${Math.round(via * 100)}%</h3><p class="via-sub">Que se corte algún tramo de la ruta del concentrado, octubre a diciembre. Toque un tramo para verlo en el mapa.</p><ul>${cad.tramos.map((r, i) => { const ev = D.eventos.filter(e => toca(r, e)
           && Math.abs(new Date(String(e.fecha_evento || e.fecha_anuncio).slice(0, 10)) - new Date(hoyISO())) <= 14 * 864e5);
-        return `<li><b>${esc(r.nombre)}, ${esc(r.modo.toLowerCase())}</b><span class="${ev.length ? "mal" : ""}">${ev.length
+        return `<li><button type="button" class="tramo" data-tramo="${i}"><b>${esc(r.nombre)}, ${esc(r.modo.toLowerCase())}</b><em>${Math.round(pt(r) * 100)}%</em></button><span class="${ev.length ? "mal" : ""}">${ev.length
           ? ev.map(e => `${esc(corta(e))} ${e.estado === "anunciada" ? "anunciado para el" : "el"} ${esc(dia(String(e.fecha_evento || e.fecha_anuncio).slice(0, 10)))} en ${esc(lugar(e.ubigeo))}`).join(". ") : "Sin avisos"}.</span></li>`; }).join("")}</ul>`;
+      box.querySelectorAll(".tramo").forEach(b => b.onclick = () => { const us = new Set(cad.tramos[+b.dataset.tramo].ubigeos), bb = new maplibregl.LngLatBounds();
+        G.features.filter(f => us.has(f.properties.u)).forEach(f => JSON.stringify(f.geometry.coordinates).match(/-?\d+\.?\d*,-?\d+\.?\d*/g).forEach(s => bb.extend(s.split(",").map(Number))));
+        if (!bb.isEmpty()) map.fitBounds(bb, { padding: pad(80), pitch: 0, duration: 900 }); });
       return;
     }
     const rs = [...new Set(filas.filter(f => opera(f.os[0])).flatMap(f => rutasDe(f.u)))];
