@@ -102,6 +102,9 @@
 const FUENTES = ["https://raw.githubusercontent.com/nicosil02/tremor/datos/web.json", "web.json"];
 // nombre en pantalla: (cómo figura en el OEFA, alias en notas y radio) — los mismos de tremor/avisos.py
 const EMPRESAS = {
+  "Bateas": ["minera bateas", /bateas|caylloma|cailloma/i],
+  "Raura": ["minera raura", /\braura\b/i],
+  "Poderosa": ["minera poderosa", /minera poderosa|\bpataz\b/i],
   "Las Bambas": ["minera las bambas", /las bambas|\bmmg\b|ferrobamba|chalcobamba/i],
   "Southern": ["southern peru", /southern|toquepala|cuajone|t[ií]a mar[ií]a/i],
   "Antamina": ["minera antamina", /antamina/i],
@@ -127,8 +130,9 @@ const guardado = k => { try { return localStorage.getItem(k); } catch { return n
 const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 
 // Piloto con una sola minera; en ?admin se ven todas para revisar que cada una salga bien
-const PILOTO = "Las Bambas", ADMIN = /[?&]admin\b/.test(location.search);
-let D, A, E, empresa = ADMIN && EMPRESAS[guardado("tremor-empresa")] ? guardado("tremor-empresa") : PILOTO, pila = [];
+const PILOTO = ["Bateas", "Raura", "Poderosa", "Las Bambas"], ADMIN = /[?&]admin\b/.test(location.search);
+const LISTA = ADMIN ? Object.keys(EMPRESAS) : PILOTO;
+let D, A, E, empresa = LISTA.includes(guardado("tremor-empresa")) ? guardado("tremor-empresa") : PILOTO[0], pila = [];
 
 const CADENA = fetch("cadena.json").then(r => r.json()).catch(() => ({}));
 let CAD = {};
@@ -164,7 +168,7 @@ function armar() {
     avisos.push({ f, urge: viene || (anun && dias(f) > -3), tipo: "Protesta", e, cerca, trans, tramo: tramoDe(u, e),
       t: `${accion(e)}${e.actor ? ` de ${e.actor.toLowerCase()}` : ""}`,
       w: viene ? cuando(f) : dia(f),
-      s: [u === "00" ? (trans ? "Puede frenar el concentrado" : "Lugar sin precisar") : !zona.has(u) && tramoDe(u, e) ? `${lugar(u)}, en su ruta` : lugar(u), viene ? "" : anun ? "anunciada" : "ocurrió"].filter(Boolean).join(", ") });
+      s: [u === "00" ? (trans ? "Puede frenar sus despachos" : "Lugar sin precisar") : !zona.has(u) && tramoDe(u, e) ? `${lugar(u)}, en su ruta` : lugar(u), viene ? "" : anun ? "anunciada" : "ocurrió"].filter(Boolean).join(", ") });
   }
   for (const s of D.sutran || []) if (rutas.includes(s.via))
     avisos.push({ f: String(s.fecha_evento || HOY).slice(0, 10), urge: true, tipo: "Bloqueo", sutran: s, t: `Vía ${s.via} bloqueada`, w: "ahora",
@@ -180,7 +184,9 @@ function armar() {
     const prox = ev.filter(x => x.e.estado === "anunciada" && x.f >= HOY).sort((a, b) => a.f.localeCompare(b.f))[0];
     const rec = ev.filter(x => dias(x.f) >= -14 && x.f <= HOY).sort((a, b) => b.f.localeCompare(a.f))[0];
     const vago = (prox || rec) && String((prox || rec).e.ubigeo).length < 6 ? `, en ${lugar(String((prox || rec).e.ubigeo))} sin distrito` : "";
-    const peor = r.ubigeos.map(u => [(A.get(u) || {}).prob ?? 0, u]).sort((a, b) => b[0] - a[0])[0] || [0, ""];
+    // ponytail: fuera del número las capitales de departamento y Lima-Callao; su protesta urbana rara vez corta la carga,
+    // y la EGPP pone ahí lo que no sabe ubicar. Siguen contando para los avisos. Mejor: protestas sobre la vía misma.
+    const peor = r.ubigeos.filter(u => !/0101$/.test(u) && !/^(1501|0701)/.test(u)).map(u => [(A.get(u) || {}).prob ?? 0, u]).sort((a, b) => b[0] - a[0])[0] || [0, ""];
     return { ...r, vago, p: peor[0], peor: peor[1], estado: bl ? ["mal", "Bloqueo vigente"] : prox ? ["mal", `${accion(prox.e)} ${cuando(prox.f)}`] : rec ? ["ojo", `${accion(rec.e)} ${dia(rec.f)}`] : ["ok", "Sin avisos"] }; });
   // ponytail: tramos tratados como independientes; distritos vecinos se mueven juntos, así que es un techo
   const via = cadena.length ? 1 - cadena.reduce((q, r) => q * (1 - r.p), 1) : null;
@@ -194,7 +200,7 @@ const filaAviso = (x, k) => fila(x.urge ? "urge" : "", 0, x.t, x.w, x.s, `data-a
 function cabecera(atras, txt) {
   document.getElementById("cab").innerHTML = atras
     ? `<button type="button" class="atras" aria-label="Volver">‹</button><h1>${esc(txt)}</h1>`
-    : !ADMIN ? `<h1>${esc(empresa)}</h1>` : `<select id="emp" class="titulo" aria-label="Empresa">${Object.keys(EMPRESAS)
+    : `<select id="emp" class="titulo" aria-label="Empresa">${LISTA
         .map(n => `<option${n === empresa ? " selected" : ""}>${n}</option>`).join("")}</select>`;
   const at = document.querySelector("#cab .atras"); if (at) at.onclick = volver;
   const se = document.getElementById("emp"); if (se) se.onchange = () => { empresa = se.value; guardar("tremor-empresa", empresa); X = armar(); pila = []; ir(actual); };
@@ -215,7 +221,7 @@ const VISTAS = {
       <span class="t">${esc(o.unidad)}</span><span class="pct">${o.p == null ? "–" : pct(o.p)}<small>${o.p == null ? "" : `${nivel(o.p)} ${flecha(o.p - (o.normal ?? o.p))}`}</small></span>
       <span class="s" style="grid-column:2">${esc(lugar(o.ubigeo))}</span></button></li>`;
     return `<h2>Riesgo en la operación</h2><ul>${(op.length ? op : otras).map(filaOp).join("")}</ul>`
-      + (X.cadena.length ? `<h2>Riesgo en la vía</h2><div class="via"><b>${pct(X.via)}</b><span>Que se corte algún tramo de la ruta del concentrado, octubre a diciembre</span></div>
+      + (X.cadena.length ? `<h2>Riesgo en la vía</h2><div class="via"><b>${pct(X.via)}</b><span>Que se corte algún tramo de su ruta de salida, octubre a diciembre</span></div>
         <ol class="cadena">${X.cadena.map((r, i) =>
           `<li class="${r.estado[0]}"><button type="button" data-tramo="${i}"><b>${esc(r.nombre)}</b><span class="modo">${esc(r.modo)}. ${esc(r.estado[1] + r.vago)}</span><span class="est">${pct(r.p)}</span></button></li>`).join("")}</ol>`
         : X.rutas.length ? `<h2>Rutas de salida</h2>${X.rutas.map(r => { const b = (D.sutran || []).filter(s => s.via === r).length;
@@ -277,7 +283,7 @@ function detalleAviso(k) {
   const e = x.e, f = x.f;
   return `<div class="nota"><h3>${esc(x.t)}</h3><p class="meta">${esc(largo(f))}${e.estado === "anunciada" && f >= HOY ? `, ${cuando(f)}` : e.estado === "anunciada" ? ", anunciada" : ""}</p>
     <span class="etq">Dónde</span>${esc(String(e.ubigeo) === "00" ? (x.trans ? "La nota no lo dice. Suelen ser en Lima" : "La nota no lo dice") : lugar(String(e.ubigeo)))}${x.cerca ? `, zona de ${esc(x.cerca.unidad)}` : ""}
-    ${x.tramo ? `<span class="etq">Qué puede tocar</span>El traslado del concentrado, tramo ${esc(x.tramo.nombre)} (${esc(x.tramo.modo.toLowerCase())})` : ""}
+    ${x.tramo ? `<span class="etq">Qué puede tocar</span>Sus despachos, tramo ${esc(x.tramo.nombre)} (${esc(x.tramo.modo.toLowerCase())})` : ""}
     ${x.trans && !x.tramo ? `<span class="etq">Qué puede tocar</span>El traslado de concentrado e insumos${X.rutas.length ? ` por ${esc(X.rutas.join(" y "))}` : ""}` : ""}
     <span class="etq">La nota</span>${esc(e.titular)}<br><a class="ir" href="${esc(e.enlace)}" target="_blank" rel="noopener">Leer en ${esc(e.medio)}</a></div>`;
 }

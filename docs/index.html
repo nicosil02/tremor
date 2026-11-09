@@ -500,8 +500,8 @@ function iniciar(D, G, H, C) {
 
   const ops = d3.groups(D.operaciones, o => o.empresa).sort((a, b) => b[1].length - a[1].length);
   document.getElementById("empresas").innerHTML = ops.map(([e]) => `<option value="${esc(nombre(e))}">`).join("");
-  const ejemplos = [["Las Bambas", "minera las bambas"], ["Southern", "southern peru"], ["Antamina", "antamina"], ["Yanacocha", "yanacocha"],
-                    ].filter(([, t]) => ops.some(([e]) => llano(e).includes(t))).filter(([n]) => ADMIN || n === "Las Bambas");
+  const ejemplos = [["Bateas", "minera bateas"], ["Raura", "minera raura"], ["Poderosa", "minera poderosa"], ["Las Bambas", "minera las bambas"], ["Southern", "southern peru"], ["Antamina", "antamina"], ["Yanacocha", "yanacocha"],
+                    ].filter(([, t]) => ops.some(([e]) => llano(e).includes(t))).filter(([n]) => ADMIN || ["Bateas", "Raura", "Poderosa", "Las Bambas"].includes(n));
   const sug = document.getElementById("sugerencias");
   const input = document.getElementById("empresa");
   sug.innerHTML = ejemplos.map(([n, t]) => `<button type="button" data-t="${t}" aria-pressed="false">${n}</button>`).join("");
@@ -1281,13 +1281,15 @@ function iniciar(D, G, H, C) {
   function rutasEmpresa(pais) {
     const box = document.getElementById("rutas-emp"); box.hidden = pais; if (pais) return;
     // Con cadena de traslado conocida (docs/cadena.json), cada tramo con lo ocurrido o anunciado en 14 días
-    const cad = CADENA[Object.keys(CADENA).find(k => filas.some(f => f.os[0].unidad === k))];
+    const cad = Object.values(CADENA).find(c => filas.some(f => String(f.os[0].empresa).toLowerCase().includes(c.empresa)));
     if (cad) {
       const toca = (r, e) => { const u = String(e.ubigeo); return r.ubigeos.includes(u) || (u.length < 6 && u !== "00" && /paro|bloque|huelga/i.test(e.accion || "") && r.ubigeos.some(x => x.startsWith(u))); };
       // Riesgo en la vía: el distrito más expuesto de cada tramo; tramos tratados como independientes (un techo)
-      const pt = r => Math.max(0, ...r.ubigeos.map(u => (A.get(u) || {}).prob ?? 0));
+      // ponytail: fuera del número las capitales de departamento y Lima-Callao; su protesta urbana rara vez corta la carga,
+      // y la EGPP pone ahí lo que no sabe ubicar. Siguen contando para los avisos. Mejor: protestas sobre la vía misma.
+      const pt = r => Math.max(0, ...r.ubigeos.filter(u => !/0101$/.test(u) && !/^(1501|0701)/.test(u)).map(u => (A.get(u) || {}).prob ?? 0));
       const via = 1 - cad.tramos.reduce((q, r) => q * (1 - pt(r)), 1);
-      box.innerHTML = `<h3>Riesgo en la vía, ${Math.round(via * 100)}%</h3><p class="via-sub">Que se corte algún tramo de la ruta del concentrado, octubre a diciembre. Toque un tramo para verlo en el mapa.</p><ul>${cad.tramos.map((r, i) => { const ev = D.eventos.filter(e => toca(r, e)
+      box.innerHTML = `<h3>Riesgo en la vía, ${Math.round(via * 100)}%</h3><p class="via-sub">Que se corte algún tramo de su ruta de salida, octubre a diciembre. Toque un tramo para verlo en el mapa.</p><ul>${cad.tramos.map((r, i) => { const ev = D.eventos.filter(e => toca(r, e)
           && Math.abs(new Date(String(e.fecha_evento || e.fecha_anuncio).slice(0, 10)) - new Date(hoyISO())) <= 14 * 864e5);
         return `<li><button type="button" class="tramo" data-tramo="${i}"><b>${esc(r.nombre)}, ${esc(r.modo.toLowerCase())}</b><em>${Math.round(pt(r) * 100)}%</em></button><span class="${ev.length ? "mal" : ""}">${ev.length
           ? ev.map(e => `${esc(corta(e))} ${e.estado === "anunciada" ? "anunciado para el" : "el"} ${esc(dia(String(e.fecha_evento || e.fecha_anuncio).slice(0, 10)))} en ${esc(lugar(e.ubigeo))}`).join(". ") : "Sin avisos"}.</span></li>`; }).join("")}</ul>`;
