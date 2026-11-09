@@ -90,23 +90,27 @@ VINCULO = ("Para cada conflicto social del Perú (ficha de la Defensoría del Pu
 GENERICAS = {"compania", "cia", "sociedad", "minera", "minero", "mineros", "empresa", "sac", "saa", "srl", "eirl", "del",
              "peru", "sucursal", "mining", "resources", "gold", "corporation", "holding", "the", "los", "las", "san",
              "unidad", "proyecto", "mina", "petrolera", "energia", "anonima", "cerrada", "abierta", "limitada",
-             "regional", "hospital", "central", "planta", "norte", "sur", "nacional", "municipal"}
+             "regional", "hospital", "central", "planta", "norte", "sur", "nacional", "municipal", "cerro", "lote"}
 
 
-def emparejar(ops, empresa, unidad):
+def emparejar(ops, empresa, unidad, ubigeo=None):
     """La operación de la base que corresponde a la empresa y unidad nombradas en el conflicto (por nombre).
-    Sin empresa no hay operación: un hospital o un municipio "regional" no es la unidad Regional - Atico."""
+    La empresa tiene que coincidir entera (todas las palabras propias del nombre más corto): "Minera Oro Negro" no
+    es "Águila de Oro", ni "Korimallco Minerals" es "Alturas Minerals". Sin empresa que coincida, solo se acepta la
+    unidad si está en el mismo departamento del conflicto. Entre unidades de la empresa gana la del departamento."""
     if not empresa:
         return None, None, None
-    ne, nu = norm(empresa or ""), norm(unidad or "")
-    raiz = lambda s: [w for w in s.replace(".", " ").split() if len(w) > 2 and w not in GENERICAS]
-    re_, ru = set(raiz(ne)), set(raiz(nu))
+    raiz = lambda s: {w for w in norm(s or "").replace(".", " ").replace(",", " ").split() if len(w) > 2 and w not in GENERICAS}
+    re_, ru, dep = raiz(empresa), raiz(unidad), str(ubigeo or "")[:2]
     mejor = None
     for e, u, ub in ops:
-        pe = len(re_ & set(raiz(norm(e)))) if re_ else 0
-        pu = len(ru & set(raiz(norm(u or "")))) if ru else 0
-        p = pe + 2 * pu
-        if (pu or pe >= 1) and (not mejor or p > mejor[0]):
+        re2, ru2 = raiz(e), raiz(u)
+        entera = lambda x, y: bool(x and y) and len(x & y) == min(len(x), len(y))
+        misma, pu, cerca = entera(re_, re2), len(ru & ru2), bool(dep) and str(ub or "")[:2] == dep
+        if not (misma or (entera(ru, ru2) and cerca)):
+            continue
+        p = (misma, pu, str(ub) == str(ubigeo), cerca)
+        if not mejor or p > mejor[0]:
             mejor = (p, e, u, ub)
     return mejor[1:] if mejor else (None, None, None)
 
@@ -119,13 +123,14 @@ def vinculos(con) -> int:
                    contra_empresa TEXT, unidad TEXT, estado TEXT, tema TEXT, empresa_op TEXT, unidad_op TEXT,
                    ubigeo_op TEXT, actualizado TEXT NOT NULL)""")
     ops = con.execute("SELECT empresa, unidad, ubigeo FROM operacion").fetchall()
-    filas = con.execute("""SELECT c.id, c.nombre, coalesce(cm.descripcion, c.descripcion, ''), coalesce(cm.actores_primarios, ''),
+    filas = con.execute("""SELECT c.id, c.ubigeo, c.nombre, coalesce(cm.descripcion, c.descripcion, ''), coalesce(cm.actores_primarios, ''),
                                   coalesce(x.resumen, '')
                            FROM caso c JOIN caso_mes cm ON cm.caso_id = c.id LEFT JOIN caso_contexto x ON x.caso_id = c.id
                            WHERE cm.reporte_num = (SELECT MAX(num) FROM reporte) AND cm.estado IN ('activo', 'latente')""").fetchall()
     hechos = 0
     for k in range(0, len(filas), 4):
-        lote = "\n".join(f"[{i}] {n}. {d[:700]} Actores: {a[:300]}. {x}" for i, n, d, a, x in filas[k:k + 4])
+        lote = "\n".join(f"[{i}] {n}. {d[:700]} Actores: {a[:300]}. {x}" for i, _, n, d, a, x in filas[k:k + 4])
+        ubs = {f[0]: f[1] for f in filas[k:k + 4]}
         try:
             out = chat_json(con, VINCULO, lote, "caso-vinculo-1").get("r", [])
         except SinCuota:
@@ -137,7 +142,7 @@ def vinculos(con) -> int:
                 i = int(v["i"])
             except (KeyError, TypeError, ValueError):
                 continue
-            e, u, ub = emparejar(ops, v.get("contra_empresa"), v.get("unidad"))
+            e, u, ub = emparejar(ops, v.get("contra_empresa"), v.get("unidad"), ubs.get(i))
             con.execute("INSERT OR REPLACE INTO caso_vinculo VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
                         (i, v.get("quien_reclama"), v.get("contra_empresa"), v.get("unidad"),
                          json.dumps(v.get("estado") or [], ensure_ascii=False), v.get("tema"), e, u, ub))
@@ -148,8 +153,5 @@ def vinculos(con) -> int:
 
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
-    assert claves("Comunidad Campesina de Maure – Penal de Challapalca / INPE")[:3] == ["Maure", "Penal", "Challapalca"]
-    assert emparejar([("SOUTHERN PERU", "Regional - Atico", "x")], None, "Hospital Regional II-2 JAMO") == (None, None, None)
-    assert emparejar([("ARUNTANI S.A.C.", "Florencia - Tucari", "x")], "Aruntani", "Tucari")[0] == "ARUNTANI S.A.C."
     print(f"Contexto de prensa para {casos(conectar())} casos sin descripción.")
     print(f"Vínculos de {vinculos(conectar())} conflictos vigentes.")

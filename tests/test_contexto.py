@@ -1,0 +1,30 @@
+from tremor.contexto import claves, emparejar
+
+OPS = [("SOUTHERN PERU COPPER CORPORATION", "Regional - Atico", "040101"), ("SOUTHERN PERU COPPER CORPORATION", "Cuajone", "180106"),
+       ("MINERA AGUILA DE ORO SOCIEDAD", "Planta de Beneficio Río Seco", "190101"), ("ALTURAS MINERALS S.A.", "Baños del Indio", "230101"),
+       ("CORPORACION ACEROS AREQUIPA S.A.", "Coribeni", "080101"), ("ARUNTANI S.A.C.", "Florencia - Tucari", "180201"),
+       ("LA ARENA S.A.", "Corral Grande", "130101"), ("CERRO DE PASCO RESOURCES", "Quiulacocha", "190101")]
+
+
+def test_claves():
+    assert claves("Comunidad Campesina de Maure – Penal de Challapalca / INPE")[:3] == ["Maure", "Penal", "Challapalca"]
+
+
+def test_emparejar_rechaza_parecidos():
+    assert emparejar(OPS, None, "Hospital Regional II-2 JAMO") == (None, None, None)
+    for empresa, unidad, ub in [("Minera Oro Negro", None, "120101"), ("Korimallco Minerals S.A.C.", "Minera Korimallko", "030101"),
+                                ("Municipalidad Provincial de Arequipa", "tarifa de pasaje", "040101"), ("Cerro S.A.C.", "planta de oxígeno", "200101")]:
+        assert emparejar(OPS, empresa, unidad, ub) == (None, None, None), empresa
+
+
+def test_emparejar_acepta_y_elige_unidad():
+    assert emparejar(OPS, "Aruntani", "Pasto Grande", "180101")[0] == "ARUNTANI S.A.C."
+    assert emparejar(OPS, "Southern Perú Copper Corporation", None, "180105")[1] == "Cuajone"
+    assert emparejar(OPS, "Tía María", "proyecto minero Tía María", "180101") == (None, None, None)
+
+
+def test_unidad_sola_exige_nombre_entero():
+    ops = [("MINERA PEÑOLES DE PERU S.A.", "Santa Cruz", "020101"), ("MINERA CHINALCO PERÚ S.A.", "Casaracra", "120801"),
+           ("MINERA CHINALCO PERÚ S.A.", "Toromocho", "120806")]
+    assert emparejar(ops, "MTC", "Valle Santa Lacramarca", "021801") == (None, None, None)
+    assert emparejar(ops, "Chinalco", None, "120806")[1] == "Toromocho"
