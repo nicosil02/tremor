@@ -21,6 +21,8 @@ si informa una protesta EN EL PERÚ y codifícala.
 
 Protesta = acción colectiva (2+ personas), pública, contenciosa (contra los intereses de alguien) y episódica.
 No son protesta: elecciones, actos oficiales, deportes, procesos judiciales sobre protestas pasadas, opiniones.
+Tampoco lo que hace una autoridad o una empresa: que la municipalidad paralice, clausure o bloquee una obra tras el
+reclamo de vecinos es un acto administrativo, no protesta. Un reclamo verbal o escrito sin acción colectiva tampoco.
 A diferencia de la EGPP, también cuentan las protestas ANUNCIADAS (convocadas para una fecha futura).
 
 Responde SOLO un JSON {{"notas": [...]}} con un objeto por nota, con estas claves:

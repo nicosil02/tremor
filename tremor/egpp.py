@@ -49,6 +49,7 @@ def operacion(*textos) -> str | None:
 
 def tipo_conflicto(actor, reclamo, sector, adversario, *textos) -> str:
     t = " ".join(str(x) for x in textos if isinstance(x, str))
+    t = re.sub(r"(?i)\b(manzana|mz\.?)\s*\w+\s*,?\s*lotes?\s*\d+", " ", t)  # "manzana A, lote 20" es una dirección, no un lote petrolero
     if actor in ("Mineros", "Trabajadores petroleros") and reclamo == "Laborales":
         return "laboral_minero"
     senal = bool(EXTRACTIVO.search(t))

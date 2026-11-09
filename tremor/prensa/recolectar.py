@@ -49,6 +49,11 @@ FEEDS = {
     "Agronoticias": ("https://agronoticias.pe/feed/", None),
     # Radios locales (directorio radio-browser, feeds probados el 7 nov 2026)
     "Exitosa": ("https://www.exitosanoticias.pe/feed/", None),
+    # Televisión: las notas de los noticieros que cada canal publica en su web (los feeds de YouTube ya no responden)
+    "Canal N": ("https://canaln.pe/feed", None),
+    "América Noticias": ("https://www.americatv.com.pe/noticias/feed", None),
+    "ATV Noticias": ("https://www.atv.pe/feed", None),
+    "Willax": ("https://willax.pe/feed", None),
     "Radio Panamericana": ("https://www.radiopanamericana.com/feed/", None),
     "Radio Sin Patrones": ("https://radiosinpatrones.com/feed/", "Arequipa"),        # Valle de Tambo
     "Radio Yaraví": ("https://www.radioyaravi.org.pe/feed/", "Arequipa"),
@@ -135,7 +140,7 @@ def parsear(xml: str, medio_fijo=None):
         try:
             pub = parsedate_to_datetime(g("pubDate")).astimezone(LIMA).isoformat(timespec="minutes")
         except (TypeError, ValueError):
-            pub = None
+            pub = (g("pubDate") or "")[:16] if re.match(r"\d{4}-\d\d-\d\dT", g("pubDate") or "") else None  # ISO (América)
         fuente = re.search(r'<source[^>]*url="([^"]+)"', item)
         yield {"medio": medio, "titular": titulo.strip(), "resumen": resumen[:600], "publicado": pub, "enlace": g("link"),
                "fuente_url": fuente[1] if fuente else ""}
@@ -162,6 +167,8 @@ def recolectar(con, desde: date | None = None, hasta: date | None = None, pausa=
         for medio, (url, dep) in FEEDS.items():
             try:
                 r = requests.get(url, timeout=30, headers=UA); r.raise_for_status()
+                if r.encoding == "ISO-8859-1" and "charset" not in r.headers.get("content-type", "").lower():
+                    r.encoding = "utf-8"  # sin charset, requests supone latin-1 y salen "PaÃ­ses"
             except requests.RequestException as e:
                 print(f"  {medio}: {e.__class__.__name__}")
                 continue

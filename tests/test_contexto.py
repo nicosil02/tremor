@@ -47,3 +47,9 @@ def test_lugar_lote():
     from tremor.empresas import lugar_lote
     assert lugar_lote("área inicial del Lote 206, ubicado en la provincia de Talara del departamento de Piura, adjudicándolo") == "200701"
     assert lugar_lote("Lote Z-69, ubicado en el zócalo continental frente a Tumbes") is None
+
+
+def test_lote_urbano_no_es_extractivo():
+    from tremor.egpp import tipo_conflicto
+    assert tipo_conflicto("Pobladores", "Servicios", "Ciudadanía", None, "antena en avenida Los Robles, manzana A, lote 20") == "otro"
+    assert tipo_conflicto("Pobladores", "Ambientales", "Ciudadanía", None, "derrame en el Lote 192") == "socioambiental_extractivo"

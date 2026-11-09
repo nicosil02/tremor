@@ -358,6 +358,14 @@ def proyectos(con, desde=2021):
     clave = lambda e: " ".join(norm(e).replace(".", " ").replace(",", " ").split())
     nombres = {clave(e): e for (e,) in con.execute("SELECT DISTINCT empresa FROM operacion WHERE tipo != 'proyecto'")}
     t = [f._replace(empresa=nombres.get(clave(f.empresa), f.empresa)) for f in t]
+    # La cartera a veces da solo la provincia: si la empresa ya opera en esa provincia, el proyecto va al distrito
+    # de su unidad (la Reposición Ferrobamba es un tajo de Las Bambas, en Challhuahuacho). Si no, queda en provincia.
+    suyas = {}
+    for e, u, et in con.execute("SELECT empresa, ubigeo, etapa FROM operacion WHERE tipo != 'proyecto' AND length(ubigeo) = 6"):
+        suyas.setdefault((e, u[:4]), []).append((not str(et or "").startswith("operación"), u))
+    t = [f._replace(ubigeo=min(suyas[(f.empresa, f.ubigeo)])[1]) if len(str(f.ubigeo)) == 4 and (f.empresa, f.ubigeo) in suyas else f
+         for f in t]
+    t = list({(f.empresa, f.unidad, f.ubigeo): f for f in t}.values())
     pd.DataFrame(t).drop(columns="nuevo", errors="ignore").to_sql("operacion", con, if_exists="append", index=False)
     con.commit()
     print(f"{len(t)} proyectos-distrito nuevos ({len(a)} filas de la cartera MINEM, {len(b)} con EIA del SENACE desde {desde})")

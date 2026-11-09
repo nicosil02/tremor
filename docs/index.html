@@ -207,7 +207,7 @@
   .leyenda b { display: block; font-weight: 650; color: var(--tinta); margin-bottom: 6px; line-height: 1.25; }
   .leyenda .rampa { display: grid; grid-template-columns: repeat(4, 1fr); height: 10px; }
   .leyenda .cortes { display: grid; grid-template-columns: repeat(4, 1fr); font-size: 13px; color: var(--tinta-3); margin-top: 2px; }
-  .leyenda .cortes span { line-height: 1.25; }
+  .leyenda .cortes span:not(:first-child) { margin-left: -10px; }
   .leyenda .detalle { display: none; }
   .leyenda.cerca .riesgo { display: none; }
   .leyenda.cerca .detalle { display: grid; gap: 6px; }
@@ -280,7 +280,7 @@
     <div class="leyenda" id="leyenda" hidden>
       <div class="riesgo"><b>Probabilidad de paro o bloqueo en la zona de influencia</b>
         <div class="rampa"><i style="background:var(--cobre-1)"></i><i style="background:var(--cobre-2)"></i><i style="background:var(--cobre-3)"></i><i style="background:var(--cobre-4)"></i></div>
-        <div class="cortes"><span>Bajo<br>&lt;10%</span><span>Medio<br>10–25%</span><span>Alto<br>25–50%</span><span>Crítico<br>&gt;50%</span></div></div>
+        <div class="cortes"><span>Bajo</span><span>10%</span><span>25%</span><span>50%</span></div></div>
       <div class="detalle"><b>En el mapa</b>
         <div class="linea"><i class="l-sel"></i>Unidad abierta</div>
         <div class="linea"><i class="l-unidad"></i>Otras unidades (OEFA)</div>
@@ -390,6 +390,13 @@ function iniciar(D, G, H, C) {
       tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"] });
     map.addLayer({ id: "sat", type: "raster", source: "sat", minzoom: 6.5,  // de cerca, la tierra: el satélite entra al acercarse a una región
       paint: { "raster-opacity": ["interpolate", ["linear"], ["zoom"], 6.5, 0, 8, 1], "raster-fade-duration": 0 } }, bajoNombres);
+    // Mientras cargan las fotos del satélite, el hueco no debe verse blanco (parecía otra vista encima de la otra):
+    // de cerca, el mapa de fondo se apaga y queda el relieve sobre un color de tierra.
+    for (const c of map.getStyle().layers) {
+      if (c.id === "sat") break;
+      if (c.type === "background") map.setPaintProperty(c.id, "background-color", ["interpolate", ["linear"], ["zoom"], 7, map.getPaintProperty(c.id, "background-color") || "#f2f0eb", 8, "#7a6650"]);
+      if (c.type === "fill") map.setPaintProperty(c.id, "fill-opacity", ["interpolate", ["linear"], ["zoom"], 7, 1, 8, 0]);
+    }
     const rampa = ["step", ["get", "p"], css("--cobre-1"), 0.1, css("--cobre-2"), 0.25, css("--cobre-3"), 0.5, css("--cobre-4")];
     map.addSource("zonas", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     // Sobre el satélite la zona se vuelve transparente: manda la huella de la operación
@@ -454,8 +461,8 @@ function iniciar(D, G, H, C) {
       "circle-color": ["match", ["get", "k"], "anunciada", css("--patina"), "via", "#b3261e", css("--tinta-3")] } });
     map.addLayer({ id: "ops", type: "circle", source: "puntos", filter: ["==", ["get", "k"], "op"], paint: {
       "circle-radius": ["case", ["==", ["get", "e"], 1], 9, 5],
-      "circle-color": ["case", ["==", ["get", "e"], 1], ["step", ["get", "p"], css("--cobre-1"), 0.1, css("--cobre-2"), 0.25, css("--cobre-3"), 0.5, css("--cobre-4")], "#fff"],
-      "circle-stroke-width": 2.2, "circle-stroke-color": ["case", ["==", ["get", "e"], 1], "#fff", css("--tinta")] } });
+      "circle-color": ["step", ["get", "p"], css("--cobre-1"), 0.1, css("--cobre-2"), 0.25, css("--cobre-3"), 0.5, css("--cobre-4")],
+      "circle-stroke-width": 2.2, "circle-stroke-color": "#fff" } });
     map.addLayer({ id: "ops-nombre", type: "symbol", source: "puntos", filter: ["all", ["==", ["get", "k"], "op"], ["==", ["get", "e"], 1]],
       layout: { ...TEXTO, "text-field": ["format", ["get", "t"], { "font-scale": 1 }, "\n", {}, ["coalesce", ["get", "pc"], ""], { "font-scale": 1.3 }],
                 "text-size": 15, "text-offset": [0, 1.1], "text-anchor": "top", "text-max-width": 14 },
@@ -514,7 +521,8 @@ function iniciar(D, G, H, C) {
     // En todo el país se listan las 25 zonas con operación más riesgosas
     const base = suyas || D.alerta.filter(a => mesP(a) != null).sort((x, y) => mesP(y) - mesP(x)).slice(0, 25)
       .map(a => ({ unidad: lugar(a.ubigeo), ubigeo: a.ubigeo }));
-    filas = d3.groups(base, o => o.ubigeo).map(([u, os]) => ({ u, os, a: A.get(u) || {} }));
+    const dePROV = u => d3.greatest([...A.values()].filter(x => String(x.ubigeo).startsWith(String(u).slice(0, 4)) && mesP(x) != null), mesP);
+    filas = d3.groups(base, o => o.ubigeo).map(([u, os]) => ({ u, os, a: A.get(u) || dePROV(u) || {} }));
     enPais = !suyas; ordenarFilas(); cerrarFicha();
     // Una empresa aunque cada fuente la escriba distinto ("MINERA LAS BAMBAS S.A." y "Minera Las Bambas S.A.")
     const empresas = suyas ? [...d3.group(suyas, o => llano(o.empresa).replace(/[^a-z0-9]+/g, " ").trim()).values()].map(os => os[0].empresa) : [];
@@ -1011,7 +1019,7 @@ function iniciar(D, G, H, C) {
         h: `<b>${esc(lugar(f.properties.u))}</b><br>${pct(mesP(a))} de que haya un paro o bloqueo en la zona ${enMes}` } }; });
     map.getSource("zonas").setData({ type: "FeatureCollection", features: feats });
     // En la vista de una empresa el color va en sus operaciones; la zona queda como un fondo tenue
-    map.setPaintProperty("zonas", "fill-opacity", ["interpolate", ["linear"], ["zoom"], 9, pais ? 0.8 : 0.22, 10.5, 0]);
+    map.setPaintProperty("zonas", "fill-opacity", ["interpolate", ["linear"], ["zoom"], 9, 0.75, 10.5, 0]);  // el mismo color de riesgo en el país y en la empresa
     const pts = [...filas.map((f, i) => ({ c: puntoOp(f), k: "op", i, p: mesP(f.a) ?? 0, e: !pais, t: titFila(f), pc: mesP(f.a) == null ? "" : pct(mesP(f.a)) })), ...puntosEventos].filter(p => p.c)
       .map(p => ({ type: "Feature", geometry: { type: "Point", coordinates: p.c }, properties: { k: p.k, h: p.h || "", t: p.t || "", pc: p.pc || "", i: p.i ?? -1, p: p.p ?? 0, e: p.e ? 1 : 0 } }));
     map.getSource("puntos").setData({ type: "FeatureCollection", features: pts });
