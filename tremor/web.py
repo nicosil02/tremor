@@ -68,7 +68,22 @@ def datos(con):
             "cobertura": cobertura(con),
             "vecinos": vecinos(con),
             "casos": casos_zona(con),
-            "calibracion": calibracion(con)}
+            "calibracion": calibracion(con),
+            "menciones": menciones(con)}
+
+
+def menciones(con):
+    """Lo que dijeron radio y medios de cada proyecto en los últimos 30 días: titular, quién, cuándo, el tono y un
+    fragmento. Una por titular (la misma nota llega por el feed del medio y por Google News: se queda el enlace directo)."""
+    desde = (date.today() - timedelta(days=30)).isoformat()
+    m = tabla(con, "SELECT m.proyecto, m.fecha, m.medio, m.origen, m.tono, n.titular, n.resumen, n.enlace FROM mencion m "
+                   f"JOIN nota n ON n.id = m.nota_id WHERE m.fecha >= '{desde}' ORDER BY m.fecha DESC")
+    if not len(m):
+        return []
+    m["google"] = m.enlace.str.contains("news.google")
+    m = m.sort_values(["google", "fecha"], ascending=[True, False]).drop_duplicates(["proyecto", "titular"]).sort_values("fecha", ascending=False)
+    m["resumen"] = m.resumen.fillna("").str.split(r'"use strict"|The post |\[…\]', regex=True).str[0].str.strip().str.slice(0, 300)
+    return registros(m.drop(columns="google"))
 
 
 def calibracion(con):

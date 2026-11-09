@@ -47,8 +47,12 @@
   .sev.media { background: var(--cobre-3); }
   .a-meta { display: flex; gap: 8px; font-size: 15px; color: var(--tinta-3); }
   .a-meta b { color: var(--tinta-2); font-weight: 600; }
-  .a-tit { font-weight: 600; color: var(--tinta); line-height: 1.3; margin-top: 2px; }
-  .a-src { font-size: 15px; color: var(--tinta-3); margin-top: 2px; }
+  .a-tit { font-weight: 650; font-size: 18px; color: var(--tinta); line-height: 1.3; margin-top: 2px; }
+  .a-quien { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; margin-top: 6px; font-size: 16px; color: var(--tinta); }
+  .a-cita { margin: 6px 0 0; font-size: 16px; line-height: 1.5; color: var(--tinta-2); max-width: 60ch; }
+  .tono { font-size: 15px; font-weight: 650; }
+  .tono.neg { color: #b3261e; } .tono.pos { color: #2f6b4f; } .tono.neu { color: var(--tinta-2); }
+  .a-src { font-size: 16px; color: var(--tinta-2); margin-top: 4px; }
   .a-dia { display: block; font-size: 14px; color: var(--tinta-3); }
   .a-op { font-weight: 650; font-size: 16px; color: var(--tinta); line-height: 1.3; }
   .a-pc { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
@@ -273,7 +277,8 @@
   .resumen b { font-weight: 750; }
   .panel.en-detalle .resumen, .panel.en-detalle .titular { display: none; }
   /* Alertas: un registro con la fecha en su columna, agrupado por prioridad */
-  .alertas li.a-grupo { display: block; font-size: 15px; font-weight: 700; padding: 16px 0 2px; border: 0; }
+  .alertas li.a-grupo { display: block; font-size: 16px; font-weight: 700; padding: 20px 0 2px; border: 0; }
+  .alertas li.a-grupo.dicen { color: var(--tinta); }
   .alertas li.a-grupo.alta { color: #b3261e; } .alertas li.a-grupo.media { color: var(--cobre-4); }
   .alertas li.a-grupo:first-child { padding-top: 0; }
   .alerta { grid-template-columns: 44px 1fr; gap: 4px 14px; }
@@ -398,7 +403,7 @@ Promise.all([json(FUENTES), json(["distritos.json"]), json(["operaciones.json"])
 
 function iniciar(D, G, H, C) {
   const A = new Map(D.alerta.map(a => [a.ubigeo, a]));
-  const lugar = u => { u = String(u || ""); const a = A.get(u) || [...A.values()].find(x => x.ubigeo.startsWith(u)); if (!a) return u;
+  const lugar = u => { u = String(u || ""); if (u === "00") return "lugar sin precisar"; const a = A.get(u) || [...A.values()].find(x => x.ubigeo.startsWith(u)); if (!a) return u;
     const [dep, prov, dist] = (a.lugar || "").split(" / ").map(nombre);
     return u.length >= 6 ? `${dist}, ${prov}` : u.length === 4 ? `la provincia de ${prov}` : dep; };
   const mes = s => s ? new Date(s + "-15").toLocaleDateString("es-PE", { month: "long", year: "numeric" }) : "";
@@ -1083,7 +1088,9 @@ function iniciar(D, G, H, C) {
     const provs = new Set([...zonas].map(u => u.slice(0, 4))), deps = new Set([...zonas].map(u => u.slice(0, 2)));
     const extractivo = e => e.tipo_conflicto && e.tipo_conflicto !== "otro";
     const fuerza = e => /paro|bloqueo|huelga|toma|paraliz|movilizaci/i.test(`${e.accion} ${e.titular}`);
-    const toca = e => { const u = String(e.ubigeo || ""); if (pais) return extractivo(e);
+    // Un paro de transportistas sin lugar puede ser nacional: corta la salida del mineral de cualquier operación
+    const transporte = e => String(e.ubigeo) === "00" && /transportista/i.test(e.actor || "");
+    const toca = e => { const u = String(e.ubigeo || ""); if (transporte(e)) return true; if (pais) return extractivo(e);
       if (u.length >= 4 && provs.has(u.slice(0, 4))) return extractivo(e) || fuerza(e);  // un paro en la provincia corta igual sus vías
       return deps.has(u.slice(0, 2)) && extractivo(e); };
     const cuando = e => String(e.fecha_evento || e.fecha_anuncio || "");
@@ -1142,42 +1149,51 @@ function iniciar(D, G, H, C) {
     return i;
   }
   // Las alertas del cliente: protestas anunciadas, vías bloqueadas y operaciones en riesgo alto, por prioridad y fecha
+  const ORDEN_S = { alta: 0, media: 1, dicen: 2 };
+  const GRUPO_S = { alta: "Prioridad alta", media: "Prioridad media", dicen: "Lo que dicen los medios" };
+  const TONO = t => t < 0 ? ["neg", "Crítico con la empresa"] : t > 0 ? ["pos", "Favorable a la empresa"] : ["neu", "Informativo"];
   function alertas(ev, vias) {
     const fuerza = s => /paro|bloqueo|huelga|toma|paraliz/i.test(s);
     const items = [
       ...ev.map(e => ({ f: String(e.fecha_evento || e.fecha_anuncio || "").slice(0, 10), i: opDe(e.ubigeo),
-        s: e.estado === "anunciada" && fuerza(`${e.accion} ${e.titular}`) ? "alta" : "media",
+        s: e.estado === "anunciada" && (fuerza(`${e.accion} ${e.titular}`) || /transportista/i.test(e.actor || "")) ? "alta" : "media",
         // El titular dice el hecho mejor que cualquier plantilla; debajo, si fue anuncio o hecho, dónde y quién lo publicó
         t: e.titular || corta(e),
-        src: `${e.estado === "anunciada" ? "Anunciada" : "Ocurrió"} en ${esc(lugar(e.ubigeo).split(", ")[0])}. <a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.medio)}</a>` })),
+        src: `${e.estado === "anunciada" ? "Anunciada para el " + esc(dia(e.fecha_evento || e.fecha_anuncio)) : "Ocurrió"} en ${esc(lugar(e.ubigeo).split(", ")[0])}.${/transportista/i.test(e.actor || "") ? " Puede afectar el traslado de concentrado e insumos." : ""} <a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.medio)}</a>` })),
       ...vias.map(s => { let i = filas.findIndex(f => usanVia(s).some(o => zonaDe(f.u).includes(String(o.ubigeo)))); if (i < 0) i = opDe(s.ubigeo);
         return { f: String(s.fecha_evento || "").slice(0, 10), i, s: "alta", via: s,
           t: `Vía ${s.via || ""} bloqueada por una protesta en ${nombre(s.distrito || "")}, ${s.region || ""}. Es una ruta de salida de la operación`, src: "SUTRAN" }; }),
-      // Lo que dicen de ella radio y prensa esta semana (índice de ánimo por proyecto)
-      ...(D.animo || []).filter(m => ALIAS && ALIAS.test(llano(m.proyecto))).map(m => ({ f: String(D.creado), i: -1,
-        s: m.aviso || m.pct_negativo >= 0.5 ? "media" : null,
-        t: `${m.menciones_7d} ${m.menciones_7d === 1 ? "mención" : "menciones"} de ${m.proyecto} en radio y prensa en 7 días, ${Math.round(m.pct_negativo * 100)}% en tono negativo`
-           + (m.base_7d ? ` (lo habitual, ${Math.round(m.base_7d)})` : ""), src: "Tremor, radios y medios regionales" }))
-    ].filter(x => x.s).sort((a, b) => (a.s === "alta" ? 0 : 1) - (b.s === "alta" ? 0 : 1) || b.f.localeCompare(a.f));
+      // Lo que dijeron de ella radio y medios: cada nota es un hecho, con quién lo dijo y su tono
+      ...(D.menciones || []).filter(m => ALIAS && ALIAS.test(llano(m.proyecto)) && !ev.some(e => e.titular === m.titular))
+        .map(m => ({ f: m.fecha, i: -1, s: "dicen", t: m.titular, cita: m.resumen, tono: m.tono,
+          quien: `${m.origen === "radio" ? "Radio " : ""}${m.medio}`, enlace: m.enlace }))
+    ].filter(x => x.s).sort((a, b) => ORDEN_S[a.s] - ORDEN_S[b.s] || b.f.localeCompare(a.f));
     // Un registro: agrupado por prioridad (el título lo dice en palabras), la fecha en su columna y la regleta del riesgo
     const fecha = f => { const d = new Date(String(f).slice(0, 10) + "T12:00"); return isNaN(d) ? "" :
       `<time class="a-fecha" datetime="${String(f).slice(0, 10)}"><b>${d.getDate()}</b><small>${d.toLocaleDateString("es-PE", { month: "short" }).replace(".", "")}</small></time>`; };
-    document.getElementById("alertas").innerHTML = items.slice(0, 8).map((x, k, xs) => {
+    document.getElementById("alertas").innerHTML = items.slice(0, 12).map((x, k, xs) => {
       const p = x.i >= 0 ? mesP(filas[x.i].a) : null;
-      const grupo = !k || xs[k - 1].s !== x.s ? `<li class="a-grupo ${x.s}">Prioridad ${x.s}</li>` : "";
+      const grupo = !k || xs[k - 1].s !== x.s ? `<li class="a-grupo ${x.s}">${GRUPO_S[x.s]}</li>` : "";
+      if (x.s === "dicen") { const [c, tx] = TONO(x.tono);
+        return `${grupo}<li class="alerta">${fecha(x.f)}<div><div class="a-tit">${esc(x.t)}</div>
+          <div class="a-quien"><b>${esc(x.quien)}</b><span class="tono ${c}">${tx}</span></div>
+          ${x.cita ? `<p class="a-cita">${esc(x.cita)}${x.cita.length >= 300 ? "…" : ""}</p>` : ""}
+          <a class="ver" href="${esc(x.enlace)}" target="_blank" rel="noopener">Leer en ${esc(x.quien)}</a></div></li>`; }
       return `${grupo}<li class="alerta">${fecha(x.f)}
         <div>${x.i >= 0 ? (x.zona ? `<div class="a-op">Zona de ${esc(lugar(filas[x.i].u).split(",")[0])}</div><div class="a-uni">${esc(filas.filter(g => g.u === filas[x.i].u).map(titFila).join(", "))}</div>`
                                     : `<div class="a-op">${esc(titFila(filas[x.i]))}</div>`) : ""}
           ${x.pc ? `<div class="a-pc"><b class="c${x.n}">${x.pc}</b><div><span class="nv c${x.n}">Riesgo ${banda(p).toLowerCase()}</span>${escala(p)}</div></div><div class="a-que">${esc(x.t)}</div>` : `<div class="a-tit">${esc(x.t)}</div>`}
           ${x.por ? `<div class="a-por">${esc(x.por)}${x.mas ? `<details><summary>Por qué</summary>${esc(x.mas)}</details>` : ""}</div>` : ""}${x.src ? `<div class="a-src">${x.src}</div>` : ""}
           ${x.i >= 0 ? `<button type="button" class="ver" data-i="${x.i}">Ver en el mapa</button>` : ""}</div></li>`; }).join("")
-      || `<li class="alerta"><span></span><div class="a-tit">Sin protestas, bloqueos ni menciones en su zona en los últimos 45 días.</div></li>`;
+      || `<li class="alerta"><span></span><div class="a-tit">Sin protestas ni bloqueos en su zona en 45 días, y sin menciones en medios en 30.</div></li>`;
     document.querySelectorAll("#alertas .ver").forEach(b => b.onclick = () => abrir(+b.dataset.i, true));
-    const op = filas.filter(f => opera(f.os[0])), altos = op.filter(f => (mesP(f.a) ?? 0) >= 0.25).length, nAl = items.filter(x => x.s === "alta").length;
+    const op = filas.filter(f => opera(f.os[0])), altos = op.filter(f => (mesP(f.a) ?? 0) >= 0.25).length, nAl = items.filter(x => x.s === "alta").length,
+      nDic = items.filter(x => x.s === "dicen").length, nHe = items.length - nDic;
     const hoy = new Date(String(D.creado) + "T12:00").toLocaleDateString("es-PE", { day: "numeric", month: "long" });
     document.getElementById("bajada").textContent = `Al ${hoy}. ${op.length} ${op.length === 1 ? "unidad en operación" : "unidades en operación"}, ${altos} con riesgo alto o crítico ${enMes}` +
       `${filas.length > op.length ? `, y ${filas.length - op.length} en exploración o proyecto` : ""}. ` +
-      (nAl ? `${nAl} ${nAl === 1 ? "hecho" : "hechos"} de prioridad alta.` : items.length ? `${items.length} ${items.length === 1 ? "hecho" : "hechos"} en su zona.` : "Sin hechos nuevos en su zona.");
+      (nAl ? `${nAl} ${nAl === 1 ? "hecho" : "hechos"} de prioridad alta. ` : nHe ? `${nHe} ${nHe === 1 ? "protesta o bloqueo" : "protestas o bloqueos"} en su zona. ` : "Sin protestas ni bloqueos en su zona. ") +
+      (nDic ? `${nDic} ${nDic === 1 ? "nota" : "notas"} de medios sobre la empresa en 30 días.` : "");
   }
 
 

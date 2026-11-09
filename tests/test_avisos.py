@@ -14,12 +14,12 @@ def test_eventos_en_la_zona_o_que_nombran_a_la_empresa():
     con.executescript("""
         CREATE TABLE operacion (empresa, unidad, tipo, ubigeo, etapa);
         INSERT INTO operacion VALUES ('MINERA LAS BAMBAS S.A.', 'Las Bambas', 'mineria', '030506', 'operación');
-        CREATE TABLE evento_prensa (id, estado, fecha_anuncio, fecha_evento, ubigeo, accion, empresa, operacion, tipo_conflicto);
-        INSERT INTO evento_prensa VALUES (1, 'anunciada', '2026-11-08', '2026-11-12', '030501', 'Paro', NULL, NULL, 'otro'),
-                                         (2, 'ocurrida', NULL, '2026-11-08', '150101', 'Marcha', NULL, NULL, 'otro'),
-                                         (3, 'ocurrida', NULL, '2026-11-08', '04', 'Bloqueo', 'Minera Las Bambas', NULL, 'otro'),
-                                         (4, 'anunciada', '2026-10-01', '2026-10-02', '030506', 'Paro', NULL, NULL, 'otro');
-        CREATE TABLE evento_nota (evento_id, nota_id); CREATE TABLE nota (id, medio, enlace);""")
+        CREATE TABLE evento_prensa (id, estado, fecha_anuncio, fecha_evento, ubigeo, accion, empresa, operacion, tipo_conflicto, actor);
+        INSERT INTO evento_prensa VALUES (1, 'anunciada', '2026-11-08', '2026-11-12', '030501', 'Paro', NULL, NULL, 'otro', NULL),
+                                         (2, 'ocurrida', NULL, '2026-11-08', '150101', 'Marcha', NULL, NULL, 'otro', NULL),
+                                         (3, 'ocurrida', NULL, '2026-11-08', '04', 'Bloqueo', 'Minera Las Bambas', NULL, 'otro', NULL),
+                                         (4, 'anunciada', '2026-10-01', '2026-10-02', '030506', 'Paro', NULL, NULL, 'otro', NULL);
+        CREATE TABLE evento_nota (evento_id, nota_id); CREATE TABLE nota (id, medio, enlace, titular);""")
     z = zona(con, "minera las bambas", {"030506": ["030501"]})
     assert z == {"030506": "Las Bambas", "030501": "Las Bambas"}
     assert [e["clave"] for e in eventos(con, z, r"las bambas", "2026-11-01")] == ["evento:1", "evento:3"]
