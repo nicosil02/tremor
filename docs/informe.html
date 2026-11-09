@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Source+Serif+4:opsz,wght@8..60,400..700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --tinta: #14212b; --tinta-2: #3e4c56; --tinta-3: #66737c; --linea: #d5dbdf; --fondo: #e9ecee; --papel: #f6f7f8;
+    --tinta: #14212b; --tinta-2: #3e4c56; --tinta-3: #5b6770; --linea: #d5dbdf; --fondo: #e9ecee; --papel: #f6f7f8;
     --marino: #13304a; --cobre-1: #f3e1d3; --cobre-2: #e3a67c; --cobre-3: #c96a3a; --cobre-4: #8a3213; --rojo: #a4231b;
     --serif: "Source Serif 4", Georgia, serif; --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   }
@@ -62,8 +62,8 @@
   .barrita i { position: absolute; inset: 0 auto 0 0; }
   .barrita u { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--tinta); }
   .nivel { display: inline-block; font-size: 13px; font-weight: 700; padding: 2px 8px; border-radius: 3px; }
-  .n0 { background: #e3ebe7; color: #3c5a4c; } .n1 { background: var(--cobre-1); color: var(--cobre-4); }
-  .n2 { background: #f2c9b0; color: #7a2a0e; } .n3 { background: var(--cobre-4); color: #fff; }
+  .n0 { background: #e3ebe7; color: #3c5a4c; } .n1 { background: var(--cobre-2); color: #4a1a06; }
+  .n2 { background: #b4542a; color: #fff; } .n3 { background: var(--cobre-4); color: #fff; }
   .flecha { font-weight: 700; }
   .sube { color: var(--rojo); } .baja { color: #2f6b4f; } .igual { color: var(--tinta-3); }
   .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
@@ -197,6 +197,7 @@
   table.riesgo td, table.riesgo th { padding-top: 7px; padding-bottom: 7px; }
   caption.rotulo { caption-side: top; text-align: left; }
   .rotulo { font-size: 13.5px; font-weight: 650; color: var(--tinta); margin: 0 0 8px; }
+  @media screen and (max-width: 700px) { table.cuadro { display: block; overflow-x: auto; } }
   table.cuadro { font-size: 13.5px; border-top: 1.5px solid var(--tinta); border-bottom: 1.5px solid var(--tinta); }
   table.cuadro th { background: #eef1f3; color: var(--tinta); font-size: 12.5px; font-weight: 650; padding: 6px 8px; border-bottom: 1px solid #c9d0d5; }
   table.cuadro td { padding: 6px 8px; border-bottom: 1px solid #e3e7ea; vertical-align: top; }
@@ -358,7 +359,7 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
     const lugarC = u => { const [d, p] = lugar(u).split(", "); return d === p ? d : lugar(u); };
     // Gráfico de pesas: promedio de 12 meses (hueco) → probabilidad del mes (lleno). Un tono, dos intensidades.
     function pesas(zs) {
-      const W = 760, izq = 230, der = 52, arriba = 44, linea = 15;
+      const chico = innerWidth < 600, W = chico ? 420 : 760, izq = chico ? 150 : 230, der = 52, arriba = 44, linea = 15;
       const filas = zs.map(z => ({ nom: partir(nombreZ(z)), lug: partir(lugarC(z.u), 36) }));
       const alto = filas.map(f => Math.max(40, (f.nom.length + f.lug.length) * linea + 10));
       const ys = alto.map((h, i) => arriba + alto.slice(0, i).reduce((a, b) => a + b, 0) + h / 2), H = arriba + alto.reduce((a, b) => a + b, 0) + 6;
@@ -424,7 +425,7 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
         ${pesas(top8)}
         <table class="cuadro riesgo"><thead><tr><th>Operación</th><th>Distrito</th><th>Situación</th><th class="num">${mesTxt.charAt(0).toUpperCase() + mesTxt.slice(1)}</th><th class="num">Prom. 12 meses</th><th class="num">Var. (pp)</th><th>Nivel</th></tr></thead><tbody>
         ${top8.map(z => { const p = mesP(z.a), n = z.a[K.n], d = Math.round((z.a[K.c] ?? 0) * 100);
-          return `<tr><td>${esc(nombreZ(z))}</td><td>${esc(lugar(z.u).split(", ")[0])}</td><td>${esc(situacion(z))}</td><td class="num">${pct(p)}</td><td class="num">${pct(n)}</td><td class="num">${d > 0 ? "+" : ""}${d}</td><td>${BANDAS[nivel(p)]}</td></tr>`; }).join("")}</tbody></table>
+          return `<tr><td>${esc(nombreZ(z))}</td><td>${esc(lugar(z.u).split(", ")[0])}</td><td>${esc(situacion(z))}</td><td class="num">${pct(p)}</td><td class="num">${pct(n)}</td><td class="num">${d > 0 ? "+" : ""}${d}</td><td><span class="nivel n${nivel(p)}">${BANDAS[nivel(p)]}</span></td></tr>`; }).join("")}</tbody></table>
         <p class="fuente">Nota. ${zonas.length > 8 ? `Se muestran las ocho zonas con mayor probabilidad de las ${zonas.length} de la empresa. ` : ""}La zona comprende el distrito de la operación y los distritos colindantes. Nivel bajo, menos de 10%. Medio, de 10% a 25%. Alto, de 25% a 50%. Crítico, más de 50%.<br>Fuente: Defensoría del Pueblo, Base de protestas EGPP-PUCP, INEI, MINEM y otras. Elaboración: Tremor.</p>
       </section>
 
