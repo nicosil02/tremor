@@ -89,11 +89,15 @@ VINCULO = ("Para cada conflicto social del Perú (ficha de la Defensoría del Pu
 
 GENERICAS = {"compania", "cia", "sociedad", "minera", "minero", "mineros", "empresa", "sac", "saa", "srl", "eirl", "del",
              "peru", "sucursal", "mining", "resources", "gold", "corporation", "holding", "the", "los", "las", "san",
-             "unidad", "proyecto", "mina", "petrolera", "energia", "anonima", "cerrada", "abierta", "limitada"}
+             "unidad", "proyecto", "mina", "petrolera", "energia", "anonima", "cerrada", "abierta", "limitada",
+             "regional", "hospital", "central", "planta", "norte", "sur", "nacional", "municipal"}
 
 
 def emparejar(ops, empresa, unidad):
-    """La operación de la base que corresponde a la empresa y unidad nombradas en el conflicto (por nombre)."""
+    """La operación de la base que corresponde a la empresa y unidad nombradas en el conflicto (por nombre).
+    Sin empresa no hay operación: un hospital o un municipio "regional" no es la unidad Regional - Atico."""
+    if not empresa:
+        return None, None, None
     ne, nu = norm(empresa or ""), norm(unidad or "")
     raiz = lambda s: [w for w in s.replace(".", " ").split() if len(w) > 2 and w not in GENERICAS]
     re_, ru = set(raiz(ne)), set(raiz(nu))
@@ -145,5 +149,7 @@ def vinculos(con) -> int:
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
     assert claves("Comunidad Campesina de Maure – Penal de Challapalca / INPE")[:3] == ["Maure", "Penal", "Challapalca"]
+    assert emparejar([("SOUTHERN PERU", "Regional - Atico", "x")], None, "Hospital Regional II-2 JAMO") == (None, None, None)
+    assert emparejar([("ARUNTANI S.A.C.", "Florencia - Tucari", "x")], "Aruntani", "Tucari")[0] == "ARUNTANI S.A.C."
     print(f"Contexto de prensa para {casos(conectar())} casos sin descripción.")
     print(f"Vínculos de {vinculos(conectar())} conflictos vigentes.")

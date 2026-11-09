@@ -20,6 +20,7 @@
   .barra .der { margin-left: auto; }
   .barra button { font: inherit; font-size: 15px; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer; border: 1px solid #3b5874;
                   background: transparent; color: #fff; transition: background-color 140ms ease, transform 140ms var(--ease-out); }
+  .barra .boton { font-size: 15px; font-weight: 600; padding: 6px 12px; border-radius: 6px; border: 1px solid #fff; background: #fff; color: var(--marino); text-decoration: none; }
   .barra button:hover { background: #1d4061; }
   .barra button:active { transform: scale(0.97); }
   .barra button[aria-pressed="true"] { background: #fff; color: var(--marino); border-color: #fff; }
@@ -219,7 +220,7 @@
     h1 { font-size: 21pt; } .evaluacion { font-size: 11.5pt; max-width: none; }
     section { margin-top: 18px; padding-top: 14px; } h2 { font-size: 12.5pt; }
     table { font-size: 9.5pt; } table.cuadro { font-size: 8.8pt; } table.cuadro th { font-size: 8.5pt; } .rotulo { font-size: 9.5pt; }
-    tr, .pesas, .evaluacion { break-inside: avoid; } h2 { break-after: avoid; }
+    tr, .pesas, .evaluacion, table.cuadro { break-inside: avoid; } h2 { break-after: avoid; }
     .fuente, .para, .anexo { font-size: 8.5pt; } .seguir { font-family: Archivo, sans-serif; font-size: 10pt; } .enl { display: none; } .anexo { margin-top: 18px; padding-top: 8px; } .hoja .membrete { padding-bottom: 6px; } h1 { margin-bottom: 12px; }
     .pesas .fila:hover .hit { fill: transparent; }
     .vista-alerta { display: none !important; }
@@ -232,7 +233,7 @@
   <b>TREMOR</b>
   <div class="grupo" id="vistas"><button type="button" data-v="informe" aria-pressed="true">Informe semanal</button><button type="button" data-v="alerta" aria-pressed="false">Alerta inmediata</button></div>
   <div class="grupo der" id="chips"></div>
-  <button type="button" onclick="print()">Descargar PDF</button>
+  <a class="boton" id="pdf" href="informes/informe-bambas.pdf" download>Descargar PDF</a>
 </div>
 <main class="hoja" id="hoja"><p>Cargando…</p></main>
 <div class="vista-alerta" id="alerta" hidden></div>
@@ -283,6 +284,7 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
 
   function pintar(k) {
     chips.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.k === k));
+    document.getElementById("pdf").href = `informes/informe-${k}.pdf`;
     const ops = D.operaciones.filter(o => llano(`${o.empresa} ${o.unidad}`).includes(k));
     const empresas = [...new Set(ops.map(o => o.empresa))], emp = nombre(empresas[0] || "");
     const corto = emp.replace(/^(Minera|Compañia Minera|Compania Minera|Sociedad Minera)\s+/i, "").replace(/\s+S\.A\.?.*$/i, "").replace(/ Corporation.*| Copper.*| Sucursal.*/i, "");
@@ -325,14 +327,18 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
       "nuevas aprobaciones ambientales": "la aprobación reciente de estudios ambientales en la zona",
       "movilizaciones recientes sin paro": "marchas y plantones recientes que aún no llegan a paro" };
 
-    const provsOp = lista([...new Set(zonas.map(z => lugar(z.u).split(", ")[1]))]);
+    const provsL = [...new Set(zonas.map(z => lugar(z.u).split(", ")[1]))];
+    const provsOp = provsL.length <= 2 ? lista(provsL) : corto;
+    const top8 = zonas.slice(0, 8);
+    const diaC = s => s.replace(/ de (\p{L}{3})\p{L}*$/u, " $1");
+    const corte = (s, n = 34) => s.length > n ? s.slice(0, n - 1).replace(/[\s,/-]+\S*$/, "") + "…" : s;
     // Gráfico de pesas: promedio de 12 meses (hueco) → probabilidad del mes (lleno). Un tono, dos intensidades.
     function pesas(zs) {
-      const W = 760, izq = 200, der = 52, fila = 40, arriba = 44, H = arriba + zs.length * fila + 6;
+      const W = 760, izq = 210, der = 52, fila = 40, arriba = 44, H = arriba + zs.length * fila + 6;
       const tope = Math.max(0.5, Math.ceil(Math.max(...zs.map(z => Math.max(mesP(z.a) ?? 0, z.a.normal_zona_1m ?? 0))) * 10) / 10);
       const x = v => izq + (W - izq - der) * Math.min(v, tope) / tope;
       const marcas = [[0, "0%"], [0.1, "10%"], [0.25, "25%"], [0.5, "50%"]].filter(m => m[0] <= tope);
-      const tramos = [[0.1, 0.25, "medio"], [0.25, 0.5, "alto"]].filter(r => r[0] < tope);
+      const tramos = [[0.1, 0.25, "medio"], [0.25, 0.5, "alto"], [0.5, tope, "crítico"]].filter(r => r[0] < tope);
       return `<div class="pesas"><div class="clave"><span><i class="pt lleno"></i>${mesTxt.charAt(0).toUpperCase() + mesTxt.slice(1)}</span><span><i class="pt hueco"></i>Promedio de los últimos 12 meses</span></div>
         <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Probabilidad de paro por operación en ${mesTxt} frente a su promedio de 12 meses">
         ${tramos.map(([a, b, n]) => `<text x="${(x(a) + x(b)) / 2}" y="16" class="tramo">${n}</text>`).join("")}
@@ -340,7 +346,7 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
         ${zs.map((z, i) => { const y = arriba + i * fila + fila / 2, p = mesP(z.a) ?? 0, n = z.a.normal_zona_1m ?? p;
           return `<g class="fila"><title>${esc(nombreZ(z))}: ${pct(p)} en ${mesTxt}, promedio de 12 meses ${pct(n)}</title>
             <rect x="0" y="${y - fila / 2}" width="${W}" height="${fila}" class="hit"/>
-            <text x="0" y="${y - 2}" class="nom">${esc(nombreZ(z))}</text><text x="0" y="${y + 13}" class="lug">${esc(lugar(z.u))}</text>
+            <text x="0" y="${y - 2}" class="nom">${esc(corte(nombreZ(z), 26))}</text><text x="0" y="${y + 13}" class="lug">${esc(corte(lugar(z.u), 32))}</text>
             <line x1="${x(n)}" x2="${x(p)}" y1="${y}" y2="${y}" class="vara"/>
             <circle cx="${x(n)}" cy="${y}" r="5" class="hueco"/><circle cx="${x(p)}" cy="${y}" r="6.5" class="lleno"/>
             <text x="${Math.max(x(p), x(n)) + 12}" y="${y + 4.5}" class="val">${pct(p)}</text></g>`; }).join("")}
@@ -353,17 +359,19 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
     const asunto = c => { const s = `${c.resumen || ""} ${c.nombre}`, xs = ASUNTOS.filter(([re]) => re.test(s)).map(x => x[1]).slice(0, 3);
       const r = xs.length ? xs.join(", ") : (c.tema || "sin dato").replace(/_/g, " "); return r.charAt(0).toUpperCase() + r.slice(1); };
     const titular = altos.length
-      ? `Riesgo alto de paro en ${num(altos.length)} de las ${num(zonas.length)} operaciones de ${provsOp} durante ${mesTxt}`
+      ? `Riesgo alto de paro en ${num(altos.length)} de las ${num(zonas.length)} operaciones de ${provsOp} durante ${mesTxt}`.replace(/ de (\d+|[a-z]+) operaciones de ([^d])/, " de $1 operaciones de $2")
       : `Riesgo ${BANDAS[niv].toLowerCase()} de paro en las operaciones de ${provsOp} durante ${mesTxt}`;
     const motor = motores[0] ? MOTOR_TXT[motores[0].corto] : "";
     const evaluacion = [
-      hechos ? `Durante la semana se registraron ${hechos} ${hechos === 1 ? "protesta o bloqueo" : "protestas o bloqueos"} en las provincias de sus operaciones o en sus rutas, que se detallan más adelante.`
+      hechos ? `Durante la semana se registraron ${num(hechos, false) === "un" ? "una" : num(hechos)} ${hechos === 1 ? "protesta o bloqueo" : "protestas o bloqueos"} en las provincias de sus operaciones o en sus rutas, que se detallan más adelante.`
              : `Durante la semana no se registraron protestas ni bloqueos en ${provsOp} ni en ${corredor}.`,
-      altos.length ? `${hechos ? "La" : "No obstante, la"} probabilidad de paro para ${mesTxt} se mantiene en nivel alto en ${lista(altos.map(z => `${nombreZ(z)} (${pct(mesP(z.a))})`))}.`
+      altos.length ? `${hechos ? "La" : "No obstante, la"} probabilidad de paro para ${mesTxt} se mantiene en nivel alto en ${altos.length > 3 ? `${altos.slice(0, 3).map(z => `${corte(nombreZ(z))} (${pct(mesP(z.a))})`).join(", ")} y otras ${num(altos.length - 3)} operaciones` : lista(altos.map(z => `${corte(nombreZ(z))} (${pct(mesP(z.a))})`))}.`
                    : `La operación con mayor exposición es ${nombreZ(top)}, con una probabilidad de paro de ${pct(mesP(top.a))} para ${mesTxt}.`,
       motor ? `El principal factor es ${motor}.` : "",
       deEmpresa.length ? `La Defensoría del Pueblo registra ${num(deEmpresa.length, false)} conflictos vigentes con la empresa, de los cuales ${num(activosE.length, false)} se encuentran activos. ${(() => { const con = deEmpresa.filter(c => /HAY/i.test(c.dialogo || "") && !/NO HAY/i.test(c.dialogo || "")).length;
-        return `${Num(con, false)} ${con === 1 ? "cuenta" : "cuentan"} con mesa de diálogo${sinDialogoE.length ? ` y ${num(sinDialogoE.length, false)} ${sinDialogoE.length === 1 ? "carece" : "carecen"} de ella` : ""}.`; })()}` : ""
+        const s = sinDialogoE.length, uno = n => n === 1 ? "uno" : num(n, false);
+        return con ? `${Num(con, false) === "Un" ? "Uno" : Num(con, false)} ${con === 1 ? "cuenta" : "cuentan"} con mesa de diálogo${s ? ` y ${uno(s)} ${s === 1 ? "carece" : "carecen"} de ella` : ""}.`
+                   : s ? `${s === 1 ? "Uno carece" : `${Num(s, false)} carecen`} de mesa de diálogo.` : "El reporte no informa si cuentan con mesa de diálogo."; })()}` : ""
     ].filter(Boolean).join(" ");
     // El reclamo sin el sujeto repetido ("La comunidad campesina exige..."): el caso ya dice quién es
     const reclamo = s => { const r = String(s || "").replace(/^(catorce |dos |tres |las |los |la |el )*(comunidad(es)?( campesinas?| nativas?)?|pobladores|comuneros|productores|agricultores|ronderos|trabajadores|vecinos)( locales)?( (de|del) [\p{L} ]+?)?\s+(?=(exigen?|demandan?|piden?|reclaman?|solicitan?|cuestionan?|rechazan?)\b)/iu, "")
@@ -385,23 +393,24 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
 
       <section><h2>Riesgo por operación</h2>
         <p class="rotulo">Gráfico 1. Probabilidad de paro o bloqueo en la zona de cada operación, ${mesTxt} de ${hoy.slice(0, 4)}</p>
-        ${pesas(zonas)}
+        ${pesas(top8)}
         <table class="cuadro riesgo"><thead><tr><th>Operación</th><th>Distrito</th><th class="num">${mesTxt.charAt(0).toUpperCase() + mesTxt.slice(1)}</th><th class="num">Prom. 12 meses</th><th class="num">Var. (pp)</th><th>Nivel</th></tr></thead><tbody>
-        ${zonas.map(z => { const p = mesP(z.a), n = z.a.normal_zona_1m, d = Math.round((z.a.cambio_zona_1m ?? 0) * 100);
-          return `<tr><td>${esc(nombreZ(z))}</td><td>${esc(lugar(z.u).split(", ")[0])}</td><td class="num">${pct(p)}</td><td class="num">${pct(n)}</td><td class="num">${d > 0 ? "+" : ""}${d}</td><td>${BANDAS[nivel(p)]}</td></tr>`; }).join("")}</tbody></table>
-        <p class="fuente">Nota. La zona comprende el distrito de la operación y los distritos colindantes. Nivel bajo, menos de 10%. Medio, de 10% a 25%. Alto, de 25% a 50%. Crítico, más de 50%.<br>Fuente: Defensoría del Pueblo, Base de protestas EGPP-PUCP, INEI, MINEM y otras. Elaboración: Tremor.</p>
+        ${top8.map(z => { const p = mesP(z.a), n = z.a.normal_zona_1m, d = Math.round((z.a.cambio_zona_1m ?? 0) * 100);
+          return `<tr><td>${esc(corte(nombreZ(z), 40))}</td><td>${esc(lugar(z.u).split(", ")[0])}</td><td class="num">${pct(p)}</td><td class="num">${pct(n)}</td><td class="num">${d > 0 ? "+" : ""}${d}</td><td>${BANDAS[nivel(p)]}</td></tr>`; }).join("")}</tbody></table>
+        <p class="fuente">Nota. ${zonas.length > 8 ? `Se muestran las ocho operaciones con mayor probabilidad de las ${zonas.length} de la empresa. ` : ""}La zona comprende el distrito de la operación y los distritos colindantes. Nivel bajo, menos de 10%. Medio, de 10% a 25%. Alto, de 25% a 50%. Crítico, más de 50%.<br>Fuente: Defensoría del Pueblo, Base de protestas EGPP-PUCP, INEI, MINEM y otras. Elaboración: Tremor.</p>
       </section>
 
       <section><h2>Hechos de la semana</h2>
-        ${hechos ? `<table><thead><tr><th>Fecha</th><th>Hecho</th><th>Lugar</th><th>Fuente</th></tr></thead><tbody>
-          ${vias.map(s => `<tr><td>${dia(s.fecha_evento)}</td><td><b>Vía ${esc(s.via)} bloqueada, sigue vigente.</b><small>${esc(s.contexto || "")}</small></td><td>${esc(nombre(s.distrito))}</td><td>SUTRAN</td></tr>`).join("")}
-          ${ev.map(e => `<tr><td>${dia(e.fecha_evento || e.fecha_anuncio)}</td><td><b>${esc(e.titular)}</b>${e.estado === "anunciada" ? "<small>Anunciada, aún no ocurre.</small>" : ""}</td><td>${esc(lugar(e.ubigeo))}</td><td><a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.medio)}</a></td></tr>`).join("")}
-          </tbody></table>`
+        ${hechos ? `<p class="rotulo">Cuadro ${"1"}. Protestas, anuncios y bloqueos en las provincias de sus operaciones</p>
+          <table class="cuadro"><thead><tr><th>Fecha</th><th>Hecho</th><th>Ubicación</th><th>Fuente</th></tr></thead><tbody>
+          ${vias.map(s => `<tr><td>${diaC(dia(s.fecha_evento))}</td><td>Bloqueo de la vía ${esc(s.via)}, vigente. ${esc(s.contexto || "")}</td><td>${esc(nombre(s.distrito))}</td><td>SUTRAN</td></tr>`).join("")}
+          ${ev.map(e => `<tr><td>${diaC(dia(e.fecha_evento || e.fecha_anuncio))}</td><td>${esc(e.titular)}${e.estado === "anunciada" ? " (anunciada)" : ""}</td><td>${esc(lugar(e.ubigeo) || "s. d.")}</td><td>${esc(e.medio)}</td></tr>`).join("")}
+          </tbody></table><p class="fuente">Fuente: prensa nacional y regional, radios locales y SUTRAN. Elaboración: Tremor.</p>`
         : `<p>No se registraron protestas, anuncios de protesta ni bloqueos de vías en ${provsOp} ni en ${corredor} durante el periodo. Se revisaron la prensa nacional y regional, las radios locales, las alertas de la SUTRAN y los reportes de la Defensoría del Pueblo.</p>`}
       </section>
 
       <section><h2>Conflictos registrados con la empresa</h2>
-        <p class="rotulo">Cuadro 1. Conflictos sociales vigentes que involucran a ${esc(corto)}</p>
+        <p class="rotulo">Cuadro ${hechos ? 2 : 1}. Conflictos sociales vigentes que involucran a ${esc(corto)}</p>
         <table class="cuadro"><thead><tr><th class="num">N.º</th><th>Caso</th><th>Ubicación</th><th>Asunto principal</th><th>Estado</th><th>Diálogo</th></tr></thead><tbody>
         ${(deEmpresa.length ? deEmpresa : casos).slice(0, 8).map((c, k) => `<tr><td class="num">${k + 1}</td><td>${esc(c.nombre)}</td><td>${esc(lugar(c.ubigeo) || "s. d.")}</td>
           <td>${esc(asunto(c))}</td><td>${c.estado === "activo" ? "Activo" : "Latente"}</td><td>${/NO HAY/i.test(c.dialogo || "") ? "No" : /HAY/i.test(c.dialogo || "") ? "Sí" : "s. d."}</td></tr>`).join("")}
@@ -422,7 +431,6 @@ const MOTOR = [[/elecci[oó]n municipal/i, "el ciclo poselectoral municipal", "T
     const enProv = p => zonas.filter(z => prov(z) === p).map(nombreZ);
     const via = corredor === "el Corredor Minero del Sur" ? "la vía PE-3SG (Corredor Minero del Sur)" : corredor;
     const masDias = n => dia(new Date(new Date(hoy + "T12:00").getTime() + n * 864e5).toISOString().slice(0, 10));
-    const diaC = s => s.replace(/ de (\p{L}{3})\p{L}*$/u, " $1");
     const otra = zonas.find(z => prov(z) !== prov(top)) || zonas[1] || top;
     const alertas = [
       { sev: "alta", hora: "12:10", c: `Paro de 48 h en ${prov(top)} el ${diaC(masDias(4))}`, pv: `Afecta ${num(enProv(prov(top)).length)} operaciones y ${via.split(" (")[0]}`,
