@@ -224,9 +224,11 @@ function armar() {
   }).sort((x, y) => opera(y) - opera(x) || (y.p ?? -1) - (x.p ?? -1));
   const zona = new Set(unidades.flatMap(u => [...u.zona]));
   const SECTOR = /docente|maestr|profesor|m[eé]dic|enfermer|obstetr|salud|judicial|estatal|universit|estudiant|administrativ/i;
-  const tramos = (CAD[empresa] || {}).tramos || [], toca = (r, u, e) => !(SECTOR.test(e.actor || "") && !/bloque|toma/i.test(e.accion || "")) && (r.ubigeos.includes(u)
+  const tramos = (CAD[empresa] || {}).tramos || [], sinBloqueo = e => SECTOR.test(e.actor || "") && !/bloque|toma/i.test(e.accion || ""),
+    pasa = (r, u, e) => (r.ubigeos.includes(u)
     || (u.length < 6 && u !== "00" && /paro|bloque|huelga/i.test(e.accion || "") && r.ubigeos.some(x => x.startsWith(u)))),
-    tramoDe = (u, e) => tramos.find(r => toca(r, u, e));
+    toca = (r, u, e) => !sinBloqueo(e) && pasa(r, u, e),  // sigue contando como conflictividad, pero no pinta la vía
+    tramoDe = (u, e) => tramos.find(r => pasa(r, u, e));
   const rutas = [...new Set(unidades.filter(opera).flatMap(u => D.rutas[u.ubigeo] || []))];
   const avisos = [];
   for (const e of D.eventos) {
@@ -238,7 +240,7 @@ function armar() {
     avisos.push({ f, urge: viene || (anun && dias(f) > -3), tipo: "Protesta", e, cerca, trans, tramo: tramoDe(u, e), tramos: tramos.filter(r => toca(r, u, e)),
       t: `${accion(e)}${e.actor ? ` de ${e.actor.toLowerCase()}` : ""}`,
       w: viene ? cuando(f) : dia(f),
-      s: [u === "00" ? (trans ? "Puede frenar sus despachos" : "Lugar sin precisar") : !zona.has(u) && tramoDe(u, e) ? `${lugar(u)}, en su ruta` : lugar(u), e.suspendido ? "suspendida" : viene ? "" : anun ? "anunciada" : "ocurrió"].filter(Boolean).join(", ") });
+      s: [u === "00" ? (trans ? "Puede frenar sus despachos" : "Lugar sin precisar") : !zona.has(u) && tramoDe(u, e) ? `${lugar(u)}, en su ruta${sinBloqueo(e) ? ", no suele cortar vías" : ""}` : lugar(u), e.suspendido ? "suspendida" : viene ? "" : anun ? "anunciada" : "ocurrió"].filter(Boolean).join(", ") });
   }
   for (const s of D.sutran || []) if (rutas.includes(s.via))
     avisos.push({ f: String(s.fecha_evento || HOY).slice(0, 10), urge: true, tipo: "Bloqueo", sutran: s, t: `Vía ${s.via} bloqueada`, w: "ahora",
