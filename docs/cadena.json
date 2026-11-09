@@ -1,0 +1,205 @@
+{
+ "Bateas": {
+  "empresa": "minera bateas",
+  "fuente": "Licitación de transporte de Minera Bateas (2023): zinc en camión de Caylloma al puerto de Matarani (TISUR, ≈225 km) y plomo a los almacenes de Impala en el Callao (≈1 460 km)",
+  "tramos": [
+   {
+    "nombre": "Mina a Callalli",
+    "modo": "Camión",
+    "via": "PE-34E",
+    "ubigeos": [
+     "040505",
+     "040504",
+     "040517",
+     "040514"
+    ]
+   },
+   {
+    "nombre": "Bajada a Arequipa",
+    "modo": "Camión",
+    "via": "PE-34A",
+    "ubigeos": [
+     "040128",
+     "040104",
+     "040124"
+    ]
+   },
+   {
+    "nombre": "Puerto de Matarani, zinc",
+    "modo": "Camión",
+    "via": "PE-1S",
+    "ubigeos": [
+     "040108",
+     "040702",
+     "040701",
+     "040704"
+    ]
+   },
+   {
+    "nombre": "Panamericana Sur al Callao, plomo",
+    "modo": "Camión",
+    "via": "PE-1S",
+    "ubigeos": [
+     "040201",
+     "040206",
+     "040307",
+     "110301",
+     "110101",
+     "110501",
+     "110506",
+     "110210",
+     "150501",
+     "150509",
+     "150505"
+    ]
+   }
+  ]
+ },
+ "Raura": {
+  "empresa": "minera raura",
+  "fuente": "Raura está en el km 131 de la PE-18 Huaura–Sayán–Churín–Oyón (clasificador de la red vial del MTC), vía que la empresa cofinanció; embarca por el Callao (Wood Mackenzie) y el transporte lo hacen empresas comunales (Energiminas, oct 2023)",
+  "tramos": [
+   {
+    "nombre": "Mina a Oyón",
+    "modo": "Camión",
+    "via": "PE-18",
+    "ubigeos": [
+     "101007",
+     "150901",
+     "150903",
+     "150905"
+    ]
+   },
+   {
+    "nombre": "Churín a Sayán",
+    "modo": "Camión",
+    "via": "PE-18",
+    "ubigeos": [
+     "150906",
+     "150902",
+     "150804",
+     "150807",
+     "150808",
+     "150811"
+    ]
+   },
+   {
+    "nombre": "Huacho al Callao",
+    "modo": "Camión",
+    "via": "PE-1N",
+    "ubigeos": [
+     "150801",
+     "150806",
+     "150812",
+     "150605",
+     "150604",
+     "150601",
+     "150125"
+    ]
+   }
+  ]
+ },
+ "Poderosa": {
+  "empresa": "minera poderosa",
+  "fuente": "Acceso Trujillo–Huamachuco (PE-10A, ≈180 km) y Huamachuco–Sacsacocha–Puente Pallar–Chagual–Vijus (≈311 km en total; la empresa dice 320 km al este de Trujillo). El oro sale por vía pública a plantas de Trujillo (El Comercio) y hay avionetas Trujillo–Chagual–Urpay; la vía estuvo bloqueada 46 días",
+  "tramos": [
+   {
+    "nombre": "Mina a Chagual",
+    "modo": "Camión",
+    "via": "PE-10C",
+    "ubigeos": [
+     "130809",
+     "130808",
+     "130805",
+     "130810"
+    ]
+   },
+   {
+    "nombre": "Cruce del Marañón a Huamachuco",
+    "modo": "Camión",
+    "via": "PE-10C",
+    "ubigeos": [
+     "130903",
+     "130902",
+     "130901"
+    ]
+   },
+   {
+    "nombre": "Huamachuco a Trujillo",
+    "modo": "Camión",
+    "via": "PE-10A",
+    "ubigeos": [
+     "131006",
+     "130602",
+     "130611",
+     "130601",
+     "130106",
+     "130101"
+    ]
+   }
+  ]
+ },
+ "Las Bambas": {
+  "empresa": "minera las bambas",
+  "fuente": "MMG: camión por el Corredor Minero del Sur hasta la estación Pillones (≈490 km) y tren de PeruRail hasta el puerto de Matarani (≈295 km)",
+  "tramos": [
+   {
+    "nombre": "Mina a Velille",
+    "modo": "Camión",
+    "via": "PE-3SG",
+    "ubigeos": [
+     "030506",
+     "030504",
+     "080702",
+     "080704",
+     "080701",
+     "080703",
+     "080705",
+     "080708"
+    ]
+   },
+   {
+    "nombre": "Espinar",
+    "modo": "Camión",
+    "via": "PE-3SG",
+    "ubigeos": [
+     "080801",
+     "080802",
+     "080803",
+     "080805",
+     "080806",
+     "080808"
+    ]
+   },
+   {
+    "nombre": "Estación Pillones",
+    "modo": "Camión",
+    "via": "PE-34E",
+    "ubigeos": [
+     "040504",
+     "040514"
+    ]
+   },
+   {
+    "nombre": "Tren a la costa",
+    "modo": "Tren",
+    "ubigeos": [
+     "040128",
+     "040104",
+     "040124",
+     "040702",
+     "040703",
+     "040705"
+    ]
+   },
+   {
+    "nombre": "Puerto de Matarani",
+    "modo": "Puerto",
+    "ubigeos": [
+     "040704",
+     "040701"
+    ]
+   }
+  ]
+ }
+}

@@ -39,6 +39,8 @@ PROYECTOS = {
     "Marcona (Shougang)": (r"shougang|marcona", "Ica", ["Nazca"]),
     "Lagunas Norte (Boroo)": (r"lagunas norte|barrick|boroo", "La Libertad", ["Santiago de Chuco"]),
     "Minera Poderosa": (r"minera poderosa|la poderosa", "La Libertad", ["Pataz"]),
+    "Minera Bateas": (r"minera bateas|\bbateas\b", "Arequipa", ["Caylloma"]),
+    "Raura": (r"\braura\b", "Huánuco", ["Lauricocha"]),
     "Volcan": (r"minera volcan|volcan compa", "Pasco", ["Pasco"]),
     "San Rafael (Minsur)": (r"minsur", "Puno", ["Melgar"]),
     "Corani (Bear Creek)": (r"corani|bear creek", "Puno", ["Carabaya"]),

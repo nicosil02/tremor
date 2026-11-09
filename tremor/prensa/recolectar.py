@@ -91,7 +91,9 @@ TEMAS = ["(paro OR bloqueo OR huelga) Perú", "(protesta OR movilización OR mar
          "paro regional Perú", "(anuncian OR convocan) (paro OR huelga OR movilización) Perú",
          "(comuneros OR comunidades campesinas OR ronderos) Perú", "(comunidades nativas OR indígenas) protesta Perú",
          "minera (protesta OR conflicto OR bloqueo OR paro) Perú", "(lote petrolero OR derrame OR oleoducto) Perú",
-         "frente de defensa Perú", "(enfrentamiento OR heridos) protesta Perú", "conflicto social Perú",
+         "frente de defensa Perú",
+         # clientes del piloto: toda nota que los nombre, no solo las de protesta (las lee tremor.animo)
+         '("minera bateas" OR "minera raura" OR "minera poderosa" OR Caylloma OR Pataz OR Oyón)', "(enfrentamiento OR heridos) protesta Perú", "conflicto social Perú",
          # medios sin feed propio (Base_legislativa los lee así)
          f"{PALABRAS} site:expreso.com.pe", f"{PALABRAS} site:ojo-publico.com", f"{PALABRAS} site:canaln.pe"]
 LIMA = timezone(timedelta(hours=-5))

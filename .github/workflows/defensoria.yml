@@ -70,9 +70,25 @@ jobs:
       - name: Perfil por distrito (EGPP)
         run: python -m tremor.egpp perfil
 
+      - name: Caché del clasificador (mDeBERTa NLI, ~1 GB)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: clasifica-mdeberta-v1
+
+      - name: De qué trata cada nota y su tono (transformer local, sin cuota)
+        run: |
+          pip install transformers sentencepiece
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m tremor.clasifica
+
       - name: Publicar en la rama datos
+        env:  # sin estos secretos, los avisos solo se imprimen en el log
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           python -m tremor.web   # web.json: lo que lee la página (docs/index.html)
+          python -m tremor.avisos   # Telegram a cada empresa: protestas en su zona, menciones en radio y subidas del riesgo
           mkdir -p /tmp/datos && gzip -9 -c datos/tremor.db > /tmp/datos/tremor.db.gz && cp datos/exportes/*.csv /tmp/datos/
           cp datos/exportes/web.json /tmp/datos/
           cp datos/distritos.geojson /tmp/datos/ || true
