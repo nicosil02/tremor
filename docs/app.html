@@ -74,6 +74,10 @@
   .nota .meta { margin: 8px 0 0; color: var(--tinta-2); }
   .nota .cita { margin: 14px 0 0; font-size: 16px; line-height: 1.5; color: var(--tinta); }
   .nota .ir { display: inline-block; margin-top: 14px; color: var(--cobre-4); font-weight: 700; }
+  button.vermapa { font: inherit; font-weight: 700; color: var(--cobre-4); background: none; border: 1.5px solid var(--cobre-4); border-radius: 8px;
+    min-height: 44px; padding: 0 16px; margin: 4px 16px 8px; cursor: pointer; }
+  .nota button.vermapa { margin: 14px 0 0 16px; }
+  .leyenda-via small { display: block; font-weight: 400; font-size: 13px; color: var(--tinta-2); max-width: 240px; }
   .etq { display: block; margin-top: 14px; font-size: 14px; font-weight: 700; color: var(--tinta-2); }
   .tono-neg { color: var(--rojo); } .tono-pos { color: var(--verde); }
   #mapa { position: fixed; inset: 0 0 calc(60px + env(safe-area-inset-bottom)); }
@@ -250,7 +254,7 @@ const VISTAS = {
     const ls = xs => `<ul>${xs.map(x => fila(x.urge ? "urge" : "", 0, x.t, x.w, x.s, `data-pais="${PAIS.indexOf(x)}"`)).join("")}</ul>`;
     return `<h2>Anunciado en el país</h2>${v.length ? ls(v) : `<p class="vacio">Nada anunciado.</p>`}<h2>Última semana</h2>${r.length ? ls(r) : `<p class="vacio">Sin protestas registradas.</p>`}`;
   },
-  mapa() { cabecera(false); return X.cadena.length ? `<p class="leyenda-via">${FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Riesgo en la vía, " + pct(X.via)}</p>` : ""; },
+  mapa() { cabecera(false); return X.cadena.length ? `<p class="leyenda-via">${ley()}</p>` : ""; },
 };
 
 // Imagen satelital del polígono de la unidad (Esri World Imagery, el mismo satélite del mapa de la versión completa)
@@ -305,6 +309,8 @@ function detalleAviso(k) {
 
 let actual = "avisos", mapa, PAIS = [], FOCO = null, SEL = null;  // SEL: distritos que el mapa resalta y encuadra
 const VER = `<button type="button" class="ir vermapa" data-vermapa>Ver en el mapa</button>`;
+const ley = () => (FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Riesgo en la vía, " + pct(X.via))
+  + `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`;
 function ver(us, t) { SEL = us && us.length ? { us, t } : null; if (ANCHO.matches && mapa) verMapa(); }
 function marcar() {
   const s = SEL;
@@ -350,6 +356,9 @@ function verMapa() {
   if (!mapa) {
     mapa = new maplibregl.Map({ container: "mapa", style: "https://tiles.openfreemap.org/styles/positron", center: [-75, -10], zoom: 4.3, attributionControl: { compact: true } });
     mapa.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    // nombres del mapa base en castellano ("Arequipa", no "Department of Arequipa")
+    mapa.on("load", () => mapa.getStyle().layers.forEach(l => l.type === "symbol" && l.layout && l.layout["text-field"]
+      && mapa.setLayoutProperty(l.id, "text-field", ["coalesce", ["get", "name:es"], ["get", "name"]])));
     mapa.on("click", "ops", ev => { const n = ev.features[0].properties.unidad; if (!ANCHO.matches) ir("operaciones"); abrir(detalleOp(n)); });
     mapa.on("click", "tramos", ev => {
       if (mapa.queryRenderedFeatures(ev.point, { layers: ["ops"] }).length) return;
@@ -358,6 +367,8 @@ function verMapa() {
         Probabilidad de paro o bloqueo hasta diciembre, ${pct(p)}${u === r.peor ? `<br>Es el distrito más expuesto del tramo y da su ${pct(r.p)}` : ""}`).addTo(mapa); });
     ["ops", "tramos"].forEach(c => { mapa.on("mouseenter", c, () => mapa.getCanvas().style.cursor = "pointer"); mapa.on("mouseleave", c, () => mapa.getCanvas().style.cursor = ""); });
   } else mapa.resize();
+  if (ANCHO.matches) { const l = document.getElementById("ley") || document.body.appendChild(Object.assign(document.createElement("p"), { id: "ley", className: "leyenda-via" }));
+    l.hidden = !X.cadena.length; if (X.cadena.length) l.innerHTML = ley(); }
   fetch("operaciones.json").then(r => r.json()).then(g => {
     const [oefa] = EMPRESAS[empresa];
     // un punto por unidad, en el centro de su polígono
