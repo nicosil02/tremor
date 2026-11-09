@@ -57,7 +57,7 @@
  },
  "Raura": {
   "empresa": "minera raura",
-  "fuente": "Raura embarca su concentrado por el Callao (Wood Mackenzie); el transporte lo hacen empresas comunales (Energiminas, oct 2023); ruta Oyón, Churín y Sayán (PE-18) a la Panamericana Norte",
+  "fuente": "Raura está en el km 131 de la PE-18 Huaura–Sayán–Churín–Oyón (clasificador de la red vial del MTC), vía que la empresa cofinanció; embarca por el Callao (Wood Mackenzie) y el transporte lo hacen empresas comunales (Energiminas, oct 2023)",
   "tramos": [
    {
     "nombre": "Mina a Oyón",
@@ -101,7 +101,7 @@
  },
  "Poderosa": {
   "empresa": "minera poderosa",
-  "fuente": "Poderosa saca su oro por vía pública a plantas de acopio en Trujillo (El Comercio) y usa avionetas entre Trujillo, Chagual y Urpay; la vía de Pataz estuvo bloqueada 46 días",
+  "fuente": "Acceso Trujillo–Huamachuco (PE-10A, ≈180 km) y Huamachuco–Sacsacocha–Puente Pallar–Chagual–Vijus (≈311 km en total; la empresa dice 320 km al este de Trujillo). El oro sale por vía pública a plantas de Trujillo (El Comercio) y hay avionetas Trujillo–Chagual–Urpay; la vía estuvo bloqueada 46 días",
   "tramos": [
    {
     "nombre": "Mina a Chagual",

@@ -26,12 +26,16 @@ for f in csv.DictReader(open(RAIZ / "tremor" / "ubigeo.csv", encoding="utf-8")):
 
 # nombre: (cómo figura en operacion.empresa, alias en notas y radio)
 EMPRESAS = {
+    "Bateas": ("minera bateas", r"minera bateas|\bbateas\b|caylloma|cailloma"),
+    "Raura": ("minera raura", r"\braura\b"),
+    "Poderosa": ("minera poderosa", r"minera poderosa|\bpataz\b"),
     "Las Bambas": ("minera las bambas", r"las bambas|\bmmg\b|ferrobamba|chalcobamba"),
     "Southern": ("southern peru", r"southern|toquepala|cuajone|t[ií]a mar[ií]a"),
     "Antamina": ("minera antamina", r"antamina"),
     "Yanacocha": ("minera yanacocha", r"yanacocha|\bconga\b"),
 }
 LUCHA = r"\bparo\b|bloque|huelga|\btoma\b|protest|moviliza|marcha|plant[oó]n|enfrentamiento"
+CADENA = json.load(open(RAIZ / "docs" / "cadena.json", encoding="utf-8"))
 SUBE = 0.05  # puntos sobre lo habitual que hacen avisar una subida del riesgo
 
 
@@ -107,9 +111,9 @@ def mensaje(nombre, evs, rad, rie):
     lineas = [f"*Tremor, avisos para {nombre}*"]
     for e in sorted(evs, key=lambda e: e["estado"] != "anunciada"):
         cuando = "Anunciada para el" if e["estado"] == "anunciada" else "Ocurrió el"
-        cerca = f", zona de {e['unidad']}" if e["unidad"] else ""
+        cerca = f", {e['unidad']}" if (e["unidad"] or "").startswith("en su ruta") else f", zona de {e['unidad']}" if e["unidad"] else ""
         fuente = f"[{e['medio']}]({e['enlace']})" if e["enlace"] else e["medio"]
-        ruta = " Puede afectar el traslado de concentrado e insumos." if e["transporte"] else ""
+        ruta = " Puede afectar sus despachos e insumos." if e["transporte"] else ""
         lineas.append(f"\n• *{e['titular'] or e['accion']}*\n{cuando} {dia(e['fecha'])} en {lugar(e['ubigeo'])}{cerca}.{ruta} {fuente}")
     for r in rad:
         lineas.append(f"\n• {r['medio']} lo mencionó el {dia(r['dia'])} a las {r['hora']}: «{r['texto']}»")
@@ -142,6 +146,9 @@ def main(dias=3):
     ya = set(con.execute("SELECT clave || '|' || empresa FROM aviso_enviado").fetchall())
     for nombre, (empresa, alias) in EMPRESAS.items():
         z = zona(con, empresa, web["vecinos"])
+        for t in CADENA.get(nombre, {}).get("tramos", []):  # su ruta de salida (docs/cadena.json)
+            for u in t["ubigeos"]:
+                z.setdefault(u, f"en su ruta, tramo {t['nombre']}")
         nuevo = lambda xs: [x for x in xs if (f"{x['clave']}|{nombre}",) not in ya]
         evs, rad, rie = nuevo(eventos(con, z, alias, desde)), nuevo(radio(con, alias, desde)), nuevo(riesgo(web, z))
         if not (evs or rad or rie):
