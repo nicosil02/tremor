@@ -278,7 +278,10 @@
   .panel.en-detalle .resumen, .panel.en-detalle .titular { display: none; }
   /* Alertas: un registro con la fecha en su columna, agrupado por prioridad */
   .alertas li.a-grupo { display: block; font-size: 16px; font-weight: 700; padding: 20px 0 2px; border: 0; }
-  .alertas li.a-grupo.dicen { color: var(--tinta); }
+  .alertas li.a-grupo.dicen, .alertas li.a-grupo.media { color: var(--tinta); }
+  .alertas li.a-grupo.viene { color: #b3261e; font-size: 18px; }
+  .alerta.viene { grid-template-columns: 88px 1fr; }
+  .a-fecha.rel b { font-size: 22px; color: #b3261e; } .a-fecha.rel small { font-size: 14px; white-space: nowrap; }
   .alertas li.a-grupo.alta { color: #b3261e; } .alertas li.a-grupo.media { color: var(--cobre-4); }
   .alertas li.a-grupo:first-child { padding-top: 0; }
   .alerta { grid-template-columns: 44px 1fr; gap: 4px 14px; }
@@ -1149,17 +1152,22 @@ function iniciar(D, G, H, C) {
     return i;
   }
   // Las alertas del cliente: protestas anunciadas, vías bloqueadas y operaciones en riesgo alto, por prioridad y fecha
-  const ORDEN_S = { alta: 0, media: 1, dicen: 2 };
-  const GRUPO_S = { alta: "Prioridad alta", media: "Prioridad media", dicen: "Lo que dicen los medios" };
+  const ORDEN_S = { viene: -1, alta: 0, media: 1, dicen: 2 };
+  const GRUPO_S = { viene: "Lo que viene", alta: "Prioridad alta", media: "Pasó en las últimas semanas", dicen: "Lo que dicen los medios" };
+  const hoyISO = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
   const TONO = t => t < 0 ? ["neg", "Crítico con la empresa"] : t > 0 ? ["pos", "Favorable a la empresa"] : ["neu", "Informativo"];
   function alertas(ev, vias) {
     const fuerza = s => /paro|bloqueo|huelga|toma|paraliz/i.test(s);
     const items = [
-      ...ev.map(e => ({ f: String(e.fecha_evento || e.fecha_anuncio || "").slice(0, 10), i: opDe(e.ubigeo),
-        s: e.estado === "anunciada" && (fuerza(`${e.accion} ${e.titular}`) || /transportista/i.test(e.actor || "")) ? "alta" : "media",
-        // El titular dice el hecho mejor que cualquier plantilla; debajo, si fue anuncio o hecho, dónde y quién lo publicó
-        t: e.titular || corta(e),
-        src: `${e.estado === "anunciada" ? "Anunciada para el " + esc(dia(e.fecha_evento || e.fecha_anuncio)) : "Ocurrió"} en ${esc(lugar(e.ubigeo).split(", ")[0])}.${/transportista/i.test(e.actor || "") ? " Puede afectar el traslado de concentrado e insumos." : ""} <a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.medio)}</a>` })),
+      ...ev.map(e => { const f = String(e.fecha_evento || e.fecha_anuncio || "").slice(0, 10), anun = e.estado === "anunciada";
+        // Un anuncio queda en "Lo que viene" hasta su fecha; pasada la fecha sin noticia de que ocurrió, se dice así
+        const viene = anun && f >= hoyISO(), trans = /transportista/i.test(e.actor || "");
+        const donde = String(e.ubigeo) === "00" ? `La nota no dice dónde${trans ? "; estas movilizaciones suelen concentrarse en Lima" : ""}.` : `En ${esc(lugar(e.ubigeo).split(", ")[0])}.`;
+        return { f, i: opDe(e.ubigeo), s: viene ? "viene" : anun && (fuerza(`${e.accion} ${e.titular}`) || trans) ? "alta" : "media",
+          // El titular dice el hecho mejor que cualquier plantilla; debajo, dónde, qué puede tocar y quién lo publicó
+          t: e.titular || corta(e),
+          src: `${viene ? "" : anun ? `Anunciada para el ${esc(dia(f))}, sin noticia de que haya ocurrido. ` : `Ocurrió el ${esc(dia(f))}. `}${donde}`
+            + `${trans ? " Puede afectar el traslado de concentrado e insumos." : ""} <a href="${esc(e.enlace)}" target="_blank" rel="noopener">${esc(e.medio)}</a>` }; }),
       ...vias.map(s => { let i = filas.findIndex(f => usanVia(s).some(o => zonaDe(f.u).includes(String(o.ubigeo)))); if (i < 0) i = opDe(s.ubigeo);
         return { f: String(s.fecha_evento || "").slice(0, 10), i, s: "alta", via: s,
           t: `Vía ${s.via || ""} bloqueada por una protesta en ${nombre(s.distrito || "")}, ${s.region || ""}. Es una ruta de salida de la operación`, src: "SUTRAN" }; }),
@@ -1167,13 +1175,18 @@ function iniciar(D, G, H, C) {
       ...(D.menciones || []).filter(m => ALIAS && ALIAS.test(llano(m.proyecto)) && !ev.some(e => e.titular === m.titular))
         .map(m => ({ f: m.fecha, i: -1, s: "dicen", t: m.titular, cita: m.resumen, tono: m.tono,
           quien: `${m.origen === "radio" ? "Radio " : ""}${m.medio}`, enlace: m.enlace }))
-    ].filter(x => x.s).sort((a, b) => ORDEN_S[a.s] - ORDEN_S[b.s] || b.f.localeCompare(a.f));
+    ].filter(x => x.s).sort((a, b) => ORDEN_S[a.s] - ORDEN_S[b.s] || (a.s === "viene" ? a.f.localeCompare(b.f) : b.f.localeCompare(a.f)));
     // Un registro: agrupado por prioridad (el título lo dice en palabras), la fecha en su columna y la regleta del riesgo
+    // Lo que viene se cuenta en días, en grande: "Mañana", "En 3 días"
+    const falta = f => { const n = Math.round((new Date(f + "T12:00") - new Date(hoyISO() + "T12:00")) / 864e5);
+      const d = new Date(f + "T12:00").toLocaleDateString("es-PE", { weekday: "short", day: "numeric", month: "short" }).replace(/\./g, "");
+      return `<time class="a-fecha rel" datetime="${f}"><b>${n === 0 ? "Hoy" : n === 1 ? "Mañana" : `En ${n} días`}</b><small>${d}</small></time>`; };
     const fecha = f => { const d = new Date(String(f).slice(0, 10) + "T12:00"); return isNaN(d) ? "" :
       `<time class="a-fecha" datetime="${String(f).slice(0, 10)}"><b>${d.getDate()}</b><small>${d.toLocaleDateString("es-PE", { month: "short" }).replace(".", "")}</small></time>`; };
     document.getElementById("alertas").innerHTML = items.slice(0, 12).map((x, k, xs) => {
       const p = x.i >= 0 ? mesP(filas[x.i].a) : null;
       const grupo = !k || xs[k - 1].s !== x.s ? `<li class="a-grupo ${x.s}">${GRUPO_S[x.s]}</li>` : "";
+      if (x.s === "viene") return `${grupo}<li class="alerta viene">${falta(x.f)}<div><div class="a-tit">${esc(x.t)}</div><div class="a-src">${x.src}</div></div></li>`;
       if (x.s === "dicen") { const [c, tx] = TONO(x.tono);
         return `${grupo}<li class="alerta">${fecha(x.f)}<div><div class="a-tit">${esc(x.t)}</div>
           <div class="a-quien"><b>${esc(x.quien)}</b><span class="tono ${c}">${tx}</span></div>
