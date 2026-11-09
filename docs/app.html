@@ -89,7 +89,7 @@
   .pulso span { position: absolute; left: 50%; top: 22px; transform: translateX(-50%); white-space: nowrap; padding: 3px 8px; border-radius: 6px; background: #fff; font-weight: 700; font-size: 13px;
     box-shadow: 0 2px 8px rgb(28 38 41 / .2); }
   .leyenda-via i { display: inline-block; width: 18px; height: 4px; margin: 0 6px 3px 0; vertical-align: middle; }
-  .leyenda-via i.rojo { background: #d7261e; } .leyenda-via i.naranja { background: #e8962e; } .leyenda-via i.punto { width: 10px; height: 10px; border-radius: 50%; background: var(--rojo); margin-left: 4px; }
+  .leyenda-via i.rojo { background: #d7261e; } .leyenda-via i.punto.negro { background: #1c2629; } .leyenda-via i.via-l { background: #4a3b2e; height: 2px; margin-left: 4px; } .leyenda-via i.naranja { background: #e8962e; } .leyenda-via i.punto { width: 10px; height: 10px; border-radius: 50%; background: var(--rojo); margin-left: 4px; }
   .leyenda-via small { display: block; font-weight: 400; font-size: 13px; color: var(--tinta-2); max-width: 240px; }
   .cuando { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; padding: 18px 16px 0; }
   .cuando b { font-size: 34px; line-height: 1; font-weight: 750; font-variation-settings: var(--ancho); color: var(--rojo); }
@@ -281,9 +281,11 @@ const VISTAS = {
     // ponytail: sin capitales de departamento ni Lima-Callao, donde la EGPP pone lo que no sabe ubicar
     const top = D.alerta.filter(a => +a.operacion_extractiva === 1 && a.prob_zona_extractivo != null && !/0101$/.test(a.ubigeo) && !/^(1501|0701)/.test(a.ubigeo))
       .sort((a, b) => b.prob_zona_extractivo - a.prob_zona_extractivo).slice(0, 10);
-    return `<h2>Anunciado en el país</h2>${v.length ? ls(v) : `<p class="vacio">Nada anunciado.</p>`}<h2>Última semana</h2>${r.length ? ls(r) : `<p class="vacio">Sin protestas registradas.</p>`}
+    // primero lo que viene y las zonas más altas; la última semana, corta (el resto se despliega)
+    return `<h2>Anunciado en el país</h2>${v.length ? ls(v) : `<p class="vacio">Nada anunciado.</p>`}
       <h2>Zonas extractivas con más riesgo, octubre a diciembre</h2><ul>${top.map(a => `<li><button type="button" class="fila" data-distrito="${a.ubigeo}"><i style="background:var(--cobre-4)"></i>
-        <span class="t">${esc(lugar(a.ubigeo))}</span><span class="pct">${pct(a.prob_zona_extractivo)}</span><span class="s" style="grid-column:2">${esc(String(a.razones_zona_extractivo || "").replace(/^en la zona \(distrito y vecinos\): /, "").split(/ \(| · |; /)[0])}</span></button></li>`).join("")}</ul>${ANCHO.matches ? "" : VER}`;
+        <span class="t">${esc(lugar(a.ubigeo))}</span><span class="pct">${pct(a.prob_zona_extractivo)}</span><span class="s" style="grid-column:2">${esc(String(a.razones_zona_extractivo || "").replace(/^en la zona \(distrito y vecinos\): /, "").split(/ \(| · |; /)[0])}</span></button></li>`).join("")}</ul>${ANCHO.matches ? "" : VER}
+      <h2>Última semana</h2>${r.length ? ls(r.slice(0, 6)) + (r.length > 6 ? `<details class="mas"><summary><b>Ver las ${r.length - 6} restantes</b></summary>${ls(r.slice(6))}</details>` : "") : `<p class="vacio">Sin protestas registradas.</p>`}`;
   },
   mapa() { cabecera(false); return X.cadena.length || PAIS_VISTA ? `<p class="leyenda-via">${ley()}</p>` : ""; },
 };
@@ -373,27 +375,56 @@ function detalleAviso(k) {
 let actual = "avisos", mapa, PAIS = [], FOCO = null, SEL = null;  // SEL: distritos que el mapa resalta y encuadra
 const VER = `<button type="button" class="ir vermapa" data-vermapa>Ver en el mapa</button>`;
 const ley = () => (actual === "pais" || PAIS_VISTA) && !SEL
-  ? `Riesgo en zonas con operación extractiva<small>Paro, bloqueo o toma contra la actividad extractiva, octubre a diciembre. Toque un distrito para ver su porcentaje</small>`
+  ? `Riesgo en zonas con operación extractiva<small>Paro, bloqueo o toma contra la operación, octubre a diciembre. Numeradas, las 10 más altas
+    <br><i class="punto"></i>Protesta anunciada <i class="punto negro"></i>Bloqueo vigente (SUTRAN) <i class="via-l"></i>Red vial nacional</small>`
   : (FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Riesgo en la vía, " + pct(X.via))
   + (SEL ? (SEL.tr.length ? `<small><i class="rojo"></i>${/se suma/.test(SEL.etq) ? "Anunciaron que se suman" : SEL.tr2.length ? "Más probable" : "Tramos que puede cortar"}${SEL.tr2.length ? `<br><i class="naranja"></i>Posible` : ""}<br><i class="punto"></i>${/se suma/.test(SEL.etq) ? "Base que se suma" : SEL.etq ? "Donde más bloquearon antes" : "Dónde es la protesta"}</small>` : "")
     : `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`);
 function ver(us, t, tr = [], tr2 = [], etq = "") { SEL = (us && us.length) || tr.length ? { us: us || [], t, tr, tr2, etq } : null; if (ANCHO.matches && mapa) verMapa(); }
 let PULSO, PAIS_VISTA = false;
 function peru() {
+  // El Perú: zonas con operación extractiva por su riesgo (lo bajo casi transparente, para que resalte lo alto),
+  // la red vial nacional, rótulos de las 10 zonas más altas, protestas anunciadas y bloqueos vigentes de SUTRAN
   const on = actual === "pais" || (actual === "mapa" && PAIS_VISTA);
-  DISTRITOS().then(g => {
+  const CAPAS = ["peru", "peru-l", "peru-vias", "peru-vias-t", "peru-ev", "peru-top", "peru-top-t"];
+  Promise.all([DISTRITOS(), RUTAS()]).then(([g, rg]) => {
     const poner = () => {
+      const a = u => A.get(u) || {}, centro = f => { const cs = JSON.stringify(f.geometry.coordinates).match(/-?\d+\.?\d*,-?\d+\.?\d*/g).map(c => c.split(",").map(Number));
+          return [cs.reduce((x, c) => x + c[0], 0) / cs.length, cs.reduce((x, c) => x + c[1], 0) / cs.length]; };
+        const zs = g.features.filter(f => +a(f.properties.u).operacion_extractiva === 1).map(f => ({ ...f, properties: { ...f.properties, p: +a(f.properties.u).prob_zona_extractivo || 0 } }));
+        const top = zs.filter(f => !/0101$/.test(f.properties.u) && !/^(1501|0701)/.test(f.properties.u)).sort((x, y) => y.properties.p - x.properties.p).slice(0, 10)
+          .map((f, k) => ({ type: "Feature", properties: { k: k + 1, t: `${lugar(f.properties.u)} ${pct(f.properties.p)}` }, geometry: { type: "Point", coordinates: centro(f) } }));
+      const porU = new Map(g.features.map(f => [f.properties.u, f]));
+      const ev = [...PAIS.map((x, k) => ({ x, k })).filter(({ x }) => x.viene && String(x.e.ubigeo).length === 6 && porU.has(String(x.e.ubigeo)))
+            .map(({ x, k }) => ({ type: "Feature", properties: { k, s: 0, t: x.t }, geometry: { type: "Point", coordinates: centro(porU.get(String(x.e.ubigeo))) } })),
+          ...(D.sutran || []).filter(b => b.lat && b.lng).map(b => ({ type: "Feature", properties: { k: -1, s: 1, t: `Vía ${b.via} bloqueada` }, geometry: { type: "Point", coordinates: [+b.lng, +b.lat] } }))];
+      if (mapa.getSource("peru-ev")) mapa.getSource("peru-ev").setData({ type: "FeatureCollection", features: ev });
       if (!mapa.getSource("peru")) {
-        const fc = { type: "FeatureCollection", features: g.features.filter(f => +(A.get(f.properties.u) || {}).operacion_extractiva === 1)
-          .map(f => ({ ...f, properties: { ...f.properties, p: +(A.get(f.properties.u) || {}).prob_zona_extractivo || 0 } })) };
-        mapa.addSource("peru", { type: "geojson", data: fc });
-        mapa.addLayer({ id: "peru", type: "fill", source: "peru", layout: { visibility: "none" }, paint: { "fill-opacity": 0.7,
-          "fill-color": ["step", ["get", "p"], "#f3e1d3", 0.1, "#e3a67c", 0.25, "#c2552b", 0.5, "#8a3213"] } }, "ops");
-        mapa.addLayer({ id: "peru-l", type: "line", source: "peru", layout: { visibility: "none" }, paint: { "line-color": "#fff", "line-width": 0.3 } }, "ops");
-        mapa.on("click", "peru", ev => { if (!(actual === "pais" || PAIS_VISTA)) return; const u = ev.features[0].properties.u;
-          new maplibregl.Popup({ maxWidth: "240px" }).setLngLat(ev.lngLat).setHTML(`<b>${esc(lugar(u))}</b><br>${pct(ev.features[0].properties.p)} de paro, bloqueo o toma contra la actividad extractiva en la zona, octubre a diciembre`).addTo(mapa); });
+        mapa.addSource("peru", { type: "geojson", data: { type: "FeatureCollection", features: zs } });
+        mapa.addSource("peru-vias", { type: "geojson", data: rg });
+        mapa.addSource("peru-top", { type: "geojson", data: { type: "FeatureCollection", features: top } });
+        mapa.addSource("peru-ev", { type: "geojson", data: { type: "FeatureCollection", features: ev } });
+        const off = { visibility: "none" };
+        mapa.addLayer({ id: "peru", type: "fill", source: "peru", layout: off, paint: {
+          "fill-color": ["step", ["get", "p"], "#f1d9c6", 0.15, "#e3a67c", 0.25, "#c8642f", 0.4, "#8a3213"],
+          "fill-opacity": ["step", ["get", "p"], 0.25, 0.15, 0.55, 0.25, 0.75, 0.4, 0.85] } }, "ops");
+        mapa.addLayer({ id: "peru-l", type: "line", source: "peru", layout: off, paint: { "line-color": "#fff", "line-width": 0.3, "line-opacity": 0.6 } }, "ops");
+        mapa.addLayer({ id: "peru-vias", type: "line", source: "peru-vias", layout: { ...off, "line-cap": "round" }, paint: { "line-color": "#3d3128", "line-opacity": 0.8,
+          "line-width": ["interpolate", ["linear"], ["zoom"], 4, 1, 8, 2.5] } }, "ops");
+        mapa.addLayer({ id: "peru-vias-t", type: "symbol", source: "peru-vias", minzoom: 6, layout: { ...off, "symbol-placement": "line", "text-field": ["get", "r"], "text-size": 11,
+          "text-font": ["Noto Sans Bold"] }, paint: { "text-color": "#4a3b2e", "text-halo-color": "#fff", "text-halo-width": 1.5 } });
+        mapa.addLayer({ id: "peru-ev", type: "circle", source: "peru-ev", layout: off, paint: { "circle-radius": ["case", ["==", ["get", "s"], 1], 7, 6],
+          "circle-color": ["case", ["==", ["get", "s"], 1], "#1c2629", "#d7261e"], "circle-stroke-color": "#fff", "circle-stroke-width": 2 } });
+        mapa.addLayer({ id: "peru-top", type: "circle", source: "peru-top", layout: off, paint: { "circle-radius": 5, "circle-color": "#fff", "circle-stroke-color": "#8a3213", "circle-stroke-width": 2.5 } });
+        mapa.addLayer({ id: "peru-top-t", type: "symbol", source: "peru-top", layout: { ...off, "text-field": ["concat", ["to-string", ["get", "k"]], ". ", ["get", "t"]], "text-size": 13,
+          "text-font": ["Noto Sans Bold"], "text-anchor": "left", "text-offset": [0.8, 0], "text-variable-anchor": ["left", "right", "top", "bottom"], "text-radial-offset": 0.8 }, paint: { "text-color": "#1c2629", "text-halo-color": "#fff", "text-halo-width": 2 } });
+        mapa.on("click", "peru", ev => { if (!(actual === "pais" || PAIS_VISTA) || mapa.queryRenderedFeatures(ev.point, { layers: ["peru-ev"] }).length) return; const f = ev.features[0].properties;
+          new maplibregl.Popup({ maxWidth: "240px" }).setLngLat(ev.lngLat).setHTML(`<b>${esc(lugar(f.u))}</b><br>${pct(f.p)} de paro, bloqueo o toma contra la actividad extractiva en la zona, octubre a diciembre`).addTo(mapa); });
+        mapa.on("click", "peru-ev", ev => { const k = ev.features[0].properties.k; if (k >= 0) { if (!ANCHO.matches) ir("pais"); abrir(detalleAviso(PAIS[k])); }
+          else new maplibregl.Popup().setLngLat(ev.lngLat).setHTML(`<b>${esc(ev.features[0].properties.t)}</b><br>Según SUTRAN`).addTo(mapa); });
+        mapa.on("mouseenter", "peru-ev", () => mapa.getCanvas().style.cursor = "pointer"); mapa.on("mouseleave", "peru-ev", () => mapa.getCanvas().style.cursor = "");
       }
-      ["peru", "peru-l"].forEach(c => mapa.setLayoutProperty(c, "visibility", on ? "visible" : "none"));
+      CAPAS.forEach(c => mapa.setLayoutProperty(c, "visibility", on ? "visible" : "none"));
       ["ops", "ops-t", "tramos", "tramos-l", "vias", "rotulos"].forEach(c => mapa.getLayer(c) && mapa.setLayoutProperty(c, "visibility", on ? "none" : "visible"));
       if (on && !SEL) mapa.fitBounds([[-81.4, -18.4], [-68.6, -0.03]], { padding: 30, duration: 900 });
     };

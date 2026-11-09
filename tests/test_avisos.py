@@ -46,3 +46,4 @@ def test_leer_adhesiones():
     assert leer("Transportistas suspenden el paro tras acuerdo con el MTC")["suspendido"]
     assert leer("Movilización contra la extorsión y asesinatos de choferes")["urbano"]
     assert not leer("Alza de combustibles afecta a transportistas")["urbano"]
+    assert not leer("Transporte de carga pesada y mototaxistas anuncian paro en Piura")["urbano"]

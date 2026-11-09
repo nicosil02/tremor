@@ -100,8 +100,9 @@ def _lugares():
 
 
 SUMA = re.compile(r"se suma|sumar[aá]n|sumarse|acatar|respald|adhie|adhes|plegar|participar|bases? de|gremios? de")
-NO = re.compile(r"no (se )?(suma|acata|participa|pleg)|deslig|se retira|se bajan?|desist|no acatar|no se plegar")
+NO = re.compile(r"no (se )?(suma|acata|participa|pleg)|deslig|se retira|desist|no acatar|no se plegar")
 SUSPENDE = re.compile(r"(suspend|levant|desconvoc|posterg|aplaz|cancel)\w*\s+(el |la |su |del )?(paro|huelga|bloqueo|medida|paralizaci)")
+CARGA = re.compile(r"carga pesada|transporte de carga|transportistas de carga")  # "carga pesada y mototaxistas" sigue siendo carga
 URBANO = re.compile(r"extorsi|transporte (publico|urbano)|combis?\b|colectiver|mototaxi|choferes asesinad|asesinatos? de chofer")
 
 
@@ -114,7 +115,7 @@ def leer(texto):
         destino = ret if NO.search(o) else adh if SUMA.search(o) else None
         if destino is not None:
             destino.update(u for k, us in idx.items() if re.search(rf"\b{re.escape(k)}\b", o) for u in us)
-    return {"adhieren": sorted(adh - ret), "retiran": sorted(ret), "suspendido": bool(SUSPENDE.search(t)), "urbano": bool(URBANO.search(t))}
+    return {"adhieren": sorted(adh - ret), "retiran": sorted(ret), "suspendido": bool(SUSPENDE.search(t)), "urbano": bool(URBANO.search(t)) and not CARGA.search(t)}
 
 
 def focos(con, n=5):
