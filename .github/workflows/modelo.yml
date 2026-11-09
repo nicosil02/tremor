@@ -45,6 +45,11 @@ jobs:
           ACLED_PASSWORD: ${{ secrets.ACLED_PASSWORD }}
         run: python -m tremor.distritos acled_api
 
+      - name: Producción minera del MINEM (el archivo del año se actualiza cada mes) y qué unidades operan
+        run: |
+          python -m tremor.produccion
+          python -m tremor.empresas proyectos
+
       - name: Modelo
         run: python -u -m tremor.modelo
 

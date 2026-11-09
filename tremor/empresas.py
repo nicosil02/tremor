@@ -263,6 +263,24 @@ def situacion_minas(con, distritos):
         else:
             con.execute("UPDATE operacion SET etapa = 'unidad fiscalizada por OEFA' "
                         "WHERE empresa = ? AND unidad = ? AND etapa = 'operación'", (e, u))
+    # La producción declarada al MINEM confirma qué unidades operan: su titular produjo en ese distrito en los últimos
+    # 12 meses. El MINEM nombra concesiones y plantas ("Huincush" es Antamina), así que se cruza por titular y distrito;
+    # si el titular tiene varias unidades ahí, solo la de nombre parecido. No se baja a nadie: muchas minas declaran
+    # desde el distrito de su planta.
+    try:
+        pr = con.execute("""SELECT titular, unidad, ubigeo FROM produccion_unidad WHERE etapa NOT IN ('fundicion', 'refinacion',
+                            'refineria') AND anio * 12 + mes > (SELECT MAX(anio * 12 + mes) FROM produccion_unidad) - 12
+                            GROUP BY 1, 2, 3""").fetchall()
+    except Exception:  # sin la tabla (python -m tremor.produccion)
+        pr = []
+    fisc = con.execute("SELECT empresa, unidad, ubigeo FROM operacion WHERE tipo = 'mineria' AND etapa = 'unidad fiscalizada "
+                       "por OEFA' AND unidad NOT LIKE '%asivo%'").fetchall()
+    todas = con.execute("SELECT empresa, ubigeo FROM operacion WHERE tipo = 'mineria' AND (etapa LIKE 'operación%' "
+                        "OR etapa = 'unidad fiscalizada por OEFA')").fetchall()
+    for e, u, ub in fisc:
+        m = [pal(x) for t, x, g in pr if g == ub and pal(t) & pal(e)]
+        if m and (sum(1 for f, g in todas if g == ub and pal(f) == pal(e)) == 1 or any(x & pal(u) for x in m)):
+            con.execute("UPDATE operacion SET etapa = 'operación' WHERE empresa = ? AND unidad = ? AND ubigeo = ?", (e, u, ub))
 
 
 def cartera_minem(pdf=None):
