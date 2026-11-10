@@ -121,7 +121,7 @@ def datos(con):
         con_texto = {i for (i,) in con.execute("""SELECT DISTINCT en.evento_id FROM evento_nota en JOIN nota n ON n.id = en.nota_id
                                                   WHERE length(trim(coalesce(n.resumen, ''))) > 0""")}
         ev["leida"] = [i in con_texto for i in ev.id]
-        for k in ("adhieren", "retiran", "suspendido", "urbano", "carga", "puntos", "plazo"):
+        for k in ("adhieren", "retiran", "suspendido", "postergado", "urbano", "carga", "puntos", "plazo"):
             ev[k] = [x[k] for x in leido]
         ev["fecha_evento"] = [dia_dicho(t, f) for t, f in zip(ev.titular, ev.fecha_evento)]
         # la radio no tiene titular ("Radio X, en vivo 09/11 16:07"): se titula con lo que pasó
@@ -188,7 +188,8 @@ def _lugares():
 
 SUMA = re.compile(r"se suma|sumar[aá]n|sumarse|acatar|respald|adhie|adhes|plegar|participar|bases? de|gremios? de")
 NO = re.compile(r"no (se )?(suma|acata|participa|pleg)|deslig|se retira|desist|no acatar|no se plegar")
-SUSPENDE = re.compile(r"(suspend|levant|desconvoc|posterg|aplaz|cancel)\w*\s+(el |la |su |del )?(paro|huelga|bloqueo|medida|paralizaci)")
+SUSPENDE = re.compile(r"(suspend|levant|desconvoc|posterg|aplaz|reprogram|cancel)\w*\s+(el |la |su |del )?(paro|huelga|bloqueo|medida|paralizaci)")
+POSTERGA = re.compile(r"(posterg|aplaz|reprogram)\w*\s+(el |la |su |del )?(paro|huelga|bloqueo|medida|paralizaci)")
 CARGA = re.compile(r"carga pesada|transporte de carga|transportistas de carga")  # "carga pesada y mototaxistas" sigue siendo carga
 CORTA = re.compile(r"bloque|quema de llantas|cortaron|cerraron|tomaron|piquete")
 DONDE = re.compile(r"carretera|v[ií]as?\b|puente|ingreso|salida|km\b|kil[oó]metro|avenida|\bav\.|[oó]valo|jir[oó]n|plaza|cruce|desv[ií]o|panamericana|interoce[aá]nica")
@@ -294,6 +295,7 @@ def juntar(evs):
         for k in ("adhieren", "retiran", "puntos"):
             par[k] = list(dict.fromkeys((par.get(k) or []) + (e.get(k) or [])))
         par["suspendido"] = bool(par.get("suspendido")) or bool(e.get("suspendido"))
+        par["postergado"] = bool(par.get("postergado")) or bool(e.get("postergado"))
         par["urbano"] = (bool(par.get("urbano")) or bool(e.get("urbano"))) and not (par.get("carga") or e.get("carga"))
         par["carga"] = bool(par.get("carga") or e.get("carga"))
         par["plazo"] = max([x for x in (par.get("plazo"), e.get("plazo")) if isinstance(x, str)], default=None)
@@ -373,7 +375,7 @@ def leer(texto):
         destino = ret if NO.search(o) else adh if SUMA.search(o) else None
         if destino is not None:
             destino.update(u for k, us in idx.items() if re.search(rf"\b{re.escape(k)}\b", o) for u in us)
-    return {"adhieren": sorted(adh - ret), "retiran": sorted(ret), "suspendido": bool(SUSPENDE.search(t)), "urbano": bool(URBANO.search(t)) and not CARGA.search(t), "carga": bool(CARGA.search(t)), "puntos": puntos(texto), "plazo": plazo(texto)}
+    return {"adhieren": sorted(adh - ret), "retiran": sorted(ret), "suspendido": bool(SUSPENDE.search(t)), "postergado": bool(POSTERGA.search(t)), "urbano": bool(URBANO.search(t)) and not CARGA.search(t), "carga": bool(CARGA.search(t)), "puntos": puntos(texto), "plazo": plazo(texto)}
 
 
 def focos(con, n=5):

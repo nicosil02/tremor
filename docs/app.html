@@ -481,7 +481,7 @@ function detalleAviso(k) {
     suman.size ? `${lugar(punto)}, anunció que se suma` : hist.size ? `${lugar(punto)}, donde más bloquearon antes` : "");
   // Menos texto: cuándo en grande, dos datos, su ruta pintada (lo que puede cortarse en rojo) y la nota como tarjeta
   const viene = e.estado === "anunciada" && f >= HOY && !e.suspendido, toca = new Set(ts.map(r => r.nombre));
-  return `<div class="cuando${viene ? "" : " paso"}"><b>${esc(e.suspendido ? "Suspendida" : viene ? cuando(f) : dia(f))}</b><span>${esc(e.suspendido ? "según la prensa, " + largo(f) : viene ? largo(f) : e.estado === "anunciada" ? "anunciada" : "ocurrió")}</span></div>
+  return `<div class="cuando${viene ? "" : " paso"}"><b>${esc(e.suspendido ? (e.postergado ? "Postergada" : "Suspendida") : viene ? cuando(f) : dia(f))}</b><span>${esc(e.suspendido ? "según la prensa, " + largo(f) : viene ? largo(f) : e.estado === "anunciada" ? "anunciada" : "ocurrió")}</span></div>
     <h3 class="titulo-av">${esc(x.t)}</h3>
     ${(e.puntos || []).length ? `<h2>Dónde cortan el paso, según la prensa</h2><ul class="por">${e.puntos.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}<dl class="datos"><dt>Dónde</dt><dd>${esc(u === "00" ? (x.trans ? "Todo el país" : "La nota no lo dice") : lugar(u))}${e.precision === "radio" ? ", aproximado: la radio no dijo el lugar y se usa la provincia que cubre" : ""}${x.cerca ? `, zona de ${esc(x.cerca.unidad)}` : ""}</dd>
       ${e.reclamo ? `<dt>Reclamo</dt><dd>${esc(e.reclamo)}</dd>` : ""}</dl>

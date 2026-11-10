@@ -80,6 +80,30 @@ def eventos(web, z, alias, desde):
                    "titular": e.get("titular") or "", "transporte": transporte, "punto": (e.get("puntos") or [""])[0]}
 
 
+def cambios(web, z, enviados):
+    """Seguimiento de lo ya avisado: la protesta se suspendió o postergó, algunos lugares o gremios se retiran, o pasó la
+    fecha sin noticia de que se hiciera. Solo de protestas que el cliente ya recibió (enviados: sus claves), un aviso
+    por cambio."""
+    for e in web["eventos"]:
+        f, ub, acc = e.get("fecha_evento") or e.get("fecha_anuncio") or "", str(e["ubigeo"]), e.get("accion") or ""
+        orig = f"evento:{ub}:{acc}:{f}"
+        if orig not in enviados:
+            continue
+        que = f"{acc or 'Protesta'} {'en todo el país' if ub == '00' else 'en ' + lugar(ub)} del {dia(f)}"
+        fuente = f"\n\n📰 *Fuente:* [{e.get('medio') or 'nota'}]({e['enlace']})" if e.get("enlace") else ""
+        ret = [u for u in e.get("retiran") or [] if u in z]
+        if e.get("suspendido") or e.get("estado") == "suspendida":
+            pos = e.get("postergado")
+            yield ("cae:" + orig, f"{'⏸' if pos else '✅'} *PROTESTA {'POSTERGADA' if pos else 'SUSPENDIDA'}*\n_{e.get('titular') or que}_\n\n"
+                   f"{que}: según la prensa, {'se postergó; todavía sin nueva fecha' if pos else 'se suspendió o se levantó'}.{fuente}", None)
+        elif ret:
+            yield (f"retira:{orig}:{'-'.join(ret)}", f"↩️ *SE RETIRAN DE LA PROTESTA*\n_{e.get('titular') or que}_\n\n"
+                   f"{que}: anuncian que no se suman {', '.join(mayus(lugar(u)) for u in ret)}. El resto de la convocatoria sigue.{fuente}", None)
+        elif e.get("estado") == "anunciada" and f and f < hoy() and f >= (date.today() - timedelta(days=3)).isoformat():
+            yield ("nohubo:" + orig, f"❔ *SIN NOTICIA DE QUE SE REALIZARA*\n\n{que}: la fecha pasó y la prensa no informó que se "
+                   f"hiciera. Pudo levantarse o no tener cobertura; conviene confirmarlo en la zona.", None)
+
+
 def hoy():
     """La fecha en el Perú (GitHub corre en UTC: después de las 19:00 de Lima ya es mañana)."""
     return (datetime.now(timezone.utc) - timedelta(hours=5)).date().isoformat()
@@ -361,7 +385,8 @@ def main(dias=7, reenviar=False, muestra=False):  # 7: GitHub a veces corre el w
             if r := de_radio(con, e):
                 e["emitido"], e["dicho"], extra = r
                 e.update({k: v for k, v in extra.items() if v})
-        ruta = [x for x in lentas(con, nombre) if (f"{x[0]}|{nombre}",) not in ya]
+        enviados = {c for (c,) in con.execute("SELECT clave FROM aviso_enviado WHERE empresa = ?", (nombre,))}
+        ruta = [x for x in [*lentas(con, nombre), *cambios(web, z, enviados)] if (f"{x[0]}|{nombre}",) not in ya]
         for clave, texto, png in [*piezas(nombre, evs, rad, rie, unidad, web["vecinos"], tramos), *ruta]:
             if muestra:
                 d = DATOS / "exportes" / "muestra"; d.mkdir(parents=True, exist_ok=True)
