@@ -94,7 +94,7 @@ def empujan(razones):
             p = p.removesuffix(", en la zona en los últimos 3 meses")
             m = re.search(r": (\d+) \(lo habitual, (\d+)\)", p)
             if (m and int(m[1]) > int(m[2])) or (not m and re.search(r"por encima|más protestas|duplicarse", p)):
-                out.append(p)
+                out.append(re.sub(r"^(.*?) (?:muy )?por encima de lo habitual en la zona$", r"más \1 que lo habitual", p).replace(" sin paro", ""))
     return out
 
 
@@ -104,12 +104,25 @@ def riesgo(web, z):
         c = a.get("cambio_zona_ext")
         if a["ubigeo"] in z and a.get("operacion_extractiva") and c is not None and c >= SUBE:
             sube = "; ".join(empujan(a.get("razones_cambio_ext") or "")[:3])
-            yield {"clave": f"riesgo:{web['mes_base']}:{a['ubigeo']}", "lugar": a["lugar"].split(" / ")[-1].title(),
-                   "p": a["prob_zona_extractivo"], "normal": a["normal_zona_ext"], "sube": sube, "ventana": web["ventana"]}
+            dep, prov, dis = (a["lugar"].title().split(" / ") + ["", ""])[:3]
+            base = (a.get("razones_zona_extractivo") or "").split(" · ")[0].removeprefix("en la zona (distrito y vecinos): ")
+            for x, y in ((" medidas de fuerza en 12 meses", " paros, bloqueos u otras medidas de fuerza en el último año"),
+                         (" casos activos", " conflictos activos ante la Defensoría del Pueblo"), (" caso activo", " conflicto activo ante la Defensoría del Pueblo")):
+                base = base.replace(x, y)
+            yield {"clave": f"riesgo:{web['mes_base']}:{a['ubigeo']}", "lugar": f"{dis} ({prov}, {dep})", "unidad": z[a["ubigeo"]],
+                   "propio": z[a["ubigeo"]] and a["ubigeo"] in {u for u, n in z.items() if not n.startswith("en su ruta")},
+                   "p": a["prob_zona_extractivo"], "normal": a["normal_zona_ext"], "sube": sube, "base": base, "ventana": web["ventana"]}
 
 
 def lugar(ub):
     return "lugar sin precisar" if ub in (None, "", "00") else NOMBRE.get(ub, ub).title().replace("Provincia De", "la provincia de")
+
+
+def meses(v):
+    """'2026-10 a 2026-12' → 'octubre y diciembre de 2026'."""
+    largo = "enero febrero marzo abril mayo junio julio agosto septiembre octubre noviembre diciembre".split()
+    a, b = v.split(" a ")
+    return f"{largo[int(a[5:7]) - 1]} y {largo[int(b[5:7]) - 1]} de {b[:4]}"
 
 
 def dia(f):
@@ -129,9 +142,14 @@ def mensaje(nombre, evs, rad, rie):
         lineas.append(f"\n• *{e['titular'] or e['accion']}*\n{cuando} {dia(e['fecha'])} en {lugar(e['ubigeo'])}{cerca}.{ruta}{donde} {fuente}")
     for r in rad:
         lineas.append(f"\n• {r['medio']} lo mencionó el {dia(r['dia'])} a las {r['hora']}: «{r['texto']}»")
-    for r in rie:
-        lineas.append(f"\n• El riesgo de conflicto en la zona de {r['lugar']} está en {pct(r['p'])}, "
-                      f"{round((r['p'] - r['normal']) * 100)} puntos sobre lo habitual ({r['ventana']})." + (f" Lo empuja: {r['sube']}." if r["sube"] else ""))
+    for r in rie:  # para un equipo ejecutivo: qué pasa, dónde respecto de su operación, por qué y qué no es
+        donde = r["unidad"] if r["unidad"].startswith("en su ruta") else f"en la zona de su unidad {r['unidad']}"
+        lineas.append(f"\n• *Sube el riesgo de conflicto en {r['lugar']}*, {donde}.\n"
+                      f"Probabilidad de un paro, bloqueo o toma contra una operación minera en la zona entre {meses(r['ventana'])}: "
+                      f"*{pct(r['p'])}*, frente a {pct(r['normal'])} habitual (cerca de {round(r['p'] * 10)} de cada 10).\n"
+                      + (f"Por qué: en {r['lugar'].split(' (')[0]} y sus distritos vecinos hubo {r['base']}." if r["base"] else "")
+                      + (f" En las últimas semanas: {r['sube']}." if r["sube"] else "")
+                      + "\nNo hay una protesta anunciada contra la empresa: es una señal para reforzar el seguimiento de la zona.")
     return "\n".join(lineas)
 
 
