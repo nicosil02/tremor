@@ -3,7 +3,8 @@ multas firmes, supervisiones y denuncias SINADA, solo de minería, hidrocarburos
 
 El portal se actualizó por última vez el 29 abr 2025 (datos hasta marzo de 2025): es historia y contexto de cada
 unidad, no una señal en vivo. Se baja una vez; si las tablas ya tienen filas, no se vuelve a bajar.
-No se guarda texto que nombre a personas (la columna de coordinación trae nombres de supervisores en algunas filas).
+No se guarda texto que nombre a personas: el sector de la supervisión sale del número del informe, no de la
+columna de coordinación (que en algunas filas trae el nombre del supervisor).
 
     python -m tremor.oefa          # carga (o nada, si ya está)
     python -m tremor.oefa --forzar # vuelve a bajar
@@ -78,9 +79,11 @@ def tablas():
                            "afecta": s[componentes].apply(lambda r: ", ".join(c.lower() for c in componentes if r[c] == 1), axis=1),
                            "estado": s.ESTADO})
     v = _bajar("supervision")
-    v = v[v.COORDINACION.map(norm).str.contains(SECTOR)]  # descarta también las filas corridas con nombres de personas
-    supervision = pd.DataFrame({"administrado": v.ADMINISTRADO, "unidad": v.UNIDAD_FISCALIZABLE,
-                                "sector": v.COORDINACION.str.replace("COORDINACIÓN DE SUPERVISIÓN AMBIENTAL EN ", "").str.capitalize(),
+    # el sector sale del número del informe (…/DSEM-CMIN); la columna de coordinación trae a veces el nombre del
+    # supervisor, así que no se guarda: la fila se conserva y la persona no queda en la base
+    v = v.assign(sector=v.NRO_INFORME.str.extract(r"-C(MIN|HID|ELE)(?![A-Z])")[0].map(
+        {"MIN": "Minería", "HID": "Hidrocarburos", "ELE": "Electricidad"})).dropna(subset=["sector"])
+    supervision = pd.DataFrame({"administrado": v.ADMINISTRADO, "unidad": v.UNIDAD_FISCALIZABLE, "sector": v.sector,
                                 "fecha": pd.to_datetime(v.FECHA_INFORME, errors="coerce").dt.strftime("%Y-%m-%d"),
                                 "tipo": v.TIPO_DE_SUPERVISION, "obligaciones": pd.to_numeric(v.CANTIDAD_OBLIGACIONES, errors="coerce")})
     return {"oefa_medida": medida, "oefa_multa": multa, "oefa_sinada": sinada, "oefa_supervision": supervision}
