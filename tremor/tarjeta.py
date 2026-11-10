@@ -83,7 +83,8 @@ def _fondo(lon0, lat0, lon1, lat1, w, h):
                     img.paste(_tesela(z, tx % 2 ** z, ty), (tx * LADO - x0, ty * LADO - y0))
     except requests.RequestException:
         pass  # sin red: queda el fondo liso y los distritos encima
-    return img, z, x0, y0
+    gris = Image.merge("RGB", [img.convert("L")] * 3)  # fondo en gris claro: solo resalta lo del aviso
+    return Image.blend(gris, Image.new("RGB", (w, h), "white"), 0.45), z, x0, y0
 
 
 def tarjeta(titulo, cifra, sub, zona, foco, unidad=(), p=None, leyenda="Distrito del aviso"):
@@ -112,7 +113,6 @@ def tarjeta(titulo, cifra, sub, zona, foco, unidad=(), p=None, leyenda="Distrito
     mh = H - my - 96
     mapa = fig.add_axes([mx / W, 1 - (my + mh) / H, mw / W, mh / H]); mapa.set_axis_off()
     puntos = [(x, y) for u in zona for a in formas.get(u, []) for x, y in a]
-    visibles, puestos = set(), []
     if puntos:
         lon = [x for x, _ in puntos]; lat = [y for _, y in puntos]
         img, z, x0, y0 = _fondo(min(lon), min(lat), max(lon), max(lat), mw, mh)
@@ -126,40 +126,28 @@ def tarjeta(titulo, cifra, sub, zona, foco, unidad=(), p=None, leyenda="Distrito
                 if u in unidad:
                     mapa.add_patch(Polygon(a_px(anillo), closed=True, facecolor="none", edgecolor=TINTA, linewidth=2.6,
                                            linestyle=(0, (5, 3)), zorder=4))
-        halo = [patheffects.withStroke(linewidth=6, foreground="white")]
-        rotulos = ([u for u in foco if u in formas] if len(foco) <= 2 else []) + [u for u in unidad if u in formas and u in zona and u not in foco][:3]
-        for u in rotulos:
-            ps = [q for a in formas[u] for q in a_px(a)]
-            x, y = sum(q[0] for q in ps) / len(ps), sum(q[1] for q in ps) / len(ps)
-            if not (90 < x < mw - 90 and 40 < y < mh - 40) or any(abs(x - a) < 150 and abs(y - b) < 70 for a, b in puestos):
-                continue  # fuera del mapa se montaría sobre el título; muy cerca de otro rótulo, lo pisaría
-            puestos.append((x, y))
-            visibles.add(u)
-            texto = nombres[u] if u in foco else f"Su unidad\n{nombres[u]}"
-            mapa.text(x, y, texto, ha="center", va="center", zorder=6, fontproperties=FUENTE[800] if u in foco else FUENTE[600],
-                      fontsize=26 if u in foco else 21, color=TINTA, path_effects=halo, linespacing=1.05, clip_on=True)
         mapa.set_xlim(0, mw); mapa.set_ylim(mh, 0)
         mapa.text(mw - 8, mh - 8, "© colaboradores de OpenStreetMap", ha="right", va="bottom", fontsize=11, color=GRIS, zorder=7,
                   path_effects=[patheffects.withStroke(linewidth=3, foreground="white")])
 
-    # abajo: leyenda y escala de nivel
-    yb = 1 - (my + mh + 48) / H
-    fig.patches.append(Rectangle((44 / W, yb - 0.014), 0.032, 0.028, transform=fig.transFigure, facecolor=color, alpha=0.6,
-                                 edgecolor=color, linewidth=2))
-    fig.text(88 / W, yb, leyenda, fontproperties=FUENTE[600], fontsize=22, color=TINTA, va="center")
-    if (set(unidad) & set(zona)) - set(foco):  # la unidad solo va en la leyenda si está dibujada en el mapa
-        fig.lines.append(plt.Line2D([370 / W, 404 / W], [yb, yb], transform=fig.transFigure, color=TINTA, linewidth=3,
-                                    linestyle=(0, (5, 3))))
-        fig.text(416 / W, yb, "Su unidad", fontproperties=FUENTE[600], fontsize=22, color=TINTA, va="center")
-    if p is not None:
-        x0, ancho = 600 / W, 108 / W
-        for n, tope, c in NIVELES:
-            actual = n == nivel(p)[0]
-            fig.patches.append(Rectangle((x0, yb - 0.022), ancho, 0.044, transform=fig.transFigure, facecolor=c,
-                                         edgecolor=TINTA if actual else "white", linewidth=4 if actual else 1))
-            fig.text(x0 + ancho / 2, yb, n, ha="center", va="center", fontproperties=FUENTE[800 if actual else 400], fontsize=19,
-                     color="white" if tope > 0.25 else TINTA)
-            x0 += ancho
+    # abajo: leyenda con los nombres (en el mapa se montaban sobre los distritos); el nivel ya está arriba
+    yb, x = 1 - (my + mh + 48) / H, 44 / W
+    r = fig.canvas.get_renderer()
+    nom = lambda us: ", ".join(dict.fromkeys(nombres[u] for u in us if u in nombres))
+    dibujada = [u for u in unidad if u in zona and u not in foco]
+    items = [("caja", leyenda + (f": {nom(foco)}" if 0 < len(foco) <= 2 else ""))]
+    if dibujada:
+        items.append(("raya", f"Su unidad: {nom(dibujada[:2])}"))
+    for tipo, texto in items:
+        if tipo == "caja":
+            fig.patches.append(Rectangle((x, yb - 0.014), 0.032, 0.028, transform=fig.transFigure, facecolor=color, alpha=0.6,
+                                         edgecolor=color, linewidth=2))
+        else:
+            fig.lines.append(plt.Line2D([x, x + 0.032], [yb, yb], transform=fig.transFigure, color=TINTA, linewidth=3,
+                                        linestyle=(0, (5, 3))))
+        t = fig.text(x + 0.044, yb, textwrap.shorten(texto, 40, placeholder="…"), fontproperties=FUENTE[600], fontsize=22,
+                     color=TINTA, va="center")
+        x = t.get_window_extent(r).x1 / W + 0.04
     buf = io.BytesIO()
     fig.savefig(buf, format="png", facecolor="white")
     plt.close(fig)

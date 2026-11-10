@@ -31,7 +31,7 @@ def test_eventos_en_la_zona_o_que_nombran_a_la_empresa():
                        ev(6, "anunciada", "2026-11-03", "00", "Paro", actor="Transportistas de carga"),
                        ev(7, "anunciada", "2099-11-12", "030506", "Paro", suspendido=True),
                        ev(8, "ocurrida", "2026-11-08", "030506", "Bloqueo", leida=False)]}
-    assert [e["clave"] for e in eventos(web, z, r"las bambas", "2026-11-01")] == ["evento:1", "evento:3"]
+    assert [e["clave"] for e in eventos(web, z, r"las bambas", "2026-11-01")] == ["evento:030501:Paro:2099-11-12", "evento:04:Bloqueo:2026-11-08"]  # por contenido: el id cambia al reagrupar
 
 
 def test_focos():
@@ -154,3 +154,35 @@ def test_por_reglas_dia_del_mes_siguiente():
     from tremor.prensa.codificar import por_reglas
     c = por_reglas("Transportistas de Arequipa anuncian paro", "se acatará los días 3 y 4", "2026-11-28")
     assert c["fecha_evento"] == "2026-12-03"
+
+
+def test_sutran_en_zona_o_ruta():
+    import sqlite3
+    from tremor.avisos import sutran
+    con = sqlite3.connect(":memory:")
+    con.execute("CREATE TABLE sutran_alerta (codigo, motivo, submotivo, estado_via, titulo, descripcion, ubigeo, fecha_evento, "
+                "visto_ultimo)")
+    con.executemany("INSERT INTO sutran_alerta VALUES (?, ?, ?, ?, ?, '', ?, '2026-11-10', '2026-11-10T08:00:00')", [
+        ("A", "humano", "humano.protestas", "interrumpido", "PROTESTA KM 20", "040108"),          # protesta en la ruta
+        ("B", "fenomenos_naturales", "fenomenos_naturales.climatologico", "interrumpido", "HUAICO", "040108"),
+        ("C", "accidentes", "accidentes.siniestro_vial", "restringido", "CHOQUE", "040108"),       # solo restringida: no
+        ("D", "humano", "humano.protestas", "interrumpido", "PROTESTA", "100111")])                # fuera de la zona
+    z = {"040108": "en su ruta, tramo Puerto de Matarani"}
+    xs = {x["clave"]: x["accion"] for x in sutran(con, z, "2026-11-09")}
+    assert xs == {"sutran:A": "Bloqueo de vías", "sutran:B": "Vía interrumpida por fenómeno natural"}
+
+
+def test_ruta_lenta_un_aviso_por_tramo():
+    import sqlite3
+    from datetime import datetime
+    from tremor.avisos import lentas
+    con = sqlite3.connect(":memory:")
+    assert lentas(con, "Bateas") == []  # sin clave de TomTom no hay tabla
+    con.execute("CREATE TABLE tiempo_viaje (cliente, tramo, hora, segundos, sin_trafico, metros, cierre, senal, causa)")
+    con.executemany("INSERT INTO tiempo_viaje VALUES ('Bateas', ?, ?, ?, 7200, 0, 0, ?, ?)", [
+        ("Puerto de Matarani, zinc", "2026-11-10T11:00:00", 13000, "tarda 1.8 veces lo normal", "lluvia fuerte: 25 mm en 6 horas"),
+        ("Puerto de Matarani, zinc", "2026-11-10T10:00:00", 12000, "tarda 1.7 veces lo normal", None),   # el mismo tramo, antes
+        ("Lima, plomo", "2026-11-10T11:00:00", 7300, None, None)])                                       # normal: no avisa
+    (clave, texto, _), = lentas(con, "Bateas", datetime(2026, 11, 10, 12))
+    assert clave == "ruta:Puerto de Matarani, zinc:2026-11-10"
+    assert "Puerto de Matarani (zinc)" in texto and "3 h 36 min" in texto and "lluvia fuerte" in texto

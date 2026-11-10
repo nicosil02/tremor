@@ -10,6 +10,7 @@ ponytail: un cliente por chat; con más clientes, un chat por empresa (columna e
 import json
 import os
 import re
+import sqlite3
 import sys
 from datetime import date, timedelta
 from urllib.parse import quote
@@ -72,9 +73,75 @@ def eventos(web, z, alias, desde):
         en_zona = ub in z and not (sin_bloqueo and z[ub].startswith("en su ruta")) and (
             e.get("tipo_conflicto") not in (None, "otro") or re.search(LUCHA.replace("|marcha", ""), acc, re.I))
         if nombra or (ub == "00" and transporte) or en_zona:
-            yield {"clave": f"evento:{e['id']}" + (f":plazo{pl}" if pl else ""), "estado": "plazo" if pl else "sin_fecha" if e.get("sin_fecha") else e["estado"], "fecha": pl or f,
+            # la clave es el contenido, no el id: los eventos se renumeran en cada corrida y el aviso se repetía
+            yield {"clave": f"evento:{ub}:{acc}:{f}" + (f":plazo{pl}" if pl else ""), "actor": actor, "reclamo": e.get("reclamo") or "", "estado": "plazo" if pl else "sin_fecha" if e.get("sin_fecha") else e["estado"], "fecha": pl or f,
                    "ubigeo": ub, "accion": acc or "Protesta", "unidad": z.get(ub), "medio": e.get("medio") or "", "enlace": e.get("enlace") or "",
                    "titular": e.get("titular") or "", "transporte": transporte, "punto": (e.get("puntos") or [""])[0]}
+
+
+def sutran(con, z, desde):
+    """Alertas de la SUTRAN en la zona o la ruta: toda protesta, y en la ruta toda vía interrumpida (huaico, accidente,
+    El Niño): al de logística le sirve igual, pero el aviso dice la causa."""
+    from tremor.tiempos import MOTIVO
+    for codigo, motivo, sub, estado, titulo, desc, ub, fecha in con.execute(
+            "SELECT codigo, motivo, submotivo, estado_via, titulo, descripcion, ubigeo, fecha_evento FROM sutran_alerta "
+            "WHERE visto_ultimo >= ?", (desde,)):
+        if (ub or "") not in z:
+            continue
+        protesta, ruta = motivo == "humano", z[ub].startswith("en su ruta")
+        if not protesta and not (ruta and (estado or "").startswith("interrump")):
+            continue
+        causa = "El Niño" if "nino" in (sub or "") else MOTIVO.get(motivo, motivo or "causa sin precisar")
+        yield {"clave": f"sutran:{codigo}", "estado": "ocurrida", "fecha": fecha or desde, "ubigeo": ub,
+               "accion": "Bloqueo de vías" if protesta else f"Vía interrumpida por {causa}", "unidad": z[ub],
+               "medio": "SUTRAN", "enlace": "https://alertasviales.sutran.gob.pe", "titular": (titulo or "").capitalize(),
+               "transporte": False, "punto": (desc or "")[:200], "segun": "SUTRAN"}
+
+
+DURA = r"\b(\d+|veinticuatro|cuarenta y ocho|setenta y dos)\s+horas|\bindefinid\w*|\b(\d+|un|dos|tres|cuatro|cinco)\s+d[ií]as\b"
+
+
+def de_radio(con, e):
+    """Si la protesta salió solo de la radio: la hora de emisión y la frase donde se nombra la medida (sin ella el aviso no
+    dice quién, cuándo ni cuánto dura)."""
+    try:  # releída por el LLM (codificar.verificar_radio): solo las concretas, con quiénes, cuándo y duración dichos
+        filas = con.execute("SELECT n.publicado, n.resumen, v.quienes, v.cuando, v.duracion FROM nota n JOIN radio_verificada v "
+                            "ON v.nota_id = n.id AND v.concreta = 1 WHERE n.consulta = 'radio' AND n.medio = ? AND n.enlace = ? "
+                            "ORDER BY n.publicado DESC", (e["medio"], e["enlace"])).fetchall()
+    except sqlite3.OperationalError:  # base sin la tabla todavía
+        filas = []
+    for pub, txt, quienes, cuando, duracion in filas:
+        m = re.search(LUCHA, txt or "", re.I)
+        if m:
+            a, b = max(0, m.start() - 110), m.end() + 140
+            return pub, ("…" if a else "") + txt[a:b].strip() + ("…" if b < len(txt) else ""), {"quienes": quienes, "dicho_cuando": cuando, "duracion": duracion}
+    return None
+
+
+def lentas(con, nombre, ahora_=None):
+    """Tramos de su ruta que TomTom mide lentos o cerrados en las últimas 3 horas, con la causa (tiempos.causa). Un
+    aviso por tramo y día. Sin la tabla (sin clave de TomTom) no hay nada."""
+    from datetime import datetime
+    hm = lambda s: f"{s // 3600} h {s % 3600 // 60:02d} min" if s >= 3600 else f"{s // 60} min"
+    desde = ((ahora_ or datetime.now()) - timedelta(hours=3)).isoformat(timespec="seconds")
+    try:
+        filas = con.execute("SELECT tramo, hora, segundos, sin_trafico, senal, causa FROM tiempo_viaje WHERE cliente = ? AND hora >= ? "
+                            "AND senal IS NOT NULL ORDER BY hora DESC", (nombre, desde)).fetchall()
+    except sqlite3.OperationalError:
+        return []
+    out, vistos = [], set()
+    for tramo, hora, seg, sin, sen, causa in filas:
+        if tramo in vistos:
+            continue
+        vistos.add(tramo)
+        out.append((f"ruta:{tramo}:{hora[:10]}",
+                    f"🐢 *RUTA LENTA · {re.sub(r', (\w+)$', r' (\1)', tramo)}*\n"
+                    f"_Su ruta de salida tarda {hm(seg)}; lo normal es {hm(sin)}_\n\n"
+                    f"🛣 *Qué pasa:* {sen[0].upper()}{sen[1:]} (TomTom, {hora[11:16]})\n"
+                    f"🔎 *Causa:* {causa or 'causa sin confirmar'}\n\n"
+                    f"✅ *Qué hacer*\nConfirmar con sus transportistas antes de despachar y ver rutas u horarios alternos.\n\n"
+                    f"🔗 *Conoce más aquí:* {APP}?e={quote(nombre)}", None))
+    return out
 
 
 def radio(con, alias, desde):
@@ -188,13 +255,23 @@ def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
         hacer = ("Adelantar o reprogramar despachos y coordinar con sus transportistas rutas y horarios." if e["transporte"] or ruta
                  else "Confirmar con relaciones comunitarias y seguridad, y seguir la convocatoria." if fuerza
                  else "Revisar el pedido con relaciones comunitarias y preparar una respuesta antes de que escale.")
-        fuente = f"[{e['medio']}]({e['enlace']})" if e["enlace"] else e["medio"]
+        oido = e.get("dicho")  # solo la radio: sin nota escrita, se cita lo que se dijo al aire
+        fuente = (f"{e['medio']}, en vivo el {dia(e['emitido'])} a las {e['emitido'][11:16]}" if oido
+                  else f"[{e['medio']}]({e['enlace']})" if e["enlace"] else e["medio"])
         enlace = f"{APP}?e={quote(nombre)}" + (f"&d={e['ubigeo']}" if len(e["ubigeo"]) == 6 else "")
-        texto = (f"🚧 *ALERTA DE PROTESTA · {e['accion'] or 'Protesta'}*\n"
+        corte = (e["accion"] or "").startswith("Vía interrumpida")  # huaico, accidente, El Niño (SUTRAN): no es protesta
+        cab = (f"🛑 *VÍA INTERRUMPIDA · {e['accion'][21:].capitalize()}*" if corte else f"📻 *MENCIÓN EN RADIO · {e['accion']}*" if oido
+               else f"🚧 *ALERTA DE PROTESTA · {e['accion'] or 'Protesta'}*")
+        dura = e.get("duracion") or (m.group(0) if (m := re.search(DURA, f"{e['titular']} {oido or ''}", re.I)) else None)
+        quien = ((f"👥 *Quiénes:* {e.get('quienes') or e['actor']}\n" if e.get("quienes") or e.get("actor") else "")
+                 + (f"🗣 *Fecha que dijo la radio:* {e['dicho_cuando']}\n" if e.get("dicho_cuando") else "") + (f"📣 *Por qué:* reclamo {e['reclamo'].lower()}\n" if e.get("reclamo") else "")
+                 + ("" if corte else f"⏱ *Duración:* {dura or 'no se informó'}\n"))
+        texto = (f"{cab}\n"
                  f"_{e['titular'] or e['accion']}_\n\n"
                  f"📍 *Dónde:* {donde}\n"
-                 f"🗓 *Cuándo:* {cuando}\n\n"
-                 f"⚠️ *¿Qué puede pasar?*\n{efecto}" + (f"\nSegún la prensa: {e['punto']}" if e["punto"] else "") + "\n\n"
+                 f"🗓 *Cuándo:* {cuando}\n" + quien + "\n"
+                 + (f"🎙 *Qué se dijo:* «{oido}»\n_Solo lo dijo la radio; no hay nota escrita que lo confirme._\n\n" if oido else "") +
+                 f"⚠️ *¿Qué puede pasar?*\n{efecto}" + (f"\nSegún {e.get('segun', 'la prensa')}: {e['punto']}" if e["punto"] else "") + "\n\n"
                  f"✅ *Qué hacer*\n{hacer}\n\n"
                  f"📰 *Fuente:* {fuente}\n"
                  f"🔗 *Conoce más aquí:* {enlace}")
@@ -206,7 +283,7 @@ def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
         cifra, sub = ((dia(e["fecha"]), ["Fecha del anuncio", "Todavía sin fecha de protesta"]) if e["estado"] == "sin_fecha"
                       else (dia(e["fecha"]), [cuando.split(" para el")[0].split(" el ")[0], "Todo el país" if e["ubigeo"] == "00" else mayus(lugar(e["ubigeo"]))]))
         png = tarjeta(re.sub(r",? según .*$", "", e["titular"] or e["accion"]), cifra, sub, mapa, foco, suyos,
-                      leyenda="Su ruta de salida" if e["ubigeo"] == "00" else "Lugar de la protesta") if mapa else None
+                      leyenda="Su ruta de salida" if e["ubigeo"] == "00" else "Lugar del corte" if corte else "Lugar de la protesta") if mapa else None
         out.append((e["clave"], texto, png))
     for r in rad:
         out.append((r["clave"], f"📻 *MENCIÓN EN RADIO · {r['medio']}*\n\n🗓 *Cuándo:* {dia(r['dia'])}, {r['hora']}\n"
@@ -241,7 +318,7 @@ def enviar(texto, png=None):
     return False
 
 
-def main(dias=3, reenviar=False, muestra=False):
+def main(dias=7, reenviar=False, muestra=False):  # 7: GitHub a veces corre el workflow pocas veces al día
     """muestra: las piezas de las 7 empresas en datos/exportes/muestra/ (imagen y texto), sin enviar nada; para revisarlas
     a ojo antes de cambiar el formato."""
     con = conectar()
@@ -259,8 +336,13 @@ def main(dias=3, reenviar=False, muestra=False):
             for u in t["ubigeos"]:
                 z.setdefault(u, "en su ruta, tramo " + re.sub(r", (\w+)$", r" (\1)", t["nombre"]))  # "Puerto de Matarani (zinc)"
         nuevo = lambda xs: [x for x in xs if (f"{x['clave']}|{nombre}",) not in ya]
-        evs, rad, rie = nuevo(eventos(web, z, alias, desde)), nuevo(radio(con, alias, desde)), nuevo(riesgo(web, z))
-        for clave, texto, png in piezas(nombre, evs, rad, rie, unidad, web["vecinos"], tramos):
+        evs, rad, rie = nuevo([*eventos(web, z, alias, desde), *sutran(con, z, desde)]), nuevo(radio(con, alias, desde)), nuevo(riesgo(web, z))
+        for e in evs:
+            if r := de_radio(con, e):
+                e["emitido"], e["dicho"], extra = r
+                e.update({k: v for k, v in extra.items() if v})
+        ruta = [x for x in lentas(con, nombre) if (f"{x[0]}|{nombre}",) not in ya]
+        for clave, texto, png in [*piezas(nombre, evs, rad, rie, unidad, web["vecinos"], tramos), *ruta]:
             if muestra:
                 d = DATOS / "exportes" / "muestra"; d.mkdir(parents=True, exist_ok=True)
                 base = f"{nombre}_{clave}".replace(":", "_").replace(" ", "_")
@@ -271,7 +353,10 @@ def main(dias=3, reenviar=False, muestra=False):
             if enviar(texto, png):
                 con.execute("INSERT OR IGNORE INTO aviso_enviado VALUES (?, ?, ?)", (clave, nombre, ahora()))
                 con.commit()
+    # en CSV para que la corrida siempre publique la base cuando se avisó algo (si no, la siguiente reenvía lo mismo)
+    with open(DATOS / "exportes" / "aviso_enviado.csv", "w", newline="", encoding="utf-8") as f:
+        csv.writer(f).writerows([("clave", "empresa", "enviado"), *con.execute("SELECT * FROM aviso_enviado ORDER BY enviado")])
 
 
 if __name__ == "__main__":
-    main(int(sys.argv[sys.argv.index("--dias") + 1]) if "--dias" in sys.argv else 3, "--reenviar" in sys.argv, "--muestra" in sys.argv)
+    main(int(sys.argv[sys.argv.index("--dias") + 1]) if "--dias" in sys.argv else 7, "--reenviar" in sys.argv, "--muestra" in sys.argv)

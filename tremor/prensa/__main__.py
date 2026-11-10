@@ -61,6 +61,7 @@ def main(argv=None):
         print(f"Codificadas {n} notas en {s} solicitudes." + (" Quedan pendientes." if falta else ""))
     if a.cmd in ("agrupar", "todo"):
         print("Revisadas por el LLM %d de %d protestas dudosas (¿contra la operación?)." % cod.revisar_operacion(con))
+        print(f"Radio: {cod.verificar_radio(con)} fragmentos releídos (¿protesta concreta?).")
         print(f"Eventos: {eventos.agrupar(con)}.")
     if a.cmd in ("exportar", "todo"):
         exportar(con)
