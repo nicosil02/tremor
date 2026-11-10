@@ -776,7 +776,7 @@ def frase(g, r):
         return (f"{tramo}{r.via_nacional_km:.0f} km de vía nacional; {r.fuerza_3_corredor:.0f} medidas de fuerza "
                 f"en el mismo corredor en 3 meses")
     # Las capitales de provincia no tienen elección distrital (las gobierna el alcalde provincial): sin margen.
-    margen = "" if pd.isna(r.margen_victoria) else f"; la última se ganó por {pct(r.margen_victoria)}"
+    margen = "" if pd.isna(r.margen_victoria) else f"; la última elección municipal se ganó por {pct(r.margen_victoria)} de diferencia"
     return f"{eleccion(r)}{margen}"
 
 

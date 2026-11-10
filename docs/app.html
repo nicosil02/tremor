@@ -112,7 +112,8 @@
   .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 16px; } .chips span { display: flex; align-items: center; gap: 5px; font-size: 14px; padding: 4px 10px; border-radius: 999px; background: #eef1ef; }
   .chips i, .casos i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
   .ch-sd i { background: #d7261e; } .ch-ac i { background: #c8642f; } .ch-ed i { background: #6f8f88; } .ch-la i { background: #b9c3c2; }
-  .casos { margin: 0; padding: 2px 16px 4px; list-style: none; } .casos li { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--linea); font-size: 15px; }
+  .casos { margin: 0; padding: 2px 16px 4px; list-style: none; } .casos li { border-bottom: 1px solid var(--linea); font-size: 15px; }
+  .casos button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
   .casos span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; } .casos small { color: var(--tinta-2); font-size: 13px; }
 .cifras-d { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 8px; margin: 4px 16px 8px; } .cifras-d div { display: grid; }
 .cifras-d b { font-size: 28px; font-weight: 750; font-variant-numeric: tabular-nums; } .cifras-d span { font-size: 14px; color: var(--tinta-2); }
@@ -210,7 +211,7 @@ const largo = f => { const s = new Date(f + "T12:00").toLocaleDateString("es-PE"
 const cal = p => { const c = p == null ? null : (D.calibracion || []).find(c => p >= c.desde && p <= c.hasta);
   return c ? `De cada 10 zonas con este riesgo, ${Math.round(c.hubo * 10)} tuvieron un paro, bloqueo o toma contra la operación en 3 meses (2024-2026).` : ""; };
 // las razones que le dicen algo a un gerente: sin ceros ni el conteo de unidades, que es el mismo motivo de la zona
-const razones = txt => String(txt || "").replace(/^en la zona \(distrito y vecinos\): /, "").split(/ · |; /).map(x => x.replace(/\s*\(.*?\)/g, "").trim())
+const razones = txt => String(txt || "").replace(/^en la zona \(distrito y vecinos\): /, "").split(/ · |; /).map(x => x.replace(/\s*\(.*?\)/g, "").replace(/^la última se ganó por (\S+)$/, "La última elección municipal se ganó por $1 de diferencia").trim().replace(/^./, c => c.toUpperCase()))
   .filter(x => x && !/^0 /.test(x) && !/unidades mineras$/.test(x));
 const nivel = p => p >= 0.5 ? "Crítico" : p >= 0.25 ? "Alto" : p >= 0.1 ? "Medio" : "Bajo";
 const flecha = d => d > 0.01 ? "↑" : d < -0.01 ? "↓" : "";
@@ -438,14 +439,13 @@ function detalleDistrito(u) {
     ${cifras.length ? `<h2>Por qué, en la zona</h2><div class="tiles">${cifras.map(([, n, t]) => `<div><b>${esc(n)}</b><span>${esc(t)}</span></div>`).join("")}</div>` : ""}
     ${resto.length ? `<ul class="por">${resto.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
     <h2>Conflictos ante la Defensoría</h2>${cs.length ? `<div class="chips">${porEst.map(([k, n]) => `<span class="ch-${EST[k]}"><i></i><b>${n}</b> ${k}</span>`).join("")}</div>
-      <ul class="casos">${cs.slice(0, 5).map(c => `<li class="ch-${EST[estadoCaso(c)]}"><i></i><span>${esc(titulo(String(c.nombre).split(/\s+[-–]\s+/)[0]))}</span><small>${esc(titulo(lugar(String(c.ubigeo))))}</small></li>`).join("")}</ul>
-      ${cs.length > 5 ? `<p class="aclara">Y ${cs.length - 5} más.</p>` : ""}` : `<p class="vacio">Sin conflictos vigentes en la zona.</p>`}
+      <ul class="casos">${cs.map(c => `<li class="ch-${EST[estadoCaso(c)]}"><button type="button" data-dcaso="${D.casos.indexOf(c)}"><i></i><span>${esc(titulo(String(c.nombre).split(/\s+[-–]\s+/)[0]))}</span><small>${esc(titulo(lugar(String(c.ubigeo))))}</small></button></li>`).join("")}</ul>` : `<p class="vacio">Sin conflictos vigentes en la zona.</p>`}
     <h2>Protestas recientes</h2>${evs.length ? `<ul>${evs.slice(0, 4).map(e => fila("", 0, `${accion(e)}${e.actor ? ` de ${e.actor.toLowerCase()}` : ""}`, dia(e.fecha_evento), lugar(String(e.ubigeo)))).join("")}</ul>`
       : `<p class="vacio">Ninguna en la prensa en las últimas seis semanas.</p>`}`;
 }
 const estadoCaso = c => c.estado === "latente" ? "latente" : /NO HAY/i.test(c.dialogo || "") ? "sin diálogo" : /HAY/i.test(c.dialogo || "") ? "en diálogo" : "activo";
-function detalleCaso(i) {
-  const c = X.casos[i], u = String(c.ubigeo), ms = c.medios || [];
+function detalleCaso(c) {
+  const u = String(c.ubigeo), ms = c.medios || [];
   cabecera(true, "Conflictos con comunidades"); ver([u], c.nombre);
   return `<div class="cuando${c.estado === "latente" ? " paso" : ""}"><b>${esc(estadoCaso(c))}</b><span>Defensoría, ${MES[c.mes - 1]} ${esc(c.anio)}</span></div>
     <h3 class="titulo-av">${esc(c.nombre)}</h3>
@@ -638,7 +638,8 @@ function conectar() {
   document.querySelectorAll("[data-pais]").forEach(b => b.onclick = () => abrir(detalleAviso(PAIS[+b.dataset.pais])));
   document.querySelectorAll("[data-tramo]").forEach(b => b.onclick = () => { SEL = null; FOCO = +b.dataset.tramo; ANCHO.matches ? verMapa() : ir("mapa"); });
   document.querySelectorAll("[data-op]").forEach(b => b.onclick = () => abrir(detalleOp(b.dataset.op)));
-  document.querySelectorAll("[data-caso]").forEach(b => b.onclick = () => abrir(detalleCaso(+b.dataset.caso)));
+  document.querySelectorAll("[data-caso]").forEach(b => b.onclick = () => abrir(detalleCaso(X.casos[+b.dataset.caso])));
+  document.querySelectorAll("[data-dcaso]").forEach(b => b.onclick = () => abrir(detalleCaso(D.casos[+b.dataset.dcaso])));
   document.querySelectorAll("[data-distrito]").forEach(b => b.onclick = () => abrir(detalleDistrito(b.dataset.distrito)));
   document.querySelectorAll("[data-vermapa]").forEach(b => b.onclick = () => { PAIS_VISTA = actual === "pais"; ir("mapa"); });
 }
