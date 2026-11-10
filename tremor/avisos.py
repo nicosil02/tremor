@@ -61,7 +61,7 @@ def eventos(web, z, alias, desde):
         f, ub, actor, acc = e.get("fecha_evento") or e.get("fecha_anuncio") or "", str(e["ubigeo"]), e.get("actor") or "", e.get("accion") or ""
         pl = e.get("plazo") if isinstance(e.get("plazo"), str) and e["plazo"] >= date.today().isoformat() else None
         vieja = e["estado"] == "anunciada" and not pl and f < date.today().isoformat()  # anunciada y ya pasó sin noticia de que ocurriera
-        if e.get("suspendido") or vieja or max(f, pl or "") < desde:
+        if e.get("suspendido") or vieja or max(f, pl or "") < desde or e.get("leida") is False:  # sin leer la nota, no se avisa
             continue
         transporte = "ransportista" in actor and "urbano" not in actor.lower() and not e.get("urbano")
         sin_bloqueo = re.search(SECTOR, actor, re.I) and not re.search(r"bloque|toma", acc, re.I)

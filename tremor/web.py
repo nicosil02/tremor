@@ -54,6 +54,10 @@ def datos(con):
         texto = dict(con.execute("""SELECT en.evento_id, group_concat(n.titular || '. ' || coalesce(n.resumen, ''), ' ')
                                     FROM evento_nota en JOIN nota n ON n.id = en.nota_id GROUP BY 1"""))
         leido = [leer(texto.get(i, "")) for i in ev.id]
+        # hay al menos una nota con texto del medio (no solo el titular): sin eso no se avisa al cliente
+        con_texto = {i for (i,) in con.execute("""SELECT DISTINCT en.evento_id FROM evento_nota en JOIN nota n ON n.id = en.nota_id
+                                                  WHERE length(trim(coalesce(n.resumen, ''))) > 0""")}
+        ev["leida"] = [i in con_texto for i in ev.id]
         for k in ("adhieren", "retiran", "suspendido", "urbano", "puntos", "plazo"):
             ev[k] = [x[k] for x in leido]
         ev["fecha_evento"] = [dia_dicho(t, f) for t, f in zip(ev.titular, ev.fecha_evento)]
