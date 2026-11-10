@@ -12,3 +12,4 @@ streamlit>=1.40
 plotly>=5.24
 py7zr
 xlrd
+matplotlib>=3.8

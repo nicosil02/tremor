@@ -212,7 +212,8 @@ const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 // Piloto con una sola minera; en ?admin se ven todas para revisar que cada una salga bien
 const PILOTO = ["Bateas", "Raura", "Poderosa", "Las Bambas"], ADMIN = /[?&]admin\b/.test(location.search);
 const LISTA = ADMIN ? Object.keys(EMPRESAS) : PILOTO;
-let D, A, E, empresa = LISTA.includes(guardado("tremor-empresa")) ? guardado("tremor-empresa") : PILOTO[0], pila = [];
+const URL_E = new URLSearchParams(location.search).get("e");  // enlace del aviso: ?e=Bateas&d=080803
+let D, A, E, empresa = LISTA.includes(URL_E) ? URL_E : LISTA.includes(guardado("tremor-empresa")) ? guardado("tremor-empresa") : PILOTO[0], pila = [];
 
 const CADENA = fetch("cadena.json").then(r => r.json()).catch(() => ({}));
 let CAD = {};
@@ -694,6 +695,8 @@ Promise.all([cargar(), CADENA]).then(([d, c]) => {
   D = d; CAD = c; A = new Map(D.alerta.map(a => [a.ubigeo, a])); X = armar();
   const n = X.avisos.filter(x => x.urge).length, b = document.getElementById("n-avisos"); if (n) { b.textContent = n; b.hidden = false; }
   ir("avisos");
+  const d = new URLSearchParams(location.search).get("d");  // abre la ficha del distrito del aviso
+  if (d && A.has(d)) { ir("pais"); abrir(detalleDistrito(d)); }
 }).catch(() => { document.getElementById("vista").innerHTML = `<p class="vacio">No se pudieron cargar los datos. Revise su conexión y vuelva a abrir.</p>`; });
 </script>
 </body>

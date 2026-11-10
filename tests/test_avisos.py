@@ -84,3 +84,13 @@ def test_provincia_nombrada():
     assert provincia_nombrada("Frente de Defensa de Datem del Marañón anuncia movilizaciones", "1601") == "1607"
     assert provincia_nombrada("Paro en Iquitos", "1601") == "1601"
     assert provincia_nombrada("Bloqueo en Datem del Marañón", "160701") == "160701"
+
+
+def test_tarjeta_png():
+    import pytest
+    from tremor.db import DATOS
+    if not (DATOS / "distritos.geojson").exists():
+        pytest.skip("sin límites distritales")
+    from tremor.tarjeta import tarjeta
+    png = tarjeta("Prueba", "49%", ["Nivel alto", "Octubre a diciembre"], ["a"], ["b"], ["080803"], {"080803"}, [], p=0.49)
+    assert png[:8] == b"\x89PNG\r\n\x1a\n"

@@ -12,6 +12,7 @@ import os
 import re
 import sys
 from datetime import date, timedelta
+from urllib.parse import quote
 
 import csv
 
@@ -109,7 +110,7 @@ def riesgo(web, z):
             for x, y in ((" medidas de fuerza en 12 meses", " paros, bloqueos u otras medidas de fuerza en el último año"),
                          (" casos activos", " conflictos activos ante la Defensoría del Pueblo"), (" caso activo", " conflicto activo ante la Defensoría del Pueblo")):
                 base = base.replace(x, y)
-            yield {"clave": f"riesgo:{web['mes_base']}:{a['ubigeo']}", "lugar": f"{dis} ({prov}, {dep})", "unidad": z[a["ubigeo"]],
+            yield {"clave": f"riesgo:{web['mes_base']}:{a['ubigeo']}", "ubigeo": a["ubigeo"], "lugar": f"{dis} ({prov}, {dep})", "unidad": z[a["ubigeo"]],
                    "propio": z[a["ubigeo"]] and a["ubigeo"] in {u for u, n in z.items() if not n.startswith("en su ruta")},
                    "p": a["prob_zona_extractivo"], "normal": a["normal_zona_ext"], "sube": sube, "base": base, "ventana": web["ventana"]}
 
@@ -119,76 +120,119 @@ def lugar(ub):
 
 
 def meses(v):
-    """'2026-10 a 2026-12' → 'octubre y diciembre de 2026'."""
+    """'2026-10 a 2026-12' → 'octubre a diciembre de 2026'."""
     largo = "enero febrero marzo abril mayo junio julio agosto septiembre octubre noviembre diciembre".split()
     a, b = v.split(" a ")
-    return f"{largo[int(a[5:7]) - 1]} y {largo[int(b[5:7]) - 1]} de {b[:4]}"
+    return f"{largo[int(a[5:7]) - 1]} a {largo[int(b[5:7]) - 1]} de {b[:4]}"
 
 
 def dia(f):
     return f"{int(f[8:10])} {MESES[int(f[5:7]) - 1]}" if f and len(f) >= 10 else "fecha sin precisar"
 
 
-def mensaje(nombre, evs, rad, rie):
-    pct = lambda x: f"{round(x * 100)}%"
-    lineas = [f"*Tremor, avisos para {nombre}*"]
+APP = "https://nicosil02.github.io/tremor/app.html"
+
+
+def pct(x):
+    return f"{round(x * 100)}%"
+
+
+def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
+    """Un aviso por pieza, como los boletines de monitoreo: tarjeta (imagen) + párrafo ejecutivo, qué hacer y enlace.
+    unidad: {ubigeo: unidad} de sus operaciones; tramos: {ubigeo de su ruta}. Devuelve [(clave, texto, png o None)]."""
+    from tremor.tarjeta import nivel, tarjeta
+    suyos = list(unidad)
+    cerca = lambda u, propios=(): list(dict.fromkeys([u, *vecinos.get(u, []), *propios]))  # el distrito, sus vecinos y su unidad
+    out = []
+    for r in rie:
+        n = nivel(r["p"])[0].lower()
+        texto = (f"🔺 *Sube el riesgo de conflicto cerca de su unidad {r['unidad']}*\n\n"
+                 f"En {r['lugar']}, en la zona de su unidad, la probabilidad de un paro, bloqueo o toma contra una operación "
+                 f"minera de {meses(r['ventana'])} es de {pct(r['p'])} (nivel {n}), frente a {pct(r['normal'])} habitual. "
+                 + (f"En el distrito y sus vecinos hubo {r['base']}. " if r["base"] else "")
+                 + (f"En las últimas semanas: {r['sube']}. " if r["sube"] else "")
+                 + "No hay una protesta anunciada contra la empresa.\n\n"
+                 f"📌 Reforzar el seguimiento de la zona y el diálogo con las comunidades vecinas.\n\n"
+                 f"🔗 Vea la zona: {APP}?e={quote(nombre)}&d={r['ubigeo']}")
+        png = tarjeta(f"Sube el riesgo de conflicto cerca de su unidad {r['unidad']}", pct(r["p"]),
+                      [f"Nivel {n}", meses(r["ventana"]).capitalize()],
+                      [f"Paro, bloqueo o toma contra una operación minera en {r['lugar']} o sus vecinos.",
+                       f"Hoy está {round((r['p'] - r['normal']) * 100)} puntos sobre lo habitual en la zona."]
+                      + ([f"Antecedentes: {r['base']}."] if r["base"] else []),
+                      ["Reforzar el seguimiento de la zona y el diálogo con las comunidades vecinas."],
+                      cerca(r["ubigeo"], [u for u, n in unidad.items() if n == r["unidad"]]), {r["ubigeo"]}, suyos, p=r["p"])
+        out.append((r["clave"], texto, png))
     for e in sorted(evs, key=lambda e: e["estado"] != "anunciada"):
-        cuando = {"anunciada": "Anunciada para el", "plazo": "Vence un plazo, amenazan con nueva medida, el",
-                  "sin_fecha": "Anunciada, todavía sin fecha. Lo anunciaron el"}.get(e["estado"], "Ocurrió el")
-        cerca = f", {e['unidad']}" if (e["unidad"] or "").startswith("en su ruta") else f", zona de {e['unidad']}" if e["unidad"] else ""
+        cuando = {"anunciada": f"anunciada para el {dia(e['fecha'])}", "plazo": f"con plazo que vence el {dia(e['fecha'])}",
+                  "sin_fecha": f"anunciada el {dia(e['fecha'])}, todavía sin fecha"}.get(e["estado"], f"ocurrida el {dia(e['fecha'])}")
+        ruta = (e["unidad"] or "").startswith("en su ruta")
+        donde = "en todo el país" if e["ubigeo"] == "00" else f"en {lugar(e['ubigeo'])}" + (f", {e['unidad']}" if ruta else f", zona de su unidad {e['unidad']}" if e["unidad"] else "")
+        efecto = ("Puede frenar sus despachos de concentrado y la llegada de insumos." if e["transporte"]
+                  else "Puede cortar el paso de sus camiones por ese tramo." if ruta else "Puede afectar el acceso y la operación de su unidad.")
+        hacer = ("Adelantar o reprogramar despachos y coordinar con sus transportistas rutas y horarios." if e["transporte"] or ruta
+                 else "Confirmar con relaciones comunitarias y seguridad, y seguir la convocatoria.")
         fuente = f"[{e['medio']}]({e['enlace']})" if e["enlace"] else e["medio"]
-        ruta = " Puede afectar sus despachos e insumos." if e["transporte"] else ""
-        donde = f" Según la prensa: {e['punto']}" if e["punto"] else ""
-        lineas.append(f"\n• *{e['titular'] or e['accion']}*\n{cuando} {dia(e['fecha'])} en {lugar(e['ubigeo'])}{cerca}.{ruta}{donde} {fuente}")
+        enlace = f"{APP}?e={quote(nombre)}" + (f"&d={e['ubigeo']}" if len(e["ubigeo"]) == 6 else "")
+        texto = (f"🚧 *{e['titular'] or e['accion']}*\n\n"
+                 f"Medida {cuando}, {donde}. {efecto}" + (f" Según la prensa: {e['punto']}" if e["punto"] else "")
+                 + f"\n\n📌 {hacer}\n\n🔗 Fuente: {fuente}. Vea el detalle: {enlace}")
+        foco = set(tramos) if e["ubigeo"] == "00" and e["transporte"] else {u for u in [e["ubigeo"]] if len(u) == 6}
+        propios = [u for u, n in unidad.items() if n == e["unidad"]]
+        mapa = (suyos + list(tramos)) if e["ubigeo"] == "00" else cerca(e["ubigeo"], propios) if len(e["ubigeo"]) == 6 else []
+        png = tarjeta(e["titular"] or e["accion"], dia(e["fecha"]), [cuando.split(" para el")[0].split(" el ")[0].capitalize(),
+                      "En todo el país" if e["ubigeo"] == "00" else lugar(e["ubigeo"])], [efecto] + ([e["punto"]] if e["punto"] else []),
+                      [hacer], mapa, foco, suyos, leyenda="Su ruta de salida" if e["ubigeo"] == "00" else "Distrito del aviso") if mapa else None
+        out.append((e["clave"], texto, png))
     for r in rad:
-        lineas.append(f"\n• {r['medio']} lo mencionó el {dia(r['dia'])} a las {r['hora']}: «{r['texto']}»")
-    for r in rie:  # para un equipo ejecutivo: qué pasa, dónde respecto de su operación, por qué y qué no es
-        donde = r["unidad"] if r["unidad"].startswith("en su ruta") else f"en la zona de su unidad {r['unidad']}"
-        lineas.append(f"\n• *Sube el riesgo de conflicto en {r['lugar']}*, {donde}.\n"
-                      f"Probabilidad de un paro, bloqueo o toma contra una operación minera en la zona entre {meses(r['ventana'])}: "
-                      f"*{pct(r['p'])}*, frente a {pct(r['normal'])} habitual (cerca de {round(r['p'] * 10)} de cada 10).\n"
-                      + (f"Por qué: en {r['lugar'].split(' (')[0]} y sus distritos vecinos hubo {r['base']}." if r["base"] else "")
-                      + (f" En las últimas semanas: {r['sube']}." if r["sube"] else "")
-                      + "\nNo hay una protesta anunciada contra la empresa: es una señal para reforzar el seguimiento de la zona.")
-    return "\n".join(lineas)
+        out.append((r["clave"], f"📻 *{r['medio']} mencionó a la empresa*\n\nEl {dia(r['dia'])} a las {r['hora']}: «{r['texto']}»", None))
+    return out
 
 
-def enviar(texto):
-    """Telegram con Markdown; si un * o _ suelto rompe el formato, reintenta en texto plano. Sin claves, imprime."""
+def enviar(texto, png=None):
+    """Telegram con Markdown (foto con el texto al pie, o solo texto); si un * o _ suelto rompe el formato, reintenta en
+    texto plano. Sin claves, imprime y guarda la imagen en datos/exportes."""
     token, chat = os.environ.get("TELEGRAM_BOT_TOKEN"), os.environ.get("TELEGRAM_CHAT_ID")
     if not (token and chat):
         print(texto, "\n")
+        if png:
+            (DATOS / "exportes" / f"aviso_{abs(hash(texto)) % 10**6}.png").write_bytes(png)
         return False
     for modo in ("Markdown", None):
-        r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", timeout=20,
-                          data={"chat_id": chat, "text": texto[:4096], "disable_web_page_preview": True, **({"parse_mode": modo} if modo else {})})
+        extra = {"parse_mode": modo} if modo else {}
+        if png:
+            r = requests.post(f"https://api.telegram.org/bot{token}/sendPhoto", timeout=60, files={"photo": ("aviso.png", png, "image/png")},
+                              data={"chat_id": chat, "caption": texto[:1024], **extra})
+        else:
+            r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", timeout=20,
+                              data={"chat_id": chat, "text": texto[:4096], "disable_web_page_preview": True, **extra})
         if r.ok:
             return True
     print("Telegram rechazó el mensaje:", r.status_code)
     return False
 
 
-def main(dias=3):
+def main(dias=3, reenviar=False):
     con = conectar()
     con.execute("CREATE TABLE IF NOT EXISTS aviso_enviado (clave TEXT, empresa TEXT, enviado TEXT, PRIMARY KEY (clave, empresa))")
     web = json.load(open(DATOS / "exportes" / "web.json", encoding="utf-8"))
     desde = (date.today() - timedelta(days=dias)).isoformat()
-    ya = set(con.execute("SELECT clave || '|' || empresa FROM aviso_enviado").fetchall())
+    ya = set() if reenviar else set(con.execute("SELECT clave || '|' || empresa FROM aviso_enviado").fetchall())  # --reenviar: prueba
     for nombre, (empresa, alias) in EMPRESAS.items():
         if nombre != CLIENTE:
             continue
         z = zona(con, empresa, web["vecinos"])
+        unidad = dict(con.execute("SELECT ubigeo, unidad FROM operacion WHERE lower(empresa) LIKE ?", (f"%{empresa}%",)).fetchall())
+        tramos = [u for t in CADENA.get(nombre, {}).get("tramos", []) for u in t["ubigeos"]]
         for t in CADENA.get(nombre, {}).get("tramos", []):  # su ruta de salida (docs/cadena.json)
             for u in t["ubigeos"]:
                 z.setdefault(u, f"en su ruta, tramo {t['nombre']}")
         nuevo = lambda xs: [x for x in xs if (f"{x['clave']}|{nombre}",) not in ya]
         evs, rad, rie = nuevo(eventos(web, z, alias, desde)), nuevo(radio(con, alias, desde)), nuevo(riesgo(web, z))
-        if not (evs or rad or rie):
-            continue
-        if enviar(mensaje(nombre, evs, rad, rie)):
-            con.executemany("INSERT OR IGNORE INTO aviso_enviado VALUES (?, ?, ?)", [(x["clave"], nombre, ahora()) for x in evs + rad + rie])
-            con.commit()
+        for clave, texto, png in piezas(nombre, evs, rad, rie, unidad, web["vecinos"], tramos):
+            if enviar(texto, png):
+                con.execute("INSERT OR IGNORE INTO aviso_enviado VALUES (?, ?, ?)", (clave, nombre, ahora()))
+                con.commit()
 
 
 if __name__ == "__main__":
-    main(int(sys.argv[sys.argv.index("--dias") + 1]) if "--dias" in sys.argv else 3)
+    main(int(sys.argv[sys.argv.index("--dias") + 1]) if "--dias" in sys.argv else 3, "--reenviar" in sys.argv)
