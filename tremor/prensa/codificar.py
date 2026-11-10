@@ -30,7 +30,7 @@ Responde SOLO un JSON {{"notas": [...]}} con un objeto por nota, con estas clave
 - id: el mismo id recibido
 - es_protesta: true/false (false también si ocurre fuera del Perú)
 - estado: "anunciada" (aún no ocurre), "ocurrida" (ocurre u ocurrió) o "suspendida" (se levantó o canceló)
-- fecha_evento: AAAA-MM-DD de la protesta (resuelve "mañana", "el lunes", "desde el 15" con la fecha de publicación); null si no se sabe
+- fecha_evento: AAAA-MM-DD de la protesta (resuelve "mañana", "el lunes", "desde el 15" con la fecha de publicación; un día sin mes, como "los días 16, 17 y 18", es la próxima vez que cae ese día desde la publicación; en un rango, el primer día); null si no se sabe
 - region, provincia, distrito, localidad: nombres tal como permite inferir la nota (localidad = comunidad, centro poblado,
   carretera o puente); null si no se sabe. No inventes: si solo dice el departamento, deja el resto en null.
 - sector y actor: de las listas (actor debe pertenecer al sector)

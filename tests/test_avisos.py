@@ -148,3 +148,9 @@ def test_por_reglas_rango():
     from tremor.prensa.codificar import por_reglas
     c = por_reglas("Transportistas de carga pesada anuncian paro nacional del 16 al 18 de noviembre", "", "2026-11-03")
     assert c["fecha_evento"] == "2026-11-16" and c["ubigeo"] is None
+
+
+def test_por_reglas_dia_del_mes_siguiente():
+    from tremor.prensa.codificar import por_reglas
+    c = por_reglas("Transportistas de Arequipa anuncian paro", "se acatará los días 3 y 4", "2026-11-28")
+    assert c["fecha_evento"] == "2026-12-03"
