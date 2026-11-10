@@ -139,6 +139,10 @@ def pct(x):
     return f"{round(x * 100)}%"
 
 
+def mayus(s):
+    return s[:1].upper() + s[1:]  # .capitalize() bajaría "Candarave" a "candarave"
+
+
 def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
     """Un aviso por pieza, como las alertas de monitoreo: tarjeta (imagen con mapa real) y un texto por subtítulos
     (zona, periodo, nivel, qué puede pasar, por qué, qué hacer, enlace). unidad: {ubigeo: unidad} de sus operaciones;
@@ -175,7 +179,7 @@ def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
         if prov and not e["unidad"]:
             e = {**e, "unidad": ", ".join(dict.fromkeys(unidad[x] for x in prov))}
         fuerza = bool(re.search(r"paro|huelga|bloque|toma|invasi|enfrent", (e["accion"] or "").lower()))
-        donde = ("Todo el país" if e["ubigeo"] == "00" else lugar(e["ubigeo"]).capitalize()
+        donde = ("Todo el país" if e["ubigeo"] == "00" else mayus(lugar(e["ubigeo"]))
                  + (f", {e['unidad'].replace('en su ruta, tramo', 'en su ruta de salida, tramo')}" if ruta
                     else f", zona de su unidad {e['unidad']}" if e["unidad"] else ""))
         efecto = ("Puede frenar sus despachos de concentrado y la llegada de insumos." if e["transporte"]
@@ -200,8 +204,8 @@ def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
             foco = {u for u in vecinos if u.startswith(e["ubigeo"])}
         mapa = (suyos + list(tramos)) if e["ubigeo"] == "00" else cerca(e["ubigeo"], propios) if len(e["ubigeo"]) == 6 else [*foco, *prov]
         cifra, sub = ((dia(e["fecha"]), ["Fecha del anuncio", "Todavía sin fecha de protesta"]) if e["estado"] == "sin_fecha"
-                      else (dia(e["fecha"]), [cuando.split(" para el")[0].split(" el ")[0], "Todo el país" if e["ubigeo"] == "00" else lugar(e["ubigeo"]).capitalize()]))
-        png = tarjeta(e["titular"] or e["accion"], cifra, sub, mapa, foco, suyos,
+                      else (dia(e["fecha"]), [cuando.split(" para el")[0].split(" el ")[0], "Todo el país" if e["ubigeo"] == "00" else mayus(lugar(e["ubigeo"]))]))
+        png = tarjeta(re.sub(r",? según .*$", "", e["titular"] or e["accion"]), cifra, sub, mapa, foco, suyos,
                       leyenda="Su ruta de salida" if e["ubigeo"] == "00" else "Lugar de la protesta") if mapa else None
         out.append((e["clave"], texto, png))
     for r in rad:
@@ -237,28 +241,37 @@ def enviar(texto, png=None):
     return False
 
 
-def main(dias=3, reenviar=False):
+def main(dias=3, reenviar=False, muestra=False):
+    """muestra: las piezas de las 7 empresas en datos/exportes/muestra/ (imagen y texto), sin enviar nada; para revisarlas
+    a ojo antes de cambiar el formato."""
     con = conectar()
     con.execute("CREATE TABLE IF NOT EXISTS aviso_enviado (clave TEXT, empresa TEXT, enviado TEXT, PRIMARY KEY (clave, empresa))")
     web = json.load(open(DATOS / "exportes" / "web.json", encoding="utf-8"))
     desde = (date.today() - timedelta(days=dias)).isoformat()
-    ya = set() if reenviar else set(con.execute("SELECT clave || '|' || empresa FROM aviso_enviado").fetchall())  # --reenviar: prueba
+    ya = set() if reenviar or muestra else set(con.execute("SELECT clave || '|' || empresa FROM aviso_enviado").fetchall())  # --reenviar: prueba
     for nombre, (empresa, alias) in EMPRESAS.items():
-        if nombre != CLIENTE:
+        if nombre != CLIENTE and not muestra:
             continue
         z = zona(con, empresa, web["vecinos"])
         unidad = dict(con.execute("SELECT ubigeo, unidad FROM operacion WHERE lower(empresa) LIKE ?", (f"%{empresa}%",)).fetchall())
         tramos = [u for t in CADENA.get(nombre, {}).get("tramos", []) for u in t["ubigeos"]]
         for t in CADENA.get(nombre, {}).get("tramos", []):  # su ruta de salida (docs/cadena.json)
             for u in t["ubigeos"]:
-                z.setdefault(u, f"en su ruta, tramo {t['nombre']}")
+                z.setdefault(u, "en su ruta, tramo " + re.sub(r", (\w+)$", r" (\1)", t["nombre"]))  # "Puerto de Matarani (zinc)"
         nuevo = lambda xs: [x for x in xs if (f"{x['clave']}|{nombre}",) not in ya]
         evs, rad, rie = nuevo(eventos(web, z, alias, desde)), nuevo(radio(con, alias, desde)), nuevo(riesgo(web, z))
         for clave, texto, png in piezas(nombre, evs, rad, rie, unidad, web["vecinos"], tramos):
+            if muestra:
+                d = DATOS / "exportes" / "muestra"; d.mkdir(parents=True, exist_ok=True)
+                base = f"{nombre}_{clave}".replace(":", "_").replace(" ", "_")
+                (d / f"{base}.txt").write_text(texto, encoding="utf-8")
+                if png:
+                    (d / f"{base}.png").write_bytes(png)
+                continue
             if enviar(texto, png):
                 con.execute("INSERT OR IGNORE INTO aviso_enviado VALUES (?, ?, ?)", (clave, nombre, ahora()))
                 con.commit()
 
 
 if __name__ == "__main__":
-    main(int(sys.argv[sys.argv.index("--dias") + 1]) if "--dias" in sys.argv else 3, "--reenviar" in sys.argv)
+    main(int(sys.argv[sys.argv.index("--dias") + 1]) if "--dias" in sys.argv else 3, "--reenviar" in sys.argv, "--muestra" in sys.argv)

@@ -95,23 +95,24 @@ def tarjeta(titulo, cifra, sub, zona, foco, unidad=(), p=None, leyenda="Distrito
     fig = plt.figure(figsize=(W / 100, H / 100), dpi=100, facecolor="white")
 
     # arriba: marca, título, cifra y nivel
-    fig.text(48 / W, 1 - 52 / H, "TREMOR  ·  ALERTA DE CONFLICTO SOCIAL", fontproperties=FUENTE[600], fontsize=15, color=GRIS)
-    lineas = textwrap.wrap(textwrap.shorten(titulo, 126, placeholder="…"), 42)[:3]
+    fig.text(44 / W, 1 - 50 / H, "TREMOR · ALERTA", fontproperties=FUENTE[800], fontsize=20, color=GRIS)
+    lineas = textwrap.wrap(textwrap.shorten(titulo, 96, placeholder="…"), 32)[:3]
     for k, linea in enumerate(lineas):
-        fig.text(48 / W, 1 - (100 + 40 * k) / H, linea, fontproperties=FUENTE[800], fontsize=27, color=TINTA, va="top")
-    yc = 1 - (100 + 40 * len(lineas) + 48) / H
-    fig.text(48 / W, yc, cifra, fontproperties=FUENTE[800], fontsize=40, color=color, va="center")
-    xs = 48 + 31 * len(cifra) + 36
-    fig.text(xs / W, yc + 0.014, sub[0], fontproperties=FUENTE[800], fontsize=21, color=TINTA, va="center")
+        fig.text(44 / W, 1 - (88 + 52 * k) / H, linea, fontproperties=FUENTE[800], fontsize=36, color=TINTA, va="top")
+    yc = 1 - (88 + 52 * len(lineas) + 58) / H
+    t = fig.text(44 / W, yc, cifra, fontproperties=FUENTE[800], fontsize=54, color=color, va="center")
+    xs = t.get_window_extent(fig.canvas.get_renderer()).x1 + 28  # el ancho real de "49%" o "16 nov"
+    fig.text(xs / W, yc + 0.018, sub[0], fontproperties=FUENTE[800], fontsize=28, color=TINTA, va="center")
     if len(sub) > 1:
-        fig.text(xs / W, yc - 0.022, sub[1], fontproperties=FUENTE[400], fontsize=17, color=GRIS, va="center")
+        fig.text(xs / W, yc - 0.024, sub[1], fontproperties=FUENTE[400], fontsize=24, color=GRIS, va="center")
 
     # mapa real
     mx, mw = 0, W
-    my = 100 + 40 * len(lineas) + 48 + 62  # el mapa empieza donde termina la cabecera
-    mh = H - my - 100
+    my = 88 + 52 * len(lineas) + 58 + 74  # el mapa empieza donde termina la cabecera
+    mh = H - my - 96
     mapa = fig.add_axes([mx / W, 1 - (my + mh) / H, mw / W, mh / H]); mapa.set_axis_off()
     puntos = [(x, y) for u in zona for a in formas.get(u, []) for x, y in a]
+    visibles, puestos = set(), []
     if puntos:
         lon = [x for x, _ in puntos]; lat = [y for _, y in puntos]
         img, z, x0, y0 = _fondo(min(lon), min(lat), max(lon), max(lat), mw, mh)
@@ -125,34 +126,38 @@ def tarjeta(titulo, cifra, sub, zona, foco, unidad=(), p=None, leyenda="Distrito
                 if u in unidad:
                     mapa.add_patch(Polygon(a_px(anillo), closed=True, facecolor="none", edgecolor=TINTA, linewidth=2.6,
                                            linestyle=(0, (5, 3)), zorder=4))
-        halo = [patheffects.withStroke(linewidth=5, foreground="white")]
-        rotulos = ([u for u in foco if u in formas] if len(foco) <= 2 else []) + [u for u in unidad if u in formas and u not in foco][:3]
+        halo = [patheffects.withStroke(linewidth=6, foreground="white")]
+        rotulos = ([u for u in foco if u in formas] if len(foco) <= 2 else []) + [u for u in unidad if u in formas and u in zona and u not in foco][:3]
         for u in rotulos:
             ps = [q for a in formas[u] for q in a_px(a)]
             x, y = sum(q[0] for q in ps) / len(ps), sum(q[1] for q in ps) / len(ps)
-            texto = nombres[u] if u in foco else f"Su unidad\n({nombres[u]})"
+            if not (90 < x < mw - 90 and 40 < y < mh - 40) or any(abs(x - a) < 150 and abs(y - b) < 70 for a, b in puestos):
+                continue  # fuera del mapa se montaría sobre el título; muy cerca de otro rótulo, lo pisaría
+            puestos.append((x, y))
+            visibles.add(u)
+            texto = nombres[u] if u in foco else f"Su unidad\n{nombres[u]}"
             mapa.text(x, y, texto, ha="center", va="center", zorder=6, fontproperties=FUENTE[800] if u in foco else FUENTE[600],
-                      fontsize=19 if u in foco else 15, color=TINTA, path_effects=halo, linespacing=1.1)
+                      fontsize=26 if u in foco else 21, color=TINTA, path_effects=halo, linespacing=1.05, clip_on=True)
         mapa.set_xlim(0, mw); mapa.set_ylim(mh, 0)
-        mapa.text(mw - 8, mh - 8, "© colaboradores de OpenStreetMap", ha="right", va="bottom", fontsize=9, color=GRIS, zorder=7,
+        mapa.text(mw - 8, mh - 8, "© colaboradores de OpenStreetMap", ha="right", va="bottom", fontsize=11, color=GRIS, zorder=7,
                   path_effects=[patheffects.withStroke(linewidth=3, foreground="white")])
 
     # abajo: leyenda y escala de nivel
-    yb = 1 - (my + mh + 50) / H
-    fig.patches.append(Rectangle((48 / W, yb - 0.011), 0.026, 0.022, transform=fig.transFigure, facecolor=color, alpha=0.6,
+    yb = 1 - (my + mh + 48) / H
+    fig.patches.append(Rectangle((44 / W, yb - 0.014), 0.032, 0.028, transform=fig.transFigure, facecolor=color, alpha=0.6,
                                  edgecolor=color, linewidth=2))
-    fig.text(84 / W, yb, leyenda, fontproperties=FUENTE[400], fontsize=16, color=TINTA, va="center")
-    if unidad:
-        fig.lines.append(plt.Line2D([330 / W, 358 / W], [yb, yb], transform=fig.transFigure, color=TINTA, linewidth=2.6,
+    fig.text(88 / W, yb, leyenda, fontproperties=FUENTE[600], fontsize=22, color=TINTA, va="center")
+    if (set(unidad) & set(zona)) - set(foco):  # la unidad solo va en la leyenda si está dibujada en el mapa
+        fig.lines.append(plt.Line2D([370 / W, 404 / W], [yb, yb], transform=fig.transFigure, color=TINTA, linewidth=3,
                                     linestyle=(0, (5, 3))))
-        fig.text(368 / W, yb, "Su unidad", fontproperties=FUENTE[400], fontsize=16, color=TINTA, va="center")
+        fig.text(416 / W, yb, "Su unidad", fontproperties=FUENTE[600], fontsize=22, color=TINTA, va="center")
     if p is not None:
-        x0, ancho = 560 / W, 110 / W
+        x0, ancho = 600 / W, 108 / W
         for n, tope, c in NIVELES:
             actual = n == nivel(p)[0]
-            fig.patches.append(Rectangle((x0, yb - 0.017), ancho, 0.034, transform=fig.transFigure, facecolor=c,
-                                         edgecolor=TINTA if actual else "white", linewidth=3 if actual else 1))
-            fig.text(x0 + ancho / 2, yb, n, ha="center", va="center", fontproperties=FUENTE[800 if actual else 400], fontsize=15,
+            fig.patches.append(Rectangle((x0, yb - 0.022), ancho, 0.044, transform=fig.transFigure, facecolor=c,
+                                         edgecolor=TINTA if actual else "white", linewidth=4 if actual else 1))
+            fig.text(x0 + ancho / 2, yb, n, ha="center", va="center", fontproperties=FUENTE[800 if actual else 400], fontsize=19,
                      color="white" if tope > 0.25 else TINTA)
             x0 += ancho
     buf = io.BytesIO()

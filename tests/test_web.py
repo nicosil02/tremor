@@ -16,3 +16,11 @@ def test_lugares_cliente_sin_departamentos():
     grupos = lugares_cliente(con)
     nombres = {n for g in grupos for n in g}
     assert all(len(g) <= 8 for g in grupos) and "CAYLLOMA" in nombres and "AREQUIPA" not in nombres
+def test_paro_nacional_no_se_achica():
+    from tremor.web import juntar
+    base = {"fecha_evento": "2026-11-16", "reclamo": None, "accion": "Paro", "actor": "Transportistas de carga", "n_notas": 1}
+    piura = {**base, "id": 1, "ubigeo": "20", "titular": "Transporte de carga pesada anuncian paro en Piura"}
+    nac = {**base, "id": 2, "ubigeo": "00", "titular": "Transportistas de carga anuncian paro nacional de 72 horas"}
+    for orden in ([piura, nac], [nac, piura]):
+        (e,) = juntar([dict(x) for x in orden])
+        assert e["ubigeo"] == "00" and e["focos"] == ["20"] and "nacional" in e["titular"]

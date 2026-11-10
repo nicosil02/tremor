@@ -179,6 +179,9 @@ def txt(x):
     return x if isinstance(x, str) else ""
 
 
+NACIONAL = re.compile(r"paro nacional|a nivel nacional|todo el pa[ií]s", re.I)
+
+
 def cerca_dia(a, b, n=1):
     try:
         return abs((date.fromisoformat(str(a)[:10]) - date.fromisoformat(str(b)[:10])).days) <= n
@@ -204,14 +207,19 @@ def juntar(evs):
             mismo_actor = (quien(o) == quien(e) and quien(e)[0] and cerca_dia(o["fecha_evento"], e["fecha_evento"])
                            and (not txt(o.get("reclamo")) or not txt(e.get("reclamo")) or o["reclamo"] == e["reclamo"])
                            and ("00" in (u, v) or u == v or (dentro and min(len(u), len(v)) >= 4)))  # un departamento entero es demasiado
-            if mismo_dia or mismo_actor:
+            mismo_titular = txt(o.get("titular")) and txt(o.get("titular")) == txt(e.get("titular"))  # la misma nota, dos eventos
+            if mismo_dia or mismo_actor or mismo_titular:
                 par = o; break
         if par is None:
             out.append(dict(e, focos=[u] if u != "00" else [])); continue
         v = str(par["ubigeo"])
         if u != "00" and u not in par["focos"]:
             par["focos"].append(u)
-        if v == "00" or (u != "00" and u.startswith(v)):
+        if NACIONAL.search(txt(e.get("titular"))) and not NACIONAL.search(txt(par.get("titular"))):
+            par.update(ubigeo="00", **{k: e.get(k) for k in ("titular", "medio", "enlace", "fecha_evento")})  # la región se suma al paro nacional
+        elif NACIONAL.search(txt(par.get("titular"))):
+            par["ubigeo"] = "00"  # un paro nacional no se achica a la región que se suma: la región queda como foco
+        elif v == "00" or (u != "00" and u.startswith(v)):
             par["ubigeo"] = e["ubigeo"]  # más preciso
         elif u != "00" and not v.startswith(u):
             par["ubigeo"] = v[:2] if u[:2] == v[:2] else v  # dos focos del mismo departamento: el departamento
