@@ -162,8 +162,8 @@ def test_sutran_en_zona_o_ruta():
     from tremor.db import ahora
     con = sqlite3.connect(":memory:")
     con.execute("CREATE TABLE sutran_alerta (codigo, motivo, submotivo, estado_via, titulo, descripcion, ubigeo, fecha_evento, "
-                "visto_ultimo)")
-    con.executemany("INSERT INTO sutran_alerta VALUES (?, ?, ?, ?, ?, '', ?, '2026-11-10', ?)", [
+                "visto_ultimo, lat, lng)")
+    con.executemany("INSERT INTO sutran_alerta VALUES (?, ?, ?, ?, ?, '', ?, '2026-11-10', ?, NULL, NULL)", [
         ("A", "humano", "humano.protestas", "interrumpido", "PROTESTA KM 20", "040108", ahora()),          # protesta en la ruta
         ("B", "fenomenos_naturales", "fenomenos_naturales.climatologico", "interrumpido", "HUAICO", "040108", ahora()),
         ("C", "accidentes", "accidentes.siniestro_vial", "restringido", "CHOQUE", "040108", ahora()),       # solo restringida: no
