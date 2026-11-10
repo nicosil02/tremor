@@ -5,7 +5,8 @@ mención de la empresa en radio y subida del riesgo del modelo en su zona. Cada 
     python -m tremor.avisos            # sin TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID solo imprime (prueba)
     python -m tremor.avisos --dias 7   # mira más atrás (por defecto, 3 días)
 
-ponytail: un solo chat para todas las empresas; con clientes reales, un chat por empresa (columna en EMPRESAS)."""
+El chat es del cliente: solo recibe los avisos de su empresa (TREMOR_CLIENTE, por defecto Bateas).
+ponytail: un cliente por chat; con más clientes, un chat por empresa (columna en EMPRESAS)."""
 import json
 import os
 import re
@@ -36,6 +37,7 @@ EMPRESAS = {
 }
 LUCHA = r"\bparo\b|bloque|huelga|\btoma\b|protest|moviliza|marcha|plant[oó]n|enfrentamiento"
 CADENA = json.load(open(RAIZ / "docs" / "cadena.json", encoding="utf-8"))
+CLIENTE = os.environ.get("TREMOR_CLIENTE", "Bateas")
 SUBE = 0.05  # puntos sobre lo habitual que hacen avisar una subida del riesgo
 
 
@@ -154,6 +156,8 @@ def main(dias=3):
     desde = (date.today() - timedelta(days=dias)).isoformat()
     ya = set(con.execute("SELECT clave || '|' || empresa FROM aviso_enviado").fetchall())
     for nombre, (empresa, alias) in EMPRESAS.items():
+        if nombre != CLIENTE:
+            continue
         z = zona(con, empresa, web["vecinos"])
         for t in CADENA.get(nombre, {}).get("tramos", []):  # su ruta de salida (docs/cadena.json)
             for u in t["ubigeos"]:
