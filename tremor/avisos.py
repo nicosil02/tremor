@@ -35,6 +35,7 @@ EMPRESAS = {
     "Southern": ("southern peru", r"southern|toquepala|cuajone|t[ií]a mar[ií]a"),
     "Antamina": ("minera antamina", r"antamina"),
     "Yanacocha": ("minera yanacocha", r"yanacocha|\bconga\b"),
+    "Buenaventura": ("buenaventura", r"buenaventura|uchucchacua|yumpag|tambomayo|orcopampa|julcani|san gabriel"),
 }
 LUCHA = r"\bparo\b|bloque|huelga|\btoma\b|protest|moviliza|marcha|plant[oó]n|enfrentamiento"
 CADENA = json.load(open(RAIZ / "docs" / "cadena.json", encoding="utf-8"))
@@ -45,7 +46,8 @@ SUBE = 0.05  # puntos sobre lo habitual que hacen avisar una subida del riesgo
 def zona(con, empresa, vecinos):
     """Distritos de las unidades de la empresa y sus vecinos, con el nombre de la unidad que los trae."""
     z = {}
-    for u, ub in con.execute("SELECT unidad, ubigeo FROM operacion WHERE lower(empresa) LIKE ?", (f"%{empresa}%",)):
+    for u, ub in con.execute("SELECT unidad, ubigeo FROM operacion WHERE lower(empresa) LIKE ? AND unidad NOT LIKE 'Pasivos%'",
+                             (f"%{empresa}%",)):  # un pasivo ambiental no despacha: no hace zona
         for d in [ub, *vecinos.get(ub, [])]:
             z.setdefault(d, u)
     return z

@@ -185,6 +185,7 @@ const EMPRESAS = {
   "Southern": ["southern peru", /southern|toquepala|cuajone|t[ií]a mar[ií]a/i],
   "Antamina": ["minera antamina", /antamina/i],
   "Yanacocha": ["minera yanacocha", /yanacocha|\bconga\b/i],
+  "Buenaventura": ["buenaventura", /buenaventura|uchucchacua|yumpag|tambomayo|orcopampa|julcani|san gabriel/i],
 };
 const MES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "set", "oct", "nov", "dic"];
 const TEMA = { protesta: "Protesta", judicial: "Proceso judicial", dialogo: "Diálogo", aporte: "Aporte social", ambiente: "Ambiente", otro: "En medios" };
@@ -211,7 +212,7 @@ const guardado = k => { try { return localStorage.getItem(k); } catch { return n
 const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 
 // Piloto con una sola minera; en ?admin se ven todas para revisar que cada una salga bien
-const PILOTO = ["Bateas", "Raura", "Poderosa", "Las Bambas"], ADMIN = /[?&]admin\b/.test(location.search);
+const PILOTO = ["Bateas", "Raura", "Poderosa", "Las Bambas", "Buenaventura"], ADMIN = /[?&]admin\b/.test(location.search);
 const LISTA = ADMIN ? Object.keys(EMPRESAS) : PILOTO;
 const URL_E = new URLSearchParams(location.search).get("e");  // enlace del aviso: ?e=Bateas&d=080803
 let D, A, E, empresa = LISTA.includes(URL_E) ? URL_E : LISTA.includes(guardado("tremor-empresa")) ? guardado("tremor-empresa") : PILOTO[0], pila = [];

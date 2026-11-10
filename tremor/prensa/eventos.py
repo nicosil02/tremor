@@ -253,6 +253,23 @@ def validar(con, mes: str) -> str:
                    f" (socioambientales {sum(bool(x[2]) for x in socio)}/{len(socio)})")
         out.append(f"  anunciadas antes: {len(ant)} de {len(hit)} detectadas"
                    + (f", anticipación mediana {median(ant):.0f} días" if ant else ""))
+        # en las zonas de los clientes (sus unidades, vecinos y ruta): la cifra que importa para los avisos
+        from tremor.avisos import CADENA, EMPRESAS
+        from tremor.web import vecinos
+        vec = vecinos(con)
+        zona = {d for emp, _ in EMPRESAS.values() for (u,) in con.execute(
+            "SELECT ubigeo FROM operacion WHERE lower(empresa) LIKE ? AND unidad NOT LIKE 'Pasivos%'", (f"%{emp}%",))
+            for d in [u, *vec.get(u, [])]}
+        zona |= {u for c in CADENA.values() if isinstance(c, dict) for t in c.get("tramos", []) for u in t["ubigeos"]}
+        cli = [x for x in det if x[0]["ubigeo"] in zona]
+        out.append(f"  en zonas de clientes: {sum(bool(x[2]) for x in cli)}/{len(cli)}")
+        con.execute("""CREATE TABLE IF NOT EXISTS deteccion_mes (mes TEXT PRIMARY KEY, acciones INT, detectadas INT,
+            socio INT, socio_detectadas INT, clientes INT, clientes_detectadas INT, anunciadas INT, anticipacion_dias REAL,
+            calculado TEXT)""")
+        con.execute("INSERT OR REPLACE INTO deteccion_mes VALUES (?,?,?,?,?,?,?,?,?,datetime('now'))",
+                    (mes, len(acc), len(hit), len(socio), sum(bool(x[2]) for x in socio), len(cli), sum(bool(x[2]) for x in cli),
+                     len(ant), median(ant) if ant else None))
+        con.commit()
         por_dep = Counter(r["departamento"] for r, f, es in det); hit_dep = Counter(r["departamento"] for r, f, es in hit)
         out.append("  por departamento: " + "; ".join(f"{d} {hit_dep[d]}/{n}" for d, n in por_dep.most_common(8)))
     eg = [dict(r) for r in con.execute("SELECT * FROM egpp_evento WHERE duplicado_de IS NULL AND fecha BETWEEN ? AND ?",
