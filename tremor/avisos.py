@@ -77,6 +77,25 @@ def eventos(web, z, alias, desde):
                    "titular": e.get("titular") or "", "transporte": transporte, "punto": (e.get("puntos") or [""])[0]}
 
 
+def sutran(con, z, desde):
+    """Alertas de la SUTRAN en la zona o la ruta: toda protesta, y en la ruta toda vía interrumpida (huaico, accidente,
+    El Niño): al de logística le sirve igual, pero el aviso dice la causa."""
+    from tremor.tiempos import MOTIVO
+    for codigo, motivo, sub, estado, titulo, desc, ub, fecha in con.execute(
+            "SELECT codigo, motivo, submotivo, estado_via, titulo, descripcion, ubigeo, fecha_evento FROM sutran_alerta "
+            "WHERE visto_ultimo >= ?", (desde,)):
+        if (ub or "") not in z:
+            continue
+        protesta, ruta = motivo == "humano", z[ub].startswith("en su ruta")
+        if not protesta and not (ruta and (estado or "").startswith("interrump")):
+            continue
+        causa = "El Niño" if "nino" in (sub or "") else MOTIVO.get(motivo, motivo or "causa sin precisar")
+        yield {"clave": f"sutran:{codigo}", "estado": "ocurrida", "fecha": fecha or desde, "ubigeo": ub,
+               "accion": "Bloqueo de vías" if protesta else f"Vía interrumpida por {causa}", "unidad": z[ub],
+               "medio": "SUTRAN", "enlace": "https://alertasviales.sutran.gob.pe", "titular": (titulo or "").capitalize(),
+               "transporte": False, "punto": (desc or "")[:200], "segun": "SUTRAN"}
+
+
 def radio(con, alias, desde):
     """Fragmentos de radio que nombran a la empresa junto a una medida de lucha."""
     for id_, medio, pub, txt in con.execute("SELECT id, medio, publicado, resumen FROM nota WHERE consulta = 'radio' AND publicado >= ?", (desde,)):
@@ -190,11 +209,13 @@ def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
                  else "Revisar el pedido con relaciones comunitarias y preparar una respuesta antes de que escale.")
         fuente = f"[{e['medio']}]({e['enlace']})" if e["enlace"] else e["medio"]
         enlace = f"{APP}?e={quote(nombre)}" + (f"&d={e['ubigeo']}" if len(e["ubigeo"]) == 6 else "")
-        texto = (f"🚧 *ALERTA DE PROTESTA · {e['accion'] or 'Protesta'}*\n"
+        corte = (e["accion"] or "").startswith("Vía interrumpida")  # huaico, accidente, El Niño (SUTRAN): no es protesta
+        cab = f"🛑 *VÍA INTERRUMPIDA · {e['accion'][21:].capitalize()}*" if corte else f"🚧 *ALERTA DE PROTESTA · {e['accion'] or 'Protesta'}*"
+        texto = (f"{cab}\n"
                  f"_{e['titular'] or e['accion']}_\n\n"
                  f"📍 *Dónde:* {donde}\n"
                  f"🗓 *Cuándo:* {cuando}\n\n"
-                 f"⚠️ *¿Qué puede pasar?*\n{efecto}" + (f"\nSegún la prensa: {e['punto']}" if e["punto"] else "") + "\n\n"
+                 f"⚠️ *¿Qué puede pasar?*\n{efecto}" + (f"\nSegún {e.get('segun', 'la prensa')}: {e['punto']}" if e["punto"] else "") + "\n\n"
                  f"✅ *Qué hacer*\n{hacer}\n\n"
                  f"📰 *Fuente:* {fuente}\n"
                  f"🔗 *Conoce más aquí:* {enlace}")
@@ -206,7 +227,7 @@ def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
         cifra, sub = ((dia(e["fecha"]), ["Fecha del anuncio", "Todavía sin fecha de protesta"]) if e["estado"] == "sin_fecha"
                       else (dia(e["fecha"]), [cuando.split(" para el")[0].split(" el ")[0], "Todo el país" if e["ubigeo"] == "00" else mayus(lugar(e["ubigeo"]))]))
         png = tarjeta(re.sub(r",? según .*$", "", e["titular"] or e["accion"]), cifra, sub, mapa, foco, suyos,
-                      leyenda="Su ruta de salida" if e["ubigeo"] == "00" else "Lugar de la protesta") if mapa else None
+                      leyenda="Su ruta de salida" if e["ubigeo"] == "00" else "Lugar del corte" if corte else "Lugar de la protesta") if mapa else None
         out.append((e["clave"], texto, png))
     for r in rad:
         out.append((r["clave"], f"📻 *MENCIÓN EN RADIO · {r['medio']}*\n\n🗓 *Cuándo:* {dia(r['dia'])}, {r['hora']}\n"
@@ -241,7 +262,7 @@ def enviar(texto, png=None):
     return False
 
 
-def main(dias=3, reenviar=False, muestra=False):
+def main(dias=7, reenviar=False, muestra=False):  # 7: GitHub a veces corre el workflow pocas veces al día
     """muestra: las piezas de las 7 empresas en datos/exportes/muestra/ (imagen y texto), sin enviar nada; para revisarlas
     a ojo antes de cambiar el formato."""
     con = conectar()
@@ -259,7 +280,7 @@ def main(dias=3, reenviar=False, muestra=False):
             for u in t["ubigeos"]:
                 z.setdefault(u, "en su ruta, tramo " + re.sub(r", (\w+)$", r" (\1)", t["nombre"]))  # "Puerto de Matarani (zinc)"
         nuevo = lambda xs: [x for x in xs if (f"{x['clave']}|{nombre}",) not in ya]
-        evs, rad, rie = nuevo(eventos(web, z, alias, desde)), nuevo(radio(con, alias, desde)), nuevo(riesgo(web, z))
+        evs, rad, rie = nuevo([*eventos(web, z, alias, desde), *sutran(con, z, desde)]), nuevo(radio(con, alias, desde)), nuevo(riesgo(web, z))
         for clave, texto, png in piezas(nombre, evs, rad, rie, unidad, web["vecinos"], tramos):
             if muestra:
                 d = DATOS / "exportes" / "muestra"; d.mkdir(parents=True, exist_ok=True)
@@ -274,4 +295,4 @@ def main(dias=3, reenviar=False, muestra=False):
 
 
 if __name__ == "__main__":
-    main(int(sys.argv[sys.argv.index("--dias") + 1]) if "--dias" in sys.argv else 3, "--reenviar" in sys.argv, "--muestra" in sys.argv)
+    main(int(sys.argv[sys.argv.index("--dias") + 1]) if "--dias" in sys.argv else 7, "--reenviar" in sys.argv, "--muestra" in sys.argv)

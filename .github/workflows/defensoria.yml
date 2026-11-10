@@ -101,6 +101,7 @@ jobs:
           python -m tremor.clasifica
 
       - name: Publicar en la rama datos
+        if: ${{ !cancelled() }}  # si falla un paso anterior (p. ej. el LLM), los avisos de Telegram igual salen
         env:  # sin estos secretos, los avisos solo se imprimen en el log
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

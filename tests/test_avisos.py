@@ -154,3 +154,19 @@ def test_por_reglas_dia_del_mes_siguiente():
     from tremor.prensa.codificar import por_reglas
     c = por_reglas("Transportistas de Arequipa anuncian paro", "se acatará los días 3 y 4", "2026-11-28")
     assert c["fecha_evento"] == "2026-12-03"
+
+
+def test_sutran_en_zona_o_ruta():
+    import sqlite3
+    from tremor.avisos import sutran
+    con = sqlite3.connect(":memory:")
+    con.execute("CREATE TABLE sutran_alerta (codigo, motivo, submotivo, estado_via, titulo, descripcion, ubigeo, fecha_evento, "
+                "visto_ultimo)")
+    con.executemany("INSERT INTO sutran_alerta VALUES (?, ?, ?, ?, ?, '', ?, '2026-11-10', '2026-11-10T08:00:00')", [
+        ("A", "humano", "humano.protestas", "interrumpido", "PROTESTA KM 20", "040108"),          # protesta en la ruta
+        ("B", "fenomenos_naturales", "fenomenos_naturales.climatologico", "interrumpido", "HUAICO", "040108"),
+        ("C", "accidentes", "accidentes.siniestro_vial", "restringido", "CHOQUE", "040108"),       # solo restringida: no
+        ("D", "humano", "humano.protestas", "interrumpido", "PROTESTA", "100111")])                # fuera de la zona
+    z = {"040108": "en su ruta, tramo Puerto de Matarani"}
+    xs = {x["clave"]: x["accion"] for x in sutran(con, z, "2026-11-09")}
+    assert xs == {"sutran:A": "Bloqueo de vías", "sutran:B": "Vía interrumpida por fenómeno natural"}
