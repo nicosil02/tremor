@@ -146,15 +146,17 @@ def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
     out = []
     for r in rie:
         n = nivel(r["p"])[0].lower()
-        texto = (f"🔺 *Sube el riesgo de conflicto cerca de su unidad {r['unidad']}*\n\n"
-                 f"En {r['lugar']}, en la zona de su unidad, la probabilidad de un paro, bloqueo o toma contra una operación "
+        ruta = r["unidad"].startswith("en su ruta")
+        titulo = f"Sube el riesgo de conflicto {r['unidad'].replace('en su ruta, tramo', 'en su ruta de salida, tramo')}" if ruta else f"Sube el riesgo de conflicto cerca de su unidad {r['unidad']}"
+        texto = (f"🔺 *{titulo}*\n\n"
+                 f"En {r['lugar']}, {'en su ruta de salida' if ruta else 'en la zona de su unidad'}, la probabilidad de un paro, bloqueo o toma contra una operación "
                  f"minera de {meses(r['ventana'])} es de {pct(r['p'])} (nivel {n}), frente a {pct(r['normal'])} habitual. "
                  + (f"En el distrito y sus vecinos hubo {r['base']}. " if r["base"] else "")
                  + (f"En las últimas semanas: {r['sube']}. " if r["sube"] else "")
                  + "No hay una protesta anunciada contra la empresa.\n\n"
                  f"📌 Reforzar el seguimiento de la zona y el diálogo con las comunidades vecinas.\n\n"
                  f"🔗 Vea la zona: {APP}?e={quote(nombre)}&d={r['ubigeo']}")
-        png = tarjeta(f"Sube el riesgo de conflicto cerca de su unidad {r['unidad']}", pct(r["p"]),
+        png = tarjeta(titulo, pct(r["p"]),
                       [f"Nivel {n}", meses(r["ventana"]).capitalize()],
                       [f"Paro, bloqueo o toma contra una operación minera en {r['lugar']} o sus vecinos.",
                        f"Hoy está {round((r['p'] - r['normal']) * 100)} puntos sobre lo habitual en la zona."]
@@ -164,21 +166,29 @@ def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
         out.append((r["clave"], texto, png))
     for e in sorted(evs, key=lambda e: e["estado"] != "anunciada"):
         cuando = {"anunciada": f"anunciada para el {dia(e['fecha'])}", "plazo": f"con plazo que vence el {dia(e['fecha'])}",
-                  "sin_fecha": f"anunciada el {dia(e['fecha'])}, todavía sin fecha"}.get(e["estado"], f"ocurrida el {dia(e['fecha'])}")
+                  "sin_fecha": f"anunciada el {dia(e['fecha'])}, todavía sin fecha"}.get(e["estado"], f"ocurrió el {dia(e['fecha'])}")
         ruta = (e["unidad"] or "").startswith("en su ruta")
+        prov = [x for x in unidad if len(e["ubigeo"]) == 4 and x.startswith(e["ubigeo"])]  # protesta ubicada solo en la provincia
+        if prov and not e["unidad"]:
+            e = {**e, "unidad": ", ".join(dict.fromkeys(unidad[x] for x in prov))}
+        fuerza = bool(re.search(r"paro|huelga|bloque|toma|invasi|enfrent", (e["accion"] or "").lower()))
         donde = "en todo el país" if e["ubigeo"] == "00" else f"en {lugar(e['ubigeo'])}" + (f", {e['unidad']}" if ruta else f", zona de su unidad {e['unidad']}" if e["unidad"] else "")
         efecto = ("Puede frenar sus despachos de concentrado y la llegada de insumos." if e["transporte"]
-                  else "Puede cortar el paso de sus camiones por ese tramo." if ruta else "Puede afectar el acceso y la operación de su unidad.")
+                  else "Puede cortar el paso de sus camiones por ese tramo." if ruta else "Puede afectar el acceso y la operación de su unidad." if fuerza
+                  else "Es un reclamo hacia la operación que puede escalar a un paro o bloqueo.")
         hacer = ("Adelantar o reprogramar despachos y coordinar con sus transportistas rutas y horarios." if e["transporte"] or ruta
-                 else "Confirmar con relaciones comunitarias y seguridad, y seguir la convocatoria.")
+                 else "Confirmar con relaciones comunitarias y seguridad, y seguir la convocatoria." if fuerza
+                 else "Revisar el pedido con relaciones comunitarias y preparar una respuesta antes de que escale.")
         fuente = f"[{e['medio']}]({e['enlace']})" if e["enlace"] else e["medio"]
         enlace = f"{APP}?e={quote(nombre)}" + (f"&d={e['ubigeo']}" if len(e["ubigeo"]) == 6 else "")
         texto = (f"🚧 *{e['titular'] or e['accion']}*\n\n"
-                 f"Medida {cuando}, {donde}. {efecto}" + (f" Según la prensa: {e['punto']}" if e["punto"] else "")
+                 f"{cuando[0].upper() + cuando[1:]}, {donde}. {efecto}" + (f" Según la prensa: {e['punto']}" if e["punto"] else "")
                  + f"\n\n📌 {hacer}\n\n🔗 Fuente: {fuente}. Vea el detalle: {enlace}")
         foco = set(tramos) if e["ubigeo"] == "00" and e["transporte"] else {u for u in [e["ubigeo"]] if len(u) == 6}
         propios = [u for u, n in unidad.items() if n == e["unidad"]]
-        mapa = (suyos + list(tramos)) if e["ubigeo"] == "00" else cerca(e["ubigeo"], propios) if len(e["ubigeo"]) == 6 else []
+        if len(e["ubigeo"]) == 4:  # provincia: se pinta entera
+            foco = {u for u in vecinos if u.startswith(e["ubigeo"])}
+        mapa = (suyos + list(tramos)) if e["ubigeo"] == "00" else cerca(e["ubigeo"], propios) if len(e["ubigeo"]) == 6 else [*foco, *prov]
         png = tarjeta(e["titular"] or e["accion"], dia(e["fecha"]), [cuando.split(" para el")[0].split(" el ")[0].capitalize(),
                       "En todo el país" if e["ubigeo"] == "00" else lugar(e["ubigeo"])], [efecto] + ([e["punto"]] if e["punto"] else []),
                       [hacer], mapa, foco, suyos, leyenda="Su ruta de salida" if e["ubigeo"] == "00" else "Distrito del aviso") if mapa else None

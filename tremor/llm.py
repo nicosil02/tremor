@@ -14,7 +14,9 @@ import requests
 
 from tremor.db import RAIZ, ahora
 
-CADENA = "openai/gpt-oss-120b,gemini:gemini-3.5-flash-lite,openai/gpt-oss-20b"
+CADENA = ("openai/gpt-oss-120b,gemini:gemini-3.6-flash,gemini:gemini-3.5-flash,gemini:gemini-3-flash-preview,"
+          "gemini:gemini-3.8-flash,gemini:gemini-3.7-flash,gemini:gemini-3.5-flash-lite,gemini:gemini-3.1-flash-lite,"
+          "openai/gpt-oss-20b")  # cada modelo, su propio cupo diario; el saturado o retirado cede al siguiente
 GEMINI = "https://generativelanguage.googleapis.com/v1beta/openai"
 
 
@@ -78,10 +80,12 @@ def _llamar(con, url, clave, modelo, k, sistema, usuario) -> dict:
               "messages": [{"role": "system", "content": sistema}, {"role": "user", "content": usuario}]}
     for intento in range(8):
         try:
-            r = requests.post(f"{url}/chat/completions", json=cuerpo, timeout=120,
+            r = requests.post(f"{url}/chat/completions", json=cuerpo, timeout=90,
                               headers={"Authorization": f"Bearer {clave}"})
-        except requests.ConnectionError:  # red caída un momento: esperar y reintentar
-            time.sleep(20 * (intento + 1))
+        except (requests.ConnectionError, requests.Timeout):  # red caída o modelo colgado: dos intentos y al siguiente
+            if intento >= 1:
+                raise SinCuota("sin respuesta")
+            time.sleep(10)
             continue
         if r.status_code == 429:
             espera = float(r.headers.get("retry-after", 20 * (intento + 1)))
@@ -89,9 +93,13 @@ def _llamar(con, url, clave, modelo, k, sistema, usuario) -> dict:
                 raise SinCuota(r.text[:200])
             time.sleep(espera)
             continue
-        if r.status_code >= 500:  # proveedor saturado (Gemini da 503): esperar y reintentar
-            time.sleep(20 * (intento + 1))
+        if r.status_code >= 500:  # proveedor saturado (Gemini da 503): un reintento y al siguiente modelo
+            if intento >= 1:
+                raise SinCuota(f"saturado ({r.status_code})")
+            time.sleep(10)
             continue
+        if r.status_code in (403, 404):  # modelo retirado o no habilitado para esta clave
+            raise SinCuota(f"no disponible ({r.status_code})")
         if r.status_code == 400:
             raise RespuestaInvalida(r.text[:300])
         r.raise_for_status()

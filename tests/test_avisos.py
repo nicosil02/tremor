@@ -94,3 +94,63 @@ def test_tarjeta_png():
     from tremor.tarjeta import tarjeta
     png = tarjeta("Prueba", "49%", ["Nivel alto", "Octubre a diciembre"], ["a"], ["b"], ["080803"], {"080803"}, [], p=0.49)
     assert png[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_juntar_focos():
+    from tremor.web import juntar
+    base = {"adhieren": [], "retiran": [], "puntos": [], "suspendido": False, "plazo": None, "reclamo": None}
+    lima = [{**base, "fecha_evento": "2026-11-10", "ubigeo": "15", "accion": "Paro", "actor": "Transportistas urbanos", "n_notas": 5},
+            {**base, "fecha_evento": "2026-11-10", "ubigeo": "00", "accion": "Paro", "actor": "Transportistas urbanos", "n_notas": 2},
+            {**base, "fecha_evento": "2026-11-16", "ubigeo": "00", "accion": "Paro", "actor": "Transportistas de carga", "n_notas": 3}]
+    j = juntar(lima)
+    assert len(j) == 2 and [x["ubigeo"] for x in j if x["n_notas"] == 7] == ["15"]
+    piura = [{**base, "fecha_evento": "2026-11-07", "ubigeo": "200604", "accion": "Bloqueo", "actor": "Pobladores", "n_notas": 2, "reclamo": "Servicios"},
+             {**base, "fecha_evento": "2026-11-06", "ubigeo": "20", "accion": "Petición", "actor": "Pobladores", "n_notas": 1, "reclamo": "Servicios"}]
+    assert len(juntar(piura)) == 2
+
+
+def test_urbano_por_rutas():
+    from tremor.web import juntar, leer
+    assert leer("Lima: más de 50 empresas suspenderán rutas por protesta")["urbano"]
+    base = {"adhieren": [], "retiran": [], "puntos": [], "suspendido": False, "plazo": None, "reclamo": None}
+    j = juntar([{**base, "fecha_evento": "2026-11-10", "ubigeo": "15", "accion": "Paro", "actor": "Transportistas urbanos", "n_notas": 5},
+                {**base, "fecha_evento": "2026-11-09", "ubigeo": "15", "accion": "Paro", "actor": "Comerciantes", "n_notas": 1, "urbano": True}])
+    assert len(j) == 1 and j[0]["n_notas"] == 6
+
+
+def test_cola_prioriza_carga(monkeypatch):
+    import tremor.prensa.historia as H
+    monkeypatch.setattr(H, "_lugares_con_operacion", lambda con: None)
+    filas = [("a", "Vecinos protestan por la tala de árboles", "", "2026-11-09", None, "rss"),
+             ("b", "Transportistas de carga pesada anuncian paro nacional de 72 horas", "", "2026-11-03", None, "rss")]
+    assert [r[0] for r in H.ordenar(None, filas)][0] == "b"
+
+
+def test_por_reglas():
+    from tremor.prensa.codificar import por_reglas
+    c = por_reglas("VIDEO | Transportistas de carga anuncian paro nacional de 72 horas", "En Lima el gremio...", "2026-11-03")
+    assert (c["estado"], c["ubigeo"], c["actor"], c["accion"]) == ("anunciada", None, "Transportistas de carga", "Paro")
+    c = por_reglas("Paro de transportistas en Lima este 10 de noviembre: conoce qué líneas", "", "2026-11-09T18:02")
+    assert (c["estado"], c["fecha_evento"], c["actor"]) == ("anunciada", "2026-11-10", "Transportistas urbanos")
+    c = por_reglas("Huánuco: protestas por falta de agua estallan en bloqueos y choques", "anuncio publicidad tumbes", "2026-11-06")
+    assert (c["estado"], c["ubigeo"]) == ("ocurrida", "1001")
+    assert por_reglas("Paro de transporte en Lima este 10 de octubre", "", "2026-11-09") is None  # nota vieja
+
+
+def test_por_reglas_dia_sin_mes():
+    from tremor.prensa.codificar import por_reglas
+    c = por_reglas("¿Qué se sabe sobre el paro de transportistas en Arequipa?", "evalúan sumarse a una paralización convocada "
+                   "a nivel nacional para los días 16, 17 y 18", "2026-11-06T11:11")
+    assert (c["estado"], c["fecha_evento"], c["ubigeo"]) == ("anunciada", "2026-11-16", "0401")
+
+
+def test_por_reglas_rango():
+    from tremor.prensa.codificar import por_reglas
+    c = por_reglas("Transportistas de carga pesada anuncian paro nacional del 16 al 18 de noviembre", "", "2026-11-03")
+    assert c["fecha_evento"] == "2026-11-16" and c["ubigeo"] is None
+
+
+def test_por_reglas_dia_del_mes_siguiente():
+    from tremor.prensa.codificar import por_reglas
+    c = por_reglas("Transportistas de Arequipa anuncian paro", "se acatará los días 3 y 4", "2026-11-28")
+    assert c["fecha_evento"] == "2026-12-03"

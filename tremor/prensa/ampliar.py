@@ -28,7 +28,8 @@ def enlace_real(url: str) -> str | None:
     gid = re.search(r"articles/([^?/]+)", url)
     if not gid:
         return url
-    r = requests.get(f"https://news.google.com/articles/{gid[1]}", headers=UA, timeout=30)
+    # la página rss/articles trae la misma firma y no corta con captcha como /articles (25 de 25 seguidas, 9 nov)
+    r = requests.get(f"https://news.google.com/rss/articles/{gid[1]}", headers=UA, timeout=30)
     if r.status_code == 429:
         raise Limite("Google News pide captcha: seguir más tarde")
     p = r.text
@@ -91,13 +92,20 @@ def por_bing(titular: str) -> str | None:
     return elegir_bing(r.text, titular) if r.ok else None
 
 
-def ampliar(con, version: str, limite=200, pausa=8.0) -> tuple[int, int]:
+def ampliar(con, version: str, limite=200, pausa=1.0) -> tuple[int, int]:
     """Protestas sin resumen que están sin lugar preciso o marcadas como anunciadas → lead del medio. Primero los
     enlaces directos al medio (sin cupo), después los de Google News (con pausa)."""
-    filas = con.execute("""SELECT n.id, n.enlace, n.titular, substr(n.publicado, 1, 10), c.precision IS NULL OR c.precision = 'departamento' FROM nota n JOIN codificacion c ON c.nota_id = n.id AND c.version = ?
-        WHERE c.es_protesta = 1 AND coalesce(n.resumen, '') = '' AND n.publicado >= date('now', '-30 day')
+    # también las anunciadas sin fecha con resumen corto: la fecha suele estar en el cuerpo ("del 16 al 18 de noviembre")
+    filas = con.execute("""SELECT n.id, n.enlace, n.titular, substr(n.publicado, 1, 10),
+               c.precision IS NULL OR c.precision = 'departamento' OR (c.estado = 'anunciada' AND c.fecha_evento IS NULL)
+        FROM nota n JOIN codificacion c ON c.nota_id = n.id AND c.version = ?
+        WHERE c.es_protesta = 1 AND n.publicado >= date('now', '-30 day')
+          AND (coalesce(n.resumen, '') = '' OR (c.estado = 'anunciada' AND c.fecha_evento IS NULL AND length(n.resumen) < 400))
         ORDER BY n.enlace LIKE '%news.google.com%' LIMIT ?""", (version, limite)).fetchall()
+    if not filas:
+        return 0, 0
     hechas, bing = 0, False
+    viejo = dict(con.execute("SELECT id, resumen FROM nota WHERE id IN (%s)" % ",".join("?" * len(filas)), [f[0] for f in filas]))
     for id_, url, titular, publicado, sin_lugar in filas:
         if "news.google.com" in url:
             time.sleep(2 if bing else pausa)  # sin pausa Google corta con captcha a las ~15 consultas
@@ -113,11 +121,17 @@ def ampliar(con, version: str, limite=200, pausa=8.0) -> tuple[int, int]:
             continue
         f = fecha_pagina(pagina)
         if f and publicado and f < publicado and (date.fromisoformat(publicado) - date.fromisoformat(f)).days > 3:
-            con.execute("UPDATE nota SET publicado = ? WHERE id = ?", (f, id_))  # la fecha real manda
-        if texto:
+            # nota vieja que Google reindexó con fecha de hoy: no es una protesta de ahora, sale de la cola y de los eventos
+            con.execute("UPDATE nota SET publicado = ?, filtro = 'vieja' WHERE id = ?", (f, id_))
+            con.execute("DELETE FROM codificacion WHERE nota_id = ?", (id_,))
+            con.commit()
+            continue
+        if texto and len(texto) > len(viejo.get(id_) or ""):
             con.execute("UPDATE nota SET resumen = ?, enlace = ? WHERE id = ?", (texto, real, id_))
             if sin_lugar:  # solo se recodifica lo que no tenía lugar; lo demás guarda el texto para leer adhesiones
-                con.execute("DELETE FROM codificacion WHERE nota_id = ? AND version = ?", (id_, version))
+                # la anterior queda como "previa" hasta que el LLM la rehaga: sin cupo, la protesta no desaparece
+                con.execute("DELETE FROM codificacion WHERE nota_id = ? AND version IN ('previa', 'reglas')", (id_,))
+                con.execute("UPDATE codificacion SET version = 'previa' WHERE nota_id = ? AND version = ?", (id_, version))
             con.commit()  # nota por nota: no bloquear la base durante las pausas
             hechas += 1
     return len(filas), hechas

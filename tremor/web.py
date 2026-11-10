@@ -63,15 +63,19 @@ def datos(con):
         for k in ("adhieren", "retiran", "suspendido", "urbano", "puntos", "plazo"):
             ev[k] = [x[k] for x in leido]
         ev["fecha_evento"] = [dia_dicho(t, f) for t, f in zip(ev.titular, ev.fecha_evento)]
+        # la radio no tiene titular ("Radio X, en vivo 09/11 16:07"): se titula con lo que pasó
+        ev["titular"] = [f"{a or 'Protesta'} de {(ac or 'pobladores').lower()}, según {t.split(',')[0]}" if isinstance(t, str) and ", en vivo " in t else t
+                         for t, a, ac in zip(ev.titular, ev.accion, ev.actor)]
         ev = pd.DataFrame(juntar(ev.to_dict("records")))
         # el LLM a veces marca "ocurrida" lo que la nota anuncia: si la fecha aún no llega, es un anuncio
         hoy = (pd.Timestamp.now(tz="America/Lima")).strftime("%Y-%m-%d")
         ev.loc[ev.fecha_evento.astype(str) > hoy, "estado"] = "anunciada"
         # anuncio sin fecha en ninguna nota: el día de publicación no es el día de la protesta
         con_fecha = {i for (i,) in con.execute("""SELECT DISTINCT en.evento_id FROM evento_nota en JOIN codificacion k
-                                                  ON k.nota_id = en.nota_id WHERE k.fecha_evento IS NOT NULL AND k.version = ?""", (VERSION,))}
+                                                  ON k.nota_id = en.nota_id WHERE k.fecha_evento IS NOT NULL AND k.version IN (?, 'reglas', 'previa')""", (VERSION,))}
         ev["sin_fecha"] = [(s == "anunciada" and i not in con_fecha and not isinstance(p, str)) for i, s, p in zip(ev.id, ev.estado, ev.plazo)]
         ev["ubigeo"] = [provincia_nombrada(t, u) for t, u in zip(ev.titular, ev.ubigeo)]
+        ev["focos"] = [f if len(f) > 1 else [u] if u != "00" else [] for f, u in zip(ev.focos, ev.ubigeo.astype(str))]
     met = tabla(con, "SELECT objetivo, modelo, metrica, valor FROM modelo_metrica WHERE metrica IN ('precision_top20', "
                      "'precision_top20_li', 'precision_top20_ls', 'captura_top10pct', 'tasa_base')")
     ventana = tabla(con, "SELECT ventana, mes_base FROM alerta LIMIT 1")
@@ -163,24 +167,62 @@ def familia(accion):
     return "paro" if re.search(r"paro|huelga", a) else "bloqueo" if "bloque" in a else "marcha" if re.search(r"march|moviliz", a) else a
 
 
+def quien(e):
+    """Actor sin el detalle: "Transportistas urbanos" y "Transportistas de carga" quedan aparte (el urbano no frena despachos)."""
+    a = (e.get("actor") or "").lower()
+    if e.get("urbano") or "urbano" in a:  # las notas hablan de buses o rutas: es transporte urbano, diga lo que diga el actor
+        return ("transportistas", True)
+    return (a.split(" ")[0] if a else "", False)
+
+
+def txt(x):
+    return x if isinstance(x, str) else ""
+
+
+def cerca_dia(a, b, n=1):
+    try:
+        return abs((date.fromisoformat(str(a)[:10]) - date.fromisoformat(str(b)[:10])).days) <= n
+    except ValueError:
+        return False
+
+
 def juntar(evs):
-    """Una protesta contada una vez: el mismo día, el mismo reclamo y un lugar dentro del otro (Huánuco, la provincia y el
-    departamento), con la misma medida o el mismo actor, son un solo evento. Queda el de más notas, con el lugar más preciso."""
+    """Una protesta contada una vez. Son la misma: (1) el mismo día, el mismo reclamo y un lugar dentro del otro (Huánuco,
+    la provincia y el departamento), con la misma medida o el mismo actor; o (2) el mismo actor (transportistas urbanos,
+    pobladores…) a un día de diferencia, con lugares compatibles: uno sin precisar ("00") o uno dentro del otro (las
+    cuatro notas del paro de transporte de Lima del 10 nov). Queda el de más notas, con el lugar más
+    preciso que los contenga a todos, y en "focos" los distintos lugares que nombran las notas."""
     out = []
     for e in sorted(evs, key=lambda e: -(e.get("n_notas") or 0)):
         u = str(e["ubigeo"])
-        par = next((o for o in out if o["fecha_evento"] == e["fecha_evento"] and o["reclamo"] == e["reclamo"] and u != "00"
-                    and (u.startswith(str(o["ubigeo"])) or str(o["ubigeo"]).startswith(u))
-                    and (familia(o["accion"]) == familia(e["accion"]) or o["actor"] == e["actor"])), None)
+        par = None
+        for o in out:
+            v = str(o["ubigeo"])
+            dentro = u.startswith(v) or v.startswith(u)
+            mismo_dia = (o["fecha_evento"] == e["fecha_evento"] and o["reclamo"] == e["reclamo"] and u != "00" and dentro
+                         and (familia(o["accion"]) == familia(e["accion"]) or o["actor"] == e["actor"]))
+            mismo_actor = (quien(o) == quien(e) and quien(e)[0] and cerca_dia(o["fecha_evento"], e["fecha_evento"])
+                           and (not txt(o.get("reclamo")) or not txt(e.get("reclamo")) or o["reclamo"] == e["reclamo"])
+                           and ("00" in (u, v) or u == v or (dentro and min(len(u), len(v)) >= 4)))  # un departamento entero es demasiado
+            if mismo_dia or mismo_actor:
+                par = o; break
         if par is None:
-            out.append(dict(e)); continue
-        if len(u) > len(str(par["ubigeo"])):
-            par["ubigeo"] = e["ubigeo"]
+            out.append(dict(e, focos=[u] if u != "00" else [])); continue
+        v = str(par["ubigeo"])
+        if u != "00" and u not in par["focos"]:
+            par["focos"].append(u)
+        if v == "00" or (u != "00" and u.startswith(v)):
+            par["ubigeo"] = e["ubigeo"]  # más preciso
+        elif u != "00" and not v.startswith(u):
+            par["ubigeo"] = v[:2] if u[:2] == v[:2] else v  # dos focos del mismo departamento: el departamento
         par["n_notas"] = (par.get("n_notas") or 0) + (e.get("n_notas") or 0)
         for k in ("adhieren", "retiran", "puntos"):
             par[k] = list(dict.fromkeys((par.get(k) or []) + (e.get(k) or [])))
         par["suspendido"] = bool(par.get("suspendido")) or bool(e.get("suspendido"))
+        par["urbano"] = bool(par.get("urbano")) or bool(e.get("urbano"))
         par["plazo"] = max([x for x in (par.get("plazo"), e.get("plazo")) if isinstance(x, str)], default=None)
+        if not txt(par.get("reclamo")):
+            par["reclamo"] = e.get("reclamo")
     visto = set()  # el mismo plazo citado por varias protestas del departamento: un solo aviso, en la de más notas
     for e in out:
         k = (e.get("plazo"), str(e["ubigeo"])[:2])
@@ -208,7 +250,7 @@ def dia_dicho(titular, fecha):
     return fecha
 
 
-URBANO = re.compile(r"extorsi|transporte (publico|urbano)|combis?\b|colectiver|mototaxi|choferes asesinad|asesinatos? de chofer")
+URBANO = re.compile(r"extorsi|transporte (publico|urbano)|combis?\b|colectiver|mototaxi|choferes asesinad|asesinatos? de chofer|suspender\w* (sus )?rutas|empresas de transporte|lineas de (buses|transporte)|transportistas de lima y callao|buses")
 
 
 def _llano(s):
