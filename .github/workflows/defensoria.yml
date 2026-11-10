@@ -54,6 +54,7 @@ jobs:
         run: |
           [ "$(date -u +%H)" = "11" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] || exit 0
           python -m tremor.empresas cargar
+          python -m tremor.oefa   # fiscalización del OEFA: se baja una sola vez (el portal no publica desde abr 2025)
 
       - name: SUTRAN (alertas viales vigentes, y qué dicen los medios de cada bloqueo)
         env:
