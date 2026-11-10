@@ -1,4 +1,4 @@
-"""Datos de la página (docs/index.html): un solo JSON con la alerta, las operaciones por empresa, cómo le habría ido
+"""Datos de la página (docs/app.html y docs/mapa.html): un solo JSON con la alerta, las operaciones por empresa, cómo le habría ido
 a cada zona en 2024+, las señales en vivo y las métricas; y los límites distritales simplificados.
 
     python -m tremor.web            # escribe datos/exportes/web.json (viaja en la rama `datos`) y docs/distritos.json

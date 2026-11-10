@@ -2,7 +2,8 @@
 
 **Escuchamos el temblor antes del conflicto.**
 
-Demo pública: **https://nicosil02.github.io/tremor/** · Informe mensual de muestra:
+Inicio: **https://nicosil02.github.io/tremor/** · App: [app.html](https://nicosil02.github.io/tremor/app.html) ·
+Informe mensual de muestra:
 [informe.html](https://nicosil02.github.io/tremor/informe.html) · Cómo se calcula:
 [metodo.html](https://nicosil02.github.io/tremor/metodo.html)
 
@@ -63,6 +64,12 @@ su riesgo y un informe mensual listo para enviar.
 - **Monitoreo en vivo.** La prensa regional, la SUTRAN y más de 270 radios locales se leen cada día. Un LLM
   codifica cada nota con el manual de la base de protestas de la PUCP. Las protestas anunciadas aparecen como
   alerta antes de que ocurran.
+- **Avisos por Telegram.** Cada cliente recibe en su chat solo lo que toca a sus operaciones y su ruta: protestas
+  anunciadas, bloqueos de la SUTRAN y tramos lentos, con qué hacer. Si el paro se suspende o los gremios se retiran,
+  también se avisa.
+- **Su ruta de salida.** Cada tramo de la mina al puerto, con el riesgo de los distritos que cruza y el tiempo de
+  viaje medido cada hora. Al tocar un tramo, un camión o el tren en 3D lo recorre: se detiene en un bloqueo, avisa
+  una protesta anunciada y va más lento si hay tráfico.
 - **Contexto de cada zona.** Comunidades campesinas y nativas, conflictos abiertos en la Defensoría, rutas de
   salida, canon, producción minera del MINEM y lo que se reclama.
 
@@ -94,8 +101,15 @@ paro. Es ordenar todas las zonas por riesgo con razones verificables y avisar cu
 
 ## 6. Demo
 
-**URL:** https://nicosil02.github.io/tremor/. Elegir una empresa, por ejemplo Las Bambas, ver sus alertas y abrir
-una unidad.
+**URL:** https://nicosil02.github.io/tremor/. El inicio explica qué hacemos, los planes y quién está detrás. Desde
+**Ver la demo** o **Acceso de clientes** se entra a la app de una empresa, por ejemplo Las Bambas:
+
+- **Avisos:** qué atender hoy;
+- **Operaciones:** el riesgo de cada unidad y de cada tramo de su ruta (al tocar un tramo, el vehículo lo recorre);
+- **País:** todas las zonas con operación extractiva.
+
+Como hoy ningún tramo tiene un paro, cada caso se puede ver con `?prueba=corte`, `aviso` o `lento`, por ejemplo
+https://nicosil02.github.io/tremor/app.html?e=Las%20Bambas&prueba=corte (el aviso dice "prueba").
 
 | Todo el país | Una empresa | Una unidad |
 |---|---|---|
@@ -120,7 +134,8 @@ flowchart LR
   DB --> MOD[Modelo<br>logística, Lasso, árbol,<br>bosque, boosting, ensamble]
   MOD --> DB
   DB --> WEB[web.json]
-  WEB --> PAG[GitHub Pages<br>mapa e informe]
+  WEB --> PAG[GitHub Pages<br>inicio, app e informe]
+  DB --> TG[Bot de Telegram<br>avisos por cliente]
   DB --> MCP[Servidor MCP]
 ```
 
@@ -149,7 +164,7 @@ git fetch origin datos && git show origin/datos:tremor.db.gz > tremor.db.gz
 python -c "import gzip,shutil;shutil.copyfileobj(gzip.open('tremor.db.gz'),open('datos/tremor.db','wb'))"
 python -m tremor.web && cp datos/exportes/web.json docs/web.json
 python -m http.server -d docs 8000        # abrir http://localhost:8000
-python -m pytest -q                       # 115 pruebas
+python -m pytest -q                       # 154 pruebas
 ```
 
 ## 7. Modelo de negocio
@@ -161,9 +176,9 @@ presupuesto ya paga monitoreo de medios y reportes de consultoras.
 
 | Plan | Qué incluye | Precio |
 |---|---|---|
-| Piloto | Hasta 2 operaciones por 3 meses, para medir si avisó algo que el equipo no sabía | US$1 500 en total |
-| Operación | Mapa, alertas diarias, radio y prensa de su zona e informe mensual | US$1 200 al mes por operación |
-| Empresa | Hasta 5 operaciones, informe a medida e integración de sus propios registros de quejas y compromisos | US$40 000 al año |
+| Piloto | Una operación y su ruta por 3 meses, para medir si avisó algo que el equipo no sabía | US$4 500 en total |
+| Operación | Mapa, alertas diarias, radio y prensa de su zona e informe mensual | US$1 500 al mes por operación |
+| Empresa | Grupos de 3 a 5 operaciones, informe a medida e integración de sus propios registros de quejas y compromisos | US$40 000 al año |
 
 Un solo día de paralización evitado o acortado en una mina mediana paga varios años del plan.
 
@@ -175,16 +190,18 @@ la prensa se leen para el país entero.
 |---|---|---|
 | LLM | Groq en cupo gratuito: unas 200 notas al día, el resto espera al día siguiente | Todas las notas el mismo día, unas 3 000 al día. Con Claude Sonnet 5.5 (US$2 por millón de tokens de entrada y US$10 de salida) son unos 135 millones de entrada y 27 de salida al mes, cerca de **US$540 al mes**, o la mitad en lote. Un modelo más grande puede escribir el informe de cada cliente por unos pocos dólares más |
 | Radio | Máquinas de GitHub en CPU, tres franjas al día, de lunes a sábado. Gratis porque el repo es público | Servidor con GPU propio, más radios, más horas y quechua y aimara completos: **US$500 a 800 al mes** |
-| Página, datos y alertas | GitHub Pages, sin costo | Servidor propio con acceso por cliente y avisos por correo o WhatsApp: **US$50 a 100 al mes** |
-| **Total** | **US$0** | **US$1 100 a 1 500 al mes** |
+| Página, datos y alertas | GitHub Pages, sin costo | Servidor propio con acceso por cliente y avisos por correo o WhatsApp (centavos por conversación): **US$50 a 100 al mes** |
+| Tráfico en las rutas | Cupo gratuito | Tiempos de viaje de cada tramo cada hora: **unos US$50 al mes** |
+| **Total** | **US$0** | **US$1 150 a 1 500 al mes** |
 
 **Por qué la radio cuesta.** No hay forma de leer una radio más rápido de lo que habla: hay que grabarla mientras
 transmite y luego pasar el audio a texto, que es lo que más cálculo consume. Con tres franjas de una hora en 280
 radios son unas 840 horas de audio al día. En CPU eso ocupa decenas de máquinas. Una GPU lo transcribe varias decenas
 de veces más rápido, y por eso conviene pagarla cuando hay contrato.
 
-Con 2 clientes en el plan Operación ya se cubre el costo. Desde ahí, cada cliente adicional es casi todo margen,
-porque su informe y sus alertas salen de los mismos datos.
+Cada plan cubre por sí solo el costo de operar. Un piloto o una operación pagan US$1 500 al mes, y el plan Empresa unos US$3 300. Desde ahí, cada cliente adicional es casi todo margen,
+porque su informe y sus alertas salen de los mismos datos. Mientras haya pocos clientes, la revisión de los avisos dudosos y del informe
+mensual la hace el fundador; un analista a medio tiempo (unos US$800 al mes) entra a partir del tercer cliente.
 
 **Cómo llegamos a los primeros clientes.** Pilotos con 3 a 5 mineras medianas del sur andino, empezando por las
 que tienen operaciones en el Corredor Minero del Sur. La prueba de valor es el [expediente de casos](docs/casos.md)
@@ -235,7 +252,8 @@ Casi todo el código lo escribió Claude Code bajo mi dirección.
 
 - los lectores de la Defensoría, la prensa, la SUTRAN y la radio;
 - el modelo y su evaluación;
-- la página y el informe;
+- la página de inicio, la app, el informe y los vehículos 3D de la ruta;
+- el bot de avisos por Telegram;
 - los workflows;
 - las pruebas.
 

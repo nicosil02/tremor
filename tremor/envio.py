@@ -14,7 +14,7 @@ from email.message import EmailMessage
 from tremor import informe_pdf
 
 PILOTO = {"bateas": "Bateas", "raura": "Raura", "poderosa": "Poderosa", "bambas": "Las Bambas"}
-ENLACE = "https://nicosil02.github.io/tremor/"
+ENLACE = "https://nicosil02.github.io/tremor/app.html"
 
 
 def correo(pdfs, hoy):
