@@ -10,6 +10,7 @@ ponytail: un cliente por chat; con más clientes, un chat por empresa (columna e
 import json
 import os
 import re
+import sqlite3
 import sys
 from datetime import date, timedelta
 from urllib.parse import quote
@@ -103,12 +104,17 @@ DURA = r"\b(\d+|veinticuatro|cuarenta y ocho|setenta y dos)\s+horas|\bindefinid\
 def de_radio(con, e):
     """Si la protesta salió solo de la radio: la hora de emisión y la frase donde se nombra la medida (sin ella el aviso no
     dice quién, cuándo ni cuánto dura)."""
-    for pub, txt in con.execute("SELECT publicado, resumen FROM nota WHERE consulta = 'radio' AND medio = ? AND enlace = ? "
-                                "ORDER BY publicado DESC", (e["medio"], e["enlace"])):
+    try:  # releída por el LLM (codificar.verificar_radio): solo las concretas, con quiénes, cuándo y duración dichos
+        filas = con.execute("SELECT n.publicado, n.resumen, v.quienes, v.cuando, v.duracion FROM nota n JOIN radio_verificada v "
+                            "ON v.nota_id = n.id AND v.concreta = 1 WHERE n.consulta = 'radio' AND n.medio = ? AND n.enlace = ? "
+                            "ORDER BY n.publicado DESC", (e["medio"], e["enlace"])).fetchall()
+    except sqlite3.OperationalError:  # base sin la tabla todavía
+        filas = []
+    for pub, txt, quienes, cuando, duracion in filas:
         m = re.search(LUCHA, txt or "", re.I)
         if m:
             a, b = max(0, m.start() - 110), m.end() + 140
-            return pub, ("…" if a else "") + txt[a:b].strip() + ("…" if b < len(txt) else "")
+            return pub, ("…" if a else "") + txt[a:b].strip() + ("…" if b < len(txt) else ""), {"quienes": quienes, "dicho_cuando": cuando, "duracion": duracion}
     return None
 
 
@@ -230,9 +236,10 @@ def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
         corte = (e["accion"] or "").startswith("Vía interrumpida")  # huaico, accidente, El Niño (SUTRAN): no es protesta
         cab = (f"🛑 *VÍA INTERRUMPIDA · {e['accion'][21:].capitalize()}*" if corte else f"📻 *MENCIÓN EN RADIO · {e['accion']}*" if oido
                else f"🚧 *ALERTA DE PROTESTA · {e['accion'] or 'Protesta'}*")
-        dura = re.search(DURA, f"{e['titular']} {oido or ''}", re.I)
-        quien = ((f"👥 *Quiénes:* {e['actor']}\n" if e.get("actor") else "") + (f"📣 *Por qué:* reclamo {e['reclamo'].lower()}\n" if e.get("reclamo") else "")
-                 + ("" if corte else f"⏱ *Duración:* {dura.group(0) if dura else 'no se informó'}\n"))
+        dura = e.get("duracion") or (m.group(0) if (m := re.search(DURA, f"{e['titular']} {oido or ''}", re.I)) else None)
+        quien = ((f"👥 *Quiénes:* {e.get('quienes') or e['actor']}\n" if e.get("quienes") or e.get("actor") else "")
+                 + (f"🗣 *Fecha que dijo la radio:* {e['dicho_cuando']}\n" if e.get("dicho_cuando") else "") + (f"📣 *Por qué:* reclamo {e['reclamo'].lower()}\n" if e.get("reclamo") else "")
+                 + ("" if corte else f"⏱ *Duración:* {dura or 'no se informó'}\n"))
         texto = (f"{cab}\n"
                  f"_{e['titular'] or e['accion']}_\n\n"
                  f"📍 *Dónde:* {donde}\n"
@@ -306,7 +313,8 @@ def main(dias=7, reenviar=False, muestra=False):  # 7: GitHub a veces corre el w
         evs, rad, rie = nuevo([*eventos(web, z, alias, desde), *sutran(con, z, desde)]), nuevo(radio(con, alias, desde)), nuevo(riesgo(web, z))
         for e in evs:
             if r := de_radio(con, e):
-                e["emitido"], e["dicho"] = r
+                e["emitido"], e["dicho"], extra = r
+                e.update({k: v for k, v in extra.items() if v})
         for clave, texto, png in piezas(nombre, evs, rad, rie, unidad, web["vecinos"], tramos):
             if muestra:
                 d = DATOS / "exportes" / "muestra"; d.mkdir(parents=True, exist_ok=True)

@@ -72,6 +72,19 @@ REVISAR = """Eres codificador de protestas en el Perú para una empresa minera. 
 Responde solo JSON: {"notas": [{"id": "...", "tipo": "extractivo|laboral|otro"}]}"""
 TIPO_REVISADO = {"extractivo": "socioambiental_extractivo", "laboral": "laboral_minero", "otro": "otro"}
 
+# La radio es habla transcrita (con errores de Whisper), mezclada con canciones, avisos y opinión del locutor: una
+# palabra suelta ("paro de mi amor", "bloqueo hormonal") o un comentario no es una protesta. Cada fragmento que se
+# codificó como protesta se vuelve a leer con esta pregunta; si no es concreta, no se avisa.
+VERIFICAR_RADIO = """Lees la transcripción automática (con errores) de un fragmento de radio peruana. Decide si informa
+de una protesta CONCRETA: un grupo identificable que protestó, marchó, bloqueó, paró o tomó un local, o que convocó a
+hacerlo con fecha. NO es concreta: letras de canciones, publicidad, salud, cuentos, oraciones, opinión o llamados
+genéricos del locutor ("hay que levantarnos"), menciones de pasada sin hecho, y protestas en otros países.
+"contra": a quién se dirige: "minera" (mina, petrolera, proyecto extractivo o sus impactos), "gobierno", "municipio",
+"eleccion" (resultados, candidatos, credenciales), "laboral", "inseguridad", "otro".
+Responde solo JSON: {"concreta": true|false, "contra": "...", "quienes": "rol del grupo, sin nombres de personas, o null",
+"cuando": "fecha o día dicho (hoy, mañana, el 10 de noviembre) o null", "duracion": "lo dicho (72 horas, indefinido) o null",
+"lugar": "lugar dicho o null"}"""
+
 
 def dudosas(con):
     """(nota_id, version, texto) de las protestas en "otro" que nombran una operación y no se revisaron."""
@@ -106,6 +119,39 @@ def revisar_operacion(con, max_solicitudes=10):
                 hechas += 1
         con.commit()
     return hechas, len(xs)
+
+
+MEDIDA = re.compile(r"\bparo|bloque|huelga|\btoma\b|protest|moviliza|marcha|plant[oó]n|enfrenta", re.I)
+
+
+def verificar_radio(con, max_solicitudes=30):
+    """Relee con VERIFICAR_RADIO cada fragmento de radio codificado como protesta (la ventana de ±250 caracteres
+    alrededor de la medida). Si no es concreta, deja de ser protesta; si no es contra una minera, no queda como
+    extractiva. Lo que dice (quiénes, cuándo, duración) queda en radio_verificada para el aviso. Con 37 fragmentos
+    etiquetados a mano (10 nov): 1 falsa de 23 y 7 de 13 protestas peruanas (las que pierde son menciones de pasada)."""
+    con.execute("CREATE TABLE IF NOT EXISTS radio_verificada (nota_id TEXT PRIMARY KEY, concreta INTEGER, contra TEXT, "
+                "quienes TEXT, cuando TEXT, duracion TEXT, lugar TEXT)")
+    xs = con.execute("SELECT n.id, n.resumen FROM nota n JOIN codificacion c ON c.nota_id = n.id AND c.version = ? "
+                     "WHERE n.consulta = 'radio' AND c.es_protesta = 1 AND n.id NOT IN (SELECT nota_id FROM radio_verificada)",
+                     (VERSION,)).fetchall()[:max_solicitudes]
+    for n, txt in xs:
+        m = MEDIDA.search(txt or "")
+        ventana = txt[max(0, m.start() - 250):m.end() + 250] if m else (txt or "")[:600]
+        try:
+            r = chat_json(con, VERIFICAR_RADIO, ventana, "radio1")
+        except (SinCuota, RespuestaInvalida) as e:
+            print(f"  Verificación de radio pendiente: {e}")
+            break
+        txt_ = lambda k: r.get(k) if isinstance(r.get(k), str) else None
+        con.execute("INSERT OR REPLACE INTO radio_verificada VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (n, int(r.get("concreta") is True), txt_("contra"), txt_("quienes"), txt_("cuando"), txt_("duracion"), txt_("lugar")))
+        if r.get("concreta") is not True:
+            con.execute("UPDATE codificacion SET es_protesta = 0 WHERE nota_id = ? AND version = ?", (n, VERSION))
+        elif r.get("contra") != "minera":
+            con.execute("UPDATE codificacion SET tipo_conflicto = 'otro' WHERE nota_id = ? AND version = ? "
+                        "AND tipo_conflicto = 'socioambiental_extractivo'", (n, VERSION))
+        con.commit()
+    return len(xs)
 
 
 def limpiar(item: dict) -> dict:
