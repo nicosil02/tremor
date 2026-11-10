@@ -1,26 +1,35 @@
-"""Tarjeta en imagen para el aviso de Telegram, al estilo de los boletines de monitoreo (mapa a la izquierda, ficha a
-la derecha): la zona de la unidad con el distrito del aviso pintado, un Perú chico para ubicarse, la cifra, qué puede
-pasar, qué hacer y, si es riesgo, la escala de nivel. Sin red ni navegador: matplotlib y datos/distritos.geojson.
+"""Tarjeta en imagen para el aviso de Telegram, al estilo de las alertas de monitoreo: arriba el título, la cifra y el
+nivel en letra grande (se lee en el celular); abajo un mapa real (calles, ríos y pueblos de OpenStreetMap, teselas de
+la OSMF) con el distrito del aviso pintado y su unidad marcada. El detalle va en el texto del mensaje, no en la imagen.
 
     python -m tremor.tarjeta   # dibuja una de prueba en datos/exportes/tarjeta_prueba.png
 """
 import io
 import json
+import math
 import textwrap
 from functools import lru_cache
+from pathlib import Path
 
 import matplotlib
+import requests
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib import patheffects  # noqa: E402
-from matplotlib.collections import PolyCollection  # noqa: E402
+from matplotlib.font_manager import FontProperties  # noqa: E402
 from matplotlib.patches import Polygon, Rectangle  # noqa: E402
+from PIL import Image  # noqa: E402  (viene con matplotlib)
 
 from tremor.db import DATOS  # noqa: E402
 
 NIVELES = [("Bajo", 0.10, "#f1d9c6"), ("Medio", 0.25, "#e3a67c"), ("Alto", 0.50, "#c8642f"), ("Crítico", 1.01, "#8a3213")]
 TINTA, GRIS, ROJO = "#1c2629", "#5b6668", "#c0281f"
+FUENTE = {w: FontProperties(fname=Path(__file__).parent / "fuentes" / f"Archivo-{w}.ttf") for w in (400, 600, 800)}  # la de la app
+# teselas estándar de OpenStreetMap: uso liviano permitido con User-Agent propio y atribución; se guardan en caché
+TESELA = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+LADO = 256
+W, H = 1080, 1080  # cuadrada: en el celular se ve grande
 
 
 def nivel(p):
@@ -38,77 +47,114 @@ def _formas():
     return formas, nombres
 
 
-def _centro(anillo):
-    return sum(x for x, _ in anillo) / len(anillo), sum(y for _, y in anillo) / len(anillo)
+def _px(lon, lat, z):
+    """Web Mercator: grados → píxel global a zoom z (teselas de 512)."""
+    n = LADO * 2 ** z
+    s = math.sin(math.radians(lat))
+    return (lon + 180) / 360 * n, (0.5 - math.log((1 + s) / (1 - s)) / (4 * math.pi)) * n
 
 
-def tarjeta(titulo, cifra, sub, puede, hacer, zona, foco, unidad=(), p=None, leyenda="Distrito del aviso"):
-    """PNG (bytes) de 1200×675. cifra: "49%" o "16 nov"; sub: dos líneas junto a la cifra; zona: distritos del mapa;
-    foco: distritos del aviso (los pintados); unidad: distritos de la operación; p: probabilidad,
-    para el color y la escala de nivel (None en una protesta)."""
+@lru_cache(512)
+def _tesela(z, x, y):
+    cache = DATOS / "cache" / "teselas" / f"{z}_{x}_{y}.png"
+    if cache.exists():
+        return Image.open(cache).convert("RGB")
+    r = requests.get(TESELA.format(z=z, x=x, y=y), timeout=30,
+                     headers={"User-Agent": "Tremor/1.0 (alertas de conflicto social; github.com/nicosil02/tremor)"})
+    r.raise_for_status()
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    cache.write_bytes(r.content)
+    return Image.open(io.BytesIO(r.content)).convert("RGB")
+
+
+def _fondo(lon0, lat0, lon1, lat1, w, h):
+    """Mapa real que contiene la caja: (imagen w×h, z, x0, y0 en píxel global)."""
+    for z in range(12, 4, -1):  # el zoom más cercano en que la caja entra con margen
+        ax, ay = _px(lon0, lat1, z); bx, by = _px(lon1, lat0, z)
+        if bx - ax <= w * 0.82 and by - ay <= h * 0.82:
+            break
+    cx, cy = (ax + bx) / 2, (ay + by) / 2
+    x0, y0 = int(cx - w / 2), int(cy - h / 2)
+    img = Image.new("RGB", (w, h), "#f2efe9")
+    try:
+        for tx in range(x0 // LADO, (x0 + w) // LADO + 1):
+            for ty in range(y0 // LADO, (y0 + h) // LADO + 1):
+                if 0 <= ty < 2 ** z:
+                    img.paste(_tesela(z, tx % 2 ** z, ty), (tx * LADO - x0, ty * LADO - y0))
+    except requests.RequestException:
+        pass  # sin red: queda el fondo liso y los distritos encima
+    return img, z, x0, y0
+
+
+def tarjeta(titulo, cifra, sub, zona, foco, unidad=(), p=None, leyenda="Distrito del aviso"):
+    """PNG (bytes) de 1080×1080. cifra: "49%" o "16 nov"; sub: dos líneas junto a la cifra (nivel y periodo, o estado
+    y lugar); zona: distritos que encuadran el mapa; foco: distritos del aviso (pintados); unidad: los de la operación;
+    p: probabilidad, para el color y la escala (None en una protesta)."""
     formas, nombres = _formas()
     color = nivel(p)[1] if p is not None else ROJO
-    fig = plt.figure(figsize=(12, 6.75), dpi=100, facecolor="white")
-    mapa = fig.add_axes([0.02, 0.12, 0.50, 0.84]); mapa.set_axis_off(); mapa.set_aspect("equal")
-    xs, ys = [], []
-    for u in zona:
-        for anillo in formas.get(u, []):
-            pinta = u in foco
-            mapa.add_patch(Polygon(anillo, closed=True, facecolor=color if pinta else "#eef0ee", alpha=0.9 if pinta else 1,
-                                   edgecolor=TINTA if u in unidad else "#9aa5a3", linewidth=2.4 if u in unidad else 0.6,
-                                   zorder=3 if u in unidad else 2))
-            xs += [x for x, _ in anillo]; ys += [y for _, y in anillo]
-        if u in formas and (u in unidad or (u in foco and len(foco) == 1) or (len(foco) <= 1 and len(zona) <= 12)):
-            x, y = _centro(formas[u][0])
-            es = u in foco
-            mapa.text(x, y, "Su unidad" if u in unidad and not es else nombres[u], ha="center", va="center", zorder=6,
-                      fontsize=10.5 if es or u in unidad else 7.5, fontweight="bold" if es or u in unidad else "normal",
-                      color="white" if es and (p is None or p >= 0.25) else TINTA if u in unidad else GRIS,
-                      path_effects=None if es else [patheffects.withStroke(linewidth=3, foreground="white")])
-    if xs:
-        mx, my = (max(xs) - min(xs)) * 0.05, (max(ys) - min(ys)) * 0.05
-        mapa.set_xlim(min(xs) - mx, max(xs) + mx); mapa.set_ylim(min(ys) - my, max(ys) + my)
-        # fondo: el resto de distritos, para que la zona no flote en blanco
-        mapa.add_collection(PolyCollection([a for u, an in formas.items() if u not in zona for a in an],
-                                           facecolor="#f4f5f4", edgecolor="white", linewidth=0.5, zorder=1))
-        # Perú chico, con un recuadro donde está la zona
-        peru = fig.add_axes([0.40, 0.70, 0.12, 0.26]); peru.set_axis_off(); peru.set_aspect("equal")
-        peru.add_collection(PolyCollection([a for an in formas.values() for a in an], facecolor="#dfe3e1", edgecolor="none"))
-        peru.set_xlim(-81.4, -68.6); peru.set_ylim(-18.4, -0.03)
-        peru.add_patch(Rectangle((min(xs) - 0.3, min(ys) - 0.3), max(xs) - min(xs) + 0.6, max(ys) - min(ys) + 0.6,
-                                 facecolor="none", edgecolor=color, linewidth=1.8))
-    # pie del mapa
-    fig.patches.append(Rectangle((0.03, 0.075), 0.016, 0.024, transform=fig.transFigure, facecolor=color, edgecolor="none"))
-    fig.text(0.05, 0.08, leyenda, fontsize=9, color=GRIS)
-    fig.patches.append(Rectangle((0.17, 0.075), 0.016, 0.024, transform=fig.transFigure, facecolor="none", edgecolor=TINTA, linewidth=2))
-    fig.text(0.19, 0.08, "Distritos de su unidad", fontsize=9, color=GRIS)
+    fig = plt.figure(figsize=(W / 100, H / 100), dpi=100, facecolor="white")
+
+    # arriba: marca, título, cifra y nivel
+    fig.text(48 / W, 1 - 52 / H, "TREMOR  ·  ALERTA DE CONFLICTO SOCIAL", fontproperties=FUENTE[600], fontsize=15, color=GRIS)
+    lineas = textwrap.wrap(textwrap.shorten(titulo, 126, placeholder="…"), 42)[:3]
+    for k, linea in enumerate(lineas):
+        fig.text(48 / W, 1 - (100 + 40 * k) / H, linea, fontproperties=FUENTE[800], fontsize=27, color=TINTA, va="top")
+    yc = 1 - (100 + 40 * len(lineas) + 48) / H
+    fig.text(48 / W, yc, cifra, fontproperties=FUENTE[800], fontsize=40, color=color, va="center")
+    xs = 48 + 31 * len(cifra) + 36
+    fig.text(xs / W, yc + 0.014, sub[0], fontproperties=FUENTE[800], fontsize=21, color=TINTA, va="center")
+    if len(sub) > 1:
+        fig.text(xs / W, yc - 0.022, sub[1], fontproperties=FUENTE[400], fontsize=17, color=GRIS, va="center")
+
+    # mapa real
+    mx, mw = 0, W
+    my = 100 + 40 * len(lineas) + 48 + 62  # el mapa empieza donde termina la cabecera
+    mh = H - my - 100
+    mapa = fig.add_axes([mx / W, 1 - (my + mh) / H, mw / W, mh / H]); mapa.set_axis_off()
+    puntos = [(x, y) for u in zona for a in formas.get(u, []) for x, y in a]
+    if puntos:
+        lon = [x for x, _ in puntos]; lat = [y for _, y in puntos]
+        img, z, x0, y0 = _fondo(min(lon), min(lat), max(lon), max(lat), mw, mh)
+        mapa.imshow(img, extent=(0, mw, mh, 0), zorder=0)
+        a_px = lambda anillo: [(px - x0, py - y0) for px, py in (_px(x, y, z) for x, y in anillo)]
+        for u in zona:
+            for anillo in formas.get(u, []):
+                if u in foco:
+                    mapa.add_patch(Polygon(a_px(anillo), closed=True, facecolor=color, alpha=0.35, edgecolor="none", zorder=2))
+                    mapa.add_patch(Polygon(a_px(anillo), closed=True, facecolor="none", edgecolor=color, linewidth=3, zorder=3))
+                if u in unidad:
+                    mapa.add_patch(Polygon(a_px(anillo), closed=True, facecolor="none", edgecolor=TINTA, linewidth=2.6,
+                                           linestyle=(0, (5, 3)), zorder=4))
+        halo = [patheffects.withStroke(linewidth=5, foreground="white")]
+        rotulos = ([u for u in foco if u in formas] if len(foco) <= 2 else []) + [u for u in unidad if u in formas and u not in foco][:3]
+        for u in rotulos:
+            ps = [q for a in formas[u] for q in a_px(a)]
+            x, y = sum(q[0] for q in ps) / len(ps), sum(q[1] for q in ps) / len(ps)
+            texto = nombres[u] if u in foco else f"Su unidad\n({nombres[u]})"
+            mapa.text(x, y, texto, ha="center", va="center", zorder=6, fontproperties=FUENTE[800] if u in foco else FUENTE[600],
+                      fontsize=19 if u in foco else 15, color=TINTA, path_effects=halo, linespacing=1.1)
+        mapa.set_xlim(0, mw); mapa.set_ylim(mh, 0)
+        mapa.text(mw - 8, mh - 8, "© colaboradores de OpenStreetMap", ha="right", va="bottom", fontsize=9, color=GRIS, zorder=7,
+                  path_effects=[patheffects.withStroke(linewidth=3, foreground="white")])
+
+    # abajo: leyenda y escala de nivel
+    yb = 1 - (my + mh + 50) / H
+    fig.patches.append(Rectangle((48 / W, yb - 0.011), 0.026, 0.022, transform=fig.transFigure, facecolor=color, alpha=0.6,
+                                 edgecolor=color, linewidth=2))
+    fig.text(84 / W, yb, leyenda, fontproperties=FUENTE[400], fontsize=16, color=TINTA, va="center")
+    if unidad:
+        fig.lines.append(plt.Line2D([330 / W, 358 / W], [yb, yb], transform=fig.transFigure, color=TINTA, linewidth=2.6,
+                                    linestyle=(0, (5, 3))))
+        fig.text(368 / W, yb, "Su unidad", fontproperties=FUENTE[400], fontsize=16, color=TINTA, va="center")
     if p is not None:
-        x0 = 0.03
+        x0, ancho = 560 / W, 110 / W
         for n, tope, c in NIVELES:
-            fig.patches.append(Rectangle((x0, 0.025), 0.11, 0.03, transform=fig.transFigure, facecolor=c, edgecolor="white"))
-            fig.text(x0 + 0.055, 0.04, n, ha="center", va="center", fontsize=8.5, color="white" if tope > 0.25 else TINTA, fontweight="bold")
-            x0 += 0.11
-        topes = [0] + [t for _, t, _ in NIVELES]
-        i = next(k for k in range(4) if p < topes[k + 1])
-        fig.text(0.03 + 0.11 * (i + (p - topes[i]) / (topes[i + 1] - topes[i])), 0.0, "▲", ha="center", fontsize=9, color=TINTA)
-    # ficha a la derecha
-    fig.patches.append(Rectangle((0.54, 0.03), 0.44, 0.94, transform=fig.transFigure, facecolor="#f6f4f1", edgecolor="none"))
-    y = 0.92
-    fig.text(0.56, y, "TREMOR  ·  Riesgo social en operaciones", fontsize=9.5, color=GRIS, fontweight="bold"); y -= 0.075
-    for linea in textwrap.wrap(titulo, 34)[:4]:
-        fig.text(0.56, y, linea, fontsize=17, color=TINTA, fontweight="bold"); y -= 0.06
-    y -= 0.02
-    fig.text(0.56, y - 0.05, cifra, fontsize=32, color=color, fontweight="bold")
-    for k, linea in enumerate(sub[:2]):
-        fig.text(0.735, y - 0.012 - 0.038 * k, linea, fontsize=12 if k == 0 else 10, color=TINTA if k == 0 else GRIS,
-                 fontweight="bold" if k == 0 else "normal")
-    y -= 0.13
-    for cab, items in (("¿Qué puede pasar?", puede), ("Qué hacer", hacer)):
-        fig.text(0.56, y, cab, fontsize=11.5, color=TINTA, fontweight="bold"); y -= 0.045
-        for it in items:
-            for k, linea in enumerate(textwrap.wrap(it, 62)):
-                fig.text(0.565, y, ("•  " if k == 0 else "    ") + linea, fontsize=9.5, color=TINTA); y -= 0.036
-        y -= 0.02
+            actual = n == nivel(p)[0]
+            fig.patches.append(Rectangle((x0, yb - 0.017), ancho, 0.034, transform=fig.transFigure, facecolor=c,
+                                         edgecolor=TINTA if actual else "white", linewidth=3 if actual else 1))
+            fig.text(x0 + ancho / 2, yb, n, ha="center", va="center", fontproperties=FUENTE[800 if actual else 400], fontsize=15,
+                     color="white" if tope > 0.25 else TINTA)
+            x0 += ancho
     buf = io.BytesIO()
     fig.savefig(buf, format="png", facecolor="white")
     plt.close(fig)
@@ -118,8 +164,5 @@ def tarjeta(titulo, cifra, sub, puede, hacer, zona, foco, unidad=(), p=None, ley
 if __name__ == "__main__":
     png = tarjeta("Sube el riesgo de conflicto cerca de su unidad Acumulación Cailloma", "49%",
                   ["Nivel alto", "Octubre a diciembre de 2026"],
-                  ["Paro, bloqueo o toma contra una operación minera en Coporaque (Espinar, Cusco) o sus vecinos.",
-                   "11 medidas de fuerza en el último año y 3 conflictos activos ante la Defensoría."],
-                  ["Reforzar el seguimiento de la zona y el diálogo con las comunidades vecinas."],
                   ["080803", "080801", "080804", "040505"], {"080803"}, ["040505"], p=0.49)
     (DATOS / "exportes" / "tarjeta_prueba.png").write_bytes(png)

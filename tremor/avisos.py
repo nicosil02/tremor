@@ -138,41 +138,44 @@ def pct(x):
 
 
 def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
-    """Un aviso por pieza, como los boletines de monitoreo: tarjeta (imagen) + párrafo ejecutivo, qué hacer y enlace.
-    unidad: {ubigeo: unidad} de sus operaciones; tramos: {ubigeo de su ruta}. Devuelve [(clave, texto, png o None)]."""
+    """Un aviso por pieza, como las alertas de monitoreo: tarjeta (imagen con mapa real) y un texto por subtítulos
+    (zona, periodo, nivel, qué puede pasar, por qué, qué hacer, enlace). unidad: {ubigeo: unidad} de sus operaciones;
+    tramos: ubigeos de su ruta. Devuelve [(clave, texto, png o None)]."""
     from tremor.tarjeta import nivel, tarjeta
     suyos = list(unidad)
     cerca = lambda u, propios=(): list(dict.fromkeys([u, *vecinos.get(u, []), *propios]))  # el distrito, sus vecinos y su unidad
+    vinetas = lambda s: [f"• {x.strip()[0].upper()}{x.strip()[1:]}" for x in re.split(r";\s*", s or "") if x.strip()]
     out = []
     for r in rie:
-        n = nivel(r["p"])[0].lower()
+        n = nivel(r["p"])[0]
         ruta = r["unidad"].startswith("en su ruta")
-        titulo = f"Sube el riesgo de conflicto {r['unidad'].replace('en su ruta, tramo', 'en su ruta de salida, tramo')}" if ruta else f"Sube el riesgo de conflicto cerca de su unidad {r['unidad']}"
-        texto = (f"🔺 *{titulo}*\n\n"
-                 f"En {r['lugar']}, {'en su ruta de salida' if ruta else 'en la zona de su unidad'}, la probabilidad de un paro, bloqueo o toma contra una operación "
-                 f"minera de {meses(r['ventana'])} es de {pct(r['p'])} (nivel {n}), frente a {pct(r['normal'])} habitual. "
-                 + (f"En el distrito y sus vecinos hubo {r['base']}. " if r["base"] else "")
-                 + (f"En las últimas semanas: {r['sube']}. " if r["sube"] else "")
-                 + "No hay una protesta anunciada contra la empresa.\n\n"
-                 f"📌 Reforzar el seguimiento de la zona y el diálogo con las comunidades vecinas.\n\n"
-                 f"🔗 Vea la zona: {APP}?e={quote(nombre)}&d={r['ubigeo']}")
-        png = tarjeta(titulo, pct(r["p"]),
-                      [f"Nivel {n}", meses(r["ventana"]).capitalize()],
-                      [f"Paro, bloqueo o toma contra una operación minera en {r['lugar']} o sus vecinos.",
-                       f"Hoy está {round((r['p'] - r['normal']) * 100)} puntos sobre lo habitual en la zona."]
-                      + ([f"Antecedentes: {r['base']}."] if r["base"] else []),
-                      ["Reforzar el seguimiento de la zona y el diálogo con las comunidades vecinas."],
-                      cerca(r["ubigeo"], [u for u, n in unidad.items() if n == r["unidad"]]), {r["ubigeo"]}, suyos, p=r["p"])
+        donde = r["unidad"].replace("en su ruta, tramo", "en su ruta de salida, tramo") if ruta else f"en la zona de su unidad {r['unidad']}"
+        dis = r["lugar"].split(" (")[0]
+        porque = vinetas(r["base"]) + vinetas(r["sube"])
+        texto = (f"🔺 *ALERTA DE RIESGO · {dis}*\n"
+                 f"_Sube el riesgo de conflicto {donde}_\n\n"
+                 f"📍 *Zona:* {r['lugar']}\n"
+                 f"🗓 *Periodo:* {meses(r['ventana'])}\n"
+                 f"📈 *Nivel:* {n}, {pct(r['p'])} (lo habitual en la zona es {pct(r['normal'])})\n\n"
+                 f"⚠️ *¿Qué puede pasar?*\nUn paro, bloqueo o toma contra una operación minera en el distrito o sus vecinos. "
+                 f"Todavía no hay una protesta anunciada contra la empresa.\n\n"
+                 + (f"🔎 *¿Por qué sube?*\n" + "\n".join(porque) + "\n\n" if porque else "")
+                 + "✅ *Qué hacer*\nReforzar el seguimiento de la zona y el diálogo con las comunidades vecinas.\n\n"
+                 f"🔗 *Conoce más aquí:* {APP}?e={quote(nombre)}&d={r['ubigeo']}")
+        png = tarjeta(f"Sube el riesgo de conflicto en {dis}", pct(r["p"]), [f"Nivel {n.lower()}", meses(r["ventana"]).capitalize()],
+                      cerca(r["ubigeo"], [u for u, x in unidad.items() if x == r["unidad"]]), {r["ubigeo"]}, suyos, p=r["p"])
         out.append((r["clave"], texto, png))
     for e in sorted(evs, key=lambda e: e["estado"] != "anunciada"):
-        cuando = {"anunciada": f"anunciada para el {dia(e['fecha'])}", "plazo": f"con plazo que vence el {dia(e['fecha'])}",
-                  "sin_fecha": f"anunciada el {dia(e['fecha'])}, todavía sin fecha"}.get(e["estado"], f"ocurrió el {dia(e['fecha'])}")
+        cuando = {"anunciada": f"Anunciada para el {dia(e['fecha'])}", "plazo": f"Plazo que vence el {dia(e['fecha'])}",
+                  "sin_fecha": f"Anunciada el {dia(e['fecha'])}, todavía sin fecha"}.get(e["estado"], f"Ocurrió el {dia(e['fecha'])}")
         ruta = (e["unidad"] or "").startswith("en su ruta")
         prov = [x for x in unidad if len(e["ubigeo"]) == 4 and x.startswith(e["ubigeo"])]  # protesta ubicada solo en la provincia
         if prov and not e["unidad"]:
             e = {**e, "unidad": ", ".join(dict.fromkeys(unidad[x] for x in prov))}
         fuerza = bool(re.search(r"paro|huelga|bloque|toma|invasi|enfrent", (e["accion"] or "").lower()))
-        donde = "en todo el país" if e["ubigeo"] == "00" else f"en {lugar(e['ubigeo'])}" + (f", {e['unidad']}" if ruta else f", zona de su unidad {e['unidad']}" if e["unidad"] else "")
+        donde = ("Todo el país" if e["ubigeo"] == "00" else lugar(e["ubigeo"]).capitalize()
+                 + (f", {e['unidad'].replace('en su ruta, tramo', 'en su ruta de salida, tramo')}" if ruta
+                    else f", zona de su unidad {e['unidad']}" if e["unidad"] else ""))
         efecto = ("Puede frenar sus despachos de concentrado y la llegada de insumos." if e["transporte"]
                   else "Puede cortar el paso de sus camiones por ese tramo." if ruta else "Puede afectar el acceso y la operación de su unidad." if fuerza
                   else "Es un reclamo hacia la operación que puede escalar a un paro o bloqueo.")
@@ -181,39 +184,50 @@ def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
                  else "Revisar el pedido con relaciones comunitarias y preparar una respuesta antes de que escale.")
         fuente = f"[{e['medio']}]({e['enlace']})" if e["enlace"] else e["medio"]
         enlace = f"{APP}?e={quote(nombre)}" + (f"&d={e['ubigeo']}" if len(e["ubigeo"]) == 6 else "")
-        texto = (f"🚧 *{e['titular'] or e['accion']}*\n\n"
-                 f"{cuando[0].upper() + cuando[1:]}, {donde}. {efecto}" + (f" Según la prensa: {e['punto']}" if e["punto"] else "")
-                 + f"\n\n📌 {hacer}\n\n🔗 Fuente: {fuente}. Vea el detalle: {enlace}")
+        texto = (f"🚧 *ALERTA DE PROTESTA · {e['accion'] or 'Protesta'}*\n"
+                 f"_{e['titular'] or e['accion']}_\n\n"
+                 f"📍 *Dónde:* {donde}\n"
+                 f"🗓 *Cuándo:* {cuando}\n\n"
+                 f"⚠️ *¿Qué puede pasar?*\n{efecto}" + (f"\nSegún la prensa: {e['punto']}" if e["punto"] else "") + "\n\n"
+                 f"✅ *Qué hacer*\n{hacer}\n\n"
+                 f"📰 *Fuente:* {fuente}\n"
+                 f"🔗 *Conoce más aquí:* {enlace}")
         foco = set(tramos) if e["ubigeo"] == "00" and e["transporte"] else {u for u in [e["ubigeo"]] if len(u) == 6}
-        propios = [u for u, n in unidad.items() if n == e["unidad"]]
+        propios = [u for u, x in unidad.items() if x == e["unidad"]]
         if len(e["ubigeo"]) == 4:  # provincia: se pinta entera
             foco = {u for u in vecinos if u.startswith(e["ubigeo"])}
         mapa = (suyos + list(tramos)) if e["ubigeo"] == "00" else cerca(e["ubigeo"], propios) if len(e["ubigeo"]) == 6 else [*foco, *prov]
-        png = tarjeta(e["titular"] or e["accion"], dia(e["fecha"]), [cuando.split(" para el")[0].split(" el ")[0].capitalize(),
-                      "En todo el país" if e["ubigeo"] == "00" else lugar(e["ubigeo"])], [efecto] + ([e["punto"]] if e["punto"] else []),
-                      [hacer], mapa, foco, suyos, leyenda="Su ruta de salida" if e["ubigeo"] == "00" else "Distrito del aviso") if mapa else None
+        cifra, sub = ((dia(e["fecha"]), ["Fecha del anuncio", "Todavía sin fecha de protesta"]) if e["estado"] == "sin_fecha"
+                      else (dia(e["fecha"]), [cuando.split(" para el")[0].split(" el ")[0], "Todo el país" if e["ubigeo"] == "00" else lugar(e["ubigeo"]).capitalize()]))
+        png = tarjeta(e["titular"] or e["accion"], cifra, sub, mapa, foco, suyos,
+                      leyenda="Su ruta de salida" if e["ubigeo"] == "00" else "Lugar de la protesta") if mapa else None
         out.append((e["clave"], texto, png))
     for r in rad:
-        out.append((r["clave"], f"📻 *{r['medio']} mencionó a la empresa*\n\nEl {dia(r['dia'])} a las {r['hora']}: «{r['texto']}»", None))
+        out.append((r["clave"], f"📻 *MENCIÓN EN RADIO · {r['medio']}*\n\n🗓 *Cuándo:* {dia(r['dia'])}, {r['hora']}\n"
+                                f"🗣 *Qué dijo:* «{r['texto']}»", None))
     return out
 
 
 def enviar(texto, png=None):
-    """Telegram con Markdown (foto con el texto al pie, o solo texto); si un * o _ suelto rompe el formato, reintenta en
-    texto plano. Sin claves, imprime y guarda la imagen en datos/exportes."""
+    """Telegram con Markdown: la imagen con el texto al pie (si pasa de 1024 caracteres, la imagen y luego el texto);
+    si un * o _ suelto rompe el formato, reintenta en texto plano. Sin claves, imprime y guarda la imagen."""
     token, chat = os.environ.get("TELEGRAM_BOT_TOKEN"), os.environ.get("TELEGRAM_CHAT_ID")
     if not (token and chat):
         print(texto, "\n")
         if png:
             (DATOS / "exportes" / f"aviso_{abs(hash(texto)) % 10**6}.png").write_bytes(png)
         return False
+    api = f"https://api.telegram.org/bot{token}"
     for modo in ("Markdown", None):
         extra = {"parse_mode": modo} if modo else {}
-        if png:
-            r = requests.post(f"https://api.telegram.org/bot{token}/sendPhoto", timeout=60, files={"photo": ("aviso.png", png, "image/png")},
-                              data={"chat_id": chat, "caption": texto[:1024], **extra})
+        if png and len(texto) <= 1024:
+            r = requests.post(f"{api}/sendPhoto", timeout=60, files={"photo": ("aviso.png", png, "image/png")},
+                              data={"chat_id": chat, "caption": texto, **extra})
         else:
-            r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", timeout=20,
+            if png:
+                requests.post(f"{api}/sendPhoto", timeout=60, files={"photo": ("aviso.png", png, "image/png")}, data={"chat_id": chat})
+                png = None  # si el texto falla en Markdown, el reintento no repite la imagen
+            r = requests.post(f"{api}/sendMessage", timeout=20,
                               data={"chat_id": chat, "text": texto[:4096], "disable_web_page_preview": True, **extra})
         if r.ok:
             return True

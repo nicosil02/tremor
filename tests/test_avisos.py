@@ -92,7 +92,7 @@ def test_tarjeta_png():
     if not (DATOS / "distritos.geojson").exists():
         pytest.skip("sin límites distritales")
     from tremor.tarjeta import tarjeta
-    png = tarjeta("Prueba", "49%", ["Nivel alto", "Octubre a diciembre"], ["a"], ["b"], ["080803"], {"080803"}, [], p=0.49)
+    png = tarjeta("Prueba", "49%", ["Nivel alto", "Octubre a diciembre"], ["080803"], {"080803"}, [], p=0.49)
     assert png[:8] == b"\x89PNG\r\n\x1a\n"
 
 
