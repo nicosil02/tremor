@@ -58,6 +58,9 @@ def datos(con):
             ev[k] = [x[k] for x in leido]
         ev["fecha_evento"] = [dia_dicho(t, f) for t, f in zip(ev.titular, ev.fecha_evento)]
         ev = pd.DataFrame(juntar(ev.to_dict("records")))
+        # el LLM a veces marca "ocurrida" lo que la nota anuncia: si la fecha aún no llega, es un anuncio
+        hoy = (pd.Timestamp.now(tz="America/Lima")).strftime("%Y-%m-%d")
+        ev.loc[ev.fecha_evento.astype(str) > hoy, "estado"] = "anunciada"
     met = tabla(con, "SELECT objetivo, modelo, metrica, valor FROM modelo_metrica WHERE metrica IN ('precision_top20', "
                      "'precision_top20_li', 'precision_top20_ls', 'captura_top10pct', 'tasa_base')")
     ventana = tabla(con, "SELECT ventana, mes_base FROM alerta LIMIT 1")
