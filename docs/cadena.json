@@ -331,5 +331,161 @@
     ]
    }
   ]
+ },
+ "Buenaventura": {
+  "empresa": "buenaventura",
+  "fuente": "Ruta inferida por la geografía y la red vial del MTC, por confirmar con la empresa: Uchucchacua y Yumpag (Oyón) salen por la PE-18 Oyón–Churín–Sayán–Huacho, la misma vía de Raura, hacia el Callao; Tambomayo (Tapay, Caylloma) baja por el valle del Colca a Chivay y por la PE-34E a Arequipa, rumbo a Matarani como Bateas",
+  "tramos": [
+   {
+    "nombre": "Uchucchacua y Yumpag a Oyón",
+    "modo": "Camión",
+    "via": "PE-18",
+    "ubigeos": [
+     "190201",
+     "150901"
+    ],
+    "puntos": [
+     [
+      -10.63233,
+      -76.68257
+     ],
+     [
+      -10.65408,
+      -76.76828
+     ]
+    ]
+   },
+   {
+    "nombre": "Churín a Sayán",
+    "modo": "Camión",
+    "via": "PE-18",
+    "ubigeos": [
+     "150906",
+     "150902",
+     "150804",
+     "150807",
+     "150808",
+     "150811"
+    ],
+    "puntos": [
+     [
+      -10.81128,
+      -76.87503
+     ],
+     [
+      -11.13345,
+      -77.1934
+     ]
+    ]
+   },
+   {
+    "nombre": "Huacho al Callao",
+    "modo": "Camión",
+    "via": "PE-1N",
+    "ubigeos": [
+     "150801",
+     "150806",
+     "150812",
+     "150605",
+     "150604",
+     "150601",
+     "150125"
+    ],
+    "puntos": [
+     [
+      -11.10852,
+      -77.61033
+     ],
+     [
+      -11.8668,
+      -77.07784
+     ]
+    ]
+   },
+   {
+    "nombre": "Tambomayo a Chivay",
+    "modo": "Camión",
+    "via": "",
+    "ubigeos": [
+     "040516",
+     "040503",
+     "040512",
+     "040502",
+     "040519",
+     "040501"
+    ],
+    "puntos": [
+     [
+      -15.47372,
+      -71.93052
+     ],
+     [
+      -15.638,
+      -71.601
+     ]
+    ]
+   },
+   {
+    "nombre": "Chivay a Yura",
+    "modo": "Camión",
+    "via": "PE-34E",
+    "ubigeos": [
+     "040519",
+     "040514",
+     "040128"
+    ],
+    "puntos": [
+     [
+      -15.638,
+      -71.601
+     ],
+     [
+      -16.25288,
+      -71.68138
+     ]
+    ]
+   },
+   {
+    "nombre": "Bajada a Arequipa",
+    "modo": "Camión",
+    "via": "PE-34A",
+    "ubigeos": [
+     "040128",
+     "040104",
+     "040124"
+    ],
+    "puntos": [
+     [
+      -16.25288,
+      -71.68138
+     ],
+     [
+      -16.42517,
+      -71.67271
+     ]
+    ]
+   },
+   {
+    "nombre": "Puerto de Matarani",
+    "modo": "Camión",
+    "via": "PE-1S",
+    "ubigeos": [
+     "040108",
+     "040702",
+     "040701",
+     "040704"
+    ],
+    "puntos": [
+     [
+      -16.42355,
+      -71.81783
+     ],
+     [
+      -17.00076,
+      -72.09783
+     ]
+    ]
+   }
+  ]
  }
 }
