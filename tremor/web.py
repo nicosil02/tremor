@@ -64,9 +64,9 @@ def datos(con):
             ev[k] = [x[k] for x in leido]
         ev["fecha_evento"] = [dia_dicho(t, f) for t, f in zip(ev.titular, ev.fecha_evento)]
         # la radio no tiene titular ("Radio X, en vivo 09/11 16:07"): se titula con lo que pasó
-        ev["titular"] = [f"{a or 'Protesta'} de {(ac or 'pobladores').lower()}, según {t.split(',')[0]}" if isinstance(t, str) and ", en vivo " in t else t
+        ev["titular"] = [f"{a or 'Protesta'} de {(txt(ac) or 'pobladores').lower()}, según {t.split(',')[0]}" if isinstance(t, str) and ", en vivo " in t else t
                          for t, a, ac in zip(ev.titular, ev.accion, ev.actor)]
-        ev = pd.DataFrame(juntar(ev.to_dict("records")))
+        ev = pd.DataFrame(juntar(ev.astype(object).where(ev.notna(), None).to_dict("records")))  # NaN es verdadero y no tiene .lower()
         # el LLM a veces marca "ocurrida" lo que la nota anuncia: si la fecha aún no llega, es un anuncio
         hoy = (pd.Timestamp.now(tz="America/Lima")).strftime("%Y-%m-%d")
         ev.loc[ev.fecha_evento.astype(str) > hoy, "estado"] = "anunciada"
@@ -169,7 +169,7 @@ def familia(accion):
 
 def quien(e):
     """Actor sin el detalle: "Transportistas urbanos" y "Transportistas de carga" quedan aparte (el urbano no frena despachos)."""
-    a = (e.get("actor") or "").lower()
+    a = txt(e.get("actor")).lower()
     if e.get("urbano") or "urbano" in a:  # las notas hablan de buses o rutas: es transporte urbano, diga lo que diga el actor
         return ("transportistas", True)
     return (a.split(" ")[0] if a else "", False)
