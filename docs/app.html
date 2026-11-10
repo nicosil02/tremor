@@ -143,7 +143,7 @@
     header, main, nav { width: 440px; }
     main { border-right: 1px solid var(--linea); min-height: calc(100dvh - 120px); }
     header { border-right: 1px solid var(--linea); }
-    nav { right: auto; border-right: 1px solid var(--linea); grid-template-columns: repeat(3, 1fr); }
+    nav[aria-label] { right: auto; border-right: 1px solid var(--linea); grid-template-columns: repeat(3, 1fr); }  /* gana a la regla general de abajo: sin Mapa, 3 casillas */
     nav [data-v=mapa] { display: none; }
     #mapa, #mapa[hidden] { display: block; inset: 0 0 0 440px; }
     .leyenda-via { left: 452px; top: 12px; }
