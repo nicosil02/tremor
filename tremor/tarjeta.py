@@ -150,6 +150,20 @@ def trazar(tramos):
     return out
 
 
+def caminos():
+    """docs/caminos.json: cada tramo con su camino por la red vial ({cliente: {tramo: [[lon, lat], ...]}}), para que el
+    camión de la app siga la carretera. Cada tramo sale de su propio punto. Correr al cambiar cadena.json."""
+    out = {}
+    for cliente, c in json.load(open(RAIZ / "docs" / "cadena.json", encoding="utf-8")).items():
+        for t in c["tramos"]:
+            for _, partes in trazar([t]):
+                pts = [p for linea, _ in partes for p in linea]
+                pts = [p for i, p in enumerate(pts) if i == 0 or math.dist(p, pts[i - 1]) > 0.005 or i == len(pts) - 1]
+                out.setdefault(cliente, {})[t["nombre"]] = [[round(x, 4), round(y, 4)] for x, y in pts]
+    (RAIZ / "docs" / "caminos.json").write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
+    return out
+
+
 def destino(nombre):
     """'Puerto de Matarani, zinc' → 'Matarani'; 'Panamericana Sur al Callao, plomo' → 'Callao'."""
     return nombre.split(",")[0].rsplit(" de ", 1)[-1].rsplit(" al ", 1)[-1].rsplit(" a ", 1)[-1]
