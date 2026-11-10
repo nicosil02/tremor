@@ -29,7 +29,8 @@ def test_eventos_en_la_zona_o_que_nombran_a_la_empresa():
                        ev(3, "ocurrida", "2026-11-08", "04", "Bloqueo", "Minera Las Bambas"), ev(4, "anunciada", "2026-10-02", "030506", "Paro"),
                        ev(5, "anunciada", "2099-11-10", "00", "Marcha", actor="Transportistas urbanos", urbano=True),
                        ev(6, "anunciada", "2026-11-03", "00", "Paro", actor="Transportistas de carga"),
-                       ev(7, "anunciada", "2099-11-12", "030506", "Paro", suspendido=True)]}
+                       ev(7, "anunciada", "2099-11-12", "030506", "Paro", suspendido=True),
+                       ev(8, "ocurrida", "2026-11-08", "030506", "Bloqueo", leida=False)]}
     assert [e["clave"] for e in eventos(web, z, r"las bambas", "2026-11-01")] == ["evento:1", "evento:3"]
 
 
@@ -76,3 +77,20 @@ def test_dia_dicho():
     assert dia_dicho("Aplazan paro y convocan marcha para el martes 20", "2026-11-20") == "2026-10-20"
     assert dia_dicho("Paro el miércoles 4", "2026-11-04") == "2026-11-04"
     assert dia_dicho("Paro nacional", "2026-11-16") == "2026-11-16"
+
+
+def test_provincia_nombrada():
+    from tremor.web import provincia_nombrada
+    assert provincia_nombrada("Frente de Defensa de Datem del Marañón anuncia movilizaciones", "1601") == "1607"
+    assert provincia_nombrada("Paro en Iquitos", "1601") == "1601"
+    assert provincia_nombrada("Bloqueo en Datem del Marañón", "160701") == "160701"
+
+
+def test_tarjeta_png():
+    import pytest
+    from tremor.db import DATOS
+    if not (DATOS / "distritos.geojson").exists():
+        pytest.skip("sin límites distritales")
+    from tremor.tarjeta import tarjeta
+    png = tarjeta("Prueba", "49%", ["Nivel alto", "Octubre a diciembre"], ["a"], ["b"], ["080803"], {"080803"}, [], p=0.49)
+    assert png[:8] == b"\x89PNG\r\n\x1a\n"
