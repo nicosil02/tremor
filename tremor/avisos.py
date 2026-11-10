@@ -118,6 +118,32 @@ def de_radio(con, e):
     return None
 
 
+def lentas(con, nombre, ahora_=None):
+    """Tramos de su ruta que TomTom mide lentos o cerrados en las últimas 3 horas, con la causa (tiempos.causa). Un
+    aviso por tramo y día. Sin la tabla (sin clave de TomTom) no hay nada."""
+    from datetime import datetime
+    hm = lambda s: f"{s // 3600} h {s % 3600 // 60:02d} min" if s >= 3600 else f"{s // 60} min"
+    desde = ((ahora_ or datetime.now()) - timedelta(hours=3)).isoformat(timespec="seconds")
+    try:
+        filas = con.execute("SELECT tramo, hora, segundos, sin_trafico, senal, causa FROM tiempo_viaje WHERE cliente = ? AND hora >= ? "
+                            "AND senal IS NOT NULL ORDER BY hora DESC", (nombre, desde)).fetchall()
+    except sqlite3.OperationalError:
+        return []
+    out, vistos = [], set()
+    for tramo, hora, seg, sin, sen, causa in filas:
+        if tramo in vistos:
+            continue
+        vistos.add(tramo)
+        out.append((f"ruta:{tramo}:{hora[:10]}",
+                    f"🐢 *RUTA LENTA · {re.sub(r', (\w+)$', r' (\1)', tramo)}*\n"
+                    f"_Su ruta de salida tarda {hm(seg)}; lo normal es {hm(sin)}_\n\n"
+                    f"🛣 *Qué pasa:* {sen[0].upper()}{sen[1:]} (TomTom, {hora[11:16]})\n"
+                    f"🔎 *Causa:* {causa or 'causa sin confirmar'}\n\n"
+                    f"✅ *Qué hacer*\nConfirmar con sus transportistas antes de despachar y ver rutas u horarios alternos.\n\n"
+                    f"🔗 *Conoce más aquí:* {APP}?e={quote(nombre)}", None))
+    return out
+
+
 def radio(con, alias, desde):
     """Fragmentos de radio que nombran a la empresa junto a una medida de lucha."""
     for id_, medio, pub, txt in con.execute("SELECT id, medio, publicado, resumen FROM nota WHERE consulta = 'radio' AND publicado >= ?", (desde,)):
@@ -315,7 +341,8 @@ def main(dias=7, reenviar=False, muestra=False):  # 7: GitHub a veces corre el w
             if r := de_radio(con, e):
                 e["emitido"], e["dicho"], extra = r
                 e.update({k: v for k, v in extra.items() if v})
-        for clave, texto, png in piezas(nombre, evs, rad, rie, unidad, web["vecinos"], tramos):
+        ruta = [x for x in lentas(con, nombre) if (f"{x[0]}|{nombre}",) not in ya]
+        for clave, texto, png in [*piezas(nombre, evs, rad, rie, unidad, web["vecinos"], tramos), *ruta]:
             if muestra:
                 d = DATOS / "exportes" / "muestra"; d.mkdir(parents=True, exist_ok=True)
                 base = f"{nombre}_{clave}".replace(":", "_").replace(" ", "_")

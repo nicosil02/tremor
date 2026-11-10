@@ -170,3 +170,19 @@ def test_sutran_en_zona_o_ruta():
     z = {"040108": "en su ruta, tramo Puerto de Matarani"}
     xs = {x["clave"]: x["accion"] for x in sutran(con, z, "2026-11-09")}
     assert xs == {"sutran:A": "Bloqueo de vías", "sutran:B": "Vía interrumpida por fenómeno natural"}
+
+
+def test_ruta_lenta_un_aviso_por_tramo():
+    import sqlite3
+    from datetime import datetime
+    from tremor.avisos import lentas
+    con = sqlite3.connect(":memory:")
+    assert lentas(con, "Bateas") == []  # sin clave de TomTom no hay tabla
+    con.execute("CREATE TABLE tiempo_viaje (cliente, tramo, hora, segundos, sin_trafico, metros, cierre, senal, causa)")
+    con.executemany("INSERT INTO tiempo_viaje VALUES ('Bateas', ?, ?, ?, 7200, 0, 0, ?, ?)", [
+        ("Puerto de Matarani, zinc", "2026-11-10T11:00:00", 13000, "tarda 1.8 veces lo normal", "lluvia fuerte: 25 mm en 6 horas"),
+        ("Puerto de Matarani, zinc", "2026-11-10T10:00:00", 12000, "tarda 1.7 veces lo normal", None),   # el mismo tramo, antes
+        ("Lima, plomo", "2026-11-10T11:00:00", 7300, None, None)])                                       # normal: no avisa
+    (clave, texto, _), = lentas(con, "Bateas", datetime(2026, 11, 10, 12))
+    assert clave == "ruta:Puerto de Matarani, zinc:2026-11-10"
+    assert "Puerto de Matarani (zinc)" in texto and "3 h 36 min" in texto and "lluvia fuerte" in texto
