@@ -134,6 +134,7 @@ def verificar_radio(con, max_solicitudes=30):
     xs = con.execute("SELECT n.id, n.resumen FROM nota n JOIN codificacion c ON c.nota_id = n.id AND c.version = ? "
                      "WHERE n.consulta = 'radio' AND c.es_protesta = 1 AND n.id NOT IN (SELECT nota_id FROM radio_verificada)",
                      (VERSION,)).fetchall()[:max_solicitudes]
+    hechas = 0
     for n, txt in xs:
         m = MEDIDA.search(txt or "")
         ventana = txt[max(0, m.start() - 250):m.end() + 250] if m else (txt or "")[:600]
@@ -151,7 +152,8 @@ def verificar_radio(con, max_solicitudes=30):
             con.execute("UPDATE codificacion SET tipo_conflicto = 'otro' WHERE nota_id = ? AND version = ? "
                         "AND tipo_conflicto = 'socioambiental_extractivo'", (n, VERSION))
         con.commit()
-    return len(xs)
+        hechas += 1
+    return hechas
 
 
 def limpiar(item: dict) -> dict:
