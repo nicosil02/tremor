@@ -31,7 +31,7 @@ def test_eventos_en_la_zona_o_que_nombran_a_la_empresa():
                        ev(6, "anunciada", "2026-11-03", "00", "Paro", actor="Transportistas de carga"),
                        ev(7, "anunciada", "2099-11-12", "030506", "Paro", suspendido=True),
                        ev(8, "ocurrida", "2026-11-08", "030506", "Bloqueo", leida=False)]}
-    assert [e["clave"] for e in eventos(web, z, r"las bambas", "2026-11-01")] == ["evento:030501:Paro:2099-11-12", "evento:04:Bloqueo:2026-11-08"]  # por contenido: el id cambia al reagrupar
+    assert [e["clave"] for e in eventos(web, z, r"las bambas", "2026-11-01")] == ["evento:030501:Paro:2099-11-12"]  # por contenido (el id cambia al reagrupar); el bloqueo del 8 nov ya pasó: no se avisa
 
 
 def test_focos():
@@ -159,14 +159,15 @@ def test_por_reglas_dia_del_mes_siguiente():
 def test_sutran_en_zona_o_ruta():
     import sqlite3
     from tremor.avisos import sutran
+    from tremor.db import ahora
     con = sqlite3.connect(":memory:")
     con.execute("CREATE TABLE sutran_alerta (codigo, motivo, submotivo, estado_via, titulo, descripcion, ubigeo, fecha_evento, "
                 "visto_ultimo)")
-    con.executemany("INSERT INTO sutran_alerta VALUES (?, ?, ?, ?, ?, '', ?, '2026-11-10', '2026-11-10T08:00:00')", [
-        ("A", "humano", "humano.protestas", "interrumpido", "PROTESTA KM 20", "040108"),          # protesta en la ruta
-        ("B", "fenomenos_naturales", "fenomenos_naturales.climatologico", "interrumpido", "HUAICO", "040108"),
-        ("C", "accidentes", "accidentes.siniestro_vial", "restringido", "CHOQUE", "040108"),       # solo restringida: no
-        ("D", "humano", "humano.protestas", "interrumpido", "PROTESTA", "100111")])                # fuera de la zona
+    con.executemany("INSERT INTO sutran_alerta VALUES (?, ?, ?, ?, ?, '', ?, '2026-11-10', ?)", [
+        ("A", "humano", "humano.protestas", "interrumpido", "PROTESTA KM 20", "040108", ahora()),          # protesta en la ruta
+        ("B", "fenomenos_naturales", "fenomenos_naturales.climatologico", "interrumpido", "HUAICO", "040108", ahora()),
+        ("C", "accidentes", "accidentes.siniestro_vial", "restringido", "CHOQUE", "040108", ahora()),       # solo restringida: no
+        ("D", "humano", "humano.protestas", "interrumpido", "PROTESTA", "100111", ahora())])                # fuera de la zona
     z = {"040108": "en su ruta, tramo Puerto de Matarani"}
     xs = {x["clave"]: x["accion"] for x in sutran(con, z, "2026-11-09")}
     assert xs == {"sutran:A": "Bloqueo de vías", "sutran:B": "Vía interrumpida por fenómeno natural"}
