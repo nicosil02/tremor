@@ -13,7 +13,7 @@ from tremor.lugares import catalogo, nombre, norm
 mcp = MCPServer("tremor", instructions=(
     "Conflictos sociales en el Perú por distrito (ubigeo INEI): historia de protestas de la EGPP PUCP (1980-2025), "
     "acciones de protesta de la Defensoría, protestas en la prensa (incluidas las anunciadas), bloqueos de la SUTRAN, "
-    "presupuesto municipal del MEF, pobreza departamental de la ENAHO, y precios y producción minera del BCRP. "
+    "fiscalización ambiental del OEFA (medidas, multas, supervisiones, denuncias SINADA), presupuesto municipal del MEF, pobreza departamental de la ENAHO, y precios y producción minera del BCRP. "
     "Primero ubica el lugar con buscar_lugar y usa su ubigeo. Cita la fuente de cada cifra; para el MEF, la URL que "
     "devuelve consulta_amigable."))
 
@@ -155,6 +155,21 @@ def empresa(nombre: str) -> dict:
             "como_leer": "alerta = la zona está en el 10% de zonas con operación más riesgosas ese mes; pct_vistos = de "
                          "los meses con medida de fuerza en la zona, cuántos tuvo en alerta; acierto_alertas = de sus "
                          "alertas, cuántas acertaron."}
+
+
+@mcp.tool()
+def fiscalizacion_oefa(empresa: str | None = None, ubigeo: str | None = None) -> dict:
+    """Fiscalización ambiental del OEFA (minería, hidrocarburos y electricidad) de una empresa (razón social o parte:
+    "Southern", "Bateas") o de un lugar (ubigeo de 2, 4 o 6 dígitos): medidas administrativas y cuántas incumplió,
+    multas firmes y su monto, supervisiones por año y, para un lugar, denuncias ambientales SINADA. Cifras exactas del
+    portal de datos abiertos del OEFA (hasta marzo de 2025: el OEFA no publica desde entonces); citar la fuente."""
+    from tremor.oefa import fiscalizacion
+    if not (empresa or ubigeo):
+        return {"error": "Indica una empresa o un ubigeo (usa buscar_lugar para el ubigeo)."}
+    try:
+        return fiscalizacion(conectar(), empresa, ubigeo)
+    except Exception:
+        return {"error": "La base no tiene los datos del OEFA. Cárgalos con python -m tremor.oefa."}
 
 
 @mcp.tool()
