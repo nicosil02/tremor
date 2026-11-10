@@ -63,13 +63,16 @@ def datos(con):
         for k in ("adhieren", "retiran", "suspendido", "urbano", "puntos", "plazo"):
             ev[k] = [x[k] for x in leido]
         ev["fecha_evento"] = [dia_dicho(t, f) for t, f in zip(ev.titular, ev.fecha_evento)]
+        # la radio no tiene titular ("Radio X, en vivo 09/11 16:07"): se titula con lo que pasó
+        ev["titular"] = [f"{a or 'Protesta'} de {(ac or 'pobladores').lower()}, según {t.split(',')[0]}" if isinstance(t, str) and ", en vivo " in t else t
+                         for t, a, ac in zip(ev.titular, ev.accion, ev.actor)]
         ev = pd.DataFrame(juntar(ev.to_dict("records")))
         # el LLM a veces marca "ocurrida" lo que la nota anuncia: si la fecha aún no llega, es un anuncio
         hoy = (pd.Timestamp.now(tz="America/Lima")).strftime("%Y-%m-%d")
         ev.loc[ev.fecha_evento.astype(str) > hoy, "estado"] = "anunciada"
         # anuncio sin fecha en ninguna nota: el día de publicación no es el día de la protesta
         con_fecha = {i for (i,) in con.execute("""SELECT DISTINCT en.evento_id FROM evento_nota en JOIN codificacion k
-                                                  ON k.nota_id = en.nota_id WHERE k.fecha_evento IS NOT NULL AND k.version = ?""", (VERSION,))}
+                                                  ON k.nota_id = en.nota_id WHERE k.fecha_evento IS NOT NULL AND k.version IN (?, 'reglas')""", (VERSION,))}
         ev["sin_fecha"] = [(s == "anunciada" and i not in con_fecha and not isinstance(p, str)) for i, s, p in zip(ev.id, ev.estado, ev.plazo)]
         ev["ubigeo"] = [provincia_nombrada(t, u) for t, u in zip(ev.titular, ev.ubigeo)]
         ev["focos"] = [f if len(f) > 1 else [u] if u != "00" else [] for f, u in zip(ev.focos, ev.ubigeo.astype(str))]
@@ -247,7 +250,7 @@ def dia_dicho(titular, fecha):
     return fecha
 
 
-URBANO = re.compile(r"extorsi|transporte (publico|urbano)|combis?\b|colectiver|mototaxi|choferes asesinad|asesinatos? de chofer|suspender\w* (sus )?rutas|empresas de transporte|lineas de (buses|transporte)|buses")
+URBANO = re.compile(r"extorsi|transporte (publico|urbano)|combis?\b|colectiver|mototaxi|choferes asesinad|asesinatos? de chofer|suspender\w* (sus )?rutas|empresas de transporte|lineas de (buses|transporte)|transportistas de lima y callao|buses")
 
 
 def _llano(s):

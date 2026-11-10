@@ -5,6 +5,7 @@ ponytail: una codificación por nota (la protesta principal); separar varias pro
 """
 import json
 import re
+from datetime import date, timedelta
 from pathlib import Path
 
 from tremor.egpp import tipo_conflicto
@@ -117,6 +118,7 @@ def codificar(con, max_solicitudes=200) -> tuple[int, int, bool]:
     solicitudes = hechas = 0
     for i in range(0, len(pendientes), LOTE):
         if solicitudes >= max_solicitudes:
+            respaldo(con, pendientes[i:])
             return solicitudes, hechas, True
         lote = pendientes[i:i + LOTE]
         entrada = [{"id": r[0], "fecha_publicacion": (r[3] or "")[:10], "departamento_de_la_busqueda": r[4],
@@ -125,6 +127,7 @@ def codificar(con, max_solicitudes=200) -> tuple[int, int, bool]:
             por_id = _pedir(con, entrada)
         except SinCuota as e:
             print(f"  Sin cuota: {e}")
+            respaldo(con, pendientes[i:])
             return solicitudes, hechas, True
         solicitudes += 1
         for r in lote:
@@ -140,3 +143,74 @@ def codificar(con, max_solicitudes=200) -> tuple[int, int, bool]:
             hechas += 1
         con.commit()
     return solicitudes, hechas, False
+
+
+# --- Respaldo sin LLM: cuando se acaba el cupo, lo que le importa a un cliente minero no espera al día siguiente ---
+MESES = "enero febrero marzo abril mayo junio julio agosto septiembre octubre noviembre diciembre".split()
+ACCION = [(r"bloque", "Bloqueo de vías"), (r"huelga", "Huelga"), (r"\bparo\b|paraliz", "Paro"), (r"march|moviliz", "Marcha"),
+          (r"planton", "Plantón"), (r"\btoma\b|tomaron", "Toma de local")]
+ACTOR = [(r"carga pesada|transportistas de carga|transporte de carga|camioner", "Transportistas de carga"),
+         (r"transporte (publico|urbano)|combis?\b|colectiver|mototaxi|buses|transportistas de lima|empresas de transporte", "Transportistas urbanos"),
+         (r"comunidad(es)? campesina|comuneros", "Comunidades campesinas"), (r"comunidad(es)? nativa|indigena", "Comunidades nativas"),
+         (r"agricultor|regantes", "Agricultores"), (r"ronder", "Rondas campesinas")]
+ANUNCIA = re.compile(r"anunci|convoc|alist|amenaz|advierte|preparan")  # gana sobre lo demás
+OCURRE = re.compile(r"estall|bloquean|bloquearon|acatan|acataron|protestaron|marcharon|choques|enfrentamient|se registr|continua|cumple|segundo dia|tercer dia")
+PRONTO = re.compile(r"acatar|se sumar|realizar[aá]n|iniciar[aá]n|desde el|a partir del?|este (lunes|martes|miercoles|jueves|viernes|sabado|domingo)|ma[nñ]ana|suspender[aá]n|dejar[aá]n")
+SUSPENDE = re.compile(r"(suspend|levant|desconvoc|posterg|cancel)\w*\s+(el |la |su |del )?(paro|huelga|bloqueo|medida|paralizaci)")
+
+
+def por_reglas(titular, resumen, publicado):
+    """Codificación de respaldo con reglas (versión "reglas"): acción, actor, anunciada u ocurrida, fecha dicha en la
+    nota ("el 16 de noviembre") y lugar por nombre de provincia o distrito. Solo si es del Perú: nombra un lugar
+    peruano o dice Perú; si no, None y espera al LLM. ponytail: reglas gruesas, el LLM la reemplaza al volver el cupo."""
+    from tremor.web import _lugares, _norm
+    tit = _norm(titular or "")
+    t = f"{tit}. {_norm((resumen or '')[:300])}"  # el resumen a veces trae la página entera (menús, otras ciudades)
+    accion = next((a for p, a in ACCION if re.search(p, t)), None)
+    if not accion:
+        return None
+    idx = _lugares()
+    def en(x):
+        return sorted({u for k, us in idx.items() if re.search(rf"\b{re.escape(k)}\b", x) for u in us}, key=len, reverse=True)
+    lugares = [] if re.search(r"paro nacional|a nivel nacional|todo el pais", tit) else en(tit) or en(t)
+    if not lugares and "peru" not in t and not re.search(r"paro nacional|a nivel nacional|todo el pais", tit):
+        return None  # puede ser de otro país (camioneros de Chile): espera al LLM
+    actor = next((a for p, a in ACTOR if re.search(p, t)), None)
+    if not actor and re.search(r"transportista|transporte|chofer", t):  # sin más pista: en Lima es urbano; fuera, carga
+        actor = "Transportistas urbanos" if lugares and all(x[:2] in ("15", "07") for x in lugares) else "Transportistas de carga"
+    actor = actor or "Pobladores"
+    sector = next((s for s, xs in CODIGOS["sector_actor"].items() if actor in xs), None)
+    m = re.search(rf"\b(\d{{1,2}}) de ({'|'.join(MESES)})\b", t)
+    fecha = f"{(publicado or '2000')[:4]}-{MESES.index(m.group(2)) + 1:02d}-{int(m.group(1)):02d}" if m else None
+    pub = (publicado or "")[:10]
+    if fecha and pub and fecha < pub and (date.fromisoformat(pub) - date.fromisoformat(fecha)).days > 3:
+        return None  # recuerda algo pasado o es una nota vieja reindexada: espera al LLM
+    def estado_de(x):
+        return ("suspendida" if SUSPENDE.search(x) else "anunciada" if ANUNCIA.search(x) or (fecha and fecha > pub)
+                else "ocurrida" if OCURRE.search(x) else "anunciada" if PRONTO.search(x) else None)
+    estado = estado_de(tit) or estado_de(t) or "ocurrida"
+    if not fecha and estado == "ocurrida":
+        fecha = (publicado or "")[:10] or None
+    u = (lugares[0] if len(lugares) == 1 or all(x.startswith(lugares[-1][:4]) for x in lugares)
+         else lugares[0][:2] if all(x[:2] == lugares[0][:2] for x in lugares) else None) if lugares else None
+    return {"es_protesta": 1, "estado": estado, "fecha_evento": fecha, "region": None, "provincia": None, "distrito": None,
+            "localidad": None, "ubigeo": u, "precision": None if not u else "distrito" if len(u) == 6 else "provincia",
+            "sector": sector, "actor": actor, "accion": accion, "adversario": None, "empresa": None, "operacion": None,
+            "reclamo": None, "sub_reclamo": None, "heridos": None, "muertos": None, "detenidos": None,
+            "tipo_conflicto": tipo_conflicto(actor, None, sector, None, t)}
+
+
+def respaldo(con, pendientes):
+    """Las notas vivas que le importan a un cliente y quedaron sin LLM: se codifican por reglas."""
+    from tremor.prensa.historia import CLIENTE
+    n, hace = 0, (date.today() - timedelta(days=15)).isoformat()
+    for r in pendientes:
+        if (r[5] or "").startswith("historia:") or (r[3] or "")[:10] < hace or not CLIENTE.search(norm(f"{r[1]} {r[2] or ''}")):
+            continue
+        c = por_reglas(r[1], r[2], r[3])
+        if c and (c["ubigeo"] or c["estado"] == "anunciada"):  # sin lugar, solo el aviso previo; lo ocurrido espera al LLM
+            con.execute(f"INSERT OR REPLACE INTO codificacion VALUES (?, 'reglas', {','.join('?' * len(COLUMNAS))})",
+                        (r[0], *[c[k] for k in COLUMNAS])); n += 1
+    con.commit()
+    print(f"  Respaldo por reglas: {n} notas para clientes, hasta que vuelva el cupo")
+    return n

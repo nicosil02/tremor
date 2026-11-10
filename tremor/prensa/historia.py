@@ -162,17 +162,23 @@ def _lugares_con_operacion(con):
     return re.compile(r"\b(?:" + "|".join(map(re.escape, lugares)) + r")\b") if lugares else None
 
 
+# lo que frena una operación o su salida: carga pesada, paro nacional, minería, hidrocarburos
+CLIENTE = re.compile(r"carga pesada|transportistas de carga|camioner|paro nacional|paro de transport|miner|\bmina\b|petrol|oleoducto|\blote \d|corredor minero")
+
+
 def ordenar(con, filas):
-    """Cola del codificador: primero lo vivo (feeds, Google News, radio) por fecha; después la historia, primero
+    """Cola del codificador: primero lo vivo (feeds, Google News, radio), y dentro lo que le importa a un cliente
+    minero (si no, con poco cupo las notas nuevas de otros temas dejan atrás un paro nacional de carga) y luego por fecha; después la historia, primero
     las notas con palabra de acción EGPP y lugar con operación, luego una de las dos, luego el resto.
     filas: (id, titular, resumen, publicado, departamento_consulta, consulta)."""
     lugar = _lugares_con_operacion(con)
 
     def clave(r):
-        if not (r[5] or "").startswith("historia:"):
-            return (0, 0)
         t = norm(f"{r[1]} {r[2] or ''}")
-        return (1, -(2 * bool(EGPP.search(t)) + bool(lugar and lugar.search(t))))
+        valor = 2 * bool(EGPP.search(t)) + bool(lugar and lugar.search(t))
+        if not (r[5] or "").startswith("historia:"):  # lo vivo: primero lo que le importa a un cliente minero
+            return (0, -(3 * bool(CLIENTE.search(t)) + valor))
+        return (1, -valor)
     return sorted(sorted(filas, key=lambda r: r[3] or "", reverse=True), key=clave)  # estable: fecha desc dentro
 
 

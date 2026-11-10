@@ -44,8 +44,9 @@ def _moda(vals):
 
 def agrupar(con) -> int:
     filas = [dict(r) for r in con.execute("""SELECT c.*, n.publicado, n.medio, n.resumen FROM codificacion c JOIN nota n ON n.id = c.nota_id
-        WHERE c.version = ? AND c.es_protesta = 1
-          AND (c.ubigeo IS NOT NULL OR c.actor LIKE 'Transportistas%' OR c.empresa IS NOT NULL OR c.operacion IS NOT NULL)""", (VERSION,))]
+        WHERE (c.version = ? OR (c.version = 'reglas' AND NOT EXISTS (  -- respaldo sin LLM, hasta que el LLM la codifique
+                 SELECT 1 FROM codificacion v WHERE v.nota_id = c.nota_id AND v.version = ?))) AND c.es_protesta = 1
+          AND (c.ubigeo IS NOT NULL OR c.actor LIKE 'Transportistas%' OR c.empresa IS NOT NULL OR c.operacion IS NOT NULL)""", (VERSION, VERSION))]
     # Sin lugar solo entran los paros de transportistas (cortan la salida del mineral en todo el país) y lo que nombra una
     # operación; van con ubigeo "00". El resto sin lugar suele ser de otro país o no se puede ubicar.
     for r in filas:

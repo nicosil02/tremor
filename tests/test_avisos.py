@@ -116,3 +116,22 @@ def test_urbano_por_rutas():
     j = juntar([{**base, "fecha_evento": "2026-11-10", "ubigeo": "15", "accion": "Paro", "actor": "Transportistas urbanos", "n_notas": 5},
                 {**base, "fecha_evento": "2026-11-09", "ubigeo": "15", "accion": "Paro", "actor": "Comerciantes", "n_notas": 1, "urbano": True}])
     assert len(j) == 1 and j[0]["n_notas"] == 6
+
+
+def test_cola_prioriza_carga(monkeypatch):
+    import tremor.prensa.historia as H
+    monkeypatch.setattr(H, "_lugares_con_operacion", lambda con: None)
+    filas = [("a", "Vecinos protestan por la tala de árboles", "", "2026-11-09", None, "rss"),
+             ("b", "Transportistas de carga pesada anuncian paro nacional de 72 horas", "", "2026-11-03", None, "rss")]
+    assert [r[0] for r in H.ordenar(None, filas)][0] == "b"
+
+
+def test_por_reglas():
+    from tremor.prensa.codificar import por_reglas
+    c = por_reglas("VIDEO | Transportistas de carga anuncian paro nacional de 72 horas", "En Lima el gremio...", "2026-11-03")
+    assert (c["estado"], c["ubigeo"], c["actor"], c["accion"]) == ("anunciada", None, "Transportistas de carga", "Paro")
+    c = por_reglas("Paro de transportistas en Lima este 10 de noviembre: conoce qué líneas", "", "2026-11-09T18:02")
+    assert (c["estado"], c["fecha_evento"], c["actor"]) == ("anunciada", "2026-11-10", "Transportistas urbanos")
+    c = por_reglas("Huánuco: protestas por falta de agua estallan en bloqueos y choques", "anuncio publicidad tumbes", "2026-11-06")
+    assert (c["estado"], c["ubigeo"]) == ("ocurrida", "1001")
+    assert por_reglas("Paro de transporte en Lima este 10 de octubre", "", "2026-11-09") is None  # nota vieja
