@@ -165,7 +165,9 @@ def leer_dfai(html_):
 # cita la de la DFAI que revisa; la empresa sale de ahí (no se guarda texto: puede nombrar a personas).
 TFA = ("https://www.gob.pe/institucion/oefa/colecciones/1716-sala-especializada-en-mineria-energia-actividades-"
        "productivas-e-infraestructura-y-servicios-tfa-se?sheet={}")
-_TFA = re.compile(r"(\d{1,2}) de (\w+) de (\d{4})\s*\n\s*Resoluci\S+ N\S*?\s*(\d{1,4})-(\d{4})-OEFA[/-]TFA-SE[^\n]*\n\s*([^\n]+)")
+# Hasta 2019 la redacción era otra: "RESOLUCIÓN N° 339-2018-OEFA/TFA-SMEPIM" y otras salas (SMEPIM, SEPIM, SEE).
+_TFA = re.compile(r"(\d{1,2}) de (\w+) de (\d{4})\s*\n\s*Resoluci\S+ N\S*?\s*(\d{1,4})-(\d{4})-OEFA[/-]TFA-(S\w*)[^\n]*\n\s*([^\n]+)",
+                  re.I)
 DECISION = [("confirma", r"\bconfirma"), ("revoca", r"\brevoca"), ("nulidad", r"nulidad"), ("improcedente", r"improcedente"),
             ("otro", r"")]
 
@@ -178,9 +180,10 @@ def _texto(html_):
 
 def leer_tfa(html_):
     out = []
-    for d, mes_, a, n, anio, res in _TFA.findall(_texto(html_)):
+    for d, mes_, a, n, anio, sala, res in _TFA.findall(_texto(html_)):
         ref = re.search(r"(\d{1,5})-(\d{4})-OEFA[/-]DF(S?)AI", res)
-        out.append({"num": f"{int(n):04d}-{anio}", "fecha": f"{a}-{MESES.get(mes_.lower(), 0):02d}-{int(d):02d}",
+        sala = sala.upper()  # cada sala numera aparte: la SE (desde 2019) sin sufijo, las antiguas con el suyo
+        out.append({"num": f"{int(n):04d}-{anio}" + ("" if sala == "SE" else f"-{sala}"), "fecha": f"{a}-{MESES.get(mes_.lower(), 0):02d}-{int(d):02d}",
                     "dfai": f"{int(ref[1]):04d}-{ref[2]}" + ("-S" if ref[3] else "") if ref else None,
                     "decision": next(k for k, p in DECISION if re.search(p, res, re.I))})
     return out
@@ -211,13 +214,18 @@ def coleccion(con, tabla, hasta_pagina=2000, pausa=0.5, anio=None):
                 r = requests.get(url.format(p), timeout=60, headers={"User-Agent": "Tremor/1.0 (github.com/nicosil02/tremor)"},
                                  params={"filter[start_date]": f"{anio}-01-01", "filter[end_date]": f"{anio}-12-31"} if anio else None)
                 r.encoding = "utf-8"
-                break
+                filas = leer(r.text)
+                if filas or i >= 1:  # gob.pe a veces devuelve una página vacía al azar: un reintento antes de darla por final
+                    break
+                time.sleep(20)
             except requests.RequestException:
                 time.sleep(15 * (i + 1))
         else:
             raise RuntimeError(f"gob.pe no responde en la página {p}")
-        filas = leer(r.text)
         if not filas:
+            if re.search(r"Resoluci\S+ N\S*?\s*\d", _texto(r.text), re.I):  # hay resoluciones que no se leen: no es el final
+                print(f"  {tabla}: la página {p} trae resoluciones en un formato que no se lee")
+                continue
             break
         antes = con.total_changes
         con.executemany(f"INSERT OR IGNORE INTO {tabla} VALUES ({', '.join(':' + k for k in filas[0])})", filas)
@@ -264,6 +272,10 @@ def dfai(con):
         for a in range(2016, date.today().year + 1):  # la primera vez, año por año: gob.pe no pagina más allá de ~10 000
             coleccion(con, "oefa_dfai", anio=a)
     coleccion(con, "oefa_dfai")
+    if not con.execute("SELECT name FROM sqlite_master WHERE name = 'oefa_tfa'").fetchone() or \
+            con.execute("SELECT MIN(fecha) FROM oefa_tfa").fetchone()[0] > "2017":  # sin la historia: año por año
+        for a in range(2016, date.today().year + 1):
+            coleccion(con, "oefa_tfa", anio=a)
     coleccion(con, "oefa_tfa")
     ruias(con)
 
