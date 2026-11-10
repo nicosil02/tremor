@@ -83,8 +83,8 @@ def sutran(con, z, desde):
     """Alertas de la SUTRAN en la zona o la ruta: toda protesta, y en la ruta toda vía interrumpida (huaico, accidente,
     El Niño): al de logística le sirve igual, pero el aviso dice la causa."""
     from tremor.tiempos import MOTIVO
-    for codigo, motivo, sub, estado, titulo, desc, ub, fecha in con.execute(
-            "SELECT codigo, motivo, submotivo, estado_via, titulo, descripcion, ubigeo, fecha_evento FROM sutran_alerta "
+    for codigo, motivo, sub, estado, titulo, desc, ub, fecha, lat, lng in con.execute(
+            "SELECT codigo, motivo, submotivo, estado_via, titulo, descripcion, ubigeo, fecha_evento, lat, lng FROM sutran_alerta "
             "WHERE visto_ultimo >= ?", (desde,)):
         if (ub or "") not in z:
             continue
@@ -95,7 +95,7 @@ def sutran(con, z, desde):
         yield {"clave": f"sutran:{codigo}", "estado": "ocurrida", "fecha": fecha or desde, "ubigeo": ub,
                "accion": "Bloqueo de vías" if protesta else f"Vía interrumpida por {causa}", "unidad": z[ub],
                "medio": "SUTRAN", "enlace": "https://alertasviales.sutran.gob.pe", "titular": (titulo or "").capitalize(),
-               "transporte": False, "punto": (desc or "")[:200], "segun": "SUTRAN"}
+               "transporte": False, "punto": (desc or "")[:200], "segun": "SUTRAN", "coord": (lat, lng) if lat and lng else None}
 
 
 DURA = r"\b(\d+|veinticuatro|cuarenta y ocho|setenta y dos)\s+horas|\bindefinid\w*|\b(\d+|un|dos|tres|cuatro|cinco)\s+d[ií]as\b"
@@ -129,18 +129,23 @@ def lentas(con, nombre, ahora_=None):
                             "AND senal IS NOT NULL ORDER BY hora DESC", (nombre, desde)).fetchall()
     except sqlite3.OperationalError:
         return []
+    from tremor.tarjeta import tarjeta
+    ruta = CADENA.get(nombre, {}).get("tramos", [])
     out, vistos = [], set()
     for tramo, hora, seg, sin, sen, causa in filas:
         if tramo in vistos:
             continue
         vistos.add(tramo)
+        png = tarjeta(f"Ruta lenta: {re.sub(r', (\w+)$', r' (\1)', tramo)}", hm(seg), [f"Lo normal: {hm(sin)}", f"TomTom, {hora[11:16]}"], [], set(),
+                      [u for t in ruta[:1] for u in t["ubigeos"][:1]], leyenda="Tramo lento", ruta=ruta, cortes=[tramo],
+                      empresa=EMPRESAS[nombre][0]) if ruta and (DATOS / "distritos.geojson").exists() else None
         out.append((f"ruta:{tramo}:{hora[:10]}",
                     f"🐢 *RUTA LENTA · {re.sub(r', (\w+)$', r' (\1)', tramo)}*\n"
                     f"_Su ruta de salida tarda {hm(seg)}; lo normal es {hm(sin)}_\n\n"
                     f"🛣 *Qué pasa:* {sen[0].upper()}{sen[1:]} (TomTom, {hora[11:16]})\n"
                     f"🔎 *Causa:* {causa or 'causa sin confirmar'}\n\n"
                     f"✅ *Qué hacer*\nConfirmar con sus transportistas antes de despachar y ver rutas u horarios alternos.\n\n"
-                    f"🔗 *Conoce más aquí:* {APP}?e={quote(nombre)}", None))
+                    f"🔗 *Conoce más aquí:* {APP}?e={quote(nombre)}", png))
     return out
 
 
@@ -216,6 +221,9 @@ def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
     tramos: ubigeos de su ruta. Devuelve [(clave, texto, png o None)]."""
     from tremor.tarjeta import nivel, tarjeta
     suyos = list(unidad)
+    camino, empresa = CADENA.get(nombre, {}).get("tramos", []), EMPRESAS[nombre][0]
+    salida = [u for t in camino[:1] for u in t["ubigeos"][:1]]  # donde arranca su ruta: la mina
+    cortados = lambda foco: [t["nombre"] for t in camino if set(t["ubigeos"]) & foco]
     cerca = lambda u, propios=(): list(dict.fromkeys([u, *vecinos.get(u, []), *propios]))  # el distrito, sus vecinos y su unidad
     vinetas = lambda s: [f"• {x.strip()[0].upper()}{x.strip()[1:]}" for x in re.split(r";\s*", s or "") if x.strip()]
     out = []
@@ -235,8 +243,10 @@ def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
                  + (f"🔎 *¿Por qué sube?*\n" + "\n".join(porque) + "\n\n" if porque else "")
                  + "✅ *Qué hacer*\nReforzar el seguimiento de la zona y el diálogo con las comunidades vecinas.\n\n"
                  f"🔗 *Conoce más aquí:* {APP}?e={quote(nombre)}&d={r['ubigeo']}")
+        mapa = cerca(r["ubigeo"], [u for u, x in unidad.items() if x == r["unidad"]])
         png = tarjeta(f"Sube el riesgo de conflicto en {dis}", pct(r["p"]), [f"Nivel {n.lower()}", meses(r["ventana"]).capitalize()],
-                      cerca(r["ubigeo"], [u for u, x in unidad.items() if x == r["unidad"]]), {r["ubigeo"]}, suyos, p=r["p"])
+                      mapa, {r["ubigeo"]}, [u for u in suyos if u in mapa], p=r["p"], ruta=camino,
+                      cortes=cortados({r["ubigeo"]}), empresa=empresa)
         out.append((r["clave"], texto, png))
     for e in sorted(evs, key=lambda e: e["estado"] != "anunciada"):
         cuando = {"anunciada": f"Anunciada para el {dia(e['fecha'])}", "plazo": f"Plazo que vence el {dia(e['fecha'])}",
@@ -275,15 +285,19 @@ def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
                  f"✅ *Qué hacer*\n{hacer}\n\n"
                  f"📰 *Fuente:* {fuente}\n"
                  f"🔗 *Conoce más aquí:* {enlace}")
-        foco = set(tramos) if e["ubigeo"] == "00" and e["transporte"] else {u for u in [e["ubigeo"]] if len(u) == 6}
+        nacional = e["ubigeo"] == "00" and e["transporte"]  # paro de transportistas: toda su ruta, sin distritos sueltos
+        foco = {u for u in [e["ubigeo"]] if len(u) == 6}
         propios = [u for u, x in unidad.items() if x == e["unidad"]]
         if len(e["ubigeo"]) == 4:  # provincia: se pinta entera
             foco = {u for u in vecinos if u.startswith(e["ubigeo"])}
-        mapa = (suyos + list(tramos)) if e["ubigeo"] == "00" else cerca(e["ubigeo"], propios) if len(e["ubigeo"]) == 6 else [*foco, *prov]
+        mapa = (list(tramos) or suyos) if e["ubigeo"] == "00" else cerca(e["ubigeo"], propios) if len(e["ubigeo"]) == 6 else [*foco, *prov]
+        cortes = [t["nombre"] for t in camino] if nacional else cortados(foco)
         cifra, sub = ((dia(e["fecha"]), ["Fecha del anuncio", "Todavía sin fecha de protesta"]) if e["estado"] == "sin_fecha"
                       else (dia(e["fecha"]), [cuando.split(" para el")[0].split(" el ")[0], "Todo el país" if e["ubigeo"] == "00" else mayus(lugar(e["ubigeo"]))]))
-        png = tarjeta(re.sub(r",? según .*$", "", e["titular"] or e["accion"]), cifra, sub, mapa, foco, suyos,
-                      leyenda="Su ruta de salida" if e["ubigeo"] == "00" else "Lugar del corte" if corte else "Lugar de la protesta") if mapa else None
+        png = tarjeta(re.sub(r",? según .*$", "", e["titular"] or e["accion"]), cifra, sub, [] if nacional and camino else mapa, foco,
+                      [u for u in suyos if u in mapa or (cortes and u in salida)],
+                      leyenda="Su ruta de salida" if e["ubigeo"] == "00" else "Lugar del corte" if corte else "Lugar de la protesta",
+                      ruta=camino, cortes=cortes, empresa=empresa, punto=e.get("coord")) if mapa else None
         out.append((e["clave"], texto, png))
     for r in rad:
         out.append((r["clave"], f"📻 *MENCIÓN EN RADIO · {r['medio']}*\n\n🗓 *Cuándo:* {dia(r['dia'])}, {r['hora']}\n"
