@@ -12,7 +12,7 @@ import os
 import re
 import sqlite3
 import sys
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from urllib.parse import quote
 
 import csv
@@ -64,8 +64,9 @@ def eventos(web, z, alias, desde):
     for e in web["eventos"]:
         f, ub, actor, acc = e.get("fecha_evento") or e.get("fecha_anuncio") or "", str(e["ubigeo"]), e.get("actor") or "", e.get("accion") or ""
         pl = e.get("plazo") if isinstance(e.get("plazo"), str) and e["plazo"] >= date.today().isoformat() else None
-        vieja = e["estado"] == "anunciada" and not pl and f < date.today().isoformat()  # anunciada y ya pasó sin noticia de que ocurriera
-        if e.get("suspendido") or vieja or max(f, pl or "") < desde or e.get("leida") is False:  # sin leer la nota, no se avisa
+        vieja = e["estado"] == "anunciada" and not pl and f < hoy()  # anunciada y ya pasó sin noticia de que ocurriera
+        pasada = e["estado"] == "ocurrida" and not pl and f < hoy()  # lo que ya pasó no le sirve al cliente: solo lo de hoy
+        if e.get("suspendido") or vieja or pasada or max(f, pl or "") < desde or e.get("leida") is False:  # sin leer la nota, no se avisa
             continue
         transporte = "ransportista" in actor and "urbano" not in actor.lower() and not e.get("urbano")
         sin_bloqueo = re.search(SECTOR, actor, re.I) and not re.search(r"bloque|toma", acc, re.I)
@@ -79,13 +80,18 @@ def eventos(web, z, alias, desde):
                    "titular": e.get("titular") or "", "transporte": transporte, "punto": (e.get("puntos") or [""])[0]}
 
 
+def hoy():
+    """La fecha en el Perú (GitHub corre en UTC: después de las 19:00 de Lima ya es mañana)."""
+    return (datetime.now(timezone.utc) - timedelta(hours=5)).date().isoformat()
+
+
 def sutran(con, z, desde):
     """Alertas de la SUTRAN en la zona o la ruta: toda protesta, y en la ruta toda vía interrumpida (huaico, accidente,
     El Niño): al de logística le sirve igual, pero el aviso dice la causa."""
     from tremor.tiempos import MOTIVO
     for codigo, motivo, sub, estado, titulo, desc, ub, fecha, lat, lng in con.execute(
             "SELECT codigo, motivo, submotivo, estado_via, titulo, descripcion, ubigeo, fecha_evento, lat, lng FROM sutran_alerta "
-            "WHERE visto_ultimo >= ?", (desde,)):
+            "WHERE visto_ultimo >= ?", ((datetime.now() - timedelta(hours=6)).isoformat(timespec="seconds"),)):  # solo los cortes vigentes
         if (ub or "") not in z:
             continue
         protesta, ruta = motivo == "humano", z[ub].startswith("en su ruta")

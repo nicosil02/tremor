@@ -121,7 +121,7 @@ def datos(con):
         con_texto = {i for (i,) in con.execute("""SELECT DISTINCT en.evento_id FROM evento_nota en JOIN nota n ON n.id = en.nota_id
                                                   WHERE length(trim(coalesce(n.resumen, ''))) > 0""")}
         ev["leida"] = [i in con_texto for i in ev.id]
-        for k in ("adhieren", "retiran", "suspendido", "urbano", "puntos", "plazo"):
+        for k in ("adhieren", "retiran", "suspendido", "urbano", "carga", "puntos", "plazo"):
             ev[k] = [x[k] for x in leido]
         ev["fecha_evento"] = [dia_dicho(t, f) for t, f in zip(ev.titular, ev.fecha_evento)]
         # la radio no tiene titular ("Radio X, en vivo 09/11 16:07"): se titula con lo que pasó
@@ -136,7 +136,10 @@ def datos(con):
                                                   ON k.nota_id = en.nota_id WHERE k.fecha_evento IS NOT NULL AND k.version IN (?, 'reglas', 'previa')""", (VERSION,))}
         ev["sin_fecha"] = [(s == "anunciada" and i not in con_fecha and not isinstance(p, str)) for i, s, p in zip(ev.id, ev.estado, ev.plazo)]
         ev["ubigeo"] = [provincia_nombrada(t, u) for t, u in zip(ev.titular, ev.ubigeo)]
-        ev["focos"] = [f if len(f) > 1 else [u] if u != "00" else [] for f, u in zip(ev.focos, ev.ubigeo.astype(str))]
+        nombrados = [distritos_nombrados(t, u) for t, u in zip(ev.titular, ev.ubigeo)]
+        ev["ubigeo"] = [d[0] if len(d) == 1 else u for d, u in zip(nombrados, ev.ubigeo)]
+        ev["focos"] = [d if d else f if len(f) > 1 else [u] if u != "00" else []
+                       for d, f, u in zip(nombrados, ev.focos, ev.ubigeo.astype(str))]
     met = tabla(con, "SELECT objetivo, modelo, metrica, valor FROM modelo_metrica WHERE metrica IN ('precision_top20', "
                      "'precision_top20_li', 'precision_top20_ls', 'captura_top10pct', 'tasa_base')")
     ventana = tabla(con, "SELECT ventana, mes_base FROM alerta LIMIT 1")
@@ -232,6 +235,8 @@ def familia(accion):
 def quien(e):
     """Actor sin el detalle: "Transportistas urbanos" y "Transportistas de carga" quedan aparte (el urbano no frena despachos)."""
     a = txt(e.get("actor")).lower()
+    if e.get("carga"):  # la nota nombra la carga pesada: es el transporte en general, aunque el LLM ponga "urbanos"
+        return (a.split(" ")[0] if a else "", False)
     if e.get("urbano") or "urbano" in a:  # las notas hablan de buses o rutas: es transporte urbano, diga lo que diga el actor
         return ("transportistas", True)
     return (a.split(" ")[0] if a else "", False)
@@ -278,7 +283,7 @@ def juntar(evs):
         if u != "00" and u not in par["focos"]:
             par["focos"].append(u)
         if NACIONAL.search(txt(e.get("titular"))) and not NACIONAL.search(txt(par.get("titular"))):
-            par.update(ubigeo="00", **{k: e.get(k) for k in ("titular", "medio", "enlace", "fecha_evento")})  # la región se suma al paro nacional
+            par.update(ubigeo="00", **{k: e.get(k) for k in ("titular", "medio", "enlace", "fecha_evento", "actor")})  # la región se suma al paro nacional
         elif NACIONAL.search(txt(par.get("titular"))):
             par["ubigeo"] = "00"  # un paro nacional no se achica a la región que se suma: la región queda como foco
         elif v == "00" or (u != "00" and u.startswith(v)):
@@ -289,7 +294,8 @@ def juntar(evs):
         for k in ("adhieren", "retiran", "puntos"):
             par[k] = list(dict.fromkeys((par.get(k) or []) + (e.get(k) or [])))
         par["suspendido"] = bool(par.get("suspendido")) or bool(e.get("suspendido"))
-        par["urbano"] = bool(par.get("urbano")) or bool(e.get("urbano"))
+        par["urbano"] = (bool(par.get("urbano")) or bool(e.get("urbano"))) and not (par.get("carga") or e.get("carga"))
+        par["carga"] = bool(par.get("carga") or e.get("carga"))
         par["plazo"] = max([x for x in (par.get("plazo"), e.get("plazo")) if isinstance(x, str)], default=None)
         if not txt(par.get("reclamo")):
             par["reclamo"] = e.get("reclamo")
@@ -343,6 +349,21 @@ def provincia_nombrada(titular, ubigeo):
     return next(iter(hay)) if len(hay) == 1 and not u.startswith(next(iter(hay))) else u
 
 
+DISTRITOS = {}
+for _f in csv.DictReader(open(RAIZ / "tremor" / "ubigeo.csv", encoding="utf-8")):
+    if _llano(_f["distrito"]) != _llano(_f["provincia"]) and len(_f["distrito"]) >= 4:  # "Lima" distrito = provincia: ambiguo
+        DISTRITOS.setdefault(_f["ubigeo"][:4], {})[_llano(_f["distrito"])] = _f["ubigeo"]
+
+
+def distritos_nombrados(titular, ubigeo):
+    """Si la protesta quedó en la provincia y el titular nombra distritos de ella, esos distritos ("profesores de San
+    Martín de Porres y Los Olivos" quedaba en toda Lima)."""
+    t, u = _llano(titular), str(ubigeo)
+    if len(u) != 4:
+        return []
+    return [d for n, d in DISTRITOS.get(u, {}).items() if re.search(rf"\b{re.escape(n)}\b", t)]
+
+
 def leer(texto):
     """Reglas sobre el cuerpo de las notas de un evento: lugares que anuncian sumarse o retirarse (por oración),
     si la medida se suspendió y si es transporte urbano (no frena la carga)."""
@@ -352,7 +373,7 @@ def leer(texto):
         destino = ret if NO.search(o) else adh if SUMA.search(o) else None
         if destino is not None:
             destino.update(u for k, us in idx.items() if re.search(rf"\b{re.escape(k)}\b", o) for u in us)
-    return {"adhieren": sorted(adh - ret), "retiran": sorted(ret), "suspendido": bool(SUSPENDE.search(t)), "urbano": bool(URBANO.search(t)) and not CARGA.search(t), "puntos": puntos(texto), "plazo": plazo(texto)}
+    return {"adhieren": sorted(adh - ret), "retiran": sorted(ret), "suspendido": bool(SUSPENDE.search(t)), "urbano": bool(URBANO.search(t)) and not CARGA.search(t), "carga": bool(CARGA.search(t)), "puntos": puntos(texto), "plazo": plazo(texto)}
 
 
 def focos(con, n=5):

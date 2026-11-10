@@ -53,13 +53,13 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           [ "$(date -u +%H)" = "11" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] || exit 0
-          python -m tremor.empresas cargar
+          python -m tremor.empresas cargar || echo "Operaciones: el servidor del OEFA no respondió, quedan las del día anterior"
           # cuánto detecta la prensa de lo que registra la Defensoría, por mes (tabla deteccion_mes); los dos últimos
           # meses con reporte, porque la Defensoría publica con un mes de rezago
           for m in $(python -c "import sqlite3;print(' '.join(f'{a}-{m:02d}' for a,m in sqlite3.connect('datos/tremor.db').execute('SELECT anio, mes FROM reporte ORDER BY num DESC LIMIT 2')))"); do
             python -m tremor.prensa validar --mes $m || true
           done
-          python -m tremor.oefa   # fiscalización del OEFA: se baja una sola vez (el portal no publica desde abr 2025)
+          python -m tremor.oefa || true   # fiscalización del OEFA: se baja una sola vez (el portal no publica desde abr 2025)
           python -m tremor.oefa dfai || true   # sanciones DFAI y Tribunal (gob.pe) y reincidentes (RUIAS): solo lo nuevo
 
       - name: SUTRAN (alertas viales vigentes, y qué dicen los medios de cada bloqueo)
