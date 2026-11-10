@@ -695,8 +695,8 @@ Promise.all([cargar(), CADENA]).then(([d, c]) => {
   D = d; CAD = c; A = new Map(D.alerta.map(a => [a.ubigeo, a])); X = armar();
   const n = X.avisos.filter(x => x.urge).length, b = document.getElementById("n-avisos"); if (n) { b.textContent = n; b.hidden = false; }
   ir("avisos");
-  const d = new URLSearchParams(location.search).get("d");  // abre la ficha del distrito del aviso
-  if (d && A.has(d)) { ir("pais"); abrir(detalleDistrito(d)); }
+  const dz = new URLSearchParams(location.search).get("d");  // abre la ficha del distrito del aviso
+  if (dz && A.has(dz)) { ir("pais"); abrir(detalleDistrito(dz)); }
 }).catch(() => { document.getElementById("vista").innerHTML = `<p class="vacio">No se pudieron cargar los datos. Revise su conexión y vuelva a abrir.</p>`; });
 </script>
 </body>
