@@ -383,11 +383,12 @@ function fiscal(unidad) {
     <p class="aclara">Datos abiertos del OEFA, de 2016 a marzo de 2025${f.u ? `; el último registro es del ${dia(f.u)} de ${f.u.slice(0, 4)}` : ""}.</p>${reciente()}`;
 }
 // lo reciente de la empresa (resoluciones publicadas en gob.pe y registro de reincidentes), en una frase
-// el tramo, medido en la última hora con tráfico en vivo (tremor/tiempos.py); solo se muestra si algo anda mal
+// el tramo, medido en la última hora con tráfico en vivo (tremor/tiempos.py); en rojo si algo anda mal
 const hm = m => m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`;
 function viaje(tramo) {
   const t = ((D.tiempos || {})[empresa] || {})[tramo];
-  return t && t.senal ? `<span class="aviso-t">Ahora ${esc(t.senal)}: ${hm(t.min)}, normal ${hm(t.normal)}${t.causa ? `. Causa: ${esc(t.causa)}` : ""}</span>` : "";
+  return !t ? "" : t.senal ? `<span class="aviso-t">Ahora ${esc(t.senal)}: ${hm(t.min)}, normal ${hm(t.normal)}${t.causa ? `. Causa: ${esc(t.causa)}` : ""}</span>`
+    : `<span class="modo">Último tráfico medido: ${hm(t.min)}, lo normal ${hm(t.normal)} (TomTom)</span>`;
 }
 function reciente() {
   const r = (D.oefa_empresa || {})[empresa], h = (D.oefa_empresa || {})._hasta;
