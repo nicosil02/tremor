@@ -246,13 +246,13 @@ function armar() {
     const pl = e.plazo && e.plazo >= HOY && !e.suspendido, f = pl ? e.plazo : String(e.fecha_evento || e.fecha_anuncio || "").slice(0, 10), u = String(e.ubigeo);
     const trans = /transportista/i.test(e.actor || "") && !/urbano/i.test(e.actor || "") && !e.urbano, nombra = alias.test(`${e.empresa || ""} ${e.operacion || ""}`);
     if (!nombra && !(trans && u === "00") && !zona.has(u) && !tramoDe(u, e)) continue;
-    const anun = (e.estado === "anunciada" || pl) && !e.suspendido, viene = anun && f >= HOY;
+    const anun = (e.estado === "anunciada" || pl) && !e.suspendido, viene = anun && !e.sin_fecha && f >= HOY;
     const cerca = unidades.find(x => x.zona.has(u));
     const leve = sinBloqueo(e) && !zona.has(u);  // gremio que no corta vías y solo pasa por la ruta: se informa, no se atiende
-    avisos.push({ f, urge: !leve && (viene || (anun && dias(f) > -3)), tipo: "Protesta", e, cerca, trans, tramo: tramoDe(u, e), tramos: tramos.filter(r => toca(r, u, e)),
+    avisos.push({ f, urge: !leve && !e.sin_fecha && (viene || (anun && dias(f) > -3)), tipo: "Protesta", e, cerca, trans, tramo: tramoDe(u, e), tramos: tramos.filter(r => toca(r, u, e)),
       t: `${accion(e)}${e.actor ? ` de ${e.actor.toLowerCase()}` : ""}`,
       w: viene ? cuando(f) : dia(f),
-      s: [pl ? "vence un plazo, amenazan con nueva medida" : "", u === "00" ? (trans ? "Puede frenar sus despachos" : "Lugar sin precisar") : !zona.has(u) && tramoDe(u, e) ? `${lugar(u)}, en su ruta${sinBloqueo(e) ? ", no suele cortar vías" : ""}` : lugar(u), e.suspendido ? "suspendida" : viene ? "" : anun ? "anunciada, sin confirmar" : "ocurrió"].filter(Boolean).join(", ") });
+      s: [pl ? "vence un plazo, amenazan con nueva medida" : "", u === "00" ? (trans ? "Puede frenar sus despachos" : "Lugar sin precisar") : !zona.has(u) && tramoDe(u, e) ? `${lugar(u)}, en su ruta${sinBloqueo(e) ? ", no suele cortar vías" : ""}` : lugar(u), e.suspendido ? "suspendida" : e.sin_fecha ? "anunciada, todavía sin fecha" : viene ? "" : anun ? "anunciada, sin confirmar" : "ocurrió"].filter(Boolean).join(", ") });
   }
   for (const s of D.sutran || []) if (rutas.includes(s.via))
     avisos.push({ f: String(s.fecha_evento || HOY).slice(0, 10), urge: true, tipo: "Bloqueo", sutran: s, t: `Vía ${s.via} bloqueada`, w: "ahora",

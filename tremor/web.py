@@ -4,6 +4,7 @@ a cada zona en 2024+, las señales en vivo y las métricas; y los límites distr
     python -m tremor.web            # escribe datos/exportes/web.json (viaja en la rama `datos`) y docs/distritos.json
 """
 import functools
+import csv
 import json
 import re
 import sys
@@ -12,6 +13,7 @@ from datetime import date, timedelta
 import pandas as pd
 
 from tremor.db import DATOS, RAIZ, conectar
+from tremor.prensa.codificar import VERSION
 
 DOCS = RAIZ / "docs"
 ALERTA = ["ubigeo", "lugar", "prob", "prob_extractivo", "prob_crisis", "prob_zona", "prob_zona_extractivo", "prob_1m",
@@ -65,6 +67,11 @@ def datos(con):
         # el LLM a veces marca "ocurrida" lo que la nota anuncia: si la fecha aún no llega, es un anuncio
         hoy = (pd.Timestamp.now(tz="America/Lima")).strftime("%Y-%m-%d")
         ev.loc[ev.fecha_evento.astype(str) > hoy, "estado"] = "anunciada"
+        # anuncio sin fecha en ninguna nota: el día de publicación no es el día de la protesta
+        con_fecha = {i for (i,) in con.execute("""SELECT DISTINCT en.evento_id FROM evento_nota en JOIN codificacion k
+                                                  ON k.nota_id = en.nota_id WHERE k.fecha_evento IS NOT NULL AND k.version = ?""", (VERSION,))}
+        ev["sin_fecha"] = [(s == "anunciada" and i not in con_fecha and not isinstance(p, str)) for i, s, p in zip(ev.id, ev.estado, ev.plazo)]
+        ev["ubigeo"] = [provincia_nombrada(t, u) for t, u in zip(ev.titular, ev.ubigeo)]
     met = tabla(con, "SELECT objetivo, modelo, metrica, valor FROM modelo_metrica WHERE metrica IN ('precision_top20', "
                      "'precision_top20_li', 'precision_top20_ls', 'captura_top10pct', 'tasa_base')")
     ventana = tabla(con, "SELECT ventana, mes_base FROM alerta LIMIT 1")
@@ -202,6 +209,26 @@ def dia_dicho(titular, fecha):
 
 
 URBANO = re.compile(r"extorsi|transporte (publico|urbano)|combis?\b|colectiver|mototaxi|choferes asesinad|asesinatos? de chofer")
+
+
+def _llano(s):
+    import unicodedata
+    return unicodedata.normalize("NFKD", str(s)).encode("ascii", "ignore").decode().lower()
+
+
+PROVINCIAS = {}
+for _f in csv.DictReader(open(RAIZ / "tremor" / "ubigeo.csv", encoding="utf-8")):
+    if _llano(_f["provincia"]) != _llano(_f["region"]):  # "Arequipa" o "Lima" son a la vez provincia y región: ambiguos
+        PROVINCIAS[_llano(_f["provincia"])] = _f["ubigeo"][:4]
+
+
+def provincia_nombrada(titular, ubigeo):
+    """Si el titular nombra una sola provincia y el LLM ubicó la protesta fuera de ella, manda la del titular
+    ("Frente de Defensa de Datem del Marañón…" quedaba en Maynas). Solo nombres de dos palabras o más: los cortos
+    ("Mariscal", "Ilo") chocan con otras palabras."""
+    t, u = _llano(titular), str(ubigeo)
+    hay = {p for n, p in PROVINCIAS.items() if " " in n and re.search(rf"\b{re.escape(n)}\b", t)}
+    return next(iter(hay)) if len(hay) == 1 and not u.startswith(next(iter(hay))) else u
 
 
 def leer(texto):

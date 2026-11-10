@@ -69,7 +69,7 @@ def eventos(web, z, alias, desde):
         en_zona = ub in z and not (sin_bloqueo and z[ub].startswith("en su ruta")) and (
             e.get("tipo_conflicto") not in (None, "otro") or re.search(LUCHA.replace("|marcha", ""), acc, re.I))
         if nombra or (ub == "00" and transporte) or en_zona:
-            yield {"clave": f"evento:{e['id']}" + (f":plazo{pl}" if pl else ""), "estado": "plazo" if pl else e["estado"], "fecha": pl or f,
+            yield {"clave": f"evento:{e['id']}" + (f":plazo{pl}" if pl else ""), "estado": "plazo" if pl else "sin_fecha" if e.get("sin_fecha") else e["estado"], "fecha": pl or f,
                    "ubigeo": ub, "accion": acc or "Protesta", "unidad": z.get(ub), "medio": e.get("medio") or "", "enlace": e.get("enlace") or "",
                    "titular": e.get("titular") or "", "transporte": transporte, "punto": (e.get("puntos") or [""])[0]}
 
@@ -120,7 +120,8 @@ def mensaje(nombre, evs, rad, rie):
     pct = lambda x: f"{round(x * 100)}%"
     lineas = [f"*Tremor, avisos para {nombre}*"]
     for e in sorted(evs, key=lambda e: e["estado"] != "anunciada"):
-        cuando = {"anunciada": "Anunciada para el", "plazo": "Vence un plazo, amenazan con nueva medida, el"}.get(e["estado"], "Ocurrió el")
+        cuando = {"anunciada": "Anunciada para el", "plazo": "Vence un plazo, amenazan con nueva medida, el",
+                  "sin_fecha": "Anunciada, todavía sin fecha. Lo anunciaron el"}.get(e["estado"], "Ocurrió el")
         cerca = f", {e['unidad']}" if (e["unidad"] or "").startswith("en su ruta") else f", zona de {e['unidad']}" if e["unidad"] else ""
         fuente = f"[{e['medio']}]({e['enlace']})" if e["enlace"] else e["medio"]
         ruta = " Puede afectar sus despachos e insumos." if e["transporte"] else ""

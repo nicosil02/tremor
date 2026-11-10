@@ -77,3 +77,10 @@ def test_dia_dicho():
     assert dia_dicho("Aplazan paro y convocan marcha para el martes 20", "2026-11-20") == "2026-10-20"
     assert dia_dicho("Paro el miércoles 4", "2026-11-04") == "2026-11-04"
     assert dia_dicho("Paro nacional", "2026-11-16") == "2026-11-16"
+
+
+def test_provincia_nombrada():
+    from tremor.web import provincia_nombrada
+    assert provincia_nombrada("Frente de Defensa de Datem del Marañón anuncia movilizaciones", "1601") == "1607"
+    assert provincia_nombrada("Paro en Iquitos", "1601") == "1601"
+    assert provincia_nombrada("Bloqueo en Datem del Marañón", "160701") == "160701"
