@@ -92,13 +92,15 @@ def cambios(web, z, enviados):
         que = f"{acc or 'Protesta'} {'en todo el país' if ub == '00' else 'en ' + lugar(ub)} del {dia(f)}"
         fuente = f"\n\n📰 *Fuente:* [{e.get('medio') or 'nota'}]({e['enlace']})" if e.get("enlace") else ""
         ret = [u for u in e.get("retiran") or [] if u in z]
+        gre = e.get("gremios_retiran") or []
         if e.get("suspendido") or e.get("estado") == "suspendida":
             pos = e.get("postergado")
             yield ("cae:" + orig, f"{'⏸' if pos else '✅'} *PROTESTA {'POSTERGADA' if pos else 'SUSPENDIDA'}*\n_{e.get('titular') or que}_\n\n"
                    f"{que}: según la prensa, {'se postergó; todavía sin nueva fecha' if pos else 'se suspendió o se levantó'}.{fuente}", None)
-        elif ret:
-            yield (f"retira:{orig}:{'-'.join(ret)}", f"↩️ *SE RETIRAN DE LA PROTESTA*\n_{e.get('titular') or que}_\n\n"
-                   f"{que}: anuncian que no se suman {', '.join(mayus(lugar(u)) for u in ret)}. El resto de la convocatoria sigue.{fuente}", None)
+        elif ret or gre:
+            quienes = ", ".join([*gre, *(mayus(lugar(u)) for u in ret)])
+            yield (f"retira:{orig}:{'-'.join(ret + gre)}", f"↩️ *SE RETIRAN DE LA PROTESTA*\n_{e.get('titular') or que}_\n\n"
+                   f"{que}: anuncian que no se suman: {quienes}. El resto de la convocatoria sigue.{fuente}", None)
         elif e.get("estado") == "anunciada" and f and f < hoy() and f >= (date.today() - timedelta(days=3)).isoformat():
             yield ("nohubo:" + orig, f"❔ *SIN NOTICIA DE QUE SE REALIZARA*\n\n{que}: la fecha pasó y la prensa no informó que se "
                    f"hiciera. Pudo levantarse o no tener cobertura; conviene confirmarlo en la zona.", None)
