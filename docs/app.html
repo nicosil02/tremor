@@ -580,7 +580,8 @@ async function camion(r, fc, centro) {
     const f = (s - d[k - 1]) / (d[k] - d[k - 1] || 1);
     return [ca[k - 1][0] + f * (ca[k][0] - ca[k - 1][0]), ca[k - 1][1] + f * (ca[k][1] - ca[k - 1][1])]; };
   mapa.addLayer(capa3d(v, en, L));
-  if (!mapa.getPitch()) mapa.easeTo({ pitch: 40, duration: 900 });  // inclinado lo justo para que se vea en 3D, desde arriba
+  const inclina = () => mapa.getPitch() || mapa.easeTo({ pitch: 40, duration: 900 });  // inclinado lo justo para que se vea en 3D, desde arriba
+  mapa.isMoving() ? mapa.once("moveend", inclina) : inclina();  // después del acercamiento al tramo, sin cortarlo
   // Qué le pasa al vehículo (r.anim, de la cadena): "corte" = bloqueo vigente, se detiene en el punto del bloqueo;
   // "aviso" = protesta anunciada o de hoy, pasa y al cruzar el lugar queda un aviso ámbar; tráfico medido: vía cerrada o
   // desvío = se detiene (sin punto: a mitad del tramo); lento = va más despacio con la demora a la vista.
