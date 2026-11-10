@@ -72,7 +72,7 @@ def datos(con):
         ev.loc[ev.fecha_evento.astype(str) > hoy, "estado"] = "anunciada"
         # anuncio sin fecha en ninguna nota: el día de publicación no es el día de la protesta
         con_fecha = {i for (i,) in con.execute("""SELECT DISTINCT en.evento_id FROM evento_nota en JOIN codificacion k
-                                                  ON k.nota_id = en.nota_id WHERE k.fecha_evento IS NOT NULL AND k.version IN (?, 'reglas')""", (VERSION,))}
+                                                  ON k.nota_id = en.nota_id WHERE k.fecha_evento IS NOT NULL AND k.version IN (?, 'reglas', 'previa')""", (VERSION,))}
         ev["sin_fecha"] = [(s == "anunciada" and i not in con_fecha and not isinstance(p, str)) for i, s, p in zip(ev.id, ev.estado, ev.plazo)]
         ev["ubigeo"] = [provincia_nombrada(t, u) for t, u in zip(ev.titular, ev.ubigeo)]
         ev["focos"] = [f if len(f) > 1 else [u] if u != "00" else [] for f, u in zip(ev.focos, ev.ubigeo.astype(str))]

@@ -135,3 +135,16 @@ def test_por_reglas():
     c = por_reglas("Huánuco: protestas por falta de agua estallan en bloqueos y choques", "anuncio publicidad tumbes", "2026-11-06")
     assert (c["estado"], c["ubigeo"]) == ("ocurrida", "1001")
     assert por_reglas("Paro de transporte en Lima este 10 de octubre", "", "2026-11-09") is None  # nota vieja
+
+
+def test_por_reglas_dia_sin_mes():
+    from tremor.prensa.codificar import por_reglas
+    c = por_reglas("¿Qué se sabe sobre el paro de transportistas en Arequipa?", "evalúan sumarse a una paralización convocada "
+                   "a nivel nacional para los días 16, 17 y 18", "2026-11-06T11:11")
+    assert (c["estado"], c["fecha_evento"], c["ubigeo"]) == ("anunciada", "2026-11-16", "0401")
+
+
+def test_por_reglas_rango():
+    from tremor.prensa.codificar import por_reglas
+    c = por_reglas("Transportistas de carga pesada anuncian paro nacional del 16 al 18 de noviembre", "", "2026-11-03")
+    assert c["fecha_evento"] == "2026-11-16" and c["ubigeo"] is None

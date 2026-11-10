@@ -180,8 +180,14 @@ def por_reglas(titular, resumen, publicado):
         actor = "Transportistas urbanos" if lugares and all(x[:2] in ("15", "07") for x in lugares) else "Transportistas de carga"
     actor = actor or "Pobladores"
     sector = next((s for s, xs in CODIGOS["sector_actor"].items() if actor in xs), None)
-    m = re.search(rf"\b(\d{{1,2}}) de ({'|'.join(MESES)})\b", t)
+    m = re.search(rf"\b(\d{{1,2}})(?:(?:,| y| al| hasta el) \d{{1,2}})* de ({'|'.join(MESES)})\b", t)  # "del 16 al 18": el 16
     fecha = f"{(publicado or '2000')[:4]}-{MESES.index(m.group(2)) + 1:02d}-{int(m.group(1)):02d}" if m else None
+    d = None if m else re.search(r"\b(?:los dias|el dia|este (?:lunes|martes|miercoles|jueves|viernes|sabado|domingo)) (\d{1,2})\b", t)
+    if d and publicado:  # "los días 16, 17 y 18" sin mes: este mes, o el siguiente si el día ya pasó
+        y, mes, hoy = int(publicado[:4]), int(publicado[5:7]), int(publicado[8:10])
+        if int(d[1]) < hoy:
+            y, mes = (y + 1, 1) if mes == 12 else (y, mes + 1)
+        fecha = f"{y}-{mes:02d}-{int(d[1]):02d}"
     pub = (publicado or "")[:10]
     if fecha and pub and fecha < pub and (date.fromisoformat(pub) - date.fromisoformat(fecha)).days > 3:
         return None  # recuerda algo pasado o es una nota vieja reindexada: espera al LLM
@@ -204,8 +210,11 @@ def respaldo(con, pendientes):
     """Las notas vivas que le importan a un cliente y quedaron sin LLM: se codifican por reglas."""
     from tremor.prensa.historia import CLIENTE
     n, hace = 0, (date.today() - timedelta(days=15)).isoformat()
+    # una previa del LLM vale más que las reglas, salvo si era un anuncio sin fecha (para eso se leyó el cuerpo)
+    previa = {i for (i,) in con.execute("""SELECT nota_id FROM codificacion WHERE version = 'previa'
+                                          AND NOT (estado = 'anunciada' AND fecha_evento IS NULL)""")}
     for r in pendientes:
-        if (r[5] or "").startswith("historia:") or (r[3] or "")[:10] < hace or not CLIENTE.search(norm(f"{r[1]} {r[2] or ''}")):
+        if r[0] in previa or (r[3] or "")[:10] < hace or not CLIENTE.search(norm(r[1] or "")):  # el resumen trae menús
             continue
         c = por_reglas(r[1], r[2], r[3])
         if c and (c["ubigeo"] or c["estado"] == "anunciada"):  # sin lugar, solo el aviso previo; lo ocurrido espera al LLM
