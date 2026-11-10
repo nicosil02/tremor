@@ -49,3 +49,11 @@ def test_leer_tfa():
     html_ = ("<time>19 de octubre de 2026</time>\n<h3>Resolución N° 606-2026-OEFA/TFA-SE</h3>\n<p>Se confirma la Resolución "
              "Directoral N.° 01132-2026-OEFA/DFAI del 26 de junio de 2026, en el extremo ...</p>\n<span>Disponible en formato PDF</span>")
     assert leer_tfa(html_) == [{"num": "0606-2026", "fecha": "2026-10-19", "dfai": "1132-2026", "decision": "confirma"}]
+
+
+def test_leer_tfa_formato_antiguo():
+    from tremor.oefa import leer_tfa
+    html_ = ("<time>19 de octubre de 2018</time>\n<h3>RESOLUCIÓN N° 338-2018-OEFA/TFA-SMEPIM</h3>\n<p>PRIMERO.- CONFIRMAR el "
+             "artículo N° 1 de la Resolución Directoral No 2089-2018-OEFA/DFAI del 29 de agosto de 2018, ...</p>")
+    assert leer_tfa(html_) == [{"num": "0338-2018-SMEPIM", "fecha": "2018-10-19", "dfai": "2089-2018", "decision": "confirma"}]
+
