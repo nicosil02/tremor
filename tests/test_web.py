@@ -50,8 +50,8 @@ def test_oefa_unidades_por_nombre_normalizado():
 def test_senal_tiempo_de_viaje():
     from tremor.tiempos import senal
     assert senal(3600, 3500, 100000, 100000, False) is None
-    assert senal(3600, 3500, 100000, 100000, True) == "el ruteador marca la vía cerrada"
-    assert senal(3600, 3500, 160000, 100000, False) == "el ruteador desvía por 60 km más"
+    assert senal(3600, 3500, 100000, 100000, True) == "vía cerrada"
+    assert senal(3600, 3500, 160000, 100000, False) == "desvío de 60 km"
     assert senal(7200, 3600, 100000, 100000, False) == "tarda 2.0 veces lo normal"
 
 

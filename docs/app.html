@@ -8,6 +8,8 @@
 <meta name="theme-color" content="#f8faf9">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css">
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
 <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
 <style>
   /* Tremor en el celular: una pregunta por pantalla. Avisos (qué atender), Operaciones (cómo está cada una) y Mapa. */
@@ -126,9 +128,13 @@
   .leyenda-via .marcas { position: relative; display: block; width: 220px; height: 16px; margin-bottom: 4px; font-size: 12px; }
   .leyenda-via .marcas span { position: absolute; top: 1px; transform: translateX(-50%); }
   .leyenda-via .marcas span:nth-child(1) { left: 25%; } .leyenda-via .marcas span:nth-child(2) { left: 50%; } .leyenda-via .marcas span:nth-child(3) { left: 75%; }
-  .camion { font-size: 28px; line-height: 1; pointer-events: none; filter: drop-shadow(0 1px 2px rgb(0 0 0 / .45)); }
-  .camion span { display: inline-block; }
-  .camion.parado::after { content: ""; position: absolute; inset: -10px; border: 3px solid #d7261e; border-radius: 50%; animation: latido 1.2s ease-out infinite; }
+  .camion { width: 14px; height: 14px; border-radius: 50%; background: #d7261e; border: 2px solid #fff; pointer-events: none; }
+  .camion.parado::after { content: ""; position: absolute; inset: -24px; border: 3px solid #d7261e; border-radius: 50%; animation: latido 1.2s ease-out infinite; }
+  .camion.parado { box-shadow: 0 0 0 6px rgb(215 38 30 / .35); }
+  .camion.ojo, .camion.lento { background: #e9a019; }
+  .camion.ojo::before, .camion.lento::before { content: attr(data-motivo); position: absolute; left: 50%; bottom: 135%; transform: translateX(-50%); white-space: nowrap;
+    background: #e9a019; color: #2a1d05; font: 650 13px/1.3 Archivo, sans-serif; padding: 3px 8px; border-radius: 5px; }
+  .camion.lento { background: none; border: 0; } .camion.lento::before { bottom: 60px; }
   .camion.parado::before { content: attr(data-motivo); position: absolute; left: 50%; bottom: 135%; transform: translateX(-50%); white-space: nowrap;
     background: #d7261e; color: #fff; font: 650 13px/1.3 Archivo, sans-serif; padding: 3px 8px; border-radius: 5px; }
   @keyframes latido { from { transform: scale(.6); opacity: 1; } to { transform: scale(1.7); opacity: 0; } }
@@ -286,7 +292,7 @@ function armar() {
   const casos = (D.casos || []).filter(c => zona.has(String(c.ubigeo)));
   // Estado de cada tramo: lo anunciado manda; si no, lo ocurrido en los últimos 14 días
   const cadena = tramos.map(r => { const ev = avisos.filter(x => x.e && toca(r, String(x.e.ubigeo), x.e));
-    const bl = (D.sutran || []).filter(s => r.via && s.via === r.via).length;
+    const bl = (D.sutran || []).find(s => r.via && s.via === r.via);
     const prox = ev.filter(x => x.e.estado === "anunciada" && !x.e.suspendido && x.f >= HOY).sort((a, b) => a.f.localeCompare(b.f))[0];
     const rec = ev.filter(x => x.f === HOY)  // lo de días pasados ya no frena la ruta: queda en Avisos, no en el tramo
      .sort((a, b) => b.f.localeCompare(a.f))[0];
@@ -294,7 +300,8 @@ function armar() {
     // ponytail: fuera del número las capitales de departamento y Lima-Callao; su protesta urbana rara vez corta la carga,
     // y la EGPP pone ahí lo que no sabe ubicar. Siguen contando para los avisos. Mejor: protestas sobre la vía misma.
     const peor = r.ubigeos.filter(u => !/0101$/.test(u) && !/^(1501|0701)/.test(u)).map(u => [(A.get(u) || {}).prob ?? 0, u]).sort((a, b) => b[0] - a[0])[0] || [0, ""];
-    return { ...r, vago, p: peor[0], peor: peor[1], estado: bl ? ["mal", "Bloqueo vigente"] : prox ? ["mal", `${accion(prox.e)} ${cuando(prox.f)}`] : rec ? ["ojo", `${accion(rec.e)} ${dia(rec.f)}`] : ["ok", "Sin avisos"] }; });
+    return { ...r, vago, p: peor[0], peor: peor[1], anim: bl ? "corte" : prox || rec ? "aviso" : "", lugar: bl ? [bl.lng, bl.lat] : String((prox || rec || { e: {} }).e.ubigeo || ""),
+      estado: bl ? ["mal", "Bloqueo vigente"] : prox ? ["mal", `${accion(prox.e)} ${cuando(prox.f)}`] : rec ? ["ojo", `${accion(rec.e)} ${dia(rec.f)}`] : ["ok", "Sin avisos"] }; });
   // ponytail: tramos tratados como independientes; distritos vecinos se mueven juntos, así que es un techo
   const via = cadena.length ? 1 - cadena.reduce((q, r) => q * (1 - r.p), 1) : null;
   return { unidades, avisos, rutas, casos, cadena, via };
@@ -394,7 +401,7 @@ const hm = m => m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`;
 function viaje(tramo) {
   const t = ((D.tiempos || {})[empresa] || {})[tramo];
   return !t ? "" : t.senal ? `<span class="aviso-t">Ahora ${esc(t.senal)}: ${hm(t.min)}, normal ${hm(t.normal)}${t.causa ? `. Causa: ${esc(t.causa)}` : ""}</span>`
-    : `<span class="modo">Último tráfico medido: ${hm(t.min)}, lo normal ${hm(t.normal)} (TomTom)</span>`;
+    : `<span class="modo">Último tráfico medido: ${hm(t.min)}, lo normal ${hm(t.normal)}</span>`;
 }
 function reciente() {
   const r = (D.oefa_empresa || {})[empresa], h = (D.oefa_empresa || {})._hasta;
@@ -502,41 +509,111 @@ function detalleAviso(k) {
     <h2>La nota</h2><a class="fuente" href="${esc(e.enlace)}" target="_blank" rel="noopener"><small>${esc(e.medio)}</small>${esc(e.titular)}</a>${SEL ? VER : ""}`;
 }
 
-// Al tocar un tramo en camión, un camión recorre su vía (docs/caminos.json, el camino por la red vial que calcula
-// tremor.tarjeta.caminos); si el tramo tiene un bloqueo, una protesta o TomTom ve una demora, se detiene en el
-// distrito más expuesto con el motivo.
+// Al tocar un tramo, un camión (o el tren) en 3D recorre su vía (docs/caminos.json, el camino por la red vial que
+// calcula tremor.tarjeta.caminos) y la cámara lo sigue inclinada, como manejando. Si el tramo tiene un bloqueo, una
+// protesta o TomTom ve una demora, se detiene en el distrito más expuesto con el motivo. three.js por el importmap;
+// los modelos se arman con geometría en docs/vehiculos3d.js.
 const CAMINOS = fetch("caminos.json").then(r => r.json()).catch(() => ({}));
+const TRES = () => (TRES.p ??= Promise.all([import("three"), import("./vehiculos3d.js")]));
+async function vehiculo(tren) {
+  const [THREE, modelos] = await TRES(), g = tren ? modelos.tren(THREE) : modelos.camion(THREE);
+  // piezas: la locomotora y cada vagón van por separado sobre la vía; el camión es una sola pieza
+  const piezas = tren ? [...g.children] : [Object.assign(g, { userData: { atras: 0 } })];
+  return { THREE, piezas, largo: tren ? 20 : new THREE.Box3().setFromObject(g).getSize(new THREE.Vector3()).z, s: null };
+}
+const PX = 70;  // largo del camión (o la locomotora) en pantalla, a cualquier zoom
+function capa3d(v, en, L) {
+  const { THREE } = v, escena = new THREE.Scene(), cam = new THREE.Camera();
+  escena.add(new THREE.HemisphereLight(0xffffff, 0x7a6650, 2.4));
+  const sol = new THREE.DirectionalLight(0xffffff, 1.8); sol.position.set(20, 60, 30); escena.add(sol, ...v.piezas);
+  let rend;
+  return { id: "vehiculo", type: "custom", renderingMode: "3d",
+    onAdd(map, gl) { rend = new THREE.WebGLRenderer({ canvas: map.getCanvas(), context: gl, antialias: true }); rend.autoClear = false; },
+    render(gl, args) {
+      if (v.s == null) return;
+      const p0 = en(v.s), mpp = 40075016.7 * Math.cos(p0[1] * Math.PI / 180) / (512 * 2 ** mapa.getZoom());  // metros por píxel
+      const m = v.m = mpp * PX / v.largo;  // metros del mapa por metro del modelo
+      rend.resetState();
+      for (const pz of v.piezas) {  // cada pieza en su punto de la vía y con su rumbo: el tren dobla en las curvas
+        const s = v.s - pz.userData.atras * m / 1000;
+        if (s < 0 || s > L) continue;  // el vagón aún no sale de la mina, o ya entró al puerto
+        // la vía real tiene curvitas más chicas que el vehículo: se promedia su trazo a la escala de la pieza (si no, tiembla)
+        const w = 9 * m / 1000, pto = x => { let a = 0, b = 0; for (let i = -4; i <= 4; i++) { const p = en(Math.min(L, Math.max(0, x + w * i / 4))); a += p[0]; b += p[1]; } return [a / 9, b / 9]; };
+        const p = pto(s), adel = pto(s + w / 2), atr = pto(s - w / 2);
+        let r = Math.atan2((adel[0] - atr[0]) * Math.cos(p[1] * Math.PI / 180), adel[1] - atr[1]);
+        if (pz.userData.r != null) r = pz.userData.r + (((r - pz.userData.r) / Math.PI + 3) % 2 - 1) * Math.PI * 0.25;  // gira suave, sin saltos
+        pz.userData.r = r;
+        const mc = maplibregl.MercatorCoordinate.fromLngLat(p, 0);
+        const k = mc.meterInMercatorCoordinateUnits() * m;
+        const l = new THREE.Matrix4().makeTranslation(mc.x, mc.y, mc.z).scale(new THREE.Vector3(k, -k, k))
+          .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2)).multiply(new THREE.Matrix4().makeRotationY(Math.PI - r));
+        cam.projectionMatrix = new THREE.Matrix4().fromArray(args.defaultProjectionData.mainMatrix).multiply(l);
+        v.piezas.forEach(x => { x.visible = x === pz; });
+        rend.render(escena, cam);
+      }
+    } };
+}
 let CAMION = null;
 async function camion(r, fc, centro) {
-  if (CAMION) { cancelAnimationFrame(CAMION.raf); CAMION.m.remove(); }
-  const yo = CAMION = r && r.puntos && /Camión|Tren/.test(r.modo) ? { raf: 0, m: { remove() {} } } : null;
+  if (CAMION) { cancelAnimationFrame(CAMION.raf); CAMION.ms.forEach(m => m.remove()); if (mapa.getLayer("vehiculo")) mapa.removeLayer("vehiculo"); }
+  if (!r && mapa.getPitch()) mapa.easeTo({ pitch: 0, duration: 800 });
+  const yo = CAMION = r && r.puntos && /Camión|Tren/.test(r.modo) ? { raf: 0, ms: [] } : null;
   const linea = cs => ({ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: cs } });
-  if (mapa.getSource("camino")) mapa.getSource("camino").setData(linea([]));
+  for (const id of ["camino", "corte"]) if (mapa.getSource(id)) mapa.getSource(id).setData(linea([]));
   if (!yo) return;
-  const ca = ((await CAMINOS)[empresa] || {})[r.nombre] || r.puntos.map(([la, lo]) => [lo, la]), d = [0];
+  const [caminos, v] = await Promise.all([CAMINOS, vehiculo(r.modo === "Tren")]);
+  let ca = (caminos[empresa] || {})[r.nombre] || r.puntos.map(([la, lo]) => [lo, la]); const d = [0];
+  if (r.modo === "Tren") for (let i = 0; i < 4; i++)  // la vía férrea son estaciones unidas por rectas: se redondean las curvas (Chaikin)
+    ca = [ca[0], ...ca.slice(1).flatMap((q, k) => { const p = ca[k]; return [[.75 * p[0] + .25 * q[0], .75 * p[1] + .25 * q[1]], [.25 * p[0] + .75 * q[0], .25 * p[1] + .75 * q[1]]]; }), ca.at(-1)];
   if (CAMION !== yo) return;  // tocó otro tramo mientras cargaba
-  if (!mapa.getSource("camino")) {  // el camino que recorre, sobre las vías amarillas
-    mapa.addSource("camino", { type: "geojson", data: linea(ca) });
+  if (!mapa.getSource("camino")) {  // el camino que recorre, sobre las vías amarillas; "corte": la vía cortada donde se detiene
+    for (const id of ["camino", "corte"]) mapa.addSource(id, { type: "geojson", data: linea([]) });
     mapa.addLayer({ id: "camino", type: "line", source: "camino", layout: { "line-cap": "round", "line-join": "round" },
       paint: { "line-color": "#5c2410", "line-width": 5, "line-opacity": 0.85 } }, "ops");
-  } else mapa.getSource("camino").setData(linea(ca));
-  for (let k = 1; k < ca.length; k++) d.push(d[k - 1] + Math.hypot(ca[k][0] - ca[k - 1][0], ca[k][1] - ca[k - 1][1]));
-  const L = d.at(-1) || 1, en = s => { const k = Math.max(1, d.findIndex(x => x >= s)), f = (s - d[k - 1]) / (d[k] - d[k - 1] || 1);
+    mapa.addLayer({ id: "corte", type: "line", source: "corte", layout: { "line-cap": "round" },
+      paint: { "line-color": "#d7261e", "line-width": 7, "line-dasharray": [1.2, 0.8] } }, "ops");
+  }
+  mapa.getSource("camino").setData(linea(ca));
+  const km = ([a, b], [c, e]) => Math.hypot((c - a) * Math.cos(b * Math.PI / 180), e - b) * 111.3;
+  for (let k = 1; k < ca.length; k++) d.push(d[k - 1] + km(ca[k - 1], ca[k]));
+  const L = d.at(-1) || 1, en = s => { let k = 1, h = d.length - 1; while (k < h) { const c = (k + h) >> 1; if (d[c] >= s) h = c; else k = c + 1; }  // búsqueda binaria
+    const f = (s - d[k - 1]) / (d[k] - d[k - 1] || 1);
     return [ca[k - 1][0] + f * (ca[k][0] - ca[k - 1][0]), ca[k - 1][1] + f * (ca[k][1] - ca[k - 1][1])]; };
-  const tt = ((D.tiempos || {})[empresa] || {})[r.nombre], parado = r.estado[0] === "mal" ? r.estado[1] : tt && tt.senal ? tt.senal : null;
-  let alto = L;
-  if (parado) { const f = fc.features.find(f => f.properties.u === r.peor), c = f && centro(f);
-    alto = c ? d[ca.reduce((m, p, k) => Math.hypot(p[0] - c[0], p[1] - c[1]) < Math.hypot(ca[m][0] - c[0], ca[m][1] - c[1]) ? k : m, 0)] : L / 2; }
-  const el = Object.assign(document.createElement("div"), { className: "camion", innerHTML: `<span>${r.modo === "Tren" ? "🚆" : "🚛"}</span>` });
-  el.dataset.motivo = parado ? "Detenido: " + parado : "";
-  const m = new maplibregl.Marker({ element: el }).setLngLat(ca[0]).addTo(mapa), dur = 8000;
-  const ver = s => { const p = en(s), q = en(Math.min(s + L / 40, L)); el.firstChild.style.transform = q[0] > p[0] ? "scaleX(-1)" : ""; m.setLngLat(p); };
-  yo.m = m;
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { ver(parado ? alto : L / 2); if (parado) el.classList.add("parado"); return; }
+  mapa.addLayer(capa3d(v, en, L));
+  if (!mapa.getPitch()) mapa.easeTo({ pitch: 40, duration: 900 });  // inclinado lo justo para que se vea en 3D, desde arriba
+  // Qué le pasa al vehículo (r.anim, de la cadena): "corte" = bloqueo vigente, se detiene en el punto del bloqueo;
+  // "aviso" = protesta anunciada o de hoy, pasa y al cruzar el lugar queda un aviso ámbar; tráfico medido: vía cerrada o
+  // desvío = se detiene (sin punto: a mitad del tramo); lento = va más despacio con la demora a la vista.
+  const P = new URLSearchParams(location.search).get("prueba");  // para ver cada caso: ?prueba=corte, aviso o lento (dice "prueba")
+  if (P === "corte" || P === "aviso") r = { ...r, anim: P, lugar: r.peor, estado: ["mal", P === "corte" ? "Bloqueo vigente (prueba)" : "Paro anunciado el 20 nov (prueba)"] };
+  const t0 = ((D.tiempos || {})[empresa] || {})[r.nombre] || {};
+  const tt = P === "lento" ? { min: Math.round((t0.normal || 60) * 1.7), normal: t0.normal || 60, senal: "tarda 1.7 veces lo normal (prueba)" } : t0, cerrada = tt.senal && !/^tarda/.test(tt.senal), lento = tt.senal && /^tarda/.test(tt.senal);
+  const corte = r.anim === "corte" ? r.estado[1] : cerrada ? tt.senal[0].toUpperCase() + tt.senal.slice(1) : null;
+  const sobre = x => {  // km del camino más cercano a un punto ([lon, lat]) o al centro de un distrito (ubigeo)
+    const f = typeof x === "string" && fc.features.find(f => f.properties.u === x), c = Array.isArray(x) ? x : f && centro(f);
+    return c ? d[ca.reduce((m, p, k) => Math.hypot(p[0] - c[0], p[1] - c[1]) < Math.hypot(ca[m][0] - c[0], ca[m][1] - c[1]) ? k : m, 0)] : null; };
+  const alto = corte ? (r.anim === "corte" ? sobre(r.lugar) : null) ?? L / 2 : L, ojo = r.anim === "aviso" ? sobre(r.lugar) ?? null : null;
+  const ver = s => { v.s = s; mapa.triggerRepaint(); };
+  const marca = (clase, texto, p) => { const el = Object.assign(document.createElement("div"), { className: "camion " + clase });
+    el.dataset.motivo = texto; const m = new maplibregl.Marker({ element: el }).setLngLat(p).addTo(mapa); yo.ms.push(m); return m; };
+  const detenido = s => {  // llegó al corte: la vía se pinta cortada y late el aviso con el motivo
+    const tr = Math.max(2, L * 0.03), cs = [en(Math.max(0, s - tr / 3))];
+    d.forEach((x, k) => { if (x > s - tr / 3 && x < s + tr) cs.push(ca[k]); }); cs.push(en(Math.min(L, s + tr)));
+    mapa.getSource("corte").setData(linea(cs));
+    marca("parado", "Detenido: " + corte, en(Math.min(L, s + tr / 2))); };
+  const lenta = lento && marca("lento", `Tránsito lento${P === "lento" ? " (prueba)" : ""}: ${hm(tt.min)}, lo normal ${hm(tt.normal)}`, en(0));
+  let avisado = false;
+  const pasa = s => { if (ojo != null && !avisado && s >= ojo) { avisado = true; marca("ojo", r.estado[1], en(ojo)); } if (lenta) lenta.setLngLat(en(s)); };
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { const s = corte ? alto : ojo ?? L / 2; ver(s); pasa(s); if (corte) detenido(alto); return; }
+  const dur = Math.min(40000, Math.max(12000, L * 90)), vel = L / dur * (lento ? 0.4 : 1);  // km por ms: el tramo en 12 a 40 s
+  const fre = Math.min(alto, L * 0.06), tf = 2 * fre / vel;  // frena en el último 6% del tramo antes del corte
   let ini = null;
-  const paso = ts => { ini ??= ts; const s = (ts - ini) / dur * L;
-    if (parado && s >= alto) { ver(alto); el.classList.add("parado"); return; }
-    ver(parado ? s : s % L); yo.raf = requestAnimationFrame(paso); };
+  const paso = ts => { ini ??= ts; const t = ts - ini, t0 = (alto - fre) / vel;
+    if (!corte) { const s = (t * vel) % (L + 40 * (v.m || 0) / 1000); ver(s); pasa(s); }  // sale entero de la mina y entra entero al destino
+    else if (t < t0) ver(t * vel);
+    else if (t < t0 + tf) { const u = t - t0; ver(alto - fre + vel * u - vel * vel * u * u / (4 * fre)); }
+    else { ver(alto); return detenido(alto); }
+    yo.raf = requestAnimationFrame(paso); };
   yo.raf = requestAnimationFrame(paso);
 }
 
