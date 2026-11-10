@@ -65,7 +65,7 @@ def tiempos_actuales(con):
     out = {}
     for r in t.itertuples():
         out.setdefault(r.cliente, {})[r.tramo] = {"min": round(r.segundos / 60), "normal": round(r.sin_trafico / 60),
-                                                  "senal": r.senal}
+                                                  "senal": r.senal, "causa": getattr(r, "causa", None)}
     return out
 
 

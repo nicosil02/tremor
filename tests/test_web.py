@@ -47,3 +47,21 @@ def test_senal_tiempo_de_viaje():
     assert senal(3600, 3500, 100000, 100000, True) == "el ruteador marca la vía cerrada"
     assert senal(3600, 3500, 160000, 100000, False) == "el ruteador desvía por 60 km más"
     assert senal(7200, 3600, 100000, 100000, False) == "tarda 2.0 veces lo normal"
+
+
+def test_causa_de_la_demora():
+    import sqlite3
+    from datetime import datetime
+    from tremor.tiempos import causa
+    con = sqlite3.connect(":memory:")
+    con.execute("CREATE TABLE sutran_alerta (motivo, submotivo, titulo, ubigeo, via, visto_ultimo, estado_via)")
+    con.execute("CREATE TABLE evento_prensa (ubigeo, accion, fecha_evento, fecha_anuncio)")
+    con.execute("CREATE TABLE emergencia (ubigeo, anio, mes, tipo)")
+    t, hoy = {"ubigeos": ["040128", "040104"], "via": "PE-34A"}, datetime(2026, 11, 10, 12)
+    assert causa(con, t, hoy) == "causa sin confirmar"
+    assert causa(con, t, hoy, lluvia=25) == "lluvia fuerte: 25 mm en 6 horas"
+    con.execute("INSERT INTO evento_prensa VALUES ('0401', 'Bloqueo de vías', '2026-11-10', NULL)")
+    assert causa(con, t, hoy).startswith("protesta según la prensa")
+    con.execute("INSERT INTO sutran_alerta VALUES ('fenomenos_naturales', 'fenomenos_naturales.climatologico', "
+                "'HUAICO EN EL KM 12', '040128', 'PE-34A', '2026-11-10T11:00:00', 'interrumpido')")
+    assert causa(con, t, hoy) == "fenómeno natural según SUTRAN: Huaico en el km 12"   # SUTRAN manda sobre la prensa

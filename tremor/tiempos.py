@@ -8,6 +8,7 @@ ponytail: un solo proveedor; Google Routes (`TRAFFIC_AWARE`) se suma si TomTom r
 import os
 import statistics
 import sys
+from datetime import datetime, timedelta
 
 import requests
 
@@ -41,6 +42,46 @@ def senal(seg, sin, metros, metros_normal, cierre):
     return None
 
 
+# Una vía lenta no siempre es una protesta: huaicos, lluvias, El Niño, accidentes, obras. La causa se busca en este orden.
+MOTIVO = {"humano": "protesta", "fenomenos_naturales": "fenómeno natural", "accidentes": "accidente", "infraestructura": "obras"}
+
+
+def _llueve(puntos):
+    """mm de lluvia en las últimas 6 horas, el mayor de los puntos del tramo (Open-Meteo, sin clave; uso no comercial)."""
+    try:
+        r = requests.get("https://api.open-meteo.com/v1/forecast", timeout=30, params={
+            "latitude": ",".join(str(a) for a, _ in puntos), "longitude": ",".join(str(b) for _, b in puntos),
+            "hourly": "precipitation", "past_hours": 6, "forecast_hours": 0})
+        js = r.json()
+        return max(sum(x for x in p["hourly"]["precipitation"] if x) for p in (js if isinstance(js, list) else [js]))
+    except (requests.RequestException, KeyError, TypeError, ValueError):
+        return None
+
+
+def causa(con, t, hoy, lluvia=None):
+    """Por qué está lenta la vía: SUTRAN (trae el motivo), protesta en la prensa, lluvia fuerte o emergencia del mes."""
+    us = t["ubigeos"]
+    cerca = lambda u: bool(u) and any(u[:min(len(u), len(x), 4)] == x[:min(len(u), len(x), 4)] for x in us)
+    deps = {x[:2] for x in us}
+    for motivo, sub, titulo, u, via in con.execute(
+            "SELECT motivo, submotivo, titulo, ubigeo, via FROM sutran_alerta WHERE visto_ultimo >= ? AND estado_via <> 'normal'",
+            ((hoy - timedelta(hours=6)).isoformat(timespec="seconds"),)):
+        if cerca(u) or (via and via == t.get("via") and (u or "")[:2] in deps):
+            tipo = "El Niño" if "nino" in (sub or "") else MOTIVO.get(motivo, motivo)
+            return f"{tipo} según SUTRAN: {titulo.capitalize()[:90]}"
+    d = hoy.date()
+    for u, accion in con.execute("SELECT ubigeo, accion FROM evento_prensa WHERE COALESCE(fecha_evento, fecha_anuncio) "
+                                 "BETWEEN ? AND ?", ((d - timedelta(1)).isoformat(), d.isoformat())):
+        if cerca(u):
+            return f"protesta según la prensa ({(accion or 'medida de fuerza').lower()})"
+    if lluvia and lluvia >= 10:
+        return f"lluvia fuerte: {lluvia:.0f} mm en 6 horas"
+    for u, tipo in con.execute("SELECT ubigeo, tipo FROM emergencia WHERE anio = ? AND mes = ?", (d.year, d.month)):
+        if u in us:
+            return f"emergencia por {str(tipo).lower()} este mes (INDECI)"
+    return "causa sin confirmar"
+
+
 def recolectar(con):
     _env()
     clave = os.environ.get("TOMTOM_API_KEY")
@@ -48,7 +89,7 @@ def recolectar(con):
         print("Tiempos de viaje: falta TOMTOM_API_KEY, no se mide.")
         return 0
     con.execute("CREATE TABLE IF NOT EXISTS tiempo_viaje (cliente TEXT, tramo TEXT, hora TEXT, segundos INTEGER, "
-                "sin_trafico INTEGER, metros INTEGER, cierre INTEGER, senal TEXT)")
+                "sin_trafico INTEGER, metros INTEGER, cierre INTEGER, senal TEXT, causa TEXT)")
     n, hora = 0, ahora()
     for cliente, c in CADENA.items():
         for t in c["tramos"]:
@@ -64,9 +105,13 @@ def recolectar(con):
                 continue
             prev = [x[0] for x in con.execute("SELECT metros FROM tiempo_viaje WHERE cliente = ? AND tramo = ? AND cierre = 0",
                                               (cliente, t["nombre"]))]
-            con.execute("INSERT INTO tiempo_viaje VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                        (cliente, t["nombre"], hora, seg, sin, m, int(cierre),
-                         senal(seg, sin, m, statistics.median(prev) if prev else None, cierre)))
+            s = senal(seg, sin, m, statistics.median(prev) if prev else None, cierre)
+            try:
+                c = causa(con, t, datetime.fromisoformat(hora), _llueve(t["puntos"])) if s else None
+            except Exception as e:  # sqlite.OperationalError: una tabla que aún no existe en una base nueva
+                c = f"causa sin confirmar ({type(e).__name__})"
+            con.execute("INSERT INTO tiempo_viaje VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        (cliente, t["nombre"], hora, seg, sin, m, int(cierre), s, c))
             n += 1
     con.commit()
     print(f"Tiempos de viaje: {n} tramos medidos.")

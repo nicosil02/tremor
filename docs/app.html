@@ -376,7 +376,7 @@ function fiscal(unidad) {
 const hm = m => m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`;
 function viaje(tramo) {
   const t = ((D.tiempos || {})[empresa] || {})[tramo];
-  return t && t.senal ? `<span class="aviso-t">Ahora ${esc(t.senal)}: ${hm(t.min)}, normal ${hm(t.normal)}</span>` : "";
+  return t && t.senal ? `<span class="aviso-t">Ahora ${esc(t.senal)}: ${hm(t.min)}, normal ${hm(t.normal)}${t.causa ? `. Causa: ${esc(t.causa)}` : ""}</span>` : "";
 }
 function reciente() {
   const r = (D.oefa_empresa || {})[empresa], h = (D.oefa_empresa || {})._hasta;
