@@ -156,6 +156,36 @@ def verificar_radio(con, max_solicitudes=30):
     return hechas
 
 
+RETIROS = """Lees una nota peruana sobre una protesta. Di qué gremios, sindicatos, federaciones, frentes, comunidades o
+grupos anuncian que se retiran, se desligan, se bajan o no se suman a la medida. Solo los que la nota dice que se
+retiran, no los que se suman. Nómbralos por su rol u organización (p. ej. "transportistas de carga de Arequipa",
+"Federación de mototaxistas de Islay"), nunca con nombres de personas. Si la medida entera se levanta, "todos": true.
+Responde solo JSON: {"retiran": ["..."], "todos": true|false}"""
+SE_RETIRA = re.compile(r"deslig|se retir|desist|se baj(a|an|aron) del|no (se )?(sumar|suma|acata|participa|pleg)", re.I)
+
+
+def retiros(con, max_solicitudes=30):
+    """Gremios que se retiran de una protesta, leídos por el LLM solo en las notas de protesta donde una regla ve
+    retiro (SE_RETIRA): pocas notas, poca cuota. Queda en retiro_nota (gremios en JSON); la página los junta por evento."""
+    con.execute("CREATE TABLE IF NOT EXISTS retiro_nota (nota_id TEXT PRIMARY KEY, gremios TEXT, todos INTEGER)")
+    xs = [(n, t) for n, t in con.execute(
+        "SELECT n.id, n.titular || '. ' || coalesce(n.resumen, '') FROM nota n JOIN codificacion c ON c.nota_id = n.id "
+        "AND c.version = ? WHERE c.es_protesta = 1 AND n.id NOT IN (SELECT nota_id FROM retiro_nota)", (VERSION,))
+          if SE_RETIRA.search(t or "")][:max_solicitudes]
+    hechas = 0
+    for n, t in xs:
+        try:
+            r = chat_json(con, RETIROS, t[:1500], "retiro1")
+        except (SinCuota, RespuestaInvalida) as e:
+            print(f"  Retiros pendientes: {e}")
+            break
+        gs = [g for g in r.get("retiran") or [] if isinstance(g, str) and g.strip()]
+        con.execute("INSERT OR REPLACE INTO retiro_nota VALUES (?, ?, ?)", (n, json.dumps(gs, ensure_ascii=False), int(r.get("todos") is True)))
+        con.commit()
+        hechas += 1
+    return hechas
+
+
 def limpiar(item: dict) -> dict:
     """Respuesta del LLM → valores válidos: lo que no está en las listas queda en None (FR-009)."""
     g = lambda k: (item.get(k) or None) if isinstance(item.get(k), (str, type(None))) else None

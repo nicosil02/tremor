@@ -194,10 +194,10 @@ def test_seguimiento_de_lo_avisado():
     from datetime import date, timedelta
     ayer = (date.fromisoformat(hoy()) - timedelta(days=1)).isoformat()
     ev = lambda **k: {"ubigeo": "040701", "accion": "Paro", "fecha_evento": "2026-12-01", "estado": "anunciada", **k}
-    web = {"eventos": [ev(suspendido=True, postergado=True), ev(accion="Marcha", retiran=["040108", "150101"]),
+    web = {"eventos": [ev(suspendido=True, postergado=True), ev(accion="Marcha", retiran=["040108", "150101"], gremios_retiran=["transportistas de carga de Islay"]),
                        ev(accion="Bloqueo", fecha_evento=ayer), ev(accion="Toma", suspendido=True)]}
     z = {"040701": "Cailloma", "040108": "en su ruta"}
     enviados = {"evento:040701:Paro:2026-12-01", "evento:040701:Marcha:2026-12-01", f"evento:040701:Bloqueo:{ayer}"}
     xs = {c.split(":")[0]: t for c, t, _ in cambios(web, z, enviados)}
     assert set(xs) == {"cae", "retira", "nohubo"}          # la toma no se avisó antes: su suspensión tampoco
-    assert "POSTERGADA" in xs["cae"] and "La Joya" in xs["retira"] and "Lima" not in xs["retira"]
+    assert "POSTERGADA" in xs["cae"] and "La Joya" in xs["retira"] and "transportistas de carga de Islay" in xs["retira"] and "Lima" not in xs["retira"]

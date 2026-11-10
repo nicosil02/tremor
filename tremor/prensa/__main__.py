@@ -62,6 +62,7 @@ def main(argv=None):
     if a.cmd in ("agrupar", "todo"):
         print("Revisadas por el LLM %d de %d protestas dudosas (¿contra la operación?)." % cod.revisar_operacion(con))
         print(f"Radio: {cod.verificar_radio(con)} fragmentos releídos (¿protesta concreta?).")
+        print(f"Retiros: {cod.retiros(con)} notas leídas (¿qué gremios se bajan?).")
         print(f"Eventos: {eventos.agrupar(con)}.")
     if a.cmd in ("exportar", "todo"):
         exportar(con)

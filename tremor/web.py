@@ -7,6 +7,7 @@ import functools
 import csv
 import json
 import re
+import sqlite3
 import sys
 import unicodedata
 from datetime import date, timedelta
@@ -117,6 +118,13 @@ def datos(con):
         texto = dict(con.execute("""SELECT en.evento_id, group_concat(n.titular || '. ' || coalesce(n.resumen, ''), ' ')
                                     FROM evento_nota en JOIN nota n ON n.id = en.nota_id GROUP BY 1"""))
         leido = [leer(texto.get(i, "")) for i in ev.id]
+        try:  # gremios que se retiran, leídos por el LLM (codificar.retiros)
+            gremios = {}
+            for i, g in con.execute("SELECT en.evento_id, r.gremios FROM evento_nota en JOIN retiro_nota r ON r.nota_id = en.nota_id"):
+                gremios.setdefault(i, []).extend(json.loads(g))
+        except sqlite3.OperationalError:
+            gremios = {}
+        ev["gremios_retiran"] = [list(dict.fromkeys(gremios.get(i, []))) for i in ev.id]
         # hay al menos una nota con texto del medio (no solo el titular): sin eso no se avisa al cliente
         con_texto = {i for (i,) in con.execute("""SELECT DISTINCT en.evento_id FROM evento_nota en JOIN nota n ON n.id = en.nota_id
                                                   WHERE length(trim(coalesce(n.resumen, ''))) > 0""")}
@@ -292,7 +300,7 @@ def juntar(evs):
         elif u != "00" and not v.startswith(u):
             par["ubigeo"] = v[:2] if u[:2] == v[:2] else v  # dos focos del mismo departamento: el departamento
         par["n_notas"] = (par.get("n_notas") or 0) + (e.get("n_notas") or 0)
-        for k in ("adhieren", "retiran", "puntos"):
+        for k in ("adhieren", "retiran", "gremios_retiran", "puntos"):
             par[k] = list(dict.fromkeys((par.get(k) or []) + (e.get(k) or [])))
         par["suspendido"] = bool(par.get("suspendido")) or bool(e.get("suspendido"))
         par["postergado"] = bool(par.get("postergado")) or bool(e.get("postergado"))
