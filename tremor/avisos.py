@@ -168,13 +168,13 @@ def lentas(con, nombre, ahora_=None):
         if tramo in vistos:
             continue
         vistos.add(tramo)
-        png = tarjeta(f"Ruta lenta: {re.sub(r', (\w+)$', r' (\1)', tramo)}", hm(seg), [f"Lo normal: {hm(sin)}", f"TomTom, {hora[11:16]}"], [], set(),
+        png = tarjeta(f"Ruta lenta: {re.sub(r', (\w+)$', r' (\1)', tramo)}", hm(seg), [f"Lo normal: {hm(sin)}", f"Medido a las {hora[11:16]}"], [], set(),
                       [u for t in ruta[:1] for u in t["ubigeos"][:1]], leyenda="Tramo lento", ruta=ruta, cortes=[tramo],
                       empresa=EMPRESAS[nombre][0]) if ruta and (DATOS / "distritos.geojson").exists() else None
         out.append((f"ruta:{tramo}:{hora[:10]}",
                     f"🐢 *RUTA LENTA · {re.sub(r', (\w+)$', r' (\1)', tramo)}*\n"
                     f"_Su ruta de salida tarda {hm(seg)}; lo normal es {hm(sin)}_\n\n"
-                    f"🛣 *Qué pasa:* {sen[0].upper()}{sen[1:]} (TomTom, {hora[11:16]})\n"
+                    f"🛣 *Qué pasa:* {sen[0].upper()}{sen[1:]} (medido a las {hora[11:16]})\n"
                     f"🔎 *Causa:* {causa or 'causa sin confirmar'}\n\n"
                     f"✅ *Qué hacer*\nConfirmar con sus transportistas antes de despachar y ver rutas u horarios alternos.\n\n"
                     f"🔗 *Conoce más aquí:* {APP}?e={quote(nombre)}", png))

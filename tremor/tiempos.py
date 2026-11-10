@@ -39,9 +39,9 @@ def medir(puntos, clave):
 def senal(seg, sin, metros, metros_normal, cierre):
     """Qué dice la medición, o None si el tramo está normal. Umbrales por calibrar contra la SUTRAN."""
     if cierre:
-        return "el ruteador marca la vía cerrada"
+        return "vía cerrada"
     if metros_normal and metros > 1.3 * metros_normal:
-        return f"el ruteador desvía por {(metros - metros_normal) / 1000:.0f} km más"
+        return f"desvío de {(metros - metros_normal) / 1000:.0f} km"
     if sin and seg >= 1.5 * sin:
         return f"tarda {seg / sin:.1f} veces lo normal"
     return None
@@ -98,7 +98,7 @@ def recolectar(con):
     n, hora = 0, ahora()
     for cliente, c in CADENA.items():
         for t in c["tramos"]:
-            if not t.get("puntos"):
+            if not t.get("puntos") or t.get("modo") != "Camión":  # TomTom mide carreteras: el tren no
                 continue
             try:
                 seg, sin, m, cierre = medir(t["puntos"], clave)

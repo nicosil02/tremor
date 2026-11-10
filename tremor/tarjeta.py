@@ -133,8 +133,11 @@ def trazar(tramos):
     Callalli → Arequipa, y ramales: el plomo deja la vía al puerto). Lo que queda fuera de la red nacional (la mina suele
     estar a decenas de km, por trocha o vía departamental) va en recta y se dibuja punteado."""
     out, hecho = [], []
-    for t in (t for t in tramos if t.get("puntos")):  # el tren de Las Bambas no trae puntos
+    for t in (t for t in tramos if t.get("puntos")):  # el puerto no trae puntos
         a, b = [(lon, lat) for lat, lon in t["puntos"]]
+        if t.get("rieles"):  # el tren va por sus estaciones, no por la red vial
+            out.append((t, [([(lon, lat) for lat, lon in t["rieles"]], False)]))
+            continue
         c = camino(_red(), hecho or [a], b, t.get("via"))
         if c and sum(map(math.dist, c, c[1:])) > 3 * math.dist(c[0], b) + 0.2:
             c = None  # la red no los une por cerca (PE-10C cortada en el Marañón): da la vuelta por la costa
@@ -147,6 +150,20 @@ def trazar(tramos):
                 partes.insert(0, ([a, c[0]], False))
         hecho += [x for linea, _ in partes for x in linea]
         out.append((t, partes))
+    return out
+
+
+def caminos():
+    """docs/caminos.json: cada tramo con su camino por la red vial ({cliente: {tramo: [[lon, lat], ...]}}), para que el
+    camión de la app siga la carretera. Cada tramo sale de su propio punto. Correr al cambiar cadena.json."""
+    out = {}
+    for cliente, c in json.load(open(RAIZ / "docs" / "cadena.json", encoding="utf-8")).items():
+        for t in c["tramos"]:
+            for _, partes in trazar([t]):
+                pts = [p for linea, _ in partes for p in linea]
+                pts = [p for i, p in enumerate(pts) if i == 0 or math.dist(p, pts[i - 1]) > 0.005 or i == len(pts) - 1]
+                out.setdefault(cliente, {})[t["nombre"]] = [[round(x, 4), round(y, 4)] for x, y in pts]
+    (RAIZ / "docs" / "caminos.json").write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
     return out
 
 
