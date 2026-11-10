@@ -94,3 +94,16 @@ def test_tarjeta_png():
     from tremor.tarjeta import tarjeta
     png = tarjeta("Prueba", "49%", ["Nivel alto", "Octubre a diciembre"], ["a"], ["b"], ["080803"], {"080803"}, [], p=0.49)
     assert png[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_juntar_focos():
+    from tremor.web import juntar
+    base = {"adhieren": [], "retiran": [], "puntos": [], "suspendido": False, "plazo": None, "reclamo": None}
+    lima = [{**base, "fecha_evento": "2026-11-10", "ubigeo": "15", "accion": "Paro", "actor": "Transportistas urbanos", "n_notas": 5},
+            {**base, "fecha_evento": "2026-11-10", "ubigeo": "00", "accion": "Paro", "actor": "Transportistas urbanos", "n_notas": 2},
+            {**base, "fecha_evento": "2026-11-16", "ubigeo": "00", "accion": "Paro", "actor": "Transportistas de carga", "n_notas": 3}]
+    j = juntar(lima)
+    assert len(j) == 2 and [x["ubigeo"] for x in j if x["n_notas"] == 7] == ["15"]
+    piura = [{**base, "fecha_evento": "2026-11-07", "ubigeo": "200604", "accion": "Bloqueo", "actor": "Pobladores", "n_notas": 2, "reclamo": "Servicios"},
+             {**base, "fecha_evento": "2026-11-06", "ubigeo": "20", "accion": "Petición", "actor": "Pobladores", "n_notas": 1, "reclamo": "Servicios"}]
+    assert len(juntar(piura)) == 2

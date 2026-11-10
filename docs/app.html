@@ -116,8 +116,9 @@
 .cifras-d { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 8px; margin: 4px 16px 8px; } .cifras-d div { display: grid; }
 .cifras-d b { font-size: 28px; font-weight: 750; font-variant-numeric: tabular-nums; } .cifras-d span { font-size: 14px; color: var(--tinta-2); }
 .leyenda-via i.punto.negro { background: #1c2629; } .leyenda-via i.via-l { background: #fff; height: 4px; margin-left: 4px; box-shadow: 0 0 0 1.5px #1c2629; }
-.leyenda-via .esc { white-space: nowrap; } .leyenda-via .esc i { width: 16px; height: 10px; border-radius: 2px; margin: 0 3px 0 6px; } .leyenda-via .esc i:first-child { margin-left: 0; } .leyenda-via i.naranja { background: #e8962e; } .leyenda-via i.punto { width: 10px; height: 10px; border-radius: 50%; background: var(--rojo); margin-left: 4px; }
-  .leyenda-via small { display: block; font-weight: 400; font-size: 13px; color: var(--tinta-2); max-width: 240px; }
+.leyenda-via .esc { display: grid; grid-template-columns: auto auto; gap: 2px 12px; margin-top: 4px; } .leyenda-via .esc > span { white-space: nowrap; }
+.leyenda-via .esc i { width: 14px; height: 10px; border-radius: 2px; margin: 0 5px 2px 0; } .leyenda-via .esc i.punto { width: 9px; height: 9px; border-radius: 50%; } .leyenda-via .esc i.via-l { height: 4px; margin-left: 0; } .leyenda-via i.naranja { background: #e8962e; } .leyenda-via i.punto { width: 10px; height: 10px; border-radius: 50%; background: var(--rojo); margin-left: 4px; }
+  .leyenda-via small { display: block; font-weight: 400; font-size: 13px; color: var(--tinta-2); max-width: 280px; }
   .cuando { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; padding: 18px 16px 0; }
   .cuando b { font-size: 34px; line-height: 1; font-weight: 750; font-variation-settings: var(--ancho); color: var(--rojo); }
   .cuando b::first-letter { text-transform: uppercase; } .cuando.paso b { color: var(--tinta-2); } .cuando span { color: var(--tinta-2); }
@@ -322,7 +323,7 @@ const VISTAS = {
     cabecera(false);
     PAIS = D.eventos.map(e => { const f = String(e.fecha_evento || e.fecha_anuncio || "").slice(0, 10), viene = e.estado === "anunciada" && f >= HOY && !e.suspendido;
       return { f, e, viene, tipo: "Protesta", urge: viene, t: `${accion(e)}${e.actor ? ` de ${e.actor.toLowerCase()}` : ""}`, w: viene ? cuando(f) : dia(f),
-        s: lugar(String(e.ubigeo)) }; });
+        s: lugar(String(e.ubigeo)) + ((e.focos || []).length > 1 ? `, ${e.focos.length} focos` : "") }; });
     const v = PAIS.filter(x => x.viene).sort((a, b) => a.f.localeCompare(b.f)), r = PAIS.filter(x => !x.viene && x.f <= HOY && dias(x.f) >= -7).sort((a, b) => b.f.localeCompare(a.f));
     const ls = xs => `<ul>${xs.map(x => fila(x.urge ? "urge" : "", 0, x.t, x.w, x.s, `data-pais="${PAIS.indexOf(x)}"`)).join("")}</ul>`;
     // ponytail: sin capitales de departamento ni Lima-Callao, donde la EGPP pone lo que no sabe ubicar
@@ -455,8 +456,8 @@ let actual = "avisos", mapa, PAIS = [], FOCO = null, SEL = null;  // SEL: distri
 const VER = `<button type="button" class="ir vermapa" data-vermapa>Ver en el mapa</button>`;
 const ley = () => (actual === "pais" || PAIS_VISTA)
   ? `${SEL ? esc(SEL.t) : "Riesgo en zonas con operación extractiva"}<small>Paro, bloqueo o toma contra la operación, octubre a diciembre
-    <br><span class="esc"><i style="background:#f1d9c6"></i>menos de 15% <i style="background:#e3a67c"></i>15 a 25% <i style="background:#c8642f"></i>25 a 40% <i style="background:#8a3213"></i>40% o más</span>
-    <br><i class="punto"></i>Protesta anunciada <i class="punto negro"></i>Bloqueo vigente (SUTRAN) <i class="via-l"></i>Vía nacional, al acercarse</small>`
+    <span class="esc"><span><i style="background:#f1d9c6"></i>menos de 15%</span><span><i style="background:#e3a67c"></i>15 a 25%</span><span><i style="background:#c8642f"></i>25 a 40%</span><span><i style="background:#8a3213"></i>40% o más</span></span>
+    <span class="esc"><span><i class="punto"></i>Protesta anunciada</span><span><i class="punto negro"></i>Bloqueo (SUTRAN)</span><span><i class="via-l"></i>Vía, al acercarse</span></span></small>`
   : (FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Riesgo en la vía, " + pct(X.via))
   + (SEL ? (SEL.tr.length ? `<small><i class="rojo"></i>${/se suma/.test(SEL.etq) ? "Anunciaron que se suman" : SEL.tr2.length ? "Más probable" : "Tramos que puede cortar"}${SEL.tr2.length ? `<br><i class="naranja"></i>Posible` : ""}<br><i class="punto"></i>${/se suma/.test(SEL.etq) ? "Base que se suma" : SEL.etq ? "Donde más bloquearon antes" : "Dónde es la protesta"}</small>` : "")
     : `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`);
@@ -475,8 +476,9 @@ function peru() {
         const top = zs.filter(f => !/0101$/.test(f.properties.u) && !/^(1501|0701)/.test(f.properties.u)).sort((x, y) => y.properties.p - x.properties.p).slice(0, 10)
           .map((f, k) => ({ type: "Feature", properties: { k: k + 1, t: `${lugar(f.properties.u)} ${pct(f.properties.p)}` }, geometry: { type: "Point", coordinates: centro(f) } }));
       const porU = new Map(g.features.map(f => [f.properties.u, f]));
-      const ev = [...PAIS.map((x, k) => ({ x, k })).filter(({ x }) => x.viene && String(x.e.ubigeo).length === 6 && porU.has(String(x.e.ubigeo)))
-            .map(({ x, k }) => ({ type: "Feature", properties: { k, s: 0, t: x.t }, geometry: { type: "Point", coordinates: centro(porU.get(String(x.e.ubigeo))) } })),
+      const ev = [...PAIS.map((x, k) => ({ x, k })).filter(({ x }) => x.viene)  // un punto por foco de la protesta
+            .flatMap(({ x, k }) => [...new Set([String(x.e.ubigeo), ...(x.e.focos || [])])].filter(u => u.length === 6 && porU.has(u))
+              .map(u => ({ type: "Feature", properties: { k, s: 0, t: x.t }, geometry: { type: "Point", coordinates: centro(porU.get(u)) } }))),
           ...(D.sutran || []).filter(b => b.lat && b.lng).map(b => ({ type: "Feature", properties: { k: -1, s: 1, t: `Vía ${b.via} bloqueada` }, geometry: { type: "Point", coordinates: [+b.lng, +b.lat] } }))];
       if (mapa.getSource("peru-ev")) mapa.getSource("peru-ev").setData({ type: "FeatureCollection", features: ev });
       if (!mapa.getSource("peru")) {
