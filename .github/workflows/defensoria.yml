@@ -42,6 +42,7 @@ jobs:
         run: python -m tremor.defensoria todo
 
       - name: Operaciones y proyectos (una vez al día; OEFA, cartera del MINEM, SENACE y decretos de El Peruano)
+        continue-on-error: true  # si la OEFA o el MINEM están caídos, sigue con las operaciones del día anterior
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
