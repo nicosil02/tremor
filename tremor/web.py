@@ -167,7 +167,9 @@ def familia(accion):
 def quien(e):
     """Actor sin el detalle: "Transportistas urbanos" y "Transportistas de carga" quedan aparte (el urbano no frena despachos)."""
     a = (e.get("actor") or "").lower()
-    return (a.split(" ")[0] if a else "", bool(e.get("urbano")) or "urbano" in a)
+    if e.get("urbano") or "urbano" in a:  # las notas hablan de buses o rutas: es transporte urbano, diga lo que diga el actor
+        return ("transportistas", True)
+    return (a.split(" ")[0] if a else "", False)
 
 
 def txt(x):
@@ -198,7 +200,7 @@ def juntar(evs):
                          and (familia(o["accion"]) == familia(e["accion"]) or o["actor"] == e["actor"]))
             mismo_actor = (quien(o) == quien(e) and quien(e)[0] and cerca_dia(o["fecha_evento"], e["fecha_evento"])
                            and (not txt(o.get("reclamo")) or not txt(e.get("reclamo")) or o["reclamo"] == e["reclamo"])
-                           and ("00" in (u, v) or (dentro and min(len(u), len(v)) >= 4)))  # un departamento entero es demasiado
+                           and ("00" in (u, v) or u == v or (dentro and min(len(u), len(v)) >= 4)))  # un departamento entero es demasiado
             if mismo_dia or mismo_actor:
                 par = o; break
         if par is None:
@@ -245,7 +247,7 @@ def dia_dicho(titular, fecha):
     return fecha
 
 
-URBANO = re.compile(r"extorsi|transporte (publico|urbano)|combis?\b|colectiver|mototaxi|choferes asesinad|asesinatos? de chofer")
+URBANO = re.compile(r"extorsi|transporte (publico|urbano)|combis?\b|colectiver|mototaxi|choferes asesinad|asesinatos? de chofer|suspender\w* (sus )?rutas|empresas de transporte|lineas de (buses|transporte)|buses")
 
 
 def _llano(s):

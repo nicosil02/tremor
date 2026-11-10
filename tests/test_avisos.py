@@ -107,3 +107,12 @@ def test_juntar_focos():
     piura = [{**base, "fecha_evento": "2026-11-07", "ubigeo": "200604", "accion": "Bloqueo", "actor": "Pobladores", "n_notas": 2, "reclamo": "Servicios"},
              {**base, "fecha_evento": "2026-11-06", "ubigeo": "20", "accion": "Petición", "actor": "Pobladores", "n_notas": 1, "reclamo": "Servicios"}]
     assert len(juntar(piura)) == 2
+
+
+def test_urbano_por_rutas():
+    from tremor.web import juntar, leer
+    assert leer("Lima: más de 50 empresas suspenderán rutas por protesta")["urbano"]
+    base = {"adhieren": [], "retiran": [], "puntos": [], "suspendido": False, "plazo": None, "reclamo": None}
+    j = juntar([{**base, "fecha_evento": "2026-11-10", "ubigeo": "15", "accion": "Paro", "actor": "Transportistas urbanos", "n_notas": 5},
+                {**base, "fecha_evento": "2026-11-09", "ubigeo": "15", "accion": "Paro", "actor": "Comerciantes", "n_notas": 1, "urbano": True}])
+    assert len(j) == 1 and j[0]["n_notas"] == 6
