@@ -24,6 +24,12 @@ def test_paro_nacional_no_se_achica():
     for orden in ([piura, nac], [nac, piura]):
         (e,) = juntar([dict(x) for x in orden])
         assert e["ubigeo"] == "00" and e["focos"] == ["20"] and "nacional" in e["titular"]
+    # El Búho: el LLM puso "urbanos", pero la nota nombra la carga pesada: es el mismo paro nacional, Arequipa se suma
+    aqp = {**base, "id": 3, "ubigeo": "04", "actor": "Transportistas urbanos", "carga": True, "reclamo": "Económicos",
+           "titular": "¿Qué se sabe sobre el paro de transportistas en Arequipa por alza de combustibles?"}
+    for orden in ([aqp, {**nac, "reclamo": "Económicos"}], [{**nac, "reclamo": "Económicos"}, aqp]):
+        (e,) = juntar([dict(x) for x in orden])
+        assert e["ubigeo"] == "00" and e["focos"] == ["04"] and e["actor"] == "Transportistas de carga"
 
 
 def test_oefa_unidades_por_nombre_normalizado():
@@ -65,3 +71,11 @@ def test_causa_de_la_demora():
     con.execute("INSERT INTO sutran_alerta VALUES ('fenomenos_naturales', 'fenomenos_naturales.climatologico', "
                 "'HUAICO EN EL KM 12', '040128', 'PE-34A', '2026-11-10T11:00:00', 'interrumpido')")
     assert causa(con, t, hoy) == "fenómeno natural según SUTRAN: Huaico en el km 12"   # SUTRAN manda sobre la prensa
+
+
+def test_distritos_nombrados_en_la_provincia():
+    from tremor.web import distritos_nombrados
+    t = "MILES DE PROFESORES DE SAN MARTÍN DE PORRES Y LOS OLIVOS ACATARON PARO DEL 29 DE OCTUBRE"
+    assert sorted(distritos_nombrados(t, "1501")) == ["150117", "150135"]
+    assert distritos_nombrados(t, "150135") == []           # ya está en un distrito
+    assert distritos_nombrados("Paro de docentes en Lima", "1501") == []   # "Lima" es la provincia: no es un distrito
