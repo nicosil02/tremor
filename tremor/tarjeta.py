@@ -133,8 +133,11 @@ def trazar(tramos):
     Callalli → Arequipa, y ramales: el plomo deja la vía al puerto). Lo que queda fuera de la red nacional (la mina suele
     estar a decenas de km, por trocha o vía departamental) va en recta y se dibuja punteado."""
     out, hecho = [], []
-    for t in (t for t in tramos if t.get("puntos")):  # el tren de Las Bambas no trae puntos
+    for t in (t for t in tramos if t.get("puntos")):  # el puerto no trae puntos
         a, b = [(lon, lat) for lat, lon in t["puntos"]]
+        if t.get("rieles"):  # el tren va por sus estaciones, no por la red vial
+            out.append((t, [([(lon, lat) for lat, lon in t["rieles"]], False)]))
+            continue
         c = camino(_red(), hecho or [a], b, t.get("via"))
         if c and sum(map(math.dist, c, c[1:])) > 3 * math.dist(c[0], b) + 0.2:
             c = None  # la red no los une por cerca (PE-10C cortada en el Marañón): da la vuelta por la costa

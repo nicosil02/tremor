@@ -98,7 +98,7 @@ def recolectar(con):
     n, hora = 0, ahora()
     for cliente, c in CADENA.items():
         for t in c["tramos"]:
-            if not t.get("puntos"):
+            if not t.get("puntos") or t.get("modo") != "Camión":  # TomTom mide carreteras: el tren no
                 continue
             try:
                 seg, sin, m, cierre = medir(t["puntos"], clave)

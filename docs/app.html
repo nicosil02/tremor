@@ -509,7 +509,7 @@ const CAMINOS = fetch("caminos.json").then(r => r.json()).catch(() => ({}));
 let CAMION = null;
 async function camion(r, fc, centro) {
   if (CAMION) { cancelAnimationFrame(CAMION.raf); CAMION.m.remove(); }
-  const yo = CAMION = r && r.puntos && r.modo === "Camión" ? { raf: 0, m: { remove() {} } } : null;
+  const yo = CAMION = r && r.puntos && /Camión|Tren/.test(r.modo) ? { raf: 0, m: { remove() {} } } : null;
   const linea = cs => ({ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: cs } });
   if (mapa.getSource("camino")) mapa.getSource("camino").setData(linea([]));
   if (!yo) return;
@@ -527,7 +527,7 @@ async function camion(r, fc, centro) {
   let alto = L;
   if (parado) { const f = fc.features.find(f => f.properties.u === r.peor), c = f && centro(f);
     alto = c ? d[ca.reduce((m, p, k) => Math.hypot(p[0] - c[0], p[1] - c[1]) < Math.hypot(ca[m][0] - c[0], ca[m][1] - c[1]) ? k : m, 0)] : L / 2; }
-  const el = Object.assign(document.createElement("div"), { className: "camion", innerHTML: "<span>🚛</span>" });
+  const el = Object.assign(document.createElement("div"), { className: "camion", innerHTML: `<span>${r.modo === "Tren" ? "🚆" : "🚛"}</span>` });
   el.dataset.motivo = parado ? "Detenido: " + parado : "";
   const m = new maplibregl.Marker({ element: el }).setLngLat(ca[0]).addTo(mapa), dur = 8000;
   const ver = s => { const p = en(s), q = en(Math.min(s + L / 40, L)); el.firstChild.style.transform = q[0] > p[0] ? "scaleX(-1)" : ""; m.setLngLat(p); };

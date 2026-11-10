@@ -241,7 +241,7 @@
  },
  "Las Bambas": {
   "empresa": "minera las bambas",
-  "fuente": "MMG: camión por el Corredor Minero del Sur hasta la estación Pillones (≈490 km) y tren de PeruRail hasta el puerto de Matarani (≈295 km)",
+  "fuente": "MMG: camión por el Corredor Minero del Sur hasta la estación Pillones (≈490 km) y tren de PeruRail hasta el puerto de Matarani (≈295 km). El trazado del tren va por sus estaciones (Pillones, Sumbay, Yura, Arequipa, La Joya, Mollendo), aproximado",
   "tramos": [
    {
     "nombre": "Mina a Velille",
@@ -320,6 +320,58 @@
      "040702",
      "040703",
      "040705"
+    ],
+    "rieles": [
+     [
+      -15.83806,
+      -71.09124
+     ],
+     [
+      -15.985,
+      -71.36
+     ],
+     [
+      -16.25,
+      -71.68
+     ],
+     [
+      -16.39,
+      -71.55
+     ],
+     [
+      -16.42,
+      -71.67
+     ],
+     [
+      -16.6,
+      -71.88
+     ],
+     [
+      -16.92,
+      -71.85
+     ],
+     [
+      -17.05,
+      -71.85
+     ],
+     [
+      -17.02,
+      -72.01
+     ],
+     [
+      -17.0,
+      -72.1
+     ]
+    ],
+    "puntos": [
+     [
+      -15.83806,
+      -71.09124
+     ],
+     [
+      -17.0,
+      -72.1
+     ]
     ]
    },
    {
