@@ -282,7 +282,8 @@ function armar() {
   const cadena = tramos.map(r => { const ev = avisos.filter(x => x.e && toca(r, String(x.e.ubigeo), x.e));
     const bl = (D.sutran || []).filter(s => r.via && s.via === r.via).length;
     const prox = ev.filter(x => x.e.estado === "anunciada" && !x.e.suspendido && x.f >= HOY).sort((a, b) => a.f.localeCompare(b.f))[0];
-    const rec = ev.filter(x => dias(x.f) >= -14 && x.f <= HOY).sort((a, b) => b.f.localeCompare(a.f))[0];
+    const rec = ev.filter(x => x.f === HOY)  // lo de días pasados ya no frena la ruta: queda en Avisos, no en el tramo
+     .sort((a, b) => b.f.localeCompare(a.f))[0];
     const vago = (prox || rec) && String((prox || rec).e.ubigeo).length < 6 ? `, en ${lugar(String((prox || rec).e.ubigeo))} sin distrito` : "";
     // ponytail: fuera del número las capitales de departamento y Lima-Callao; su protesta urbana rara vez corta la carga,
     // y la EGPP pone ahí lo que no sabe ubicar. Siguen contando para los avisos. Mejor: protestas sobre la vía misma.
