@@ -43,7 +43,7 @@ def _moda(vals):
 
 
 def agrupar(con) -> int:
-    filas = [dict(r) for r in con.execute("""SELECT c.*, n.publicado, n.medio FROM codificacion c JOIN nota n ON n.id = c.nota_id
+    filas = [dict(r) for r in con.execute("""SELECT c.*, n.publicado, n.medio, n.resumen FROM codificacion c JOIN nota n ON n.id = c.nota_id
         WHERE c.version = ? AND c.es_protesta = 1
           AND (c.ubigeo IS NOT NULL OR c.actor LIKE 'Transportistas%' OR c.empresa IS NOT NULL OR c.operacion IS NOT NULL)""", (VERSION,))]
     # Sin lugar solo entran los paros de transportistas (cortan la salida del mineral en todo el país) y lo que nombra una
@@ -71,6 +71,10 @@ def agrupar(con) -> int:
     con.execute("DELETE FROM evento_prensa"); con.execute("DELETE FROM evento_nota")
     for eid, g in enumerate(grupos.values(), 1):
         g.sort(key=lambda r: r["publicado"] or "")
+        # una nota con solo titular no basta para decir que un paro anunciado ya ocurrió: Google News trae a veces notas
+        # viejas con fecha de hoy (la de Andina de agosto sobre clases en Arequipa) y el LLM pone la fecha de publicación
+        anunciado = any(r["estado"] == "anunciada" for r in g)
+        g = [r for r in g if not (anunciado and r["estado"] == "ocurrida" and not (r.get("resumen") or "").strip())] or g
         estados = [r["estado"] for r in g]
         estado = "suspendida" if estados[-1] == "suspendida" else "ocurrida" if "ocurrida" in estados else "anunciada"
         anuncios = [_f(r["publicado"]) for r in g if r["estado"] == "anunciada" and r["publicado"]]
