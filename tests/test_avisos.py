@@ -31,7 +31,7 @@ def test_eventos_en_la_zona_o_que_nombran_a_la_empresa():
                        ev(6, "anunciada", "2026-11-03", "00", "Paro", actor="Transportistas de carga"),
                        ev(7, "anunciada", "2099-11-12", "030506", "Paro", suspendido=True),
                        ev(8, "ocurrida", "2026-11-08", "030506", "Bloqueo", leida=False)]}
-    assert [e["clave"] for e in eventos(web, z, r"las bambas", "2026-11-01")] == ["evento:1", "evento:3"]
+    assert [e["clave"] for e in eventos(web, z, r"las bambas", "2026-11-01")] == ["evento:030501:Paro:2099-11-12", "evento:04:Bloqueo:2026-11-08"]  # por contenido: el id cambia al reagrupar
 
 
 def test_focos():

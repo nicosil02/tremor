@@ -72,7 +72,8 @@ def eventos(web, z, alias, desde):
         en_zona = ub in z and not (sin_bloqueo and z[ub].startswith("en su ruta")) and (
             e.get("tipo_conflicto") not in (None, "otro") or re.search(LUCHA.replace("|marcha", ""), acc, re.I))
         if nombra or (ub == "00" and transporte) or en_zona:
-            yield {"clave": f"evento:{e['id']}" + (f":plazo{pl}" if pl else ""), "estado": "plazo" if pl else "sin_fecha" if e.get("sin_fecha") else e["estado"], "fecha": pl or f,
+            # la clave es el contenido, no el id: los eventos se renumeran en cada corrida y el aviso se repetía
+            yield {"clave": f"evento:{ub}:{acc}:{f}" + (f":plazo{pl}" if pl else ""), "actor": actor, "reclamo": e.get("reclamo") or "", "estado": "plazo" if pl else "sin_fecha" if e.get("sin_fecha") else e["estado"], "fecha": pl or f,
                    "ubigeo": ub, "accion": acc or "Protesta", "unidad": z.get(ub), "medio": e.get("medio") or "", "enlace": e.get("enlace") or "",
                    "titular": e.get("titular") or "", "transporte": transporte, "punto": (e.get("puntos") or [""])[0]}
 
@@ -94,6 +95,21 @@ def sutran(con, z, desde):
                "accion": "Bloqueo de vías" if protesta else f"Vía interrumpida por {causa}", "unidad": z[ub],
                "medio": "SUTRAN", "enlace": "https://alertasviales.sutran.gob.pe", "titular": (titulo or "").capitalize(),
                "transporte": False, "punto": (desc or "")[:200], "segun": "SUTRAN"}
+
+
+DURA = r"\b(\d+|veinticuatro|cuarenta y ocho|setenta y dos)\s+horas|\bindefinid\w*|\b(\d+|un|dos|tres|cuatro|cinco)\s+d[ií]as\b"
+
+
+def de_radio(con, e):
+    """Si la protesta salió solo de la radio: la hora de emisión y la frase donde se nombra la medida (sin ella el aviso no
+    dice quién, cuándo ni cuánto dura)."""
+    for pub, txt in con.execute("SELECT publicado, resumen FROM nota WHERE consulta = 'radio' AND medio = ? AND enlace = ? "
+                                "ORDER BY publicado DESC", (e["medio"], e["enlace"])):
+        m = re.search(LUCHA, txt or "", re.I)
+        if m:
+            a, b = max(0, m.start() - 110), m.end() + 140
+            return pub, ("…" if a else "") + txt[a:b].strip() + ("…" if b < len(txt) else "")
+    return None
 
 
 def radio(con, alias, desde):
@@ -207,14 +223,21 @@ def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
         hacer = ("Adelantar o reprogramar despachos y coordinar con sus transportistas rutas y horarios." if e["transporte"] or ruta
                  else "Confirmar con relaciones comunitarias y seguridad, y seguir la convocatoria." if fuerza
                  else "Revisar el pedido con relaciones comunitarias y preparar una respuesta antes de que escale.")
-        fuente = f"[{e['medio']}]({e['enlace']})" if e["enlace"] else e["medio"]
+        oido = e.get("dicho")  # solo la radio: sin nota escrita, se cita lo que se dijo al aire
+        fuente = (f"{e['medio']}, en vivo el {dia(e['emitido'])} a las {e['emitido'][11:16]}" if oido
+                  else f"[{e['medio']}]({e['enlace']})" if e["enlace"] else e["medio"])
         enlace = f"{APP}?e={quote(nombre)}" + (f"&d={e['ubigeo']}" if len(e["ubigeo"]) == 6 else "")
         corte = (e["accion"] or "").startswith("Vía interrumpida")  # huaico, accidente, El Niño (SUTRAN): no es protesta
-        cab = f"🛑 *VÍA INTERRUMPIDA · {e['accion'][21:].capitalize()}*" if corte else f"🚧 *ALERTA DE PROTESTA · {e['accion'] or 'Protesta'}*"
+        cab = (f"🛑 *VÍA INTERRUMPIDA · {e['accion'][21:].capitalize()}*" if corte else f"📻 *MENCIÓN EN RADIO · {e['accion']}*" if oido
+               else f"🚧 *ALERTA DE PROTESTA · {e['accion'] or 'Protesta'}*")
+        dura = re.search(DURA, f"{e['titular']} {oido or ''}", re.I)
+        quien = ((f"👥 *Quiénes:* {e['actor']}\n" if e.get("actor") else "") + (f"📣 *Por qué:* reclamo {e['reclamo'].lower()}\n" if e.get("reclamo") else "")
+                 + ("" if corte else f"⏱ *Duración:* {dura.group(0) if dura else 'no se informó'}\n"))
         texto = (f"{cab}\n"
                  f"_{e['titular'] or e['accion']}_\n\n"
                  f"📍 *Dónde:* {donde}\n"
-                 f"🗓 *Cuándo:* {cuando}\n\n"
+                 f"🗓 *Cuándo:* {cuando}\n" + quien + "\n"
+                 + (f"🎙 *Qué se dijo:* «{oido}»\n_Solo lo dijo la radio; no hay nota escrita que lo confirme._\n\n" if oido else "") +
                  f"⚠️ *¿Qué puede pasar?*\n{efecto}" + (f"\nSegún {e.get('segun', 'la prensa')}: {e['punto']}" if e["punto"] else "") + "\n\n"
                  f"✅ *Qué hacer*\n{hacer}\n\n"
                  f"📰 *Fuente:* {fuente}\n"
@@ -281,6 +304,9 @@ def main(dias=7, reenviar=False, muestra=False):  # 7: GitHub a veces corre el w
                 z.setdefault(u, "en su ruta, tramo " + re.sub(r", (\w+)$", r" (\1)", t["nombre"]))  # "Puerto de Matarani (zinc)"
         nuevo = lambda xs: [x for x in xs if (f"{x['clave']}|{nombre}",) not in ya]
         evs, rad, rie = nuevo([*eventos(web, z, alias, desde), *sutran(con, z, desde)]), nuevo(radio(con, alias, desde)), nuevo(riesgo(web, z))
+        for e in evs:
+            if r := de_radio(con, e):
+                e["emitido"], e["dicho"] = r
         for clave, texto, png in piezas(nombre, evs, rad, rie, unidad, web["vecinos"], tramos):
             if muestra:
                 d = DATOS / "exportes" / "muestra"; d.mkdir(parents=True, exist_ok=True)
@@ -292,6 +318,9 @@ def main(dias=7, reenviar=False, muestra=False):  # 7: GitHub a veces corre el w
             if enviar(texto, png):
                 con.execute("INSERT OR IGNORE INTO aviso_enviado VALUES (?, ?, ?)", (clave, nombre, ahora()))
                 con.commit()
+    # en CSV para que la corrida siempre publique la base cuando se avisó algo (si no, la siguiente reenvía lo mismo)
+    with open(DATOS / "exportes" / "aviso_enviado.csv", "w", newline="", encoding="utf-8") as f:
+        csv.writer(f).writerows([("clave", "empresa", "enviado"), *con.execute("SELECT * FROM aviso_enviado ORDER BY enviado")])
 
 
 if __name__ == "__main__":
