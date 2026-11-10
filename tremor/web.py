@@ -207,7 +207,8 @@ def juntar(evs):
             mismo_actor = (quien(o) == quien(e) and quien(e)[0] and cerca_dia(o["fecha_evento"], e["fecha_evento"])
                            and (not txt(o.get("reclamo")) or not txt(e.get("reclamo")) or o["reclamo"] == e["reclamo"])
                            and ("00" in (u, v) or u == v or (dentro and min(len(u), len(v)) >= 4)))  # un departamento entero es demasiado
-            if mismo_dia or mismo_actor:
+            mismo_titular = txt(o.get("titular")) and txt(o.get("titular")) == txt(e.get("titular"))  # la misma nota, dos eventos
+            if mismo_dia or mismo_actor or mismo_titular:
                 par = o; break
         if par is None:
             out.append(dict(e, focos=[u] if u != "00" else [])); continue
