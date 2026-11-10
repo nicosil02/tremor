@@ -429,6 +429,9 @@ GRUPOS = {
 }
 VARIABLES = [v for g in GRUPOS.values() for v in g]
 # Fuera del modelo por fuga: las denuncias OEFA (2018-2024) y los conflictos ANA (sin fecha) se solapan con la prueba.
+# Fuera por historia corta: las sanciones del OEFA de gob.pe (tremor/oefa.py, DFAI y Tribunal) empiezan en dic 2021;
+# con 4 meses de rezago y 24 de ventana no tienen dato hasta abr 2024 y no se pueden validar en 2021-2023. Volver a
+# probarlas cuando la ventana de validación avance. Van a la ficha de la app como contexto.
 # Fotos recientes que sí entran (anteriores a la prueba, pero posteriores a casi todo el entrenamiento); el chequeo
 # "sin_fotos" mide cuánto dependen de ellas los aciertos.
 FOTOS = ["oficina_ambiental", "atiende_denuncias_ambientales", "participacion_formas", "personal_municipal",
@@ -728,7 +731,8 @@ def frase(g, r):
         if r.eia_36 > 0:
             partes.append(f"{r.eia_36:.0f} EIA aprobados en 3 años (SENACE)")
         elif r.certificaciones_12 > 0:
-            partes.append(f"{r.certificaciones_12:.0f} certificaciones ambientales en 12 meses (SENACE)")
+            n = r.certificaciones_12
+            partes.append(f"{n:.0f} {'certificación ambiental' if n == 1 else 'certificaciones ambientales'} en 12 meses (SENACE)")
         if r.concesiones_metalicas_nuevas_ha > 0:
             partes.append(f"{r.concesiones_metalicas_nuevas_ha:,.0f} ha de concesiones metálicas nuevas")
         return "; ".join(partes) or "concesiones mineras en el distrito"

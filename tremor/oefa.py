@@ -12,6 +12,7 @@ columna de coordinación (que en algunas filas trae el nombre del supervisor).
 import io
 import re
 import sys
+from datetime import date
 
 import pandas as pd
 import requests
@@ -125,5 +126,150 @@ def fiscalizacion(con, empresa=None, ubigeo=None):
     }
 
 
+# Resoluciones de primera instancia (DFAI) publicadas en gob.pe: siguen al día (~3 meses de rezago) cuando el portal
+# de datos abiertos ya no. Cada entrada trae número, fecha, administrado y qué se decidió; la unidad está en el PDF.
+DFAI = "https://www.gob.pe/institucion/oefa/colecciones/1758-resoluciones-de-dfai?sheet={}"
+MESES = dict(zip("enero febrero marzo abril mayo junio julio agosto septiembre setiembre octubre noviembre diciembre".split(),
+                 [1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 11, 12]))
+# en gob.pe la fecha va ANTES del número; hasta nov 2017 la oficina era la DFSAI (numeración propia: sufijo "-S")
+_ITEM = re.compile(r"(\d{1,2}) de (\w+) de (\d{4})\s*\n\s*Resoluci\S+ N\S*?\s*(\d{1,4})-(\d{4})-OEFA[/-]DF(S?)AI[^\n]*\n\s*([^\n]+)")
+TIPO = [("multa", r"multa"), ("responsabilidad", r"responsabilidad"), ("archivo", r"archiv"),
+        ("reconsideracion", r"reconsideraci"), ("otro", r"")]
+# el administrado va después de "administrado", "interpuesto por", "presentada por" o "correctiva a", antes de la coma
+_ADM = re.compile(r"(?:administrad[oa]|seguid[oa] a|coercitiva a|interpuest[oa] por|presentad[oa] por|correctivas? a|responsabilidad administrativa (?:a|de))"
+                  r"\s+(.+?)(?:,| por los| al haber|\s*\.\.\.|$)")
+
+
+# solo personas jurídicas y entidades públicas: de una persona natural no se guarda el nombre ni el resumen
+L = "A-ZÁÉÍÓÚÑ"  # siglas como palabra entera: "SA" no debe calzar con la de "SANCHEZ"
+JURIDICA = (rf"(?<![{L}])(?:S\.?\s?A\.?(?:\s?[CA]\.?)?|S\.?\s?R\.?\s?L\.?|E\.?\s?I\.?\s?R\.?\s?L\.?|S\.?\s?C\.?\s?R\.?\s?L\.?"
+            rf"|INC|LTD|EPS)(?![{L}])|(?<![{L}])(?:SOCIEDAD|EMPRESA|COMPA|CORPORACI|MUNICIPALIDAD|GOBIERNO|MINISTERIO"
+            r"|ASOCIACI|COOPERATIVA|CONSORCIO|UNIVERSIDAD|INSTITUTO|PETR[OÓ]LEO|LIMITED|COMUNIDAD|PROYECTO|PROGRAMA"
+            r"|SERVICIO|HOSPITAL|ELECTRO|MINERA|GRUPO|GRIFO|ESTACI[OÓ]N|INVERSIONES|INDUSTRIA|NEGOCIACI)")
+
+
+def leer_dfai(html_):
+    out = []
+    for d, mes_, a, n, anio, s, res in _ITEM.findall(_texto(html_)):
+        res, anio = res.strip(" |\xa0"), anio + ("-S" if s else "")
+        adm = _ADM.search(res)
+        adm = adm[1].strip(" .").upper() if adm else None
+        natural = adm is not None and not re.search(JURIDICA, adm)
+        out.append({"num": f"{int(n):04d}-{anio}", "fecha": f"{a}-{MESES.get(mes_.lower(), 0):02d}-{int(d):02d}",
+                    "administrado": "PERSONA NATURAL" if natural else adm,
+                    "tipo": next(k for k, p in TIPO if re.search(p, res, re.I)), "resumen": None if natural or adm is None else res[:200]})
+    return out
+
+
+# Segunda instancia: la Sala del Tribunal de Fiscalización Ambiental (TFA-SE), ~3 semanas de rezago. Cada resolución
+# cita la de la DFAI que revisa; la empresa sale de ahí (no se guarda texto: puede nombrar a personas).
+TFA = ("https://www.gob.pe/institucion/oefa/colecciones/1716-sala-especializada-en-mineria-energia-actividades-"
+       "productivas-e-infraestructura-y-servicios-tfa-se?sheet={}")
+_TFA = re.compile(r"(\d{1,2}) de (\w+) de (\d{4})\s*\n\s*Resoluci\S+ N\S*?\s*(\d{1,4})-(\d{4})-OEFA[/-]TFA-SE[^\n]*\n\s*([^\n]+)")
+DECISION = [("confirma", r"\bconfirma"), ("revoca", r"\brevoca"), ("nulidad", r"nulidad"), ("improcedente", r"improcedente"),
+            ("otro", r"")]
+
+
+def _texto(html_):
+    import html as h
+    t = re.sub(r"<[^>]+>", "\n", re.sub(r"<script.*?</script>|<style.*?</style>", " ", html_, flags=re.S))
+    return h.unescape(h.unescape(t))  # gob.pe escapa dos veces ("&amp;amp;")
+
+
+def leer_tfa(html_):
+    out = []
+    for d, mes_, a, n, anio, res in _TFA.findall(_texto(html_)):
+        ref = re.search(r"(\d{1,5})-(\d{4})-OEFA[/-]DF(S?)AI", res)
+        out.append({"num": f"{int(n):04d}-{anio}", "fecha": f"{a}-{MESES.get(mes_.lower(), 0):02d}-{int(d):02d}",
+                    "dfai": f"{int(ref[1]):04d}-{ref[2]}" + ("-S" if ref[3] else "") if ref else None,
+                    "decision": next(k for k, p in DECISION if re.search(p, res, re.I))})
+    return out
+
+
+def razon_social(s):
+    """'MINERA BATEAS S.A.C.' y 'Minera Bateas SAC' → 'minera bateas': para cruzar la DFAI con las operaciones."""
+    s = norm(str(s or ""))
+    s = re.sub(r"\b(s\s?a\s?[ca]?|s\s?r\s?l|e\s?i\s?r\s?l|s\s?c\s?r\s?l|sociedad anonima( cerrada| abierta)?|"
+               r"sucursal( del)? peru|en liquidacion|inc|ltd|limited)\b", " ", re.sub(r"[^a-z0-9 ]", " ", s))
+    return " ".join(s.split())
+
+
+COLECCIONES = {"oefa_dfai": (DFAI, leer_dfai, "num TEXT PRIMARY KEY, fecha TEXT, administrado TEXT, tipo TEXT, resumen TEXT"),
+               "oefa_tfa": (TFA, leer_tfa, "num TEXT PRIMARY KEY, fecha TEXT, dfai TEXT, decision TEXT")}
+
+
+def coleccion(con, tabla, hasta_pagina=2000, pausa=0.5, anio=None):
+    """Baja una colección de gob.pe, de lo más nuevo hacia atrás, hasta una página ya guardada o el final. gob.pe no
+    pagina más allá de ~10 000 resultados: lo anterior se baja año por año (`anio`), con su filtro de fechas."""
+    import time
+    url, leer, columnas = COLECCIONES[tabla]
+    con.execute(f"CREATE TABLE IF NOT EXISTS {tabla} ({columnas})")
+    nuevas, habia = 0, con.execute(f"SELECT COUNT(*) FROM {tabla}").fetchone()[0]
+    for p in range(1, hasta_pagina + 1):
+        for i in range(4):
+            try:
+                r = requests.get(url.format(p), timeout=60, headers={"User-Agent": "Tremor/1.0 (github.com/nicosil02/tremor)"},
+                                 params={"filter[start_date]": f"{anio}-01-01", "filter[end_date]": f"{anio}-12-31"} if anio else None)
+                r.encoding = "utf-8"
+                break
+            except requests.RequestException:
+                time.sleep(15 * (i + 1))
+        else:
+            raise RuntimeError(f"gob.pe no responde en la página {p}")
+        filas = leer(r.text)
+        if not filas:
+            break
+        antes = con.total_changes
+        con.executemany(f"INSERT OR IGNORE INTO {tabla} VALUES ({', '.join(':' + k for k in filas[0])})", filas)
+        con.commit()
+        nuevas += con.total_changes - antes
+        if habia and not anio and con.total_changes == antes and p > 3:  # página entera ya conocida: lo que sigue también
+            break
+        time.sleep(pausa)
+    print(tabla, nuevas, "nuevas;", tuple(con.execute(f"SELECT COUNT(*), MIN(fecha), MAX(fecha) FROM {tabla}").fetchone()))
+
+
+RUIAS = "https://sistemas.oefa.gob.pe/ruias/mfe/"
+
+
+def leer_ruias(js):
+    """Reincidentes del RUIAS: vienen como objetos dentro del JavaScript de la página. Es una foto (los registros
+    vencen y salen), así que va a la ficha de la app y no al modelo. Sin RUC/DNI ni personas naturales."""
+    import json
+    s = lambda k, o: json.loads('"' + re.sub(r"\\x([0-9A-Fa-f]{2})", r"\\u00\1", (re.search(k + r':"((?:[^"\\]|\\.)*)"', o) or [0, ""])[1]) + '"')
+    f = lambda k, o: "-".join(reversed(s(k, o).split("/"))) if re.match(r"\d", s(k, o)) else None  # 11/07/2022 → 2022-07-11; "No aplica" → None
+    out = []
+    for o in re.findall(r"\{numero:\d+,.*?\}", js):
+        adm = s("nombreRazonSocial", o)
+        if not re.search(JURIDICA, adm.upper()):
+            continue
+        out.append({"expediente": s("nroExpediente", o), "administrado": adm.upper(), "sector": s("sectorEconomico", o),
+                    "unidad": s("unidadAmbiental", o), "ubigeo": _ubigeo(s("departamento", o), s("provincia", o), s("distrito", o)),
+                    "reincidente_desde": f("fechaResolucionReincidente", o), "confirmada": f("fechaResolucionConfirma", o)})
+    actualizado = re.search(r'fechaActualizacion:"([^"]+)"', js)
+    return out, actualizado[1] if actualizado else None
+
+
+def ruias(con):
+    h = {"User-Agent": "Tremor/1.0 (github.com/nicosil02/tremor)"}
+    main = re.search(r'src="(main-[^"]+\.js)"', requests.get(RUIAS, timeout=60, headers=h).text)[1]
+    filas, actualizado = leer_ruias(requests.get(RUIAS + main, timeout=60, headers=h).text)
+    pd.DataFrame(filas).assign(actualizado=actualizado).to_sql("oefa_ruias", con, if_exists="replace", index=False)
+    con.commit()
+    print("oefa_ruias", len(filas), "reincidentes; actualizado", actualizado)
+
+
+def dfai(con):
+    if not con.execute("SELECT name FROM sqlite_master WHERE name = 'oefa_dfai'").fetchone():
+        for a in range(2016, date.today().year + 1):  # la primera vez, año por año: gob.pe no pagina más allá de ~10 000
+            coleccion(con, "oefa_dfai", anio=a)
+    coleccion(con, "oefa_dfai")
+    coleccion(con, "oefa_tfa")
+    ruias(con)
+
+
 if __name__ == "__main__":
-    cargar(conectar(), forzar="--forzar" in sys.argv)
+    if "dfai" in sys.argv:
+        dfai(conectar())
+    else:
+        cargar(conectar(), forzar="--forzar" in sys.argv)

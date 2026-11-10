@@ -60,12 +60,18 @@ jobs:
             python -m tremor.prensa validar --mes $m || true
           done
           python -m tremor.oefa   # fiscalización del OEFA: se baja una sola vez (el portal no publica desde abr 2025)
+          python -m tremor.oefa dfai || true   # sanciones DFAI y Tribunal (gob.pe) y reincidentes (RUIAS): solo lo nuevo
 
       - name: SUTRAN (alertas viales vigentes, y qué dicen los medios de cada bloqueo)
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python -m tremor.sutran
+
+      - name: Tiempo de viaje de cada tramo de la ruta del cliente (TomTom, tráfico en vivo)
+        env:
+          TOMTOM_API_KEY: ${{ secrets.TOMTOM_API_KEY }}
+        run: python -m tremor.tiempos || true
 
       - name: Conflictos (con quién es cada uno; prensa para los que no tienen descripción)
         env:

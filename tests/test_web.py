@@ -24,3 +24,26 @@ def test_paro_nacional_no_se_achica():
     for orden in ([piura, nac], [nac, piura]):
         (e,) = juntar([dict(x) for x in orden])
         assert e["ubigeo"] == "00" and e["focos"] == ["20"] and "nacional" in e["titular"]
+
+
+def test_oefa_unidades_por_nombre_normalizado():
+    import sqlite3
+    from tremor.web import clave_unidad, oefa_unidades
+    con = sqlite3.connect(":memory:")
+    con.execute("CREATE TABLE oefa_medida (administrado, unidad, estado, fecha)")
+    con.execute("CREATE TABLE oefa_multa (administrado, unidad, soles, fecha)")
+    con.execute("CREATE TABLE oefa_supervision (administrado, unidad, fecha)")
+    con.execute("INSERT INTO oefa_medida VALUES ('MINERA BATEAS S.A.C.', 'ACUMULACIÓN CAILLOMA', 'INCUMPLIDA', '2024-05-01')")
+    con.execute("INSERT INTO oefa_multa VALUES ('MINERA BATEAS S.A.C.', 'Acumulación Cailloma', 1000.5, '2023-01-01')")
+    con.execute("INSERT INTO oefa_multa VALUES ('MINERA BATEAS S.A.C.', 'Acumulación Cailloma', NULL, '2023-01-02')")
+    con.execute("INSERT INTO oefa_supervision VALUES ('OTRA S.A.', 'Acumulación Cailloma', '2025-01-01')")
+    o = oefa_unidades(con)[clave_unidad("Acumulación Cailloma")]
+    assert (o["m"], o["mi"], o["f"], o["s"], o["v"], o["u"]) == (1, 1, 2, 1000, 0, "2024-05-01")
+
+
+def test_senal_tiempo_de_viaje():
+    from tremor.tiempos import senal
+    assert senal(3600, 3500, 100000, 100000, False) is None
+    assert senal(3600, 3500, 100000, 100000, True) == "el ruteador marca la vía cerrada"
+    assert senal(3600, 3500, 160000, 100000, False) == "el ruteador desvía por 60 km más"
+    assert senal(7200, 3600, 100000, 100000, False) == "tarda 2.0 veces lo normal"
