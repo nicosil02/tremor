@@ -187,3 +187,17 @@ def test_ruta_lenta_un_aviso_por_tramo():
     (clave, texto, _), = lentas(con, "Bateas", datetime(2026, 11, 10, 12))
     assert clave == "ruta:Puerto de Matarani, zinc:2026-11-10"
     assert "Puerto de Matarani (zinc)" in texto and "3 h 36 min" in texto and "lluvia fuerte" in texto
+
+
+def test_seguimiento_de_lo_avisado():
+    from tremor.avisos import cambios, hoy
+    from datetime import date, timedelta
+    ayer = (date.fromisoformat(hoy()) - timedelta(days=1)).isoformat()
+    ev = lambda **k: {"ubigeo": "040701", "accion": "Paro", "fecha_evento": "2026-12-01", "estado": "anunciada", **k}
+    web = {"eventos": [ev(suspendido=True, postergado=True), ev(accion="Marcha", retiran=["040108", "150101"]),
+                       ev(accion="Bloqueo", fecha_evento=ayer), ev(accion="Toma", suspendido=True)]}
+    z = {"040701": "Cailloma", "040108": "en su ruta"}
+    enviados = {"evento:040701:Paro:2026-12-01", "evento:040701:Marcha:2026-12-01", f"evento:040701:Bloqueo:{ayer}"}
+    xs = {c.split(":")[0]: t for c, t, _ in cambios(web, z, enviados)}
+    assert set(xs) == {"cae", "retira", "nohubo"}          # la toma no se avisó antes: su suspensión tampoco
+    assert "POSTERGADA" in xs["cae"] and "La Joya" in xs["retira"] and "Lima" not in xs["retira"]
