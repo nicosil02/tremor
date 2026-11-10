@@ -8,6 +8,7 @@ ponytail: un solo proveedor; Google Routes (`TRAFFIC_AWARE`) se suma si TomTom r
 import os
 import statistics
 import sys
+import time
 from datetime import datetime, timedelta
 
 import requests
@@ -22,7 +23,11 @@ URL = ("https://api.tomtom.com/routing/1/calculateRoute/{}/json?traffic=true&tra
 
 def medir(puntos, clave):
     """[[lat, lon], [lat, lon]] → (segundos con tráfico, sin tráfico, metros, ¿cierre?)."""
-    r = requests.get(URL.format(":".join(f"{a},{b}" for a, b in puntos)), params={"key": clave}, timeout=60)
+    for espera in (1, 3, 8, 0):  # 429: TomTom gratis limita las consultas por segundo; Las Bambas, al final, se quedaba sin medir
+        r = requests.get(URL.format(":".join(f"{a},{b}" for a, b in puntos)), params={"key": clave}, timeout=60)
+        if r.status_code != 429 or not espera:
+            break
+        time.sleep(espera)
     if r.status_code != 200:
         raise RuntimeError(f"HTTP {r.status_code}")  # sin raise_for_status: su mensaje lleva la URL, y la URL la clave
     ruta = r.json()["routes"][0]
