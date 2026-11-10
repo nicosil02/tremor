@@ -502,7 +502,7 @@ const ley = () => (actual === "pais" || PAIS_VISTA)
   ? `${SEL ? esc(SEL.t) : "Riesgo en zonas con operación extractiva"}<small>Paro, bloqueo o toma contra la operación, octubre a diciembre
     <span class="barra" role="img" aria-label="Escala: menos de 15%, 15 a 25%, 25 a 40%, 40% o más"></span><span class="marcas"><span>15%</span><span>25%</span><span>40%</span></span>
     <span class="esc"><span><i class="punto"></i>Protesta anunciada</span><span><i class="punto negro"></i>Bloqueo (SUTRAN)</span><span><i class="via-l"></i>Vía, al acercarse</span></span></small>`
-  : (FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Riesgo en la vía, " + pct(X.via))
+  : (FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Su ruta de salida")  // el % de la vía ya está en el panel: el mapa dice qué es cada color
   + (SEL ? (SEL.tr.length ? `<small><i class="rojo"></i>${/se suma/.test(SEL.etq) ? "Anunciaron que se suman" : SEL.tr2.length ? "Más probable" : "Tramos que puede cortar"}${SEL.tr2.length ? `<br><i class="naranja"></i>Posible` : ""}<br><i class="punto"></i>${/se suma/.test(SEL.etq) ? "Base que se suma" : SEL.etq ? "Donde más bloquearon antes" : "Dónde es la protesta"}</small>` : "")
     : `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`);
 function ver(us, t, tr = [], tr2 = [], etq = "") { SEL = (us && us.length) || tr.length ? { us: us || [], t, tr, tr2, etq } : null; if (ANCHO.matches && mapa) verMapa(); }
