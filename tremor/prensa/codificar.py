@@ -8,7 +8,7 @@ import re
 from datetime import date, timedelta
 from pathlib import Path
 
-from tremor.egpp import tipo_conflicto
+from tremor.egpp import OPERACIONES, tipo_conflicto
 from tremor.llm import RespuestaInvalida, SinCuota, chat_json
 from tremor.lugares import norm, resolver
 
@@ -59,6 +59,55 @@ def _num(x):
         return None
 
 
+# Segunda mirada del LLM a los dudosos: la regla de la EGPP (tipo_conflicto) pide reclamo ambiental o territorial, así
+# que "protestas en Velille por incumplimiento de acuerdos con Las Bambas" (reclamo político) queda como "otro". Solo
+# se revisan las protestas que la regla dejó en "otro" y que nombran una operación conocida (Santa Ana es también
+# nombre de pueblo); el LLM decide. Una regla sola acertaba ~la mitad (La Oroya y La Pampilla son lugares).
+REVISAR = """Eres codificador de protestas en el Perú para una empresa minera. Para cada nota decide qué es la protesta:
+- "extractivo": contra una mina, lote petrolero, proyecto o empresa minera/petrolera/de gas, o por sus impactos, agua,
+  tierras, compromisos incumplidos o canon (también en apoyo a dirigentes procesados por protestar contra ella);
+- "laboral": de trabajadores de esa operación o de sus contratistas, por sueldo, empleo o seguridad;
+- "otro": todo lo demás (servicios, obras viales, privatización de una empresa estatal, política nacional), aunque la
+  nota nombre una mina, una empresa o un lugar con el mismo nombre.
+Responde solo JSON: {"notas": [{"id": "...", "tipo": "extractivo|laboral|otro"}]}"""
+TIPO_REVISADO = {"extractivo": "socioambiental_extractivo", "laboral": "laboral_minero", "otro": "otro"}
+
+
+def dudosas(con):
+    """(nota_id, version, texto) de las protestas en "otro" que nombran una operación y no se revisaron."""
+    con.execute("CREATE TABLE IF NOT EXISTS revision_operacion (nota_id INTEGER, version TEXT, tipo TEXT, "
+                "PRIMARY KEY (nota_id, version))")
+    filas = con.execute("""SELECT c.nota_id, c.version, n.titular, n.resumen, c.empresa, c.operacion FROM codificacion c
+        JOIN nota n ON n.id = c.nota_id WHERE c.es_protesta = 1 AND c.tipo_conflicto = 'otro' AND NOT EXISTS
+        (SELECT 1 FROM revision_operacion r WHERE r.nota_id = c.nota_id AND r.version = c.version)""").fetchall()
+    out = []
+    for r in filas:
+        t = " ".join(x for x in r[2:6] if x)
+        if any(rx.search(t) for rx, n in OPERACIONES if n != "Santa Ana"):
+            out.append((r[0], r[1], t[:600]))
+    return out
+
+
+def revisar_operacion(con, max_solicitudes=10):
+    """El LLM revisa las dudosas en lotes de 25; lo que dice queda en revision_operacion y en tipo_conflicto."""
+    xs, hechas = dudosas(con), 0
+    for i in range(0, min(len(xs), 25 * max_solicitudes), 25):
+        lote = xs[i:i + 25]
+        try:
+            resp = chat_json(con, REVISAR, json.dumps([{"id": str(n), "texto": t} for n, _, t in lote], ensure_ascii=False), "rev1")
+        except (SinCuota, RespuestaInvalida) as e:
+            print(f"  Revisión pendiente: {e}")
+            break
+        tipos = {str(x.get("id")): TIPO_REVISADO.get(x.get("tipo")) for x in resp.get("notas", []) if isinstance(x, dict)}
+        for n, v, _ in lote:
+            if tipos.get(str(n)):
+                con.execute("INSERT OR REPLACE INTO revision_operacion VALUES (?, ?, ?)", (n, v, tipos[str(n)]))
+                con.execute("UPDATE codificacion SET tipo_conflicto = ? WHERE nota_id = ? AND version = ?", (tipos[str(n)], n, v))
+                hechas += 1
+        con.commit()
+    return hechas, len(xs)
+
+
 def limpiar(item: dict) -> dict:
     """Respuesta del LLM → valores válidos: lo que no está en las listas queda en None (FR-009)."""
     g = lambda k: (item.get(k) or None) if isinstance(item.get(k), (str, type(None))) else None
@@ -83,6 +132,16 @@ def limpiar(item: dict) -> dict:
 COLUMNAS = ["es_protesta", "estado", "fecha_evento", "region", "provincia", "distrito", "localidad", "ubigeo",
             "precision", "sector", "actor", "accion", "adversario", "empresa", "operacion", "reclamo", "sub_reclamo",
             "heridos", "muertos", "detenidos", "tipo_conflicto"]
+
+
+def zona_radio(medio):
+    """Si la radio no dice dónde, la protesta queda en la provincia que cubre la radio, con precisión "radio" (idea de
+    PAPEA: el lugar de edición del medio). No para las radios de Lima: son nacionales."""
+    import csv
+    for f in csv.DictReader(open(Path(__file__).parents[1] / "radios.csv", encoding="utf-8")):
+        if f["medio"] == medio and f["ubigeo_provincia"] and f["ubigeo_provincia"] != "1501":
+            return f["ubigeo_provincia"], "radio"
+    return None, None
 
 
 def ubicar(c, texto, pista):
@@ -112,7 +171,7 @@ def codificar(con, max_solicitudes=200) -> tuple[int, int, bool]:
     Devuelve (solicitudes, notas, quedó_pendiente)."""
     from tremor.prensa.historia import ordenar  # lo vivo primero; la historia por valor (lugar con operación)
     pendientes = ordenar(con, con.execute("""SELECT n.id, n.titular, n.resumen, n.publicado, n.departamento_consulta,
-        n.consulta FROM nota n
+        n.consulta, n.medio FROM nota n
         WHERE n.filtro IS NULL AND NOT EXISTS (SELECT 1 FROM codificacion c WHERE c.nota_id = n.id AND c.version = ?)
         """, (VERSION,)).fetchall())
     solicitudes = hechas = 0
@@ -136,6 +195,8 @@ def codificar(con, max_solicitudes=200) -> tuple[int, int, bool]:
             c = limpiar(por_id[r[0]])
             texto = " ".join(x for x in (r[1], r[2], c["empresa"], c["operacion"]) if x)
             c["ubigeo"], c["precision"] = ubicar(c, texto, r[4]) if c["es_protesta"] else (None, None)
+            if c["es_protesta"] and not c["ubigeo"] and r[5] == "radio":
+                c["ubigeo"], c["precision"] = zona_radio(r[6])
             c["tipo_conflicto"] = tipo_conflicto(c["actor"], c["reclamo"], c["sector"], c["adversario"], texto) \
                 if c["es_protesta"] else None
             con.execute(f"INSERT OR REPLACE INTO codificacion VALUES (?, ?, {','.join('?' * len(COLUMNAS))})",
@@ -153,9 +214,29 @@ ACTOR = [(r"carga pesada|transportistas de carga|transporte de carga|camioner", 
          (r"transporte (publico|urbano)|combis?\b|colectiver|mototaxi|buses|transportistas de lima|empresas de transporte", "Transportistas urbanos"),
          (r"comunidad(es)? campesina|comuneros", "Comunidades campesinas"), (r"comunidad(es)? nativa|indigena", "Comunidades nativas"),
          (r"agricultor|regantes", "Agricultores"), (r"ronder", "Rondas campesinas")]
-ANUNCIA = re.compile(r"anunci|convoc|alist|amenaz|advierte|preparan")  # gana sobre lo demás
 OCURRE = re.compile(r"estall|bloquean|bloquearon|acatan|acataron|protestaron|marcharon|choques|enfrentamient|se registr|continua|cumple|segundo dia|tercer dia")
 PRONTO = re.compile(r"acatar|se sumar|realizar[aá]n|iniciar[aá]n|desde el|a partir del?|este (lunes|martes|miercoles|jueves|viernes|sabado|domingo)|ma[nñ]ana|suspender[aá]n|dejar[aá]n")
+# EMBERS (Muthiah et al. 2016): un anuncio es un verbo de convocar a pocas palabras de la medida, en la misma frase; un
+# "anunció" suelto ("el ministro anunció ayuda tras el bloqueo") no basta
+ANUNCIA_PAR = re.compile(r"\b(convoc|anunci|acuerd|acord|decret|emplaz|alist|aprueb|aprob|ratific|program|prepar|amenaz|advierte)"
+                         r"\w*(?:[^\w.]+\w+){0,4}?[^\w.]+(?:un |una |el |la )?(paro|huelga|bloqueo|marcha|moviliz|paraliz|planton)")
+DIAS = "lunes martes miercoles jueves viernes sabado domingo".split()
+
+
+def fecha_relativa(t, pub):
+    """'el próximo jueves', 'desde el lunes', 'mañana' → fecha ISO contando desde la publicación (EMBERS y PAPEA)."""
+    if not pub:
+        return None
+    p = date.fromisoformat(pub[:10])
+    m = re.search(rf"\b(?:desde el |a partir del |el |este |el proximo |proximo )({'|'.join(DIAS)})\b(?! \d)", t)
+    if m:
+        k = (DIAS.index(m[1]) - p.weekday()) % 7
+        return (p + timedelta(k or (7 if "proximo" in m[0] else 0))).isoformat()
+    if re.search(r"(?<!esta )(?<!la )(?<!pasado )\bmanana\b", t):
+        return (p + timedelta(1)).isoformat()
+    return None
+
+
 SUSPENDE = re.compile(r"(suspend|levant|desconvoc|posterg|cancel)\w*\s+(el |la |su |del )?(paro|huelga|bloqueo|medida|paralizaci)")
 
 
@@ -189,10 +270,11 @@ def por_reglas(titular, resumen, publicado):
             y, mes = (y + 1, 1) if mes == 12 else (y, mes + 1)
         fecha = f"{y}-{mes:02d}-{int(d[1]):02d}"
     pub = (publicado or "")[:10]
+    fecha = fecha or fecha_relativa(t, pub)
     if fecha and pub and fecha < pub and (date.fromisoformat(pub) - date.fromisoformat(fecha)).days > 3:
         return None  # recuerda algo pasado o es una nota vieja reindexada: espera al LLM
     def estado_de(x):
-        return ("suspendida" if SUSPENDE.search(x) else "anunciada" if ANUNCIA.search(x) or (fecha and fecha > pub)
+        return ("suspendida" if SUSPENDE.search(x) else "anunciada" if ANUNCIA_PAR.search(x) or (fecha and fecha > pub)
                 else "ocurrida" if OCURRE.search(x) else "anunciada" if PRONTO.search(x) else None)
     estado = estado_de(tit) or estado_de(t) or "ocurrida"
     if not fecha and estado == "ocurrida":

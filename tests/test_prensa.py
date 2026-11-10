@@ -47,6 +47,10 @@ def test_mismo_evento():
     assert not mismo_evento(_c("0807", "Marcha", 12), _c("0807", "Marcha", 15))
     assert not mismo_evento(_c("0807", "Paro", 12), _c("0803", "Paro", 12))              # otra provincia
     assert not mismo_evento(_c("0807", "Paro", 12, "Educativo"), _c("0807", "Paro", 12, "Transporte"))
+    otro = lambda **k: {**_c("0807", "Paro", 12), **k}
+    assert not mismo_evento(otro(reclamo="Laborales"), otro(reclamo="Ambientales"))      # otro reclamo
+    assert not mismo_evento(otro(operacion="Las Bambas"), otro(operacion="Antapaccay"))  # otra operación
+    assert mismo_evento(otro(reclamo="Ambientales"), otro())                             # sin dato no separa
 
 
 def test_ubicar_texto_defensoria():
@@ -367,3 +371,29 @@ def test_comunidad_de_caso():
     assert c("Comunidad Campesina de Maure – Penal de Challapalca") == "maure"
     assert c("CC Ajoyani-MINSUR") == "ajoyani"
     assert c("Wampis - Minería ilegal") is None
+
+
+def test_dudosas_solo_otro_que_nombra_operacion():
+    import sqlite3
+    from tremor.prensa.codificar import dudosas
+    con = sqlite3.connect(":memory:")
+    con.execute("CREATE TABLE nota (id INTEGER, titular TEXT, resumen TEXT)")
+    con.execute("CREATE TABLE codificacion (nota_id INTEGER, version TEXT, es_protesta INTEGER, tipo_conflicto TEXT, "
+                "empresa TEXT, operacion TEXT)")
+    con.executemany("INSERT INTO nota VALUES (?, ?, NULL)", [(1, "Velille protesta por acuerdos con Las Bambas"),
+                    (2, "Paro por agua potable en Juliaca"), (3, "Bloqueo en Santa Ana por la carretera")])
+    con.executemany("INSERT INTO codificacion VALUES (?, 'v2', 1, 'otro', NULL, NULL)", [(1,), (2,), (3,)])
+    assert [n for n, _, _ in dudosas(con)] == [1]
+    con.execute("INSERT INTO revision_operacion VALUES (1, 'v2', 'socioambiental_extractivo')")
+    assert dudosas(con) == []
+
+
+def test_anuncio_y_fecha_relativa():
+    from tremor.prensa.codificar import ANUNCIA_PAR, fecha_relativa
+    assert ANUNCIA_PAR.search("transportistas convocan a un paro indefinido")
+    assert ANUNCIA_PAR.search("acordaron realizar una marcha")
+    assert not ANUNCIA_PAR.search("el ministro anuncio ayuda. el bloqueo sigue")       # otra frase
+    assert fecha_relativa("paro desde el lunes", "2026-11-10") == "2026-11-16"          # 10 nov 2026 es martes
+    assert fecha_relativa("marcha el proximo martes", "2026-11-10") == "2026-11-17"
+    assert fecha_relativa("bloqueo manana en la via", "2026-11-10") == "2026-11-11"
+    assert fecha_relativa("esta manana bloquearon", "2026-11-10") is None

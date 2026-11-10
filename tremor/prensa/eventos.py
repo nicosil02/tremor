@@ -33,6 +33,11 @@ def mismo_evento(x, y) -> bool:
         return False
     if x["sector"] and y["sector"] and x["sector"] != y["sector"]:
         return False
+    # dos paros el mismo día en la misma provincia no son uno si reclaman otra cosa o apuntan a otra operación (PEA
+    # compara el texto del reclamo; aquí basta el código EGPP, que el LLM pone con kappa 1.0)
+    for k in ("reclamo", "operacion"):
+        if x.get(k) and y.get(k) and x[k].lower() != y[k].lower():
+            return False
     margen = 3 if {x["accion"], y["accion"]} & LARGAS else 1
     return abs((x["fecha"] - y["fecha"]).days) <= margen
 
@@ -85,7 +90,8 @@ def agrupar(con) -> int:
         ubigeo = max((r["ubigeo"] for r in g), key=lambda u: (len(u), sum(x["ubigeo"] == u for x in g)))
         con.execute("INSERT INTO evento_prensa VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
             eid, estado, min(anuncios).isoformat() if anuncios else None, fecha, ubigeo,
-            {2: "departamento", 4: "provincia", 6: "distrito"}[len(ubigeo)],
+            "radio" if all(r.get("precision") == "radio" for r in g if r["ubigeo"] == ubigeo)
+            else {2: "departamento", 4: "provincia", 6: "distrito"}[len(ubigeo)],
             _moda(r["accion"] for r in g), _moda(r["actor"] for r in g), _moda(r["reclamo"] for r in g),
             _moda(r["tipo_conflicto"] for r in g), _moda(r["empresa"] for r in g), _moda(r["operacion"] for r in g),
             len(g), len({r["medio"] for r in g})))
@@ -270,6 +276,25 @@ def validar(con, mes: str) -> str:
                     (mes, len(acc), len(hit), len(socio), sum(bool(x[2]) for x in socio), len(cli), sum(bool(x[2]) for x in cli),
                      len(ant), median(ant) if ant else None))
         con.commit()
+        # precisión por fuente (EMBERS): de los eventos de prensa que dicen "ocurrió" con lugar, cuántos tienen una acción
+        # de la Defensoría cerca. Es un piso: la Defensoría no registra toda protesta (las urbanas, menos).
+        fuente = {i: next(f for f in ("radio", "google", "rss", "archivo") if f in cs) for i, cs in con.execute(
+            """SELECT en.evento_id, group_concat(CASE WHEN n.consulta = 'radio' THEN 'radio' WHEN n.consulta LIKE 'feed:%'
+                   THEN 'rss' WHEN n.consulta LIKE 'historia:%' THEN 'archivo' ELSE 'google' END) FROM evento_nota en
+               JOIN nota n ON n.id = en.nota_id GROUP BY 1""")}
+        dentro = [e for e in ev if desde <= e["fecha"] <= hasta and e["ubigeo"] != "00" and e["estado"] == "ocurrida"]
+        conf = {e["id"] for e in dentro if any(e in es for r, f, es in hit)}
+        hit_f = Counter(fuente.get(e["id"]) for r, f, es in hit for e in es[:1])
+        con.execute("CREATE TABLE IF NOT EXISTS deteccion_fuente (mes TEXT, fuente TEXT, eventos INT, confirmados INT, "
+                    "detectadas INT, PRIMARY KEY (mes, fuente))")
+        filas = []
+        for fu in ("rss", "google", "radio", "archivo"):
+            xs = [e for e in dentro if fuente.get(e["id"]) == fu]
+            filas.append((mes, fu, len(xs), sum(e["id"] in conf for e in xs), hit_f[fu]))
+        con.executemany("INSERT OR REPLACE INTO deteccion_fuente VALUES (?,?,?,?,?)", filas)
+        con.commit()
+        out.append(f"  precisión: {len(conf)}/{len(dentro)} eventos ocurridos con lugar coinciden con la Defensoría; por "
+                   "fuente (confirmados/eventos, detectadas): " + "; ".join(f"{f} {c}/{n}, {d}" for _, f, n, c, d in filas))
         por_dep = Counter(r["departamento"] for r, f, es in det); hit_dep = Counter(r["departamento"] for r, f, es in hit)
         out.append("  por departamento: " + "; ".join(f"{d} {hit_dep[d]}/{n}" for d, n in por_dep.most_common(8)))
     eg = [dict(r) for r in con.execute("SELECT * FROM egpp_evento WHERE duplicado_de IS NULL AND fecha BETWEEN ? AND ?",

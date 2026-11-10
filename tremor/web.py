@@ -8,6 +8,7 @@ import csv
 import json
 import re
 import sys
+import unicodedata
 from datetime import date, timedelta
 
 import pandas as pd
@@ -28,6 +29,66 @@ def tabla(con, sql):
         return pd.read_sql(sql, con)
     except Exception:  # tabla que aún no existe (p. ej. modelo_prediccion antes de la primera corrida)
         return pd.DataFrame()
+
+
+def clave_unidad(s):
+    """Nombre de unidad sin tildes, mayúsculas ni signos: el OEFA escribe "ACUMULACIÓN CAILLOMA" y su mapa "Acumulación
+    Cailloma". La app usa la misma regla (nrm en docs/app.html)."""
+    s = unicodedata.normalize("NFD", str(s or "")).encode("ascii", "ignore").decode().lower()
+    return " ".join(re.sub(r"[^a-z0-9 ]+", " ", s).split())
+
+
+def oefa_unidades(con):
+    """Fiscalización del OEFA por unidad de las empresas de la app: medidas (y cuántas incumplió), multas firmes y su
+    monto, supervisiones y la fecha de la última. Datos hasta marzo de 2025 (el OEFA no publica desde entonces)."""
+    from tremor.avisos import EMPRESAS
+    pat = "|".join(emp for emp, _ in EMPRESAS.values())
+    out = {}
+    for tabla_, campo in (("oefa_medida", "m"), ("oefa_multa", "f"), ("oefa_supervision", "v")):
+        for r in tabla(con, f"SELECT * FROM {tabla_}").to_dict("records"):
+            if not re.search(pat, str(r["administrado"]).lower()):
+                continue
+            o = out.setdefault(clave_unidad(r["unidad"]), {"m": 0, "mi": 0, "f": 0, "s": 0.0, "v": 0, "u": ""})
+            o[campo] += 1
+            o["mi"] += campo == "m" and r.get("estado") == "INCUMPLIDA"
+            o["s"] += r["soles"] if campo == "f" and pd.notna(r.get("soles")) else 0  # NaN es verdadero
+            o["u"] = max(o["u"], str(r.get("fecha") or ""))
+    return {k: {**v, "s": round(v["s"])} for k, v in out.items()}
+
+
+def tiempos_actuales(con):
+    """Última medición de cada tramo, si es de las últimas 3 horas: {cliente: {tramo: {min, normal, senal}}}."""
+    from datetime import datetime, timedelta
+    t = tabla(con, "SELECT * FROM tiempo_viaje WHERE hora = (SELECT MAX(hora) FROM tiempo_viaje)")
+    if not len(t) or datetime.fromisoformat(t.hora.iloc[0]) < datetime.now() - timedelta(hours=3):
+        return {}
+    out = {}
+    for r in t.itertuples():
+        out.setdefault(r.cliente, {})[r.tramo] = {"min": round(r.segundos / 60), "normal": round(r.sin_trafico / 60),
+                                                  "senal": r.senal, "causa": getattr(r, "causa", None)}
+    return out
+
+
+def oefa_empresa(con):
+    """Lo reciente del OEFA por empresa cliente, de las fuentes que siguen al día: sanciones de primera instancia (DFAI)
+    en 24 meses y la última, cuántas confirmó el Tribunal (TFA) y si está en el registro de reincidentes (RUIAS)."""
+    from tremor.avisos import EMPRESAS
+    from tremor.oefa import razon_social
+    d = tabla(con, "SELECT num, fecha, administrado, tipo FROM oefa_dfai")
+    if not len(d):
+        return {}
+    t, r = tabla(con, "SELECT dfai FROM oefa_tfa WHERE decision = 'confirma'"), tabla(con, "SELECT administrado FROM oefa_ruias")
+    hasta = d.fecha.max()
+    desde = str(int(hasta[:4]) - 2) + hasta[4:]
+    d["k"] = d.administrado.map(razon_social)
+    out = {"_hasta": hasta, "_tfa_hasta": tabla(con, "SELECT MAX(fecha) AS f FROM oefa_tfa").f.iloc[0] if len(t) else None}
+    for nombre, (emp, _) in EMPRESAS.items():
+        k = razon_social(emp)
+        s = d[d.k.str.contains(k, regex=False) & d.tipo.isin(["multa", "responsabilidad"]) & (d.fecha >= desde)]
+        out[nombre] = {"dfai": len(s), "ultima": s.fecha.max() if len(s) else None,
+                       "tfa": int(t.dfai.isin(s.num).sum()) if len(t) else 0,
+                       "ruias": bool(len(r) and r.administrado.map(razon_social).str.contains(k, regex=False).any())}
+    return out
 
 
 def registros(df):
@@ -98,6 +159,7 @@ def datos(con):
             "cobertura": cobertura(con),
             "vecinos": vecinos(con),
             "casos": casos_zona(con),
+            "oefa": oefa_unidades(con), "oefa_empresa": oefa_empresa(con), "tiempos": tiempos_actuales(con),
             "calibracion": calibracion(con),
             "menciones": menciones(con),
             "focos": focos(con)}
