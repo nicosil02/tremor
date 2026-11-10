@@ -112,13 +112,21 @@
   .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 16px; } .chips span { display: flex; align-items: center; gap: 5px; font-size: 14px; padding: 4px 10px; border-radius: 999px; background: #eef1ef; }
   .chips i, .casos i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
   .ch-sd i { background: #d7261e; } .ch-ac i { background: #c8642f; } .ch-ed i { background: #6f8f88; } .ch-la i { background: #b9c3c2; }
-  .casos { margin: 0; padding: 2px 16px 4px; list-style: none; } .casos li { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--linea); font-size: 15px; }
+  .casos { margin: 0; padding: 2px 16px 4px; list-style: none; } .casos li { border-bottom: 1px solid var(--linea); font-size: 15px; }
+  .casos button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
   .casos span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; } .casos small { color: var(--tinta-2); font-size: 13px; }
 .cifras-d { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 8px; margin: 4px 16px 8px; } .cifras-d div { display: grid; }
 .cifras-d b { font-size: 28px; font-weight: 750; font-variant-numeric: tabular-nums; } .cifras-d span { font-size: 14px; color: var(--tinta-2); }
 .leyenda-via i.punto.negro { background: #1c2629; } .leyenda-via i.via-l { background: #fff; height: 4px; margin-left: 4px; box-shadow: 0 0 0 1.5px #1c2629; }
 .leyenda-via .esc { display: grid; grid-template-columns: auto auto; gap: 2px 12px; margin-top: 4px; } .leyenda-via .esc > span { white-space: nowrap; }
 .leyenda-via .esc i { width: 14px; height: 10px; border-radius: 2px; margin: 0 5px 2px 0; } .leyenda-via .esc i.punto { width: 9px; height: 9px; border-radius: 50%; } .leyenda-via .esc i.via-l { height: 4px; margin-left: 0; } .leyenda-via i.naranja { background: #e8962e; } .leyenda-via i.punto { width: 10px; height: 10px; border-radius: 50%; background: var(--rojo); margin-left: 4px; }
+  /* escala del riesgo: una barra con los 4 tonos del mapa (los mismos cortes) y los cortes marcados debajo */
+  .leyenda-via .barra { display: block; width: 220px; height: 10px; margin-top: 6px; border-radius: 3px;
+    background: linear-gradient(90deg, #f1d9c6 0 25%, #e3a67c 25% 50%, #c8642f 50% 75%, #8a3213 75%); }
+  .leyenda-via .marcas { position: relative; display: block; width: 220px; height: 16px; margin-bottom: 4px; font-size: 12px; }
+  .leyenda-via .marcas span { position: absolute; top: 1px; transform: translateX(-50%); }
+  .leyenda-via .marcas span:nth-child(1) { left: 25%; } .leyenda-via .marcas span:nth-child(2) { left: 50%; } .leyenda-via .marcas span:nth-child(3) { left: 75%; }
+  .nota-fuente { margin: 0 16px 6px; font-size: 13px; color: var(--tinta-2); }
   .leyenda-via small { display: block; font-weight: 400; font-size: 13px; color: var(--tinta-2); max-width: 280px; }
   .cuando { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; padding: 18px 16px 0; }
   .cuando b { font-size: 34px; line-height: 1; font-weight: 750; font-variation-settings: var(--ancho); color: var(--rojo); }
@@ -203,7 +211,7 @@ const largo = f => { const s = new Date(f + "T12:00").toLocaleDateString("es-PE"
 const cal = p => { const c = p == null ? null : (D.calibracion || []).find(c => p >= c.desde && p <= c.hasta);
   return c ? `De cada 10 zonas con este riesgo, ${Math.round(c.hubo * 10)} tuvieron un paro, bloqueo o toma contra la operación en 3 meses (2024-2026).` : ""; };
 // las razones que le dicen algo a un gerente: sin ceros ni el conteo de unidades, que es el mismo motivo de la zona
-const razones = txt => String(txt || "").replace(/^en la zona \(distrito y vecinos\): /, "").split(/ · |; /).map(x => x.replace(/\s*\(.*?\)/g, "").trim())
+const razones = txt => String(txt || "").replace(/^en la zona \(distrito y vecinos\): /, "").split(/ · |; /).map(x => x.replace(/\s*\(.*?\)/g, "").replace(/^la última se ganó por (\S+)$/, "La última elección municipal se ganó por $1 de diferencia").trim().replace(/^./, c => c.toUpperCase()))
   .filter(x => x && !/^0 /.test(x) && !/unidades mineras$/.test(x));
 const nivel = p => p >= 0.5 ? "Crítico" : p >= 0.25 ? "Alto" : p >= 0.1 ? "Medio" : "Bajo";
 const flecha = d => d > 0.01 ? "↑" : d < -0.01 ? "↓" : "";
@@ -263,8 +271,10 @@ function armar() {
   for (const s of D.sutran || []) if (rutas.includes(s.via))
     avisos.push({ f: String(s.fecha_evento || HOY).slice(0, 10), urge: true, tipo: "Bloqueo", sutran: s, t: `Vía ${s.via} bloqueada`, w: "ahora",
       s: `${titulo(s.distrito || "")}, SUTRAN` });
-  for (const m of D.menciones || []) if (alias.test(m.proyecto || "") && (/protesta|judicial|dialogo/.test(m.tema) || (m.tema === "ambiente" && m.tono < 0)) && !avisos.some(x => x.e && x.e.titular === m.titular))
-    avisos.push({ f: m.fecha, urge: false, tipo: TEMA[m.tema] || "En medios", m, t: m.titular.replace(/^[^:]{2,25}:\s*/, ""), w: dia(m.fecha),
+  const alAire = m => /, en vivo /.test(m.titular || "");  // la radio no tiene titular: "Radio X, en vivo 09/11/2026 19:34 (5)"
+  for (const m of D.menciones || []) if (alias.test(m.proyecto || "") && (/protesta|judicial|dialogo/.test(m.tema) || (m.tema === "ambiente" && m.tono < 0)) && !avisos.some(x => x.e && x.e.titular === m.titular)
+      && !(alAire(m) && avisos.some(x => x.m && alAire(x.m) && x.m.medio === m.medio && x.f === m.fecha)))  // un aviso por radio y día
+    avisos.push({ f: m.fecha, urge: false, tipo: TEMA[m.tema] || "En medios", m, t: alAire(m) ? `Hablan de ${m.proyecto} en la radio` : m.titular.replace(/^[^:]{2,25}:\s*/, ""), w: dia(m.fecha),
       s: `${TEMA[m.tema] || "En medios"}, ${m.medio}` });
   avisos.sort((a, b) => b.urge - a.urge || (a.urge ? a.f.localeCompare(b.f) : b.f.localeCompare(a.f)));
   const casos = (D.casos || []).filter(c => zona.has(String(c.ubigeo)));
@@ -398,7 +408,7 @@ function detalleOp(nom) {
     + (por[0] ? `<h2>Por qué</h2><ul class="por">${por.map(p => `<li>${esc(p.replace(/\s*\(.*?\)/g, "").replace(/^1 certificaciones ambientales/, "1 certificación ambiental"))}</li>`).join("")}</ul>` : "")
     + fiscal(o.unidad)
     + `<h2>Qué pasó</h2>` + (av.length ? `<ul>${av.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas cerca en 45 días.</p>`)
-    + `<h2>Comunidades</h2>` + (cs.length ? `<ul>${cs.map(c => fila("", 0, titulo(String(c.nombre).replace(/^(comunidad(es)? (campesinas?|nativas?)|cc\.?|c\.c\.)\s+(de(l)?\s+)?/i, "").split(/\s+[-–]\s+/)[0]),
+    + `<h2>Conflictos con comunidades</h2><p class="nota-fuente">Registrados por la Defensoría del Pueblo</p>` + (cs.length ? `<ul>${cs.map(c => fila("", 0, titulo(String(c.nombre).replace(/^(comunidad(es)? (campesinas?|nativas?)|cc\.?|c\.c\.)\s+(de(l)?\s+)?/i, "").split(/\s+[-–]\s+/)[0]),
         estado(c), c.medios && c.medios[0] ? `${dia(c.medios[0].fecha)}, ${c.medios[0].titular}` : `Defensoría, ${MES[c.mes - 1]}`, `data-caso="${X.casos.indexOf(c)}"`)).join("")}</ul>` : `<p class="vacio">Sin conflictos vigentes ante la Defensoría.</p>`);
 }
 
@@ -429,15 +439,14 @@ function detalleDistrito(u) {
     ${cifras.length ? `<h2>Por qué, en la zona</h2><div class="tiles">${cifras.map(([, n, t]) => `<div><b>${esc(n)}</b><span>${esc(t)}</span></div>`).join("")}</div>` : ""}
     ${resto.length ? `<ul class="por">${resto.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
     <h2>Conflictos ante la Defensoría</h2>${cs.length ? `<div class="chips">${porEst.map(([k, n]) => `<span class="ch-${EST[k]}"><i></i><b>${n}</b> ${k}</span>`).join("")}</div>
-      <ul class="casos">${cs.slice(0, 5).map(c => `<li class="ch-${EST[estadoCaso(c)]}"><i></i><span>${esc(titulo(String(c.nombre).split(/\s+[-–]\s+/)[0]))}</span><small>${esc(titulo(lugar(String(c.ubigeo))))}</small></li>`).join("")}</ul>
-      ${cs.length > 5 ? `<p class="aclara">Y ${cs.length - 5} más.</p>` : ""}` : `<p class="vacio">Sin conflictos vigentes en la zona.</p>`}
+      <ul class="casos">${cs.map(c => `<li class="ch-${EST[estadoCaso(c)]}"><button type="button" data-dcaso="${D.casos.indexOf(c)}"><i></i><span>${esc(titulo(String(c.nombre).split(/\s+[-–]\s+/)[0]))}</span><small>${esc(titulo(lugar(String(c.ubigeo))))}</small></button></li>`).join("")}</ul>` : `<p class="vacio">Sin conflictos vigentes en la zona.</p>`}
     <h2>Protestas recientes</h2>${evs.length ? `<ul>${evs.slice(0, 4).map(e => fila("", 0, `${accion(e)}${e.actor ? ` de ${e.actor.toLowerCase()}` : ""}`, dia(e.fecha_evento), lugar(String(e.ubigeo)))).join("")}</ul>`
       : `<p class="vacio">Ninguna en la prensa en las últimas seis semanas.</p>`}`;
 }
 const estadoCaso = c => c.estado === "latente" ? "latente" : /NO HAY/i.test(c.dialogo || "") ? "sin diálogo" : /HAY/i.test(c.dialogo || "") ? "en diálogo" : "activo";
-function detalleCaso(i) {
-  const c = X.casos[i], u = String(c.ubigeo), ms = c.medios || [];
-  cabecera(true, "Comunidades"); ver([u], c.nombre);
+function detalleCaso(c) {
+  const u = String(c.ubigeo), ms = c.medios || [];
+  cabecera(true, "Conflictos con comunidades"); ver([u], c.nombre);
   return `<div class="cuando${c.estado === "latente" ? " paso" : ""}"><b>${esc(estadoCaso(c))}</b><span>Defensoría, ${MES[c.mes - 1]} ${esc(c.anio)}</span></div>
     <h3 class="titulo-av">${esc(c.nombre)}</h3>
     <dl class="datos"><dt>Dónde</dt><dd>${esc(lugar(u))}</dd>${c.tipo ? `<dt>Tipo</dt><dd>${esc(c.tipo)}</dd>` : ""}
@@ -489,7 +498,7 @@ let actual = "avisos", mapa, PAIS = [], FOCO = null, SEL = null;  // SEL: distri
 const VER = `<button type="button" class="ir vermapa" data-vermapa>Ver en el mapa</button>`;
 const ley = () => (actual === "pais" || PAIS_VISTA)
   ? `${SEL ? esc(SEL.t) : "Riesgo en zonas con operación extractiva"}<small>Paro, bloqueo o toma contra la operación, octubre a diciembre
-    <span class="esc"><span><i style="background:#f1d9c6"></i>menos de 15%</span><span><i style="background:#e3a67c"></i>15 a 25%</span><span><i style="background:#c8642f"></i>25 a 40%</span><span><i style="background:#8a3213"></i>40% o más</span></span>
+    <span class="barra" role="img" aria-label="Escala: menos de 15%, 15 a 25%, 25 a 40%, 40% o más"></span><span class="marcas"><span>15%</span><span>25%</span><span>40%</span></span>
     <span class="esc"><span><i class="punto"></i>Protesta anunciada</span><span><i class="punto negro"></i>Bloqueo (SUTRAN)</span><span><i class="via-l"></i>Vía, al acercarse</span></span></small>`
   : (FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Riesgo en la vía, " + pct(X.via))
   + (SEL ? (SEL.tr.length ? `<small><i class="rojo"></i>${/se suma/.test(SEL.etq) ? "Anunciaron que se suman" : SEL.tr2.length ? "Más probable" : "Tramos que puede cortar"}${SEL.tr2.length ? `<br><i class="naranja"></i>Posible` : ""}<br><i class="punto"></i>${/se suma/.test(SEL.etq) ? "Base que se suma" : SEL.etq ? "Donde más bloquearon antes" : "Dónde es la protesta"}</small>` : "")
@@ -629,7 +638,8 @@ function conectar() {
   document.querySelectorAll("[data-pais]").forEach(b => b.onclick = () => abrir(detalleAviso(PAIS[+b.dataset.pais])));
   document.querySelectorAll("[data-tramo]").forEach(b => b.onclick = () => { SEL = null; FOCO = +b.dataset.tramo; ANCHO.matches ? verMapa() : ir("mapa"); });
   document.querySelectorAll("[data-op]").forEach(b => b.onclick = () => abrir(detalleOp(b.dataset.op)));
-  document.querySelectorAll("[data-caso]").forEach(b => b.onclick = () => abrir(detalleCaso(+b.dataset.caso)));
+  document.querySelectorAll("[data-caso]").forEach(b => b.onclick = () => abrir(detalleCaso(X.casos[+b.dataset.caso])));
+  document.querySelectorAll("[data-dcaso]").forEach(b => b.onclick = () => abrir(detalleCaso(D.casos[+b.dataset.dcaso])));
   document.querySelectorAll("[data-distrito]").forEach(b => b.onclick = () => abrir(detalleDistrito(b.dataset.distrito)));
   document.querySelectorAll("[data-vermapa]").forEach(b => b.onclick = () => { PAIS_VISTA = actual === "pais"; ir("mapa"); });
 }
