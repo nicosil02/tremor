@@ -342,7 +342,7 @@ def dia_dicho(titular, fecha):
     return fecha
 
 
-URBANO = re.compile(r"extorsi|transporte (publico|urbano)|combis?\b|colectiver|mototaxi|choferes asesinad|asesinatos? de chofer|suspender\w* (sus )?rutas|empresas de transporte|lineas de (buses|transporte)|transportistas de lima y callao|buses")
+URBANO = re.compile(r"extorsi|transporte (publico|urbano)|combis?\b|colectiver|mototaxi|choferes asesinad|asesinatos? de chofer|suspender\w* (sus )?rutas|empresas de transporte|lineas de (buses|transporte)|transportistas de lima y callao|\bbuses\b")
 
 
 def _llano(s):

@@ -10,6 +10,7 @@ franjas, para que la corrida normal lo codifique y agrupe.
 Whisper small en GPU si hay CUDA (int8_float16), si no en CPU. Sin TELEGRAM_* en el entorno los avisos solo se imprimen."""
 import json
 import os
+import re
 import tempfile
 import threading
 import time
@@ -45,6 +46,12 @@ def medida(texto):
     return (next((n for k, n in NOMBRE if m.group(0).lower().startswith(k)), "Protesta"), m) if m else (None, None)
 
 
+# países y ciudades que en una radio peruana casi siempre son noticia de afuera (Bolivia, Chile y Ecuador no: hay paros
+# en la frontera); con uno de estos, el aviso sale solo si el LLM confirma que es en el Perú
+FUERA = re.compile(r"\bespaña\b|\bespañol(es|as)\b|madrid|barcelona|cataluñ|sevilla|europa|argentin|buenos aires|"
+                   r"m[eé]xico|estados unidos|colombia|venezuel|brasil|francia|italia|alemania|portugal", re.I)
+
+
 def procesar(con, radio, inicio, texto, empresa, memoria, enviar):
     """Guarda el minuto como notas de radio; si nombra una medida, el LLM la verifica y, si es concreta, avisa.
     memoria: {(medio, medida): hora del último aviso}. Devuelve los avisos enviados."""
@@ -60,12 +67,13 @@ def procesar(con, radio, inicio, texto, empresa, memoria, enviar):
             continue
         txt = f["resumen"]
         cita = txt[max(0, m.start() - 150):m.end() + 150].strip()
+        contexto = txt[max(0, m.start() - 400):m.end() + 400]  # el país suele decirse antes o después de la cita
         try:
-            r = chat_json(con, VERIFICAR_RADIO, cita, "radio1")
+            r = chat_json(con, VERIFICAR_RADIO, contexto, "radio1")
         except (SinCuota, RespuestaInvalida) as e:
             print(f"  [LLM] {str(e)[:80]}", flush=True)
             continue
-        if r.get("concreta") is not True:
+        if r.get("concreta") is not True or r.get("en_peru") is False or (FUERA.search(contexto) and r.get("en_peru") is not True):
             continue
         s = lambda k: r.get(k) if isinstance(r.get(k), str) and r.get(k) else None
         texto_aviso = (f"📻 *EN VIVO · {radio['medio']}, {inicio:%H:%M}*\n_{nombre}{' de ' + s('quienes') if s('quienes') else ''}_\n\n"

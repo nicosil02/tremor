@@ -34,6 +34,11 @@ def test_vivo_guarda_y_avisa_una_vez(monkeypatch):
     # la misma medida en la misma radio 10 minutos después: se guarda, no se avisa
     assert vivo.procesar(con, RADIO, t + timedelta(minutes=11), CON_PARO + " ahora", "Bateas", memoria, enviados.append) == []
     assert len(enviados) == 1
+    # huelga en España: fuera aunque el LLM no lo marque, y fuera si lo marca
+    ESPANA = RELLENO + "en España los médicos anuncian una huelga de 48 horas desde mañana en Madrid. " + RELLENO
+    assert vivo.procesar(con, {**RADIO, "medio": "Radio Mar"}, t, ESPANA, "Bateas", {}, enviados.append) == []
+    monkeypatch.setattr("tremor.llm.chat_json", lambda *a: {"concreta": True, "en_peru": False})
+    assert vivo.procesar(con, {**RADIO, "medio": "Radio Luna"}, t, CON_PARO, "Bateas", {}, enviados.append) == []
     # el LLM dice que no es concreta: nada
     monkeypatch.setattr("tremor.llm.chat_json", lambda *a: {"concreta": False})
     assert vivo.procesar(con, {**RADIO, "medio": "Radio Sol"}, t, CON_PARO, "Bateas", {}, enviados.append) == []

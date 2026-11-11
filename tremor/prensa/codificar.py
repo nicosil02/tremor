@@ -81,7 +81,9 @@ hacerlo con fecha. NO es concreta: letras de canciones, publicidad, salud, cuent
 genéricos del locutor ("hay que levantarnos"), menciones de pasada sin hecho, y protestas en otros países.
 "contra": a quién se dirige: "minera" (mina, petrolera, proyecto extractivo o sus impactos), "gobierno", "municipio",
 "eleccion" (resultados, candidatos, credenciales), "laboral", "inseguridad", "otro".
-Responde solo JSON: {"concreta": true|false, "contra": "...", "quienes": "rol del grupo, sin nombres de personas, o null",
+"en_peru": false si la protesta ocurre fuera del Perú (el texto nombra otro país o una ciudad extranjera, como España,
+Madrid o Buenos Aires); true si ocurre en el Perú; null si no se sabe.
+Responde solo JSON: {"concreta": true|false, "en_peru": true|false|null, "contra": "...", "quienes": "rol del grupo, sin nombres de personas, o null",
 "cuando": "fecha o día dicho (hoy, mañana, el 10 de noviembre) o null", "duracion": "lo dicho (72 horas, indefinido) o null",
 "lugar": "lugar dicho o null"}"""
 
@@ -145,7 +147,7 @@ def verificar_radio(con, max_solicitudes=30):
             break
         txt_ = lambda k: r.get(k) if isinstance(r.get(k), str) else None
         con.execute("INSERT OR REPLACE INTO radio_verificada VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (n, int(r.get("concreta") is True), txt_("contra"), txt_("quienes"), txt_("cuando"), txt_("duracion"), txt_("lugar")))
+                    (n, int(r.get("concreta") is True and r.get("en_peru") is not False), txt_("contra"), txt_("quienes"), txt_("cuando"), txt_("duracion"), txt_("lugar")))
         if r.get("concreta") is not True:
             con.execute("UPDATE codificacion SET es_protesta = 0 WHERE nota_id = ? AND version = ?", (n, VERSION))
         elif r.get("contra") != "minera":

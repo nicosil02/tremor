@@ -416,10 +416,10 @@ ACLED = DATOS / "crudos" / "acled" / "acled_peru.csv"
 ACLED_EXTRACTIVO = re.compile(r"\bmin(?:e|es|ing|ers?)\b|\boil\b|petro|hydrocarbon|\bgas (?:field|pipeline)|camisea|"
                               r"pipeline|las bambas|tia maria|antamina|conga|yanacocha|quellaveco|\bdams?\b|"
                               r"hydroelectric|\bcanon\b|royalt", re.I)
-ACLED_NO = re.compile(r"informal|artisanal (?!fish)|reinfo|formali[sz]ation|small-scale|wages?|unions?|labou?r", re.I)
+ACLED_NO = re.compile(r"informal|artisanal (?!fish)|reinfo|formali[sz]ation|small-scale|wages?|\bunions?\b|labou?r", re.I)
 
 
-ACLED_FUERZA = re.compile(r"block|strike|paro|shut down|occup|took over|seiz|halt|paraly|closed (?:the )?(?:road|highway|access)", re.I)
+ACLED_FUERZA = re.compile(r"block|strike|\bparo\b|shut down|occup|took over|seiz|halt|paraly|closed (?:the )?(?:road|highway|access)", re.I)
 
 
 def acled(con):
