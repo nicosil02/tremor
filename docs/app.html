@@ -366,9 +366,6 @@ const VISTAS = {
     const TONO = { "-1": ["var(--rojo)", "Crítica"], "0": ["#9aa6a5", "Neutra"], "1": ["var(--verde)", "Favorable"] };
     const alias = EMPRESAS[empresa][1], todas = (D.menciones || []).filter(m => alias.test(m.proyecto || "") && dias(m.fecha) >= -6);
     const nT = t => todas.filter(m => String(m.tono) === t).length, ms = todas.filter(m => !TONO_F || String(m.tono) === TONO_F).slice(0, 8);
-    // de un fragmento de radio, la frase donde se nombra a la empresa (±70 letras), no el inicio del fragmento
-    const ventana = (t, rx) => { const i = t.search(rx); if (i < 0) return t.slice(0, 110).trim() + "…";
-      const a = Math.max(0, i - 70), b = Math.min(t.length, i + 70); return (a ? "…" : "") + t.slice(a, b).trim() + (b < t.length ? "…" : ""); };
     const hoy = `<div class="hoy">${prox ? `<button type="button" data-aviso="${X.avisos.indexOf(prox)}"><b class="c1">${esc(prox.w)}</b><span>${esc(prox.t)}</span></button>` : `<div><b>–</b><span>Nada anunciado</span></div>`}
       <div><b>${todas.length}</b><span>${todas.length ? `Reputación: menciones en 7 días, ${pct(nT("-1") / todas.length)} críticas` : "Reputación: sin menciones en 7 días"}</span></div></div>
       <p class="hoy-pie">Lo de hoy en radios, medios, Defensoría y SUTRAN. No cambia el nivel de riesgo.</p>`;
@@ -379,7 +376,7 @@ const VISTAS = {
       <p class="rep-ley">${["-1", "0", "1"].filter(t => nT(t)).map(t => `<button type="button" data-tono="${t}" aria-pressed="${TONO_F === t}"><i style="background:${TONO[t][0]}"></i>${nT(t)} ${TONO[t][1].toLowerCase()}${nT(t) > 1 ? "s" : ""}</button>`).join("")}${TONO_F ? `<button type="button" data-tono="${TONO_F}" class="todas">Ver todas</button>` : ""}</p>` : "";
     const rep = `<h2 id="reputacion">Reputación</h2><p class="rep-cab">${cab}</p>${barra}${an && an.aviso ? `<p class="rep-aviso">${esc(an.aviso.replace(/(\d{4})-(\d{2})-(\d{2})/g, (_, y, m, d) => dia(`${y}-${m}-${d}`)))}</p>` : ""}
       ${ms.length ? `<ul>${ms.map(m => { const k = X.avisos.findIndex(x => x.m === m), [col, tn] = TONO[String(m.tono)] || TONO["0"], aire = /, en vivo /.test(m.titular || "");
-        return `<li><button type="button" class="fila"${k >= 0 ? ` data-aviso="${k}"` : ` data-mencion="${D.menciones.indexOf(m)}"`}><i style="background:${col}"></i><span class="t">${esc(m.dicho || (aire ? ventana(m.resumen || "", alias) : m.titular.replace(/^[^:]{2,25}:\s*/, "")))}</span><span class="w">${esc(dia(m.fecha))}</span><span class="s">${tn}, ${esc(TEMA[m.tema] || "en medios")}, ${esc(m.medio)}</span></button></li>`; }).join("")}</ul>`
+        return `<li><button type="button" class="fila"${k >= 0 ? ` data-aviso="${k}"` : ` data-mencion="${D.menciones.indexOf(m)}"`}><i style="background:${col}"></i><span class="t">${esc(m.dicho || (aire ? `Hablan de ${m.proyecto} en ${m.medio}` : m.titular.replace(/^[^:]{2,25}:\s*/, "")))}</span><span class="w">${esc(dia(m.fecha))}</span><span class="s">${tn}, ${esc(TEMA[m.tema] || "en medios")}, ${esc(m.medio)}</span></button></li>`; }).join("")}</ul>`
         : `<p class="vacio">Nadie habló de la empresa en radios ni medios esta semana.</p>`}`;
     return hoy + (u.length ? `<h2>Atender</h2><ul>${u.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<h2>Atender</h2><p class="vacio">Nada anunciado en su zona ni en sus rutas.</p>`)
       + rep + `<h2>Para seguir</h2>` + (r.length ? `<ul>${r.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas ni notas sobre la empresa.</p>`)
