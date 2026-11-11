@@ -58,12 +58,15 @@ peor que lo normal.
 Tremor es una página con un mapa de las 1 514 operaciones extractivas del país y, para cada empresa, sus alertas,
 su riesgo y un informe mensual listo para enviar.
 
-- **Riesgo por zona.** Un modelo estima la probabilidad de un paro, bloqueo o toma contra la actividad extractiva
-  en la zona de cada operación, su distrito y los que lo rodean, en los próximos tres meses. Dice cuánto sube frente
-  a lo habitual en esa zona, por qué, y en qué puesto está en el país.
-- **Monitoreo en vivo.** La prensa regional, la SUTRAN y más de 270 radios locales se leen cada día. Un LLM
-  codifica cada nota con el manual de la base de protestas de la PUCP. Las protestas anunciadas aparecen como
-  alerta antes de que ocurran.
+- **Tres riesgos, separados.** *Zona*: tensión social, la probabilidad de cualquier protesta en el distrito de la
+  operación y sus vecinos en los próximos tres meses. *Operación*: la de un paro, bloqueo o toma contra la mina en
+  ese mismo plazo, con cuánto sube frente a lo habitual, por qué, y en qué puesto está en el país. *Carretera*:
+  los cortes de hoy en su ruta, según la SUTRAN y las radios, sin modelo. Los dos primeros son niveles de riesgo,
+  no una fecha, y los calcula un modelo entrenado solo con historia y datos del territorio: lo que dicen los
+  medios no entra al modelo, va al monitoreo.
+- **Monitoreo en vivo.** La prensa regional, la SUTRAN y 286 radios locales de 139 provincias se leen cada día.
+  Un LLM codifica cada nota con el manual de la base de protestas de la PUCP. Las protestas anunciadas aparecen
+  como alerta antes de que ocurran.
 - **Avisos por Telegram.** Cada cliente recibe en su chat solo lo que toca a sus operaciones y su ruta: protestas
   anunciadas, bloqueos de la SUTRAN y tramos lentos, con qué hacer. Si el paro se suspende o los gremios se retiran,
   también se avisa.
@@ -102,14 +105,16 @@ paro. Es ordenar todas las zonas por riesgo con razones verificables y avisar cu
 ## 6. Demo
 
 **URL:** https://nicosil02.github.io/tremor/. El inicio explica qué hacemos, los planes y quién está detrás. Desde
-**Ver la demo** o **Acceso de clientes** se entra a la app de una empresa, por ejemplo Las Bambas:
+**Ver la demo** se entra a la app de una empresa, por ejemplo Bateas. **Acceso de clientes** lleva a la misma app
+con usuario y contraseña (`streamlit_app.py`): cada cliente ve solo su operación y el equipo ve todas.
 
-- **Avisos:** qué atender hoy;
-- **Operaciones:** el riesgo de cada unidad y de cada tramo de su ruta (al tocar un tramo, el vehículo lo recorre);
-- **País:** todas las zonas con operación extractiva.
+- **Monitoreo:** lo que dicen hoy radios, medios, la Defensoría y la SUTRAN, y qué atender;
+- **Riesgo:** los tres niveles, Zona, Operación y Carretera, cada unidad y cada tramo de su ruta (al tocar un
+  tramo, el vehículo lo recorre);
+- **País:** todas las zonas con operación extractiva, con las tres capas en el mapa.
 
 Como hoy ningún tramo tiene un paro, cada caso se puede ver con `?prueba=corte`, `aviso` o `lento`, por ejemplo
-https://nicosil02.github.io/tremor/app.html?e=Las%20Bambas&prueba=corte (el aviso dice "prueba").
+https://nicosil02.github.io/tremor/app.html?e=Bateas&prueba=corte (el aviso dice "prueba").
 
 | Todo el país | Una empresa | Una unidad |
 |---|---|---|
@@ -164,7 +169,8 @@ git fetch origin datos && git show origin/datos:tremor.db.gz > tremor.db.gz
 python -c "import gzip,shutil;shutil.copyfileobj(gzip.open('tremor.db.gz'),open('datos/tremor.db','wb'))"
 python -m tremor.web && cp datos/exportes/web.json docs/web.json
 python -m http.server -d docs 8000        # abrir http://localhost:8000
-python -m pytest -q                       # 154 pruebas
+streamlit run streamlit_app.py            # con acceso por cliente; las cuentas van en .streamlit/secrets.toml
+python -m pytest -q                       # 156 pruebas
 ```
 
 ## 7. Modelo de negocio
@@ -237,10 +243,12 @@ También usa:
 
 ## 9. Qué hizo el agente
 
-Casi todo el código lo escribió Claude Code bajo mi dirección.
+Yo armé el plan a partir de proyectos previos con aprendizaje automático y conflictividad social; Claude Code fue
+el ejecutor.
 
 **Lo que hice yo:**
 
+- diseñé el producto, el plan y el orden de los módulos (`specs/`);
 - elegí el problema y las fuentes;
 - decidí las reglas del proyecto: costo cero, actores por rol, no leer Facebook y no redistribuir la base de la
   PUCP y pedir permiso a ACLED;

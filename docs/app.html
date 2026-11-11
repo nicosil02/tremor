@@ -66,7 +66,7 @@
   .via b { font-size: 44px; line-height: 1; font-weight: 750; color: var(--cobre-4); font-variant-numeric: tabular-nums; }
   .via span { font-size: 15px; color: var(--tinta-2); } ol.cadena .modo { grid-column: 1; font-size: 14px; color: var(--tinta-2); }
   ol.cadena .aviso-t { grid-column: 1; font-size: 14px; color: var(--rojo); font-weight: 600; }
-  ol.cadena .est { grid-row: 1 / 3; grid-column: 2; align-self: center; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--tinta); }
+  ol.cadena .est { grid-row: 1 / 3; grid-column: 2; align-self: center; font-size: 24px; font-weight: 750; font-variant-numeric: tabular-nums; color: var(--cobre-4); }
   .leyenda-via { position: fixed; z-index: 3; left: 12px; top: 64px; margin: 0; padding: 6px 10px; border-radius: 8px; background: rgb(248 250 249 / .92); font-weight: 650; }
   .grande { display: flex; align-items: center; gap: 14px; padding: 16px; }
   :root { --sal: cubic-bezier(0.23, 1, 0.32, 1); }
@@ -95,6 +95,8 @@
   .dz-cab { padding: 14px 16px 0; } .dz-cab h3 { margin: 0; font-size: 26px; font-weight: 750; letter-spacing: -0.01em; } .dz-cab p { margin: 2px 0 0; color: var(--tinta-2); }
   .medidor { padding: 12px 16px 4px; } .m-num { display: flex; align-items: baseline; gap: 12px; }
   .m-num b { font-size: 56px; line-height: 1; font-weight: 750; color: var(--cobre-4); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .medidor.r-zona .m-num b { color: #8a6d1f; }
+  .m-pie button.enlace { all: unset; cursor: pointer; color: var(--tinta-2); border-bottom: 1px solid var(--linea); } .m-pie button.enlace:focus-visible { outline: 3px solid var(--cobre); }
   .nv { font-weight: 700; font-size: 15px; padding: 3px 8px; border-radius: 6px; } .nv-bajo { background: #eef1ef; color: var(--tinta-2); } .nv-medio { background: #f6e6d8; color: #8a4a1f; }
   .nv-alto { background: #f1cdb4; color: #7a2e10; } .nv-crítico { background: #8a3213; color: #fff; }
   .m-barra { position: relative; display: grid; grid-template-columns: 10fr 15fr 25fr 10fr; gap: 2px; height: 10px; margin: 16px 0 34px; }
@@ -147,6 +149,12 @@
   dl.datos { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 14px 16px 4px; }
   dl.datos dt { font-size: 14px; font-weight: 700; color: var(--tinta-2); padding-top: 2px; } dl.datos dd { margin: 0; }
   ol.cadena li.nada::before { background: var(--linea); } ol.cadena li.nada b { color: var(--tinta-2); font-weight: 600; }
+  .leyenda-via .capas { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 4px; }
+  .leyenda-via .capas button { font: inherit; font-size: 13px; font-weight: 600; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--linea); background: #fff; color: var(--tinta-2); cursor: pointer; }
+  .leyenda-via .capas button[aria-pressed="true"] { background: var(--cobre-4); border-color: var(--cobre-4); color: #fff; }
+  .via b.estado { font-size: 28px; color: var(--verde); } .via b.estado.mal { color: var(--rojo); }
+  ol.cadena .libre { grid-column: 1; font-size: 14px; color: var(--verde); font-weight: 600; }
+  ol.cadena .est small { display: block; font-size: 11px; font-weight: 500; color: var(--tinta-2); text-align: right; }
   .aclara { margin: 0 16px 4px; font-size: 14px; color: var(--tinta-2); }
   .resumen { margin: 4px 16px 0; line-height: 1.5; max-width: 60ch; }
   a.fuente { display: block; margin: 8px 16px; padding: 14px 16px; border-radius: 12px; background: #eaefed; color: var(--tinta); text-decoration: none;
@@ -182,6 +190,15 @@
   .hoy > * { all: unset; box-sizing: border-box; display: grid; gap: 4px; align-content: start; padding: 12px; border-radius: 12px; background: #eaefed; cursor: pointer; }
   .hoy b { font-size: 30px; line-height: 1; font-weight: 750; font-variant-numeric: tabular-nums; } .hoy b.c1 { color: var(--cobre-4); }
   .hoy span { font-size: 14px; line-height: 1.3; color: var(--tinta-2); } .hoy button:focus-visible { outline: 3px solid var(--cobre); }
+  /* Los tres riesgos, siempre separados: tensión en la zona, contra la operación, cortes de vía */
+  .tres { list-style: none; margin: 8px 0 0; padding: 0 16px; }
+  .tres button { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: grid; grid-template-columns: 96px 1fr; grid-template-rows: auto auto; column-gap: 12px; align-items: baseline; padding: 12px 0 12px 12px; border-left: 5px solid var(--acento); border-bottom: 1px solid var(--linea); }
+  .tres button:focus-visible { outline: 3px solid var(--cobre); } .tres button:active { background: #eaefed; }
+  .tres small { grid-row: 1 / 3; align-self: center; font-size: 13px; font-weight: 800; color: var(--acento); text-transform: uppercase; letter-spacing: .04em; }
+  .tres b { font-size: 40px; line-height: 1; font-weight: 750; color: var(--acento); font-variant-numeric: tabular-nums; }
+  .tres b .nv { font-size: 14px; vertical-align: middle; margin-left: 8px; }
+  .tres span { grid-column: 2; font-size: 14px; line-height: 1.3; color: var(--tinta-2); }
+  .r-zona { --acento: #8a6d1f; } .r-op { --acento: var(--cobre-4); } .r-via { --acento: var(--verde); } .r-via.mal { --acento: var(--rojo); }
   .hoy-pie { margin: 6px 16px 0; font-size: 13px; color: var(--tinta-2); }
   .pie { padding: 18px 16px; font-size: 14px; color: var(--tinta-2); } .pie a { color: var(--tinta-2); }
   @media (prefers-reduced-motion: no-preference) { .fila, nav button { transition: background 160ms ease; } }
@@ -192,8 +209,8 @@
 <main id="vista" aria-live="polite"><p class="vacio">Cargando…</p></main>
 <div id="mapa" hidden></div>
 <nav aria-label="Secciones">
-  <button type="button" data-v="avisos">Avisos<span class="n" id="n-avisos" hidden></span></button>
-  <button type="button" data-v="operaciones">Operaciones</button>
+  <button type="button" data-v="avisos">Monitoreo<span class="n" id="n-avisos" hidden></span></button>
+  <button type="button" data-v="operaciones">Riesgo</button>
   <button type="button" data-v="pais">País</button>
   <button type="button" data-v="mapa">Mapa</button>
 </nav>
@@ -226,6 +243,7 @@ const cal = p => { const c = p == null ? null : (D.calibracion || []).find(c => 
 const razones = txt => String(txt || "").replace(/^en la zona \(distrito y vecinos\): /, "").split(/ · |; /).map(x => x.replace(/\s*\(.*?\)/g, "").replace(/^la última se ganó por (\S+)$/, "La última elección municipal se ganó por $1 de diferencia").trim().replace(/^./, c => c.toUpperCase()))
   .filter(x => x && !/^0 /.test(x) && !/unidades mineras$/.test(x));
 const nivel = p => p >= 0.5 ? "Crítico" : p >= 0.25 ? "Alto" : p >= 0.1 ? "Medio" : "Bajo";
+const nivelZ = p => p >= 0.7 ? "Crítico" : p >= 0.5 ? "Alto" : p >= 0.3 ? "Medio" : "Bajo";  // la tensión en la zona corre más alta
 const flecha = d => d > 0.01 ? "↑" : d < -0.01 ? "↓" : "";
 const pct = p => `${Math.round(p * 100)}%`;
 const opera = o => /^operación/.test(o.etapa || "");
@@ -236,7 +254,8 @@ const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 
 // Piloto con una sola minera; en ?admin se ven todas para revisar que cada una salga bien
 const PILOTO = ["Bateas", "Raura", "Poderosa", "Las Bambas", "Buenaventura"], ADMIN = /[?&]admin\b/.test(location.search);
-const LISTA = ADMIN ? Object.keys(EMPRESAS) : PILOTO;
+// Dentro de Streamlit (streamlit_app.py) la sesión fija la empresa: un cliente ve solo la suya; el equipo, todas
+const T = window.TREMOR, LISTA = T ? (T.todas ? Object.keys(EMPRESAS) : [T.empresa]) : ADMIN ? Object.keys(EMPRESAS) : PILOTO;
 const URL_E = new URLSearchParams(location.search).get("e");  // enlace del aviso: ?e=Bateas&d=080803
 let D, A, E, empresa = LISTA.includes(URL_E) ? URL_E : LISTA.includes(guardado("tremor-empresa")) ? guardado("tremor-empresa") : PILOTO[0], pila = [];
 
@@ -257,7 +276,7 @@ function armar() {
   const ops = D.operaciones.filter(o => o.empresa.toLowerCase().includes(oefa));
   const unidades = [...new Map(ops.map(o => [o.unidad, o])).values()].map(o => {
     const a = A.get(o.ubigeo) || {}, p = a.prob_zona_extractivo ?? null;
-    return { ...o, p, normal: a.normal_zona_ext ?? null, a, zona: new Set(zonaDe(o.ubigeo)) };
+    return { ...o, p, pz: a.prob_zona ?? null, normal: a.normal_zona_ext ?? null, a, zona: new Set(zonaDe(o.ubigeo)) };
   }).sort((x, y) => opera(y) - opera(x) || (y.p ?? -1) - (x.p ?? -1));
   const zona = new Set(unidades.flatMap(u => [...u.zona]));
   const SECTOR = /transportistas urbanos|docente|maestr|profesor|m[eé]dic|enfermer|obstetr|salud|judicial|estatal|universit|estudiant|administrativ/i;
@@ -314,7 +333,7 @@ const filaAviso = (x, k) => fila(x.urge ? "urge" : "", 0, x.t, x.w, x.s, `data-a
 function cabecera(atras, txt) {
   document.getElementById("cab").innerHTML = atras
     ? `<button type="button" class="atras" aria-label="Volver">‹</button><h1>${esc(txt)}</h1>`
-    : `<select id="emp" class="titulo" aria-label="Empresa">${LISTA
+    : LISTA.length === 1 ? `<h1>${esc(empresa)}</h1>` : `<select id="emp" class="titulo" aria-label="Empresa">${LISTA
         .map(n => `<option${n === empresa ? " selected" : ""}>${n}</option>`).join("")}</select>`;
   const at = document.querySelector("#cab .atras"); if (at) at.onclick = volver;
   const se = document.getElementById("emp"); if (se) se.onchange = () => { SEL = null; empresa = se.value; guardar("tremor-empresa", empresa); X = armar(); pila = []; ir(actual); };
@@ -324,11 +343,10 @@ const VISTAS = {
   avisos() {
     const u = X.avisos.filter(x => x.urge), r = X.avisos.filter(x => !x.urge);
     cabecera(false);
-    const ops = X.unidades.filter(opera).filter(o => o.p != null).sort((a, b) => b.p - a.p), o = ops[0], prox = u[0];
-    const hoy = o ? `<div class="hoy"><button type="button" data-op="${esc(o.unidad)}"><b class="c${nivel(o.p) === "Bajo" ? 0 : 1}">${pct(o.p)}</b>
-        <span>Riesgo ${nivel(o.p).toLowerCase()} ${flecha(o.p - (o.normal ?? o.p))} en ${ops.length > 1 ? `${esc(o.unidad)}, la más alta de ${ops.length}` : esc(o.unidad)}</span></button>
-      ${prox ? `<button type="button" data-aviso="${X.avisos.indexOf(prox)}"><b class="c1">${esc(prox.w)}</b><span>${esc(prox.t)}</span></button>` : `<div><b>–</b><span>Nada anunciado</span></div>`}</div>
-      <p class="hoy-pie">${cal(o.p)}</p>` : "";
+    const prox = u[0], an = (D.animo || []).find(a => EMPRESAS[empresa][1].test(a.proyecto || ""));
+    const hoy = `<div class="hoy">${prox ? `<button type="button" data-aviso="${X.avisos.indexOf(prox)}"><b class="c1">${esc(prox.w)}</b><span>${esc(prox.t)}</span></button>` : `<div><b>–</b><span>Nada anunciado</span></div>`}
+      <div><b>${an ? Math.round(an.menciones_7d) : 0}</b><span>${an ? `Menciones en 7 días, ${pct(an.pct_negativo)} negativas` : "Sin menciones en los últimos 7 días"}</span></div></div>
+      <p class="hoy-pie">Lo de hoy en radios, medios, Defensoría y SUTRAN. No cambia el nivel de riesgo.</p>`;
     return hoy + (u.length ? `<h2>Atender</h2><ul>${u.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<h2>Atender</h2><p class="vacio">Nada anunciado en su zona ni en sus rutas.</p>`)
       + `<h2>Para seguir</h2>` + (r.length ? `<ul>${r.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas ni notas sobre la empresa.</p>`)
       + `<p class="pie">Datos al ${dia(D.creado)}. <a href="informe.html?e=${empresa.toLowerCase().replace(/^las /, "")}" target="_blank" rel="noopener">Informe del mes en PDF</a></p>`;
@@ -339,10 +357,20 @@ const VISTAS = {
     const filaOp = o => `<li><button type="button" class="fila" data-op="${esc(o.unidad)}"><i style="background:${o.p >= .25 ? "var(--cobre-4)" : "#e3a67c"}"></i>
       <span class="t">${esc(o.unidad)}</span><span class="pct">${o.p == null ? "–" : pct(o.p)}<small>${o.p == null ? "" : `${nivel(o.p)} ${flecha(o.p - (o.normal ?? o.p))}`}</small></span>
       <span class="s" style="grid-column:2">${esc(lugar(o.ubigeo))}</span></button></li>`;
-    return `<h2>Riesgo en la operación</h2><ul>${(op.length ? op : otras).map(filaOp).join("")}</ul>`
-      + (X.cadena.length ? `<h2>Riesgo en la vía</h2><div class="via"><b>${pct(X.via)}</b><span>Que se corte algún tramo de su ruta, octubre a diciembre</span></div>
+    const nMal = X.cadena.filter(r => r.estado[0] !== "ok").length, o1 = (op.length ? op : otras).find(o => o.p != null);
+    // Tres riesgos distintos: la zona y la operación son niveles a 3 meses del modelo; la carretera es lo de hoy
+    const chip = (p, f) => `<span class="nv nv-${f(p).toLowerCase()}">${f(p)}</span>`;
+    const tres = `<ol class="tres">
+      <li><button type="button" class="r-zona" ${o1 ? `data-distrito="${o1.ubigeo}" data-dcapa="fuerza"` : ""}><small>Zona</small><b>${o1 && o1.pz != null ? pct(o1.pz) + chip(o1.pz, nivelZ) : "–"}</b><span>Tensión social: cualquier protesta en la zona</span></button></li>
+      <li><button type="button" class="r-op" ${o1 ? `data-distrito="${o1.ubigeo}"` : ""}><small>Operación</small><b>${o1 ? pct(o1.p) + chip(o1.p, nivel) : "–"}</b><span>Paro, bloqueo o toma contra la mina</span></button></li>
+      <li><button type="button" class="r-via${nMal ? " mal" : ""}" data-ruta><small>Carretera</small><b>${X.cadena.length ? (nMal ? `${nMal} ${nMal > 1 ? "tramos" : "tramo"}` : "Libre") : "–"}</b><span>Cortes en su ruta hoy, según SUTRAN y radios</span></button></li></ol>
+      <p class="hoy-pie">Toque uno para ver el porqué.</p>`;
+    return tres + `<h2>Operación, por unidad</h2><ul>${(op.length ? op : otras).map(filaOp).join("")}</ul>`
+      + (X.cadena.length ? `<h2 id="ruta-hoy">Carretera, hoy</h2><div class="via"><b class="estado${nMal ? " mal" : ""}">${nMal ? `${nMal} ${nMal > 1 ? "tramos" : "tramo"} con aviso` : "Libre"}</b><span>SUTRAN, radios y medios</span></div>
         <ol class="cadena">${X.cadena.map((r, i) =>
-          `<li class="${r.estado[0]}"><button type="button" data-tramo="${i}"><b>${esc(r.nombre)}</b><span class="modo">${esc(r.modo)}, más expuesto ${esc(lugar(r.peor))}</span>${r.estado[0] !== "ok" ? `<span class="aviso-t">${esc(r.estado[1])}${r.vago ? ` en ${esc(r.vago.split(" en ")[1].replace(" sin distrito", ""))}` : ""}</span>` : ""}${viaje(r.nombre)}<span class="est">${pct(r.p)}</span></button></li>`).join("")}</ol>`
+          `<li class="${r.estado[0]}"><button type="button" data-tramo="${i}"><b>${esc(r.nombre)}</b><span class="modo">${esc(r.modo)}, más expuesto ${esc(lugar(r.peor))}</span>${r.estado[0] !== "ok" ? `<span class="aviso-t">${esc(r.estado[1])}${r.vago ? ` en ${esc(r.vago.split(" en ")[1].replace(" sin distrito", ""))}` : ""}</span>` : ""}${r.estado[0] === "ok" ? `<span class="libre">Sin avisos hoy</span>` : ""}${viaje(r.nombre)}<span class="est">${pct(r.p)}</span></button></li>`).join("")}</ol>
+        <p class="aclara">Ruta completa: ${pct(X.via)}, nivel ${nivel(X.via).toLowerCase()}, de que una protesta corte algún tramo.</p>
+        <p class="pie">Los porcentajes son nivel de riesgo a 3 meses, octubre a diciembre, no una fecha. Lo de hoy viene de la SUTRAN, radios y medios.</p>`
         : X.rutas.length ? `<h2>Rutas de salida</h2>${X.rutas.map(r => { const b = (D.sutran || []).filter(s => s.via === r).length;
           return `<div class="ruta"><b>${esc(r === "PE-3SG" ? "Corredor Minero del Sur" : r)}</b><span class="${b ? "mal" : "ok"}">${b ? "Bloqueada" : "Libre"}</span></div>`; }).join("")}` : "")
       + (op.length && otras.length ? `<details class="mas"><summary>Exploración y proyectos (${otras.length})</summary><ul>${otras.map(filaOp).join("")}</ul></details>` : "");
@@ -354,13 +382,18 @@ const VISTAS = {
         s: (String(e.ubigeo) === "00" && /paro nacional|a nivel nacional|todo el pa[ií]s/i.test(e.titular || "") ? "Todo el país" : lugar(String(e.ubigeo))) + ((e.focos || []).length > 1 ? `, ${e.focos.length} focos` : "") }; });
     const v = PAIS.filter(x => x.viene).sort((a, b) => a.f.localeCompare(b.f)), r = PAIS.filter(x => !x.viene && x.f <= HOY && dias(x.f) >= -7).sort((a, b) => b.f.localeCompare(a.f));
     const ls = xs => `<ul>${xs.map(x => fila(x.urge ? "urge" : "", 0, x.t, x.w, x.s, `data-pais="${PAIS.indexOf(x)}"`)).join("")}</ul>`;
+    // La lista sigue la capa elegida en el mapa: Zona (tensión social), Operación (contra la mina) o Carretera (cortes de hoy)
     // ponytail: sin capitales de departamento ni Lima-Callao, donde la EGPP pone lo que no sabe ubicar
-    const top = D.alerta.filter(a => +a.operacion_extractiva === 1 && a.prob_zona_extractivo != null && !/0101$/.test(a.ubigeo) && !/^(1501|0701)/.test(a.ubigeo))
-      .sort((a, b) => b.prob_zona_extractivo - a.prob_zona_extractivo).slice(0, 10);
+    const Z = CAPA === "fuerza", k = Z ? "prob_zona" : "prob_zona_extractivo", rz = Z ? "razones_zona" : "razones_zona_extractivo";
+    const top = D.alerta.filter(a => +a.operacion_extractiva === 1 && a[k] != null && !/0101$/.test(a.ubigeo) && !/^(1501|0701)/.test(a.ubigeo))
+      .sort((a, b) => b[k] - a[k]).slice(0, 10);
+    const lista = CAPA === "sutran"
+      ? `<h2>Carretera: vías cortadas hoy, SUTRAN</h2>${(D.sutran || []).length ? `<ul>${D.sutran.map(s => fila("urge", 0, `Vía ${s.via}`, "ahora", titulo(s.distrito || ""))).join("")}</ul>` : `<p class="vacio">Ninguna vía cortada ahora.</p>`}`
+      : `<h2>${Z ? "Zona: distritos con más tensión social" : "Operación: zonas con más riesgo contra la mina"}</h2><ul>${top.map(a => `<li><button type="button" class="fila" data-distrito="${a.ubigeo}"${Z ? ' data-dcapa="fuerza"' : ""}><i style="background:${Z ? "#8a6d1f" : "var(--cobre-4)"}"></i>
+        <span class="t">${esc(lugar(a.ubigeo))}</span><span class="pct">${+a[k] > 0.95 ? "95% o más" : pct(a[k])}</span><span class="s" style="grid-column:2">${esc(String(a[rz] || "").replace(/^en la zona \(distrito y vecinos\): /, "").split(/ \(| · |; /)[0])}</span></button></li>`).join("")}</ul>`;
     // primero lo que viene y las zonas más altas; la última semana, corta (el resto se despliega)
     return `<h2>Anunciado en el país</h2>${v.length ? ls(v) : `<p class="vacio">Nada anunciado.</p>`}
-      <h2>Zonas extractivas con más riesgo, octubre a diciembre</h2><ul>${top.map(a => `<li><button type="button" class="fila" data-distrito="${a.ubigeo}"><i style="background:var(--cobre-4)"></i>
-        <span class="t">${esc(lugar(a.ubigeo))}</span><span class="pct">${pct(a.prob_zona_extractivo)}</span><span class="s" style="grid-column:2">${esc(String(a.razones_zona_extractivo || "").replace(/^en la zona \(distrito y vecinos\): /, "").split(/ \(| · |; /)[0])}</span></button></li>`).join("")}</ul>${ANCHO.matches ? "" : VER}
+      ${lista}${ANCHO.matches ? "" : VER}
       <h2>Última semana</h2>${r.length ? ls(r.slice(0, 6)) + (r.length > 6 ? `<details class="mas"><summary><b>Ver las ${r.length - 6} restantes</b></summary>${ls(r.slice(6))}</details>` : "") : `<p class="vacio">Sin protestas registradas.</p>`}`;
   },
   mapa() { cabecera(false); return X.cadena.length || PAIS_VISTA ? `<p class="leyenda-via">${ley()}</p>` : ""; },
@@ -416,7 +449,7 @@ function detalleOp(nom) {
   const por = razones(o.a.razones_zona_extractivo).slice(0, 3);
   const cs = X.casos.filter(c => o.zona.has(String(c.ubigeo))).slice(0, 4);
   const estado = estadoCaso;
-  cabecera(true, "Operaciones");
+  cabecera(true, "Riesgo");
   foto(o); ver([o.ubigeo], o.unidad);
   return `<div class="foto" id="foto"><div><h3>${esc(o.unidad)}</h3><p>${esc(lugar(o.ubigeo))}</p></div><small>Imagen Esri, Maxar</small></div><div class="grande"><b>${o.p == null ? "–" : pct(o.p)}</b><span>${o.p == null ? "Sin cálculo" : `Riesgo ${nivel(o.p).toLowerCase()} ${flecha(o.p - (o.normal ?? o.p))}`}
       <small>${cal(o.p)}</small><small>${o.normal != null ? `Lo habitual en la zona, ${pct(o.normal)}` : ""}</small><small>Octubre a diciembre</small></span></div>${VER}`
@@ -427,31 +460,38 @@ function detalleOp(nom) {
         estado(c), c.medios && c.medios[0] ? `${dia(c.medios[0].fecha)}, ${c.medios[0].titular}` : `Defensoría, ${MES[c.mes - 1]}`, `data-caso="${X.casos.indexOf(c)}"`)).join("")}</ul>` : `<p class="vacio">Sin conflictos vigentes ante la Defensoría.</p>`);
 }
 
-function detalleDistrito(u) {
-  // Ficha visual: medidor de riesgo, una casilla por unidad, cifras del porqué y conflictos por estado
-  const a = A.get(u) || {}, p = a.prob_zona_extractivo == null ? null : +a.prob_zona_extractivo, nh = a.normal_zona_ext == null ? null : +a.normal_zona_ext, zona = new Set(zonaDe(u));
+function detalleDistrito(u, capa = "extractivo") {
+  // Ficha visual: medidor de riesgo, una casilla por unidad, cifras del porqué y conflictos por estado.
+  // capa "fuerza" = Zona (tensión social, cualquier protesta); "extractivo" = Operación (contra la mina)
+  const Z = capa === "fuerza", a = A.get(u) || {}, nv = Z ? nivelZ : nivel;
+  const p = a[Z ? "prob_zona" : "prob_zona_extractivo"] == null ? null : +a[Z ? "prob_zona" : "prob_zona_extractivo"], zona = new Set(zonaDe(u));
+  // referencia del termómetro: en operación, lo habitual de la misma zona; en zona el modelo no da habitual, va el promedio de las zonas mineras
+  const zs = Z ? D.alerta.filter(x => +x.operacion_extractiva === 1 && x.prob_zona != null) : [];
+  const nh = Z ? (zs.length ? zs.reduce((s, x) => s + +x.prob_zona, 0) / zs.length : null) : a.normal_zona_ext != null ? +a.normal_zona_ext : null;
   const donde = String(a.lugar || "").split(" / ").slice(0, 2).reverse().map(titulo).join(", ");
   const os = D.operaciones.filter(o => o.ubigeo === u), nVec = D.operaciones.filter(o => o.ubigeo !== u && zona.has(o.ubigeo)).length;
   const ETAPAS = [["op", "en operación", opera], ["fi", "fiscalizada por OEFA", o => /fiscalizada|operador/.test(o.etapa)], ["ex", "en exploración", o => /explor/.test(o.etapa)],
     ["pr", "proyecto", o => /^proyecto/.test(o.etapa)], ["pa", "paralizada", o => /paraliz/.test(o.etapa)]];
   const etapa = o => (ETAPAS.find(([, , f]) => f(o)) || ["pa"])[0], cuenta = ETAPAS.map(([k, t]) => [k, t, os.filter(o => etapa(o) === k).length]).filter(x => x[2]);
   const TIPO = { mineria: "minería", hidrocarburos: "hidrocarburos", electricidad: "electricidad" }, ts = [...new Set(os.map(o => TIPO[o.tipo]).filter(Boolean))];
-  const por = razones(a.razones_zona_extractivo);
+  const por = razones(Z ? a.razones_zona : a.razones_zona_extractivo);
   const cifras = por.map(x => x.match(/^(\d+%?)\s+(.*)$/)).filter(Boolean).slice(0, 4), resto = por.filter(x => !/^\d/.test(x)).slice(0, 2);
   const evs = D.eventos.filter(e => zona.has(String(e.ubigeo))).sort((x, y) => String(y.fecha_evento).localeCompare(x.fecha_evento));
   const cs = D.casos.filter(c => zona.has(String(c.ubigeo))), EST = { "sin diálogo": "sd", activo: "ac", "en diálogo": "ed", latente: "la" };
   const porEst = Object.keys(EST).map(k => [k, cs.filter(c => estadoCaso(c) === k).length]).filter(x => x[1]);
-  const X0 = 0.6, x = v => Math.min(v / X0, 1) * 100;  // escala del medidor hasta 60%
-  cabecera(true, "País"); ver([u], lugar(u));
+  const X0 = Z ? 1 : 0.6, x = v => Math.min(v / X0, 1) * 100;  // escala del medidor: hasta 60% en operación, hasta 100% en zona
+  const otra = Z ? a.prob_zona_extractivo : a.prob_zona;
+  cabecera(true, Z ? "Zona" : "Operación"); ver([u], lugar(u));
   return `<div class="dz-cab"><h3>${esc(lugar(u))}</h3><p>${esc(donde)}</p></div>
-    ${p == null ? `<p class="vacio">Sin cálculo para este distrito.</p>` : `<div class="medidor"><div class="m-num"><b>${pct(p)}</b><span class="nv nv-${nivel(p).toLowerCase()}">${nivel(p)} ${flecha(p - (nh ?? p))}</span></div>
-      <div class="m-barra"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i><em style="left:${x(p)}%"></em>${nh != null ? `<u style="left:${x(nh)}%"><span>habitual ${pct(nh)}</span></u>` : ""}</div>
-      <p class="m-pie">Paro, bloqueo o toma contra la actividad extractiva, octubre a diciembre. ${cal(p)}</p></div>`}${VER}
+    ${p == null ? `<p class="vacio">Sin cálculo para este distrito.</p>` : `<div class="medidor ${Z ? "r-zona" : "r-op"}"><div class="m-num"><b>${pct(p)}</b><span class="nv nv-${nv(p).toLowerCase()}">${nv(p)} ${nh != null ? flecha(p - nh) : ""}</span></div>
+      <div class="m-barra"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i><em style="left:${x(p)}%"></em>${nh != null ? `<u style="left:${x(nh)}%"><span>${Z ? "promedio minero" : "habitual"} ${pct(nh)}</span></u>` : ""}</div>
+      <p class="m-pie"><b>${Z ? "Zona" : "Operación"}</b>: ${Z ? "tensión social, cualquier paro, marcha o bloqueo en el distrito y sus vecinos" : "paro, bloqueo o toma contra la mina"}, octubre a diciembre. ${Z ? "La marca es el promedio de las zonas mineras del país." : cal(p)}</p>
+      ${otra == null ? "" : `<p class="m-pie"><button type="button" class="enlace" data-distrito="${u}" data-dcapa="${Z ? "extractivo" : "fuerza"}"><b>${Z ? "Operación" : "Zona"}</b>: ${pct(+otra)} ${(Z ? nivel : nivelZ)(+otra).toLowerCase()} ›</button></p>`}</div>`}${VER}
     <h2>Unidades extractivas en el distrito</h2>${os.length ? `
       <ul class="w-ley">${cuenta.map(([k, t, n]) => `<li><i class="w-${k}"></i><b>${n}</b> ${n > 1 ? t.replace(/^(proyecto|paralizada|fiscalizada)/, "$1s") : t}</li>`).join("")}</ul>
       <p class="aclara">${esc((ts.join(" y ") || "Unidades").replace(/^./, c => c.toUpperCase()))}${nVec ? `. Hay ${nVec} más en los distritos vecinos` : ""}.</p>`
       : `<p class="vacio">Ninguna en el distrito${nVec ? `; ${nVec} en los vecinos` : ""}.</p>`}
-    ${cifras.length ? `<h2>Por qué, en la zona</h2><div class="tiles">${cifras.map(([, n, t]) => `<div><b>${esc(n)}</b><span>${esc(t)}</span></div>`).join("")}</div>` : ""}
+    ${cifras.length ? `<h2>Por qué ${Z ? "la tensión" : "el riesgo"}, en la zona</h2><div class="tiles">${cifras.map(([, n, t]) => `<div><b>${esc(n)}</b><span>${esc(t)}</span></div>`).join("")}</div>` : ""}
     ${resto.length ? `<ul class="por">${resto.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
     <h2>Conflictos ante la Defensoría</h2>${cs.length ? `<div class="chips">${porEst.map(([k, n]) => `<span class="ch-${EST[k]}"><i></i><b>${n}</b> ${k}</span>`).join("")}</div>
       <ul class="casos">${cs.map(c => `<li class="ch-${EST[estadoCaso(c)]}"><button type="button" data-dcaso="${D.casos.indexOf(c)}"><i></i><span>${esc(titulo(String(c.nombre).split(/\s+[-–]\s+/)[0]))}</span><small>${esc(titulo(lugar(String(c.ubigeo))))}</small></button></li>`).join("")}</ul>` : `<p class="vacio">Sin conflictos vigentes en la zona.</p>`}
@@ -620,13 +660,22 @@ async function camion(r, fc, centro) {
 
 let actual = "avisos", mapa, PAIS = [], FOCO = null, SEL = null;  // SEL: distritos que el mapa resalta y encuadra
 const VER = `<button type="button" class="ir vermapa" data-vermapa>Ver en el mapa</button>`;
-const ley = () => (actual === "pais" || PAIS_VISTA)
-  ? `${SEL ? esc(SEL.t) : "Riesgo en zonas con operación extractiva"}<small>Paro, bloqueo o toma contra la operación, octubre a diciembre
-    <span class="barra" role="img" aria-label="Escala: menos de 15%, 15 a 25%, 25 a 40%, 40% o más"></span><span class="marcas"><span>15%</span><span>25%</span><span>40%</span></span>
-    <span class="esc"><span><i class="punto"></i>Protesta anunciada</span><span><i class="punto negro"></i>Bloqueo (SUTRAN)</span><span><i class="via-l"></i>Vía, al acercarse</span></span></small>`
+// Tres capas: dos del modelo (cualquier medida de fuerza en la zona; contra la operación) y una en vivo, sin modelo
+const CAPAS_MAPA = {
+  fuerza: ["Zona", "Tensión social: nivel de riesgo de cualquier protesta en la zona", [0.3, 0.5, 0.7], "prob_zona"],
+  extractivo: ["Operación", "Nivel de riesgo de paro, bloqueo o toma contra la mina", [0.15, 0.25, 0.4], "prob_zona_extractivo"],
+  sutran: ["Carretera", "Vías cortadas hoy según la SUTRAN. No es pronóstico", null] };
+let CAPA = "extractivo";
+const ley = () => { const c = CAPAS_MAPA[CAPA]; return (actual === "pais" || PAIS_VISTA)
+  ? `${SEL ? esc(SEL.t) : "Mapa del país"}<span class="capas">${Object.entries(CAPAS_MAPA).map(([k, [t]]) => `<button type="button" data-capa="${k}" aria-pressed="${k === CAPA}">${t}</button>`).join("")}</span><small>${c[1]}
+    ${c[2] ? `<span class="barra" role="img" aria-label="Escala: menos de ${pct(c[2][0])}, ${pct(c[2][0])} a ${pct(c[2][1])}, ${pct(c[2][1])} a ${pct(c[2][2])}, ${pct(c[2][2])} o más"></span><span class="marcas">${c[2].map(v => `<span>${pct(v)}</span>`).join("")}</span>` : ""}
+    <span class="esc">${c[2] ? `<span><i class="punto"></i>Protesta anunciada</span>` : ""}<span><i class="punto negro"></i>Vía cortada (SUTRAN)</span><span><i class="via-l"></i>Vía, al acercarse</span></span></small>`
   : (FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Su ruta de salida")  // el % de la vía ya está en el panel: el mapa dice qué es cada color
   + (SEL ? (SEL.tr.length ? `<small><i class="rojo"></i>${/se suma/.test(SEL.etq) ? "Anunciaron que se suman" : SEL.tr2.length ? "Más probable" : "Tramos que puede cortar"}${SEL.tr2.length ? `<br><i class="naranja"></i>Posible` : ""}<br><i class="punto"></i>${/se suma/.test(SEL.etq) ? "Base que se suma" : SEL.etq ? "Donde más bloquearon antes" : "Dónde es la protesta"}</small>` : "")
-    : `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`);
+    : `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`); };
+document.addEventListener("click", e => { const b = e.target.closest("[data-capa]"); if (!b) return;
+  CAPA = b.dataset.capa; document.querySelectorAll(".leyenda-via").forEach(l => l.innerHTML = ley()); peru();
+  if (actual === "pais" && !pila.length) { document.getElementById("vista").innerHTML = VISTAS.pais(); conectar(); } });  // la lista del panel sigue a la capa
 function ver(us, t, tr = [], tr2 = [], etq = "") { SEL = (us && us.length) || tr.length ? { us: us || [], t, tr, tr2, etq } : null; if (ANCHO.matches && mapa) verMapa(); }
 let PULSO, PAIS_VISTA = false;
 function peru() {
@@ -638,15 +687,16 @@ function peru() {
     const poner = () => {
       const a = u => A.get(u) || {}, centro = f => { const cs = JSON.stringify(f.geometry.coordinates).match(/-?\d+\.?\d*,-?\d+\.?\d*/g).map(c => c.split(",").map(Number));
           return [cs.reduce((x, c) => x + c[0], 0) / cs.length, cs.reduce((x, c) => x + c[1], 0) / cs.length]; };
-        const zs = g.features.filter(f => +a(f.properties.u).operacion_extractiva === 1).map(f => ({ ...f, properties: { ...f.properties, p: +a(f.properties.u).prob_zona_extractivo || 0 } }));
+        const zs = g.features.filter(f => +a(f.properties.u).operacion_extractiva === 1).map(f => ({ ...f, properties: { ...f.properties, p: +a(f.properties.u)[CAPAS_MAPA[CAPA][3] || "prob_zona_extractivo"] || 0 } }));
         const top = zs.filter(f => !/0101$/.test(f.properties.u) && !/^(1501|0701)/.test(f.properties.u)).sort((x, y) => y.properties.p - x.properties.p).slice(0, 10)
-          .map((f, k) => ({ type: "Feature", properties: { k: k + 1, t: `${lugar(f.properties.u)} ${pct(f.properties.p)}` }, geometry: { type: "Point", coordinates: centro(f) } }));
+          .map((f, k) => ({ type: "Feature", properties: { k: k + 1, t: `${lugar(f.properties.u)} ${f.properties.p >= 0.95 ? "95% o más" : pct(f.properties.p)}` }, geometry: { type: "Point", coordinates: centro(f) } }));
       const porU = new Map(g.features.map(f => [f.properties.u, f]));
       const ev = [...PAIS.map((x, k) => ({ x, k })).filter(({ x }) => x.viene)  // un punto por foco de la protesta
             .flatMap(({ x, k }) => [...new Set([String(x.e.ubigeo), ...(x.e.focos || [])])].filter(u => u.length === 6 && porU.has(u))
               .map(u => ({ type: "Feature", properties: { k, s: 0, t: x.t }, geometry: { type: "Point", coordinates: centro(porU.get(u)) } }))),
           ...(D.sutran || []).filter(b => b.lat && b.lng).map(b => ({ type: "Feature", properties: { k: -1, s: 1, t: `Vía ${b.via} bloqueada` }, geometry: { type: "Point", coordinates: [+b.lng, +b.lat] } }))];
-      if (mapa.getSource("peru-ev")) mapa.getSource("peru-ev").setData({ type: "FeatureCollection", features: ev });
+      if (mapa.getSource("peru-ev")) { mapa.getSource("peru-ev").setData({ type: "FeatureCollection", features: ev });
+        mapa.getSource("peru").setData({ type: "FeatureCollection", features: zs }); mapa.getSource("peru-top").setData({ type: "FeatureCollection", features: top }); }
       if (!mapa.getSource("peru")) {
         mapa.addSource("peru", { type: "geojson", data: { type: "FeatureCollection", features: zs } });
         mapa.addSource("peru-vias", { type: "geojson", data: rg });
@@ -680,7 +730,11 @@ function peru() {
           else new maplibregl.Popup().setLngLat(ev.lngLat).setHTML(`<b>${esc(ev.features[0].properties.t)}</b><br>Según SUTRAN`).addTo(mapa); });
         mapa.on("mouseenter", "peru-ev", () => mapa.getCanvas().style.cursor = "pointer"); mapa.on("mouseleave", "peru-ev", () => mapa.getCanvas().style.cursor = "");
       }
-      CAPAS.forEach(c => mapa.setLayoutProperty(c, "visibility", on ? "visible" : "none"));
+      const [b1, b2, b3] = CAPAS_MAPA[CAPA][2] || [0.15, 0.25, 0.4], vivo = CAPA === "sutran";
+      mapa.setPaintProperty("peru", "fill-color", ["step", ["get", "p"], "#f1d9c6", b1, "#e3a67c", b2, "#c8642f", b3, "#8a3213"]);
+      mapa.setPaintProperty("peru", "fill-opacity", ["step", ["get", "p"], 0.25, b1, 0.55, b2, 0.75, b3, 0.85]);
+      mapa.setFilter("peru-ev", vivo ? ["==", ["get", "s"], 1] : null);
+      CAPAS.forEach(c => mapa.setLayoutProperty(c, "visibility", on && !(vivo && /^peru(-l|-top|-top-t)?$/.test(c)) ? "visible" : "none"));
       ["ops", "ops-t", "tramos", "tramos-l", "vias-c", "vias", "rotulos"].forEach(c => mapa.getLayer(c) && mapa.setLayoutProperty(c, "visibility", on ? "none" : "visible"));
       if (on && !SEL) mapa.fitBounds([[-81.4, -18.4], [-68.6, -0.03]], { padding: 30, duration: 900 });
     };
@@ -764,7 +818,8 @@ function conectar() {
   document.querySelectorAll("[data-op]").forEach(b => b.onclick = () => abrir(detalleOp(b.dataset.op)));
   document.querySelectorAll("[data-caso]").forEach(b => b.onclick = () => abrir(detalleCaso(X.casos[+b.dataset.caso])));
   document.querySelectorAll("[data-dcaso]").forEach(b => b.onclick = () => abrir(detalleCaso(D.casos[+b.dataset.dcaso])));
-  document.querySelectorAll("[data-distrito]").forEach(b => b.onclick = () => abrir(detalleDistrito(b.dataset.distrito)));
+  document.querySelectorAll("[data-distrito]").forEach(b => b.onclick = () => abrir(detalleDistrito(b.dataset.distrito, b.dataset.dcapa || "extractivo")));
+  document.querySelectorAll("[data-ruta]").forEach(b => b.onclick = () => { const h = document.getElementById("ruta-hoy"); if (h) h.scrollIntoView({ behavior: "smooth", block: "start" }); });
   document.querySelectorAll("[data-vermapa]").forEach(b => b.onclick = () => { PAIS_VISTA = actual === "pais"; ir("mapa"); });
 }
 document.querySelector("nav").onclick = e => { const b = e.target.closest("button"); if (b) { SEL = null; PAIS_VISTA = false; ir(b.dataset.v); } };

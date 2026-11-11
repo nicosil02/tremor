@@ -16,3 +16,4 @@ datos/cache/
 Thumbs.db
 # Los datos (base y CSV) van en la rama `datos`, no en main (ver T027)
 datos/*
+.streamlit/secrets.toml

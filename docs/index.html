@@ -104,15 +104,22 @@
   .costo p.listo { color: var(--tinta); font-weight: 650; }
   .costos .comun { font-size: 13.5px; color: var(--tinta-2); }
 
-  .servicios { display: grid; grid-template-columns: 7fr 5fr; grid-template-rows: auto auto; gap: 20px; margin-top: 48px; }
+  .servicios { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; gap: 20px; margin-top: 48px; }
   .servicio { border-radius: 16px; padding: 30px 30px 28px; background: var(--piedra); position: relative; overflow: hidden; min-height: 250px; display: flex; flex-direction: column; }
   .servicio h3 { font-size: 24px; }
   .servicio p { color: var(--tinta-2); margin-top: 10px; max-width: 44ch; }
   .servicio .vivo { margin-top: auto; padding-top: 24px; }
+  .niveles { list-style: none; margin: 20px 0 0; padding: 0; }
+  .niveles li { display: grid; grid-template-columns: 110px 1fr; grid-template-rows: auto auto; column-gap: 14px; align-items: baseline; padding: 12px 0 12px 14px; border-left: 5px solid var(--acento); border-bottom: 1px solid rgb(0 0 0 / .08); }
+  .niveles small { grid-row: 1 / 3; align-self: center; color: var(--acento); font-weight: 800; text-transform: uppercase; font-size: 13px; letter-spacing: .04em; }
+  .niveles b { font: 800 44px/1 Archivo; font-variation-settings: var(--ancha); color: var(--acento); font-variant-numeric: tabular-nums; }
+  .niveles span { grid-column: 2; color: var(--tinta-2); font-size: 14px; }
+  .nota-niveles { font-size: 13px; color: var(--tinta-2); margin-top: 10px; }
+  .r-zona { --acento: #8a6d1f; } .r-op { --acento: var(--cobre-4); } .r-via { --acento: var(--verde); }
   .servicio.alertas { grid-row: span 2; background: var(--pardo); color: #f4ebe5; }
   .servicio.alertas > p { color: #cdb9ac; }
-  .pila { position: relative; height: 240px; margin-top: auto; }
-  .pila .notif { position: absolute; left: 0; right: 0; top: 0; max-width: 380px; opacity: 0; }
+  .pila { position: relative; height: 300px; margin-top: auto; }
+  .pila .notif { position: absolute; left: 0; right: 0; top: 0; opacity: 0; }  /* del ancho de la tarjeta */
   .servicio.prediccion { background: var(--cobre-1); }
   .medidor { display: flex; align-items: baseline; gap: 14px; }
   .medidor b { font: 800 56px/1 Archivo; font-variation-settings: var(--ancha); color: var(--cobre-4); font-variant-numeric: tabular-nums; }
@@ -384,7 +391,7 @@
   <section id="servicios">
     <div class="ancho">
       <h2>Tres servicios en una sola plataforma</h2>
-      <p class="bajada">Avisos para actuar hoy, seguimiento para entender el clima social y predicción para planificar el trimestre.</p>
+      <p class="bajada">Avisos para actuar hoy, seguimiento para entender el clima social y niveles de riesgo para planificar el trimestre.</p>
       <div class="servicios">
         <div class="servicio alertas">
           <h3>Alertas</h3>
@@ -402,9 +409,14 @@
             <div class="onda" aria-hidden="true"><i style="animation-delay: 0s"></i><i style="animation-delay: .1s"></i><i style="animation-delay: .2s"></i><i style="animation-delay: .3s"></i><i style="animation-delay: .4s"></i><i style="animation-delay: .5s"></i><i style="animation-delay: .6s"></i><i style="animation-delay: .7s"></i><i style="animation-delay: .8s"></i><i style="animation-delay: .9s"></i><i style="animation-delay: .25s"></i><i style="animation-delay: .45s"></i><i style="animation-delay: .65s"></i><i style="animation-delay: .85s"></i><i style="animation-delay: .15s"></i><i style="animation-delay: .35s"></i></div></div>
         </div>
         <div class="servicio prediccion">
-          <h3>Predicción</h3>
-          <p>La probabilidad de una medida de fuerza contra la operación en cada zona, a tres meses, con sus razones.</p>
-          <div class="vivo"><div class="medidor"><b data-n="49">49%</b><span>Coporaque, Espinar: la zona con mayor alerta este trimestre</span></div><div class="barrita" style="width: 49%"></div></div>
+          <h3>Nivel de riesgo</h3>
+          <p>Tres riesgos distintos, cada uno con su nivel. Coporaque, Espinar, este trimestre:</p>
+          <ol class="niveles">
+            <li class="r-zona"><small>Zona</small><b data-n="85">85%</b><span>Tensión social: cualquier protesta en la zona</span></li>
+            <li class="r-op"><small>Operación</small><b data-n="49">49%</b><span>Paro, bloqueo o toma contra la mina</span></li>
+            <li class="r-via"><small>Carretera</small><b>Libre</b><span>Cortes en su ruta hoy. No es un pronóstico</span></li>
+          </ol>
+          <p class="nota-niveles">Zona y operación: nivel a tres meses, no una fecha.</p>
         </div>
       </div>
     </div>
@@ -418,7 +430,7 @@
           <li class="activo"><h3>Monitoreo</h3><p>Defensoría, vías interrumpidas de la SUTRAN, 407 medios de prensa nacional y regional y 286 radios locales en castellano, quechua y aimara.</p></li>
           <li><h3>Convocatorias <small>Alertas</small></h3><p>Un modelo de lenguaje codifica cada nota: acción, convocantes, adversario, lugar y fecha.</p></li>
           <li><h3>Ánimo hacia el proyecto <small>Seguimiento</small></h3><p>Cuántas veces se menciona su proyecto frente a lo habitual y en qué tono.</p></li>
-          <li><h3>Predicción a tres meses <small>Predicción</small></h3><p>Un modelo entrenado con 20 años de conflictos estima la probabilidad de una medida de fuerza en cada zona con operación.</p></li>
+          <li><h3>Nivel de riesgo a tres meses <small>Nivel de riesgo</small></h3><p>Un modelo entrenado con 20 años de conflictos da a cada zona con operación dos niveles: tensión social en la zona y medida de fuerza contra la mina.</p></li>
           <li><h3>Aviso</h3><p>Por Telegram y en la plataforma, solo lo que afecta a sus operaciones o a su ruta, con la fuente original.</p></li>
         </ol>
       </div>
@@ -690,13 +702,13 @@ if (window.gsap && !quieto) {
   // Servicios: llegan los avisos a la pila, cambia la lengua que se escucha y crece la predicción
   const pila = gsap.utils.toArray(".pila .notif");
   const tp = gsap.timeline({ repeat: -1, repeatDelay: 1.2, paused: true });
-  pila.forEach((n, i) => tp.fromTo(n, { y: -60, opacity: 0, scale: .95 }, { y: i * 76, opacity: 1, scale: 1, duration: .55, ease: "back.out(1.5)" }, i * 1.1));
+  pila.forEach((n, i) => tp.fromTo(n, { y: -60, opacity: 0, scale: .95 }, { y: i * 100, opacity: 1, scale: 1, duration: .55, ease: "back.out(1.5)" }, i * 1.1));
   tp.to(pila, { opacity: 0, y: "+=20", duration: .4, stagger: .05 }, "+=2.4");
   ScrollTrigger.create({ trigger: ".servicios", start: "top 80%", end: "bottom top", onToggle: s => s.isActive ? tp.play() : tp.pause() });
   const lenguas = [...document.querySelectorAll(".lenguas span")]; let li = 0;
   setInterval(() => { li = (li + 1) % lenguas.length; lenguas.forEach((s, i) => s.classList.toggle("on", i === li)); }, 1800);
   ScrollTrigger.create({ trigger: ".prediccion", start: "top 80%", once: true, onEnter: () => {
-    gsap.from(".barrita", { scaleX: 0, duration: 1.4, ease: "expo.out" }); cuenta(document.querySelector(".medidor b"), 1.4); } });
+    document.querySelectorAll(".niveles b[data-n]").forEach(b => cuenta(b, 1.4)); } });
 
   const mm = gsap.matchMedia();
   mm.add("(min-width: 961px)", () => {

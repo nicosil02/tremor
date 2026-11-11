@@ -8,7 +8,7 @@ mcp>=2.1
 truststore>=0.9
 geopandas>=1.0
 scikit-learn>=1.5
-streamlit>=1.40
+streamlit>=1.63
 plotly>=5.24
 py7zr
 xlrd
