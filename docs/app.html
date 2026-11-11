@@ -312,13 +312,14 @@ function armar() {
     const pl = e.plazo && e.plazo >= HOY && !e.suspendido, f = pl ? e.plazo : String(e.fecha_evento || e.fecha_anuncio || "").slice(0, 10), u = String(e.ubigeo);
     const trans = /transportista/i.test(e.actor || "") && !/urbano/i.test(e.actor || "") && !e.urbano, nombra = alias.test(`${e.empresa || ""} ${e.operacion || ""}`);
     if (!nombra && !(trans && u === "00") && !zona.has(u) && !tramoDe(u, e)) continue;
+    if (e.sin_fecha && dias(f) < -21) continue;  // anunciado sin fecha hace más de 3 semanas: ya no es para seguir
     const anun = (e.estado === "anunciada" || pl) && !e.suspendido, viene = anun && !e.sin_fecha && f >= HOY;
     const cerca = unidades.find(x => x.zona.has(u));
     const leve = sinBloqueo(e) && !zona.has(u);  // gremio que no corta vías y solo pasa por la ruta: se informa, no se atiende
     avisos.push({ f, urge: !leve && !e.sin_fecha && viene, tipo: "Protesta", e, cerca, trans, tramo: tramoDe(u, e), tramos: tramos.filter(r => toca(r, u, e)),
       t: `${accion(e)}${e.actor ? ` de ${e.actor.toLowerCase()}` : ""}`,
-      w: viene ? cuando(f) : dia(f),
-      s: [pl ? "vence un plazo, amenazan con nueva medida" : "", u === "00" ? (trans ? "Puede frenar sus despachos" : "Lugar sin precisar") : !zona.has(u) && tramoDe(u, e) ? `${lugar(u)}, en su ruta${sinBloqueo(e) ? ", no suele cortar vías" : ""}` : lugar(u), e.suspendido ? "suspendida" : e.sin_fecha ? "anunciada, todavía sin fecha" : viene ? "" : anun ? "anunciada, sin confirmar" : "ocurrió"].filter(Boolean).join(", ") });
+      w: viene ? cuando(f) : e.sin_fecha && anun ? "sin fecha" : dia(f),
+      s: [pl ? "vence un plazo, amenazan con nueva medida" : "", u === "00" ? (trans ? "Puede frenar sus despachos" : "Lugar sin precisar") : !zona.has(u) && tramoDe(u, e) ? `${lugar(u)}, en su ruta${sinBloqueo(e) ? ", no suele cortar vías" : ""}` : lugar(u), e.suspendido ? "suspendida" : e.sin_fecha ? `anunciada el ${dia(f)}, todavía sin fecha` : viene ? "" : anun ? "anunciada, sin confirmar" : "ocurrió"].filter(Boolean).join(", ") });
   }
   for (const s of D.sutran || []) if (rutas.includes(s.via))
     avisos.push({ f: String(s.fecha_evento || HOY).slice(0, 10), urge: true, tipo: "Bloqueo", sutran: s, t: `Vía ${s.via} bloqueada`, w: "ahora",
@@ -328,6 +329,9 @@ function armar() {
       && !(alAire(m) && avisos.some(x => x.m && alAire(x.m) && x.m.medio === m.medio && x.f === m.fecha)))  // un aviso por radio y día
     avisos.push({ f: m.fecha, urge: false, tipo: TEMA[m.tema] || "En medios", m, t: alAire(m) ? `Hablan de ${m.proyecto} en la radio` : m.titular.replace(/^[^:]{2,25}:\s*/, ""), w: dia(m.fecha),
       s: `${TEMA[m.tema] || "En medios"}, ${m.medio}` });
+  // un anuncio sin fecha sobra si la misma medida ya tiene fecha por venir (el paro nacional se anuncia y luego se fecha)
+  const fechadas = new Set(avisos.filter(x => x.e && !x.e.sin_fecha && x.f >= HOY).map(x => x.t));
+  for (let i = avisos.length - 1; i >= 0; i--) if (avisos[i].e?.sin_fecha && fechadas.has(avisos[i].t)) avisos.splice(i, 1);
   avisos.sort((a, b) => b.urge - a.urge || (a.urge ? a.f.localeCompare(b.f) : b.f.localeCompare(a.f)));
   const casos = (D.casos || []).filter(c => zona.has(String(c.ubigeo)));
   // Estado de cada tramo: lo anunciado manda; si no, lo ocurrido en los últimos 14 días
