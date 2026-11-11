@@ -1,4 +1,4 @@
-"""Tremor en Streamlit Community Cloud: la app real (GitHub Pages) a pantalla completa, sin barra ni menú.
+"""Tremor en Streamlit Community Cloud: la página publicada (landing y app) a pantalla completa, sin barra ni menú.
 
 Sin acceso por usuario para que cualquiera pueda revisar la demo. El acceso por cliente (una cuenta ve solo su
 empresa) está listo en `tremor.acceso` para cuando haya clientes. Los datos del modelo se exploran con
@@ -9,7 +9,7 @@ empresa) está listo en `tremor.acceso` para cuando haya clientes. Los datos del
 import streamlit as st
 import streamlit.components.v1 as componentes
 
-APP = "https://nicosil02.github.io/tremor/app.html?admin"  # la misma app publicada, con todas las mineras
+APP = "https://nicosil02.github.io/tremor/"  # la página completa: qué es, planes, quién está detrás y, desde ahí, la app
 
 st.set_page_config(page_title="Tremor", layout="wide", initial_sidebar_state="collapsed")
 # la barra de Streamlit (Fork, GitHub) se oculta con !important: su propia regla es más fuerte que un selector simple
