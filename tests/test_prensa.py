@@ -408,3 +408,22 @@ def test_animo_historia_mensual():
     a = pd.DataFrame({"proyecto": ["A", "B"], "alza": [2.5, 1.0]})
     historia(con, m, a, "2026-11"); historia(con, m, a, "2026-11")  # dos corridas: se reemplaza, no se duplica
     assert con.execute("SELECT proyecto, menciones, negativas, tono, alza FROM animo_mes ORDER BY proyecto").fetchall() == [("A", 2, 1, 0.0, 2.5), ("B", 1, 1, -1.0, 1.0)]
+
+
+def test_dicho_de_menciones_de_radio(monkeypatch):
+    """Una oración del LLM por mención de radio; 'no habla del proyecto' queda guardado y web.menciones lo deja fuera."""
+    import sqlite3
+    from tremor import animo
+    con = sqlite3.connect(":memory:")
+    con.executescript("""
+        CREATE TABLE nota (id, medio, titular, resumen, enlace, publicado, consulta, filtro);
+        INSERT INTO nota VALUES ('a', 'Radio Calor', 'Radio Calor, en vivo 10/11/2026 13:19 (1)', 'saludos ' || 'x ' || 'los comuneros dicen que Minera Bateas contamina el río', 'https://s/x.m3u8', '2026-11-10', 'radio', NULL),
+                                ('b', 'Radio Feliz', 'Radio Feliz, en vivo 10/11/2026 16:59 (13)', 'la poderosa sangre de Cristo', 'https://s/y.m3u8', '2026-11-10', 'radio', NULL);
+        CREATE TABLE mencion (nota_id, proyecto, fecha, medio, origen, negativos, positivos, tono);
+        INSERT INTO mencion VALUES ('a', 'Minera Bateas', '2026-11-10', 'Radio Calor', 'radio', 1, 0, -1),
+                                   ('b', 'Minera Poderosa', '2026-11-10', 'Radio Feliz', 'radio', 0, 0, 0);
+    """)
+    monkeypatch.setattr("tremor.llm.chat_json", lambda con, s, u, v: {"dicho": "No habla del proyecto" if "Poderosa" in u else "Comuneros dicen que la minera contamina el río."})
+    monkeypatch.setattr(animo, "date", type("D", (), {"today": staticmethod(lambda: __import__("datetime").date(2026, 11, 11))}))
+    assert animo.dicho(con) == 2
+    assert dict(con.execute("SELECT nota_id, dicho FROM mencion_dicho")) == {"a": "Comuneros dicen que la minera contamina el río.", "b": "No habla del proyecto"}

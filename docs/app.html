@@ -201,6 +201,14 @@
   .tres span { grid-column: 2; font-size: 14px; line-height: 1.3; color: var(--tinta-2); }
   .r-zona { --acento: #8a6d1f; } .r-op { --acento: var(--cobre-4); } .r-via { --acento: var(--verde); } .r-via.mal { --acento: var(--rojo); }
   .hoy-pie { margin: 6px 16px 0; font-size: 13px; color: var(--tinta-2); }
+  .rep-cab { margin: 0 16px 4px; font-size: 15px; color: var(--tinta-2); } .rep-cab b { font-size: 26px; font-weight: 750; color: var(--tinta); margin-right: 4px; }
+  .rep-aviso { margin: 0 16px 6px; font-size: 13px; font-weight: 600; color: var(--rojo); }
+  .rep-barra { display: flex; gap: 2px; height: 16px; margin: 4px 16px 6px; border-radius: 8px; overflow: hidden; }
+  .rep-barra button { all: unset; display: block; cursor: pointer; } .rep-barra.filtra button[aria-pressed=false] { opacity: .3; }
+  .rep-ley { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0 16px 8px; font-size: 13px; color: var(--tinta-2); }
+  .rep-ley button { all: unset; cursor: pointer; padding: 2px 8px; border-radius: 999px; border: 1px solid transparent; } .rep-ley button[aria-pressed=true] { border-color: var(--linea); background: #eaefed; color: var(--tinta); }
+  .rep-ley button.todas { color: var(--cobre-4); font-weight: 600; } .rep-ley button:focus-visible, .rep-barra button:focus-visible { outline: 3px solid var(--cobre); }
+  .rep-ley i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; }
   .pie { padding: 18px 16px; font-size: 14px; color: var(--tinta-2); } .pie a { color: var(--tinta-2); }
   /* Recorrido la primera vez: un recorte iluminado (sombra enorme) y una tarjeta con el paso */
   #tour-luz { position: fixed; z-index: 50; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(28, 38, 41, .6); pointer-events: none; }
@@ -333,7 +341,7 @@ function armar() {
   const via = cadena.length ? 1 - cadena.reduce((q, r) => q * (1 - r.p), 1) : null;
   return { unidades, avisos, rutas, casos, cadena, via };
 }
-let X;
+let X, TONO_F = null;  // tono elegido en la barra de Reputación
 
 const fila = (cls, i, t, w, s, attrs = "") => `<li><button type="button" class="fila ${cls}" ${attrs}><i></i><span class="t">${esc(t)}</span><span class="w">${esc(w)}</span><span class="s">${esc(s)}</span></button></li>`;
 const filaAviso = (x, k) => fila(x.urge ? "urge" : "", 0, x.t, x.w, x.s, `data-aviso="${k}"`);
@@ -350,15 +358,31 @@ function cabecera(atras, txt) {
 const VISTAS = {
   avisos() {
     // Atender: anunciado para hoy o después. Para seguir: sin fecha, gremios que no cortan vías y menciones. Pasados: ya ocurrió o la fecha pasó
-    const u = X.avisos.filter(x => x.urge), r = X.avisos.filter(x => !x.urge && (x.m || !x.e || x.e.sin_fecha || x.f >= HOY)),
+    const u = X.avisos.filter(x => x.urge), r = X.avisos.filter(x => !x.urge && !x.m && (!x.e || x.e.sin_fecha || x.f >= HOY)),
       pasados = X.avisos.filter(x => !x.urge && x.e && !x.e.sin_fecha && x.f < HOY);
     cabecera(false);
     const prox = u[0], an = (D.animo || []).find(a => EMPRESAS[empresa][1].test(a.proyecto || ""));
+    // Reputación: las menciones de la semana por tono; tocar un color de la barra deja solo esas
+    const TONO = { "-1": ["var(--rojo)", "Crítica"], "0": ["#9aa6a5", "Neutra"], "1": ["var(--verde)", "Favorable"] };
+    const alias = EMPRESAS[empresa][1], todas = (D.menciones || []).filter(m => alias.test(m.proyecto || "") && dias(m.fecha) >= -6);
+    const nT = t => todas.filter(m => String(m.tono) === t).length, ms = todas.filter(m => !TONO_F || String(m.tono) === TONO_F).slice(0, 8);
+    // de un fragmento de radio, la frase donde se nombra a la empresa (±70 letras), no el inicio del fragmento
+    const ventana = (t, rx) => { const i = t.search(rx); if (i < 0) return t.slice(0, 110).trim() + "…";
+      const a = Math.max(0, i - 70), b = Math.min(t.length, i + 70); return (a ? "…" : "") + t.slice(a, b).trim() + (b < t.length ? "…" : ""); };
     const hoy = `<div class="hoy">${prox ? `<button type="button" data-aviso="${X.avisos.indexOf(prox)}"><b class="c1">${esc(prox.w)}</b><span>${esc(prox.t)}</span></button>` : `<div><b>–</b><span>Nada anunciado</span></div>`}
-      <div><b>${an ? Math.round(an.menciones_7d) : 0}</b><span>${an ? `Reputación: menciones en 7 días, ${pct(an.pct_negativo)} negativas` : "Reputación: sin menciones en 7 días"}</span></div></div>
+      <div><b>${todas.length}</b><span>${todas.length ? `Reputación: menciones en 7 días, ${pct(nT("-1") / todas.length)} críticas` : "Reputación: sin menciones en 7 días"}</span></div></div>
       <p class="hoy-pie">Lo de hoy en radios, medios, Defensoría y SUTRAN. No cambia el nivel de riesgo.</p>`;
+    const cab = todas.length ? `<b>${todas.length}</b> menciones en 7 días${an && an.base_7d >= 1 ? `, ×${Math.round(todas.length / an.base_7d)} lo habitual` : ""}, ${pct(nT("-1") / todas.length)} críticas`
+      : `<b>0</b> menciones esta semana${an && an.base_7d ? `, lo habitual son ${an.base_7d} por semana` : ""}`;
+    const seg = t => nT(t) ? `<button type="button" data-tono="${t}" aria-pressed="${TONO_F === t}" style="flex:${nT(t)};background:${TONO[t][0]}" title="${TONO[t][1]}s"></button>` : "";
+    const barra = todas.length ? `<div class="rep-barra${TONO_F ? " filtra" : ""}" role="group" aria-label="Menciones por tono">${["-1", "0", "1"].map(seg).join("")}</div>
+      <p class="rep-ley">${["-1", "0", "1"].filter(t => nT(t)).map(t => `<button type="button" data-tono="${t}" aria-pressed="${TONO_F === t}"><i style="background:${TONO[t][0]}"></i>${nT(t)} ${TONO[t][1].toLowerCase()}${nT(t) > 1 ? "s" : ""}</button>`).join("")}${TONO_F ? `<button type="button" data-tono="${TONO_F}" class="todas">Ver todas</button>` : ""}</p>` : "";
+    const rep = `<h2 id="reputacion">Reputación</h2><p class="rep-cab">${cab}</p>${barra}${an && an.aviso ? `<p class="rep-aviso">${esc(an.aviso.replace(/(\d{4})-(\d{2})-(\d{2})/g, (_, y, m, d) => dia(`${y}-${m}-${d}`)))}</p>` : ""}
+      ${ms.length ? `<ul>${ms.map(m => { const k = X.avisos.findIndex(x => x.m === m), [col, tn] = TONO[String(m.tono)] || TONO["0"], aire = /, en vivo /.test(m.titular || "");
+        return `<li><button type="button" class="fila"${k >= 0 ? ` data-aviso="${k}"` : ` data-mencion="${D.menciones.indexOf(m)}"`}><i style="background:${col}"></i><span class="t">${esc(m.dicho || (aire ? ventana(m.resumen || "", alias) : m.titular.replace(/^[^:]{2,25}:\s*/, "")))}</span><span class="w">${esc(dia(m.fecha))}</span><span class="s">${tn}, ${esc(TEMA[m.tema] || "en medios")}, ${esc(m.medio)}</span></button></li>`; }).join("")}</ul>`
+        : `<p class="vacio">Nadie habló de la empresa en radios ni medios esta semana.</p>`}`;
     return hoy + (u.length ? `<h2>Atender</h2><ul>${u.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<h2>Atender</h2><p class="vacio">Nada anunciado en su zona ni en sus rutas.</p>`)
-      + `<h2>Para seguir</h2>` + (r.length ? `<ul>${r.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas ni notas sobre la empresa.</p>`)
+      + rep + `<h2>Para seguir</h2>` + (r.length ? `<ul>${r.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas ni notas sobre la empresa.</p>`)
       + (pasados.length ? `<h2>Pasados</h2><ul>${pasados.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : "")
       + `<p class="pie">Datos al ${dia(D.creado)}. <a href="informe.html?e=${empresa.toLowerCase().replace(/^las /, "")}" target="_blank" rel="noopener">Informe del mes en PDF</a> · <a href="#" data-tour>Ver el recorrido</a></p>`;
   },
@@ -525,8 +549,10 @@ function detalleAviso(k) {
   cabecera(true, x.tipo);
   if (x.m || x.sutran) ver(null);
   if (x.m) { const m = x.m, tono = m.tono < 0 ? ["tono-neg", "Crítico con la empresa"] : m.tono > 0 ? ["tono-pos", "Favorable a la empresa"] : null;
-    return `<div class="nota"><h3>${esc(m.titular)}</h3><p class="meta">${esc(m.medio)}, ${dia(m.fecha)}${tono && m.tema !== "judicial" ? `. <b class="${tono[0]}">${tono[1]}</b>` : ""}</p>
-      ${m.resumen ? `<p class="cita">${esc(m.resumen)}${m.resumen.length >= 300 ? "…" : ""}</p>` : ""}<a class="ir" href="${esc(m.enlace)}" target="_blank" rel="noopener">Leer en ${esc(m.medio)}</a></div>`; }
+    const aire = /, en vivo /.test(m.titular || ""), hora = aire ? (m.titular.match(/\d\d:\d\d/) || [""])[0] : "";
+    // radio: lo que se dijo según el LLM como título, el fragmento literal entre comillas y el enlace para escucharla
+    return `<div class="nota"><h3>${esc(m.dicho || (aire ? `Hablan de ${m.proyecto} en la radio` : m.titular))}</h3><p class="meta">${esc(m.medio)}, ${dia(m.fecha)}${hora ? ` ${hora}` : ""}${tono && m.tema !== "judicial" ? `. <b class="${tono[0]}">${tono[1]}</b>` : ""}</p>
+      ${m.resumen ? `<blockquote class="cita">«${esc(m.resumen)}»${aire ? `<small>Transcripción automática del fragmento; puede tener errores.</small>` : ""}</blockquote>` : ""}<a class="ir" href="${esc(m.enlace)}" target="_blank" rel="noopener">${aire ? "Escuchar" : "Leer en"} ${esc(m.medio)}</a></div>`; }
   if (x.sutran) { const s = x.sutran;
     return `<div class="nota"><h3>${esc(x.t)}</h3><p class="meta">${esc(titulo(s.distrito || ""))}, ${esc(titulo(s.region || ""))}${s.km ? `, km ${esc(s.km)}` : ""}. Según SUTRAN.</p>
       ${s.contexto ? `<p class="cita">${esc(s.contexto)}</p>` : ""}</div>`; }
@@ -831,14 +857,18 @@ function conectar() {
   document.querySelectorAll("[data-caso]").forEach(b => b.onclick = () => abrir(detalleCaso(X.casos[+b.dataset.caso])));
   document.querySelectorAll("[data-dcaso]").forEach(b => b.onclick = () => abrir(detalleCaso(D.casos[+b.dataset.dcaso])));
   document.querySelectorAll("[data-distrito]").forEach(b => b.onclick = () => abrir(detalleDistrito(b.dataset.distrito, b.dataset.dcapa || "extractivo")));
+  document.querySelectorAll("[data-mencion]").forEach(b => b.onclick = () => { const m = D.menciones[+b.dataset.mencion]; abrir(detalleAviso({ m, tipo: TEMA[m.tema] || "En medios" })); });
+  document.querySelectorAll("[data-tono]").forEach(b => b.onclick = () => { TONO_F = TONO_F === b.dataset.tono ? null : b.dataset.tono;
+    const y = scrollY; document.getElementById("vista").innerHTML = VISTAS.avisos(); conectar(); scrollTo(0, y); });
   document.querySelectorAll("[data-ruta]").forEach(b => b.onclick = () => { const h = document.getElementById("ruta-hoy"); if (h) h.scrollIntoView({ behavior: "smooth", block: "start" }); });
   document.querySelectorAll("[data-vermapa]").forEach(b => b.onclick = () => { PAIS_VISTA = actual === "pais"; ir("mapa"); });
   document.querySelectorAll("[data-tour]").forEach(b => b.onclick = e => { e.preventDefault(); tour(0); });
 }
 
-// Recorrido de 4 pasos la primera vez: cada paso abre su pestaña, ilumina un elemento y explica en dos frases
+// Recorrido de 5 pasos la primera vez: cada paso abre su pestaña, ilumina un elemento y explica en dos frases
 const PASOS = () => [
   ["avisos", "#vista h2", "Monitoreo", "Lo que dicen hoy radios, medios, la Defensoría y la SUTRAN. En Atender está lo que puede frenar a la empresa, cada aviso con su fuente."],
+  ["avisos", "#reputacion", "Reputación", "Cuánto se habla de su empresa en radios y medios esta semana y en qué tono. Toque un color de la barra para ver solo esas menciones."],
   ["operaciones", ".tres", "Riesgo", "Tres riesgos distintos: Zona, Operación y Carretera. Los porcentajes son nivel de riesgo a 3 meses, no una fecha. Toque uno para ver el porqué."],
   [ANCHO.matches ? "operaciones" : "mapa", "#mapa", "Su ruta en el mapa", "Los distritos de su ruta de salida, más oscuro es más riesgo. Toque un tramo y el camión lo recorre."],
   ["pais", ANCHO.matches ? ".leyenda-via .capas" : "nav [data-v=pais]", "País", "Todo el Perú con tres capas: Zona, Operación y Carretera. Toque una zona para ver su porqué."]];

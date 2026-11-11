@@ -86,7 +86,7 @@ def provincias():
 
 def actualizar(con, hoy=None):
     notas = pd.read_sql("SELECT id, medio, titular, resumen, substr(publicado, 1, 10) AS fecha, consulta FROM nota "
-                        "WHERE publicado IS NOT NULL", con)
+                        "WHERE publicado IS NOT NULL AND COALESCE(filtro, '') NOT IN ('religioso', 'musica_o_ruido', 'aviso', 'medio_extranjero')", con)
     filas = []
     for r in notas.itertuples():
         for nombre, frase in menciones(f"{r.titular}. {r.resumen or ''}".replace(r.medio or "\0", "")):  # sin el nombre del medio
@@ -158,9 +158,46 @@ def senal(con):
     return {p: "; ".join(v) for p, v in salida.items()}
 
 
+DICHO = ("Lees la transcripción automática, con errores, de un fragmento de radio peruana donde se nombra a una empresa o proyecto "
+         "extractivo. Escribe en UNA oración de máximo 25 palabras, en castellano llano, qué se dijo sobre ese proyecto y quién lo dijo "
+         "(por rol: un dirigente, un locutor, un comunero, una autoridad…), sin nombres de personas. Cuenta solo lo que se opina o "
+         "informa SOBRE la operación: reclamos, apoyos, denuncias, acuerdos, anuncios. Si son saludos a trabajadores o vecinos, una "
+         "mención de pasada, publicidad de la propia empresa, música o prédica, di exactamente \"no habla del proyecto\". "
+         'Responde JSON {"dicho": "<oración>"}.')
+
+
+def dicho(con, max_solicitudes=60):
+    """Qué se dijo del proyecto en cada mención de radio de los últimos 30 días, en una oración del LLM (tabla mencion_dicho),
+    para que el aviso y la ficha se entiendan sin leer la transcripción. Sin cupo, se sigue en la próxima corrida."""
+    from tremor.llm import chat_json, SinCuota, RespuestaInvalida
+    con.execute("CREATE TABLE IF NOT EXISTS mencion_dicho (nota_id TEXT, proyecto TEXT, dicho TEXT, PRIMARY KEY (nota_id, proyecto))")
+    desde = (date.today() - timedelta(days=30)).isoformat()
+    xs = con.execute("""SELECT m.nota_id, m.proyecto, n.resumen FROM mencion m JOIN nota n ON n.id = m.nota_id
+                        WHERE m.origen = 'radio' AND m.fecha >= ? AND n.resumen IS NOT NULL
+                          AND NOT EXISTS (SELECT 1 FROM mencion_dicho d WHERE d.nota_id = m.nota_id AND d.proyecto = m.proyecto)
+                        ORDER BY m.fecha DESC""", (desde,)).fetchall()[:max_solicitudes]
+    hechas = 0
+    for nota_id, proyecto, texto in xs:
+        mm = ALIAS[proyecto].search(texto) if proyecto in ALIAS else None
+        trozo = texto[max(0, mm.start() - 400):mm.end() + 400] if mm else texto[:800]
+        try:
+            r = chat_json(con, DICHO, f"Proyecto: {proyecto}\n\n{trozo}", "dicho1")
+        except SinCuota as e:
+            print(f"  dicho de menciones pendiente: {str(e)[:80]}")
+            break
+        except RespuestaInvalida:
+            continue
+        con.execute("INSERT OR REPLACE INTO mencion_dicho VALUES (?, ?, ?)", (nota_id, proyecto, (r.get("dicho") or "").strip()[:300]))
+        hechas += 1
+    con.commit()
+    return hechas
+
+
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
-    m, a = actualizar(conectar())
+    con = conectar()
+    m, a = actualizar(con)
+    print(f"{dicho(con)} menciones de radio resumidas por el LLM")
     print(f"{len(m)} menciones en {m.nota_id.nunique()} notas ({(m.origen == 'radio').sum()} de radio)")
     print(a[a.menciones_7d > 0][["proyecto", "menciones_7d", "base_7d", "alza", "pct_negativo", "tono_7d"]]
           .sort_values("menciones_7d", ascending=False).to_string(index=False))

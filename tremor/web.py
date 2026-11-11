@@ -418,21 +418,40 @@ def focos(con, n=5):
     return out
 
 
+RUIDO = "'religioso', 'musica_o_ruido', 'aviso', 'medio_extranjero'"  # fragmentos que no hablan de nadie
+
+
 def menciones(con):
     """Lo que dijeron radio y medios de cada proyecto en los últimos 30 días: titular, quién, cuándo, el tono y un
     fragmento. Una por titular (la misma nota llega por el feed del medio y por Google News: se queda el enlace directo)."""
     desde = (date.today() - timedelta(days=30)).isoformat()
     con.execute("CREATE TABLE IF NOT EXISTS nota_tema (nota_id TEXT PRIMARY KEY, tema TEXT, p_tema REAL, tono INTEGER, p_tono REAL)")
     # tema y tono del transformer (tremor.clasifica); si la nota aún no pasó por él, el tono del léxico
-    m = tabla(con, "SELECT m.proyecto, m.fecha, m.medio, m.origen, COALESCE(t.tono, m.tono) AS tono, t.tema, n.titular, n.resumen, n.enlace "
+    con.execute("CREATE TABLE IF NOT EXISTS mencion_dicho (nota_id TEXT, proyecto TEXT, dicho TEXT, PRIMARY KEY (nota_id, proyecto))")
+    m = tabla(con, "SELECT m.proyecto, m.fecha, m.medio, m.origen, COALESCE(t.tono, m.tono) AS tono, t.tema, n.titular, n.resumen, n.enlace, "
+                   "d.dicho "
                    "FROM mencion m JOIN nota n ON n.id = m.nota_id LEFT JOIN nota_tema t ON t.nota_id = m.nota_id "
-                   f"WHERE m.fecha >= '{desde}' ORDER BY m.fecha DESC")
+                   "LEFT JOIN mencion_dicho d ON d.nota_id = m.nota_id AND d.proyecto = m.proyecto "
+                   f"WHERE m.fecha >= '{desde}' AND COALESCE(n.filtro, '') NOT IN ({RUIDO}) "
+                   "AND COALESCE(d.dicho, '') NOT LIKE 'no habla%' ORDER BY m.fecha DESC")  # el LLM leyó que no era del proyecto
     if not len(m):
         return []
     m["google"] = m.enlace.str.contains("news.google")
     m = m.sort_values(["google", "fecha"], ascending=[True, False]).drop_duplicates(["proyecto", "titular"]).sort_values("fecha", ascending=False)
-    m["resumen"] = m.resumen.fillna("").str.split(r'"use strict"|The post |\[…\]', regex=True).str[0].str.strip().str.slice(0, 300)
+    m["resumen"] = m.resumen.fillna("").str.split(r'"use strict"|The post |\[…\]', regex=True).str[0].str.strip()
+    # en radio, el fragmento alrededor de donde se nombra al proyecto; en prensa, el inicio del resumen
+    from tremor.animo import ALIAS
+    m["resumen"] = [alrededor(t, ALIAS.get(p)) if o == "radio" else t[:300] for t, o, p in zip(m.resumen, m.origen, m.proyecto)]
     return registros(m.drop(columns="google"))
+
+
+def alrededor(texto, rx, ancho=150):
+    """El trozo de `texto` alrededor de la primera coincidencia de `rx`; si no la hay, el inicio."""
+    mm = rx.search(texto) if rx else None
+    if not mm:
+        return texto[:300]
+    a, b = max(0, mm.start() - ancho), min(len(texto), mm.end() + ancho)
+    return ("…" if a else "") + texto[a:b].strip() + ("…" if b < len(texto) else "")
 
 
 def calibracion(con):
