@@ -158,8 +158,8 @@ def senal(con):
     return {p: "; ".join(v) for p, v in salida.items()}
 
 
-DICHO = ("Lees la transcripción automática, con errores, de un fragmento de radio peruana donde se nombra a una empresa o proyecto "
-         "extractivo. Escribe en UNA oración de máximo 25 palabras, en castellano llano, qué se dijo sobre ese proyecto y quién lo dijo "
+DICHO = ("Lees una nota de prensa o la transcripción automática, con errores, de un fragmento de radio peruana donde se nombra a una "
+         "empresa o proyecto extractivo. Escribe en UNA oración de máximo 25 palabras, en castellano llano, qué pasó o qué se dijo sobre ese proyecto y quién lo dijo "
          "(por rol: un dirigente, un locutor, un comunero, una autoridad…), sin nombres de personas. Cuenta solo lo que se opina o "
          "informa SOBRE la operación: reclamos, apoyos, denuncias, acuerdos, anuncios. Si son saludos a trabajadores o vecinos, una "
          "mención de pasada, publicidad de la propia empresa, música o prédica, di exactamente \"no habla del proyecto\". "
@@ -167,13 +167,14 @@ DICHO = ("Lees la transcripción automática, con errores, de un fragmento de ra
 
 
 def dicho(con, max_solicitudes=60):
-    """Qué se dijo del proyecto en cada mención de radio de los últimos 30 días, en una oración del LLM (tabla mencion_dicho),
-    para que el aviso y la ficha se entiendan sin leer la transcripción. Sin cupo, se sigue en la próxima corrida."""
+    """Qué pasó o qué se dijo del proyecto en cada mención de los últimos 30 días, radio y prensa, en una oración del LLM
+    (tabla mencion_dicho): es el título de la mención en la app. Sin cupo, se sigue en la próxima corrida."""
     from tremor.llm import chat_json, SinCuota, RespuestaInvalida
     con.execute("CREATE TABLE IF NOT EXISTS mencion_dicho (nota_id TEXT, proyecto TEXT, dicho TEXT, PRIMARY KEY (nota_id, proyecto))")
     desde = (date.today() - timedelta(days=30)).isoformat()
-    xs = con.execute("""SELECT m.nota_id, m.proyecto, n.resumen FROM mencion m JOIN nota n ON n.id = m.nota_id
-                        WHERE m.origen = 'radio' AND m.fecha >= ? AND n.resumen IS NOT NULL
+    xs = con.execute("""SELECT m.nota_id, m.proyecto, CASE WHEN m.origen = 'radio' THEN n.resumen ELSE n.titular || '. ' || COALESCE(n.resumen, '') END
+                        FROM mencion m JOIN nota n ON n.id = m.nota_id
+                        WHERE m.fecha >= ? AND COALESCE(n.filtro, '') NOT IN ('religioso', 'musica_o_ruido', 'aviso', 'medio_extranjero')
                           AND NOT EXISTS (SELECT 1 FROM mencion_dicho d WHERE d.nota_id = m.nota_id AND d.proyecto = m.proyecto)
                         ORDER BY m.fecha DESC""", (desde,)).fetchall()[:max_solicitudes]
     hechas = 0
