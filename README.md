@@ -66,7 +66,10 @@ su riesgo y un informe mensual listo para enviar.
   medios no entra al modelo, va al monitoreo.
 - **Monitoreo en vivo.** La prensa regional, la SUTRAN y 286 radios locales de 139 provincias se leen cada día.
   Un LLM codifica cada nota con el manual de la base de protestas de la PUCP. Las protestas anunciadas aparecen
-  como alerta antes de que ocurran.
+  como alerta antes de que ocurran. **Radio en tiempo real:** con `python -m tremor.radio vivo --empresa Bateas` en
+  una máquina propia, las radios de la zona y la ruta se escuchan en continuo y el aviso llega al chat 1 a 2 minutos
+  después de que se dijo al aire, con la frase literal (`tremor/vivo.py`); en GitHub, sin máquina propia, la radio
+  se escucha por franjas.
 - **Avisos por WhatsApp.** Cada cliente recibe en su chat solo lo que toca a sus operaciones y su ruta: protestas
   anunciadas, bloqueos de la SUTRAN y tramos lentos, con qué hacer. Si el paro se suspende o los gremios se retiran,
   también se avisa.
