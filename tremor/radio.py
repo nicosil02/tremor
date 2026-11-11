@@ -5,6 +5,7 @@ protestas y `tremor.animo` mide menciones y tono hacia cada proyecto o empresa.
     python -m tremor.radio escuchar --minutos 30                        # todas las radios, directo a la base
     python -m tremor.radio escuchar --minutos 30 --grupo 2 --grupos 8 --salida notas_2.jsonl   # una máquina de 8
     python -m tremor.radio cargar notas_*.jsonl                         # junta lo de las máquinas en la base
+    python -m tremor.radio vivo --empresa Bateas                        # en tiempo real: avisa al minuto (tremor/vivo.py)
 
 En GitHub Actions: .github/workflows/radio.yml (matriz de máquinas, como tv-en-vivo.yml de Base_legislativa).
 Catálogo: tremor/radios.csv. Whisper "small" en CPU int8, audio mono 16 kHz (como Base_legislativa).
@@ -285,10 +286,18 @@ def main(argv=None):
     e.add_argument("--indigena", action="store_true", help="quechua y aimara con MMS (necesita transformers)")
     c = sub.add_parser("cargar")
     c.add_argument("archivos", nargs="*")
+    v = sub.add_parser("vivo", help="en tiempo real: avisa al minuto (tremor/vivo.py)")
+    v.add_argument("--empresa", default=os.environ.get("TREMOR_CLIENTE", "Bateas"))
+    v.add_argument("--provincias", nargs="*", help="ubigeos de provincia a mano, p. ej. 0405 0401")
+    v.add_argument("--minutos", type=float, help="sin esto, hasta Ctrl+C")
+    v.add_argument("--hilos", type=int, default=4)
     a = ap.parse_args(argv)
     sys.stdout.reconfigure(encoding="utf-8")
     if a.cmd == "escuchar":
         escuchar(a.minutos, a.grupo, a.grupos, a.salida, a.indigena)
+    elif a.cmd == "vivo":
+        from tremor.vivo import vivo
+        vivo(a.empresa, a.provincias, a.minutos, a.hilos)
     else:
         filas = [json.loads(x) for f in a.archivos for x in open(f, encoding="utf-8") if x.strip()]
         print(f"{guardar(conectar(), filas)} notas nuevas de {len(filas)} fragmentos de radio")
