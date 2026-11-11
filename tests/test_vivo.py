@@ -42,3 +42,16 @@ def test_vivo_guarda_y_avisa_una_vez(monkeypatch):
 def test_medida():
     assert vivo.medida("anuncian un bloqueo de la vía")[0] == "Bloqueo"
     assert vivo.medida("saludos a los oyentes") == (None, None)
+
+
+def test_conexion_compartida_entre_hilos(tmp_path):
+    """La radio en vivo escribe desde varios hilos con una sola conexión (bajo candado): sqlite debe permitirlo."""
+    import threading
+    from tremor.db import conectar
+    con = conectar(tmp_path / "t.db", hilos=True)
+    err = []
+    def escribe():
+        try: con.execute("CREATE TABLE IF NOT EXISTS x (a)"); con.execute("INSERT INTO x VALUES (1)"); con.commit()
+        except Exception as e: err.append(e)
+    t = threading.Thread(target=escribe); t.start(); t.join()
+    assert not err and con.execute("SELECT COUNT(*) FROM x").fetchone()[0] == 1
