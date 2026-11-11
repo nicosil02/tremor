@@ -219,10 +219,18 @@ la prensa se leen para el país entero.
 | Pieza | Demo de hoy | Con contrato |
 |---|---|---|
 | LLM | Groq en cupo gratuito: unas 200 notas al día, el resto espera al día siguiente | Todas las notas el mismo día, unas 3 000 al día (135 millones de tokens de entrada y 27 de salida al mes). El grueso lo codifica Claude Haiku 5.5 (US$0,10 por millón de entrada y US$0,50 de salida), unos **US$27 al mes**, o la mitad en lote. Los casos dudosos, los datos de cada cliente y su informe mensual pasan a Claude Sonnet 5.5 (US$2 y US$10), unos US$60 más. Total, cerca de **US$90 al mes** |
-| Radio | Máquinas de GitHub en CPU, tres franjas al día, de lunes a sábado. Gratis porque el repo es público | Servidor con GPU propio, más radios, más horas y quechua y aimara completos: **US$500 a 800 al mes** |
-| Página, datos y alertas | GitHub Pages, sin costo | Servidor propio con acceso por cliente y avisos por correo o WhatsApp (centavos por conversación): **US$50 a 100 al mes** |
+| Radio en castellano | Máquinas de GitHub en CPU, tres franjas al día, de lunes a sábado. Gratis porque el repo es público | Servidor con GPU propio, más radios y más horas: **US$500 a 800 al mes** |
+| Radio en quechua y aimara | Probado a mano con una radio de Puno ([ejemplo](docs/ejemplo-quechua.md)) | Un detector de idioma (MMS-LID) manda cada minuto al modelo que corresponde: MMS de Meta transcribe quechua y aimara y NLLB-200 lo traduce al castellano para el codificador. Son modelos abiertos y sin licencia de pago; el costo es más tiempo de GPU, **US$100 a 200 al mes**, más un hablante nativo que revisa una muestra al mes (**unos US$100**) |
+| Página y datos | GitHub Pages, sin costo | Servidor propio con acceso por cliente y respaldo diario: **US$30 a 60 al mes** |
+| Avisos por WhatsApp | Telegram, gratis | WhatsApp Business de Meta: cada aviso es un mensaje de plantilla de utilidad, unos US$0,02 a 0,03 en el Perú. Va dentro del costo por cliente |
 | Tráfico en las rutas | Cupo gratuito | Tiempos de viaje de cada tramo cada hora: **unos US$50 al mes** |
-| **Total** | **US$0** | **US$700 a 1 050 al mes** |
+| Dominio, correo y monitoreo | Sin costo | **Unos US$20 al mes** |
+| **Total** | **US$0** | **US$900 a 1 400 al mes** |
+
+**Licencias de datos.** La base de protestas de la PUCP es de uso académico y ACLED pide una licencia para empresas.
+Antes del primer contrato hay dos caminos: un convenio con la PUCP y una licencia de ACLED, o entrenar el modelo
+comercial solo con la Defensoría, que es pública, y dejar ACLED fuera (hoy solo valida el modelo). Lo segundo no
+cuesta nada y se mide primero cuánto se pierde.
 
 **Por qué esos modelos.** Codificar una nota es extraer campos con un manual cerrado: no pide el modelo más grande,
 pide uno barato y constante. Haiku 5.5 cuesta menos que los modelos abiertos de pago (Kimi, DeepSeek o
@@ -235,11 +243,12 @@ transmite y luego pasar el audio a texto, que es lo que más cálculo consume. C
 radios son unas 840 horas de audio al día. En CPU eso ocupa decenas de máquinas. Una GPU lo transcribe varias decenas
 de veces más rápido, y por eso conviene pagarla cuando hay contrato.
 
-**Costo por cliente.** Con el supuesto de una operación que recibe unos 40 avisos al mes, 300 notas y 60 fragmentos de radio codificados para su zona y un informe mensual: unos US$5 al mes en tokens (sus datos y su informe con Sonnet 5.5; las notas públicas se codifican una sola vez para todos) y US$30 de servidor y mensajería, cerca de **US$35 por cliente**, frente a los US$1 500 del plan; el resto del costo es fijo y se reparte.
+**Costo por cliente.** Con el supuesto de una operación que recibe unos 40 avisos al mes, 300 notas y 60 fragmentos de radio codificados para su zona y un informe mensual: unos US$5 al mes en tokens (sus datos y su informe con Sonnet 5.5; las notas públicas se codifican una sola vez para todos), unos US$6 de WhatsApp (40 avisos a 5 personas del equipo) y unos US$25 de servidor y almacenamiento de sus datos, cerca de **US$35 por cliente**, frente a los US$1 500 del plan; el resto del costo es fijo y se reparte.
 
 Cada plan cubre por sí solo el costo de operar. Un piloto o un cliente Estándar pagan US$1 500 al mes, y el plan Empresa unos US$2 500. Desde ahí, cada cliente adicional es casi todo margen,
 porque su informe y sus alertas salen de los mismos datos. Mientras haya pocos clientes, la revisión de los avisos dudosos y del informe
-mensual la hace el fundador; un analista a medio tiempo (unos US$800 al mes) entra a partir del tercer cliente.
+mensual la hace el fundador; un analista a medio tiempo (unos US$800 al mes) entra a partir del tercer cliente. Con el primer contrato se suman la
+empresa formal y un contador (unos US$100 al mes).
 
 **Cómo llegamos a los primeros clientes.** Pilotos con 3 a 5 mineras medianas del sur andino, empezando por las
 que tienen operaciones en el Corredor Minero del Sur. La prueba de valor es el [expediente de casos](docs/casos.md)
