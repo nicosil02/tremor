@@ -152,7 +152,11 @@
   footer nav { display: flex; flex-wrap: wrap; gap: 8px 22px; }
   footer a { color: var(--tinta-2); }
 
+  .der { margin-left: auto; display: flex; gap: 14px; align-items: center; }
+  .entrar { color: var(--tinta); text-decoration: none; font-weight: 600; font-size: 15px; }
+  .entrar:hover { color: var(--cobre-4); }
   @media (max-width: 1100px) { .menu { display: none; } }
+  @media (max-width: 960px) { .der .btn { display: none; } }
   @media (max-width: 900px) {
     header .fila { padding: 0 20px; }
     section { padding: 72px 0; }
@@ -174,9 +178,12 @@
   <div class="fila">
     <a class="marca" href="./" aria-label="Tremor, inicio"><i></i>Tremor</a>
     <nav class="menu" aria-label="Secciones">
-      <a href="./#servicios">Servicios</a><a href="./#como">Cómo funciona</a><a href="./#producto">Producto</a><a href="./#resultados">Resultados</a><a href="metodo.html" aria-current="page">Metodología</a><a href="./#planes">Planes</a>
+      <a href="./#servicios">Servicios</a><a href="./#como">Cómo funciona</a><a href="./#producto">Producto</a><a href="./#resultados">Resultados</a><a href="./#planes">Planes</a><a href="./#nosotros">Nosotros</a><a href="metodo.html" aria-current="page">Metodología</a>
     </nav>
-    <a class="btn" href="app.html">Ver la demostración</a>
+    <div class="der">
+      <a class="entrar" href="app.html">Demo</a>
+      <a class="btn" href="mailto:nicolas.silva@pucp.edu.pe?subject=Piloto%20de%20Tremor">Solicitar un piloto</a>
+    </div>
   </div>
 </header>
 
