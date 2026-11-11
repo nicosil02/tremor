@@ -82,6 +82,7 @@
   .nota { padding: 16px; } .nota h3 { margin: 0; font-size: 22px; line-height: 1.25; }
   .nota .meta { margin: 8px 0 0; color: var(--tinta-2); }
   .nota .cita { margin: 14px 0 0; font-size: 16px; line-height: 1.5; color: var(--tinta); }
+  blockquote.cita { margin: 4px 16px 10px; padding: 12px 14px; border-left: 4px solid var(--cobre); background: #eaefed; border-radius: 0 12px 12px 0; font-size: 16px; line-height: 1.45; } blockquote.cita small { display: block; margin-top: 6px; font-size: 13px; color: var(--tinta-2); }
   .nota .ir { display: inline-block; margin-top: 14px; color: var(--cobre-4); font-weight: 700; }
   button.vermapa { font: inherit; font-weight: 700; color: var(--cobre-4); background: none; border: 1.5px solid var(--cobre-4); border-radius: 8px;
     min-height: 44px; padding: 0 16px; margin: 4px 16px 8px; cursor: pointer; }
@@ -201,6 +202,13 @@
   .r-zona { --acento: #8a6d1f; } .r-op { --acento: var(--cobre-4); } .r-via { --acento: var(--verde); } .r-via.mal { --acento: var(--rojo); }
   .hoy-pie { margin: 6px 16px 0; font-size: 13px; color: var(--tinta-2); }
   .pie { padding: 18px 16px; font-size: 14px; color: var(--tinta-2); } .pie a { color: var(--tinta-2); }
+  /* Recorrido la primera vez: un recorte iluminado (sombra enorme) y una tarjeta con el paso */
+  #tour-luz { position: fixed; z-index: 50; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(28, 38, 41, .6); pointer-events: none; }
+  #tour-caja { position: fixed; z-index: 51; width: min(340px, calc(100vw - 32px)); background: #fff; border-radius: 12px; padding: 14px 16px; box-shadow: 0 12px 32px rgb(0 0 0 / .3); }
+  #tour-caja h3 { margin: 0 0 6px; font-size: 17px; } #tour-caja p { margin: 0 0 12px; font-size: 14px; line-height: 1.4; color: var(--tinta-2); }
+  #tour-caja div { display: flex; align-items: center; gap: 12px; } #tour-caja small { margin-left: auto; color: var(--tinta-2); }
+  #tour-caja button { font: inherit; cursor: pointer; } #tour-caja .sig { background: var(--cobre-4); color: #fff; border: 0; border-radius: 8px; padding: 8px 14px; font-weight: 700; }
+  #tour-caja .salta { background: none; border: 0; color: var(--tinta-2); text-decoration: underline; padding: 0; }
   @media (prefers-reduced-motion: no-preference) { .fila, nav button { transition: background 160ms ease; } }
 </style>
 </head>
@@ -294,7 +302,7 @@ function armar() {
     const anun = (e.estado === "anunciada" || pl) && !e.suspendido, viene = anun && !e.sin_fecha && f >= HOY;
     const cerca = unidades.find(x => x.zona.has(u));
     const leve = sinBloqueo(e) && !zona.has(u);  // gremio que no corta vías y solo pasa por la ruta: se informa, no se atiende
-    avisos.push({ f, urge: !leve && !e.sin_fecha && (viene || (anun && dias(f) > -3)), tipo: "Protesta", e, cerca, trans, tramo: tramoDe(u, e), tramos: tramos.filter(r => toca(r, u, e)),
+    avisos.push({ f, urge: !leve && !e.sin_fecha && viene, tipo: "Protesta", e, cerca, trans, tramo: tramoDe(u, e), tramos: tramos.filter(r => toca(r, u, e)),
       t: `${accion(e)}${e.actor ? ` de ${e.actor.toLowerCase()}` : ""}`,
       w: viene ? cuando(f) : dia(f),
       s: [pl ? "vence un plazo, amenazan con nueva medida" : "", u === "00" ? (trans ? "Puede frenar sus despachos" : "Lugar sin precisar") : !zona.has(u) && tramoDe(u, e) ? `${lugar(u)}, en su ruta${sinBloqueo(e) ? ", no suele cortar vías" : ""}` : lugar(u), e.suspendido ? "suspendida" : e.sin_fecha ? "anunciada, todavía sin fecha" : viene ? "" : anun ? "anunciada, sin confirmar" : "ocurrió"].filter(Boolean).join(", ") });
@@ -341,7 +349,9 @@ function cabecera(atras, txt) {
 
 const VISTAS = {
   avisos() {
-    const u = X.avisos.filter(x => x.urge), r = X.avisos.filter(x => !x.urge);
+    // Atender: anunciado para hoy o después. Para seguir: sin fecha, gremios que no cortan vías y menciones. Pasados: ya ocurrió o la fecha pasó
+    const u = X.avisos.filter(x => x.urge), r = X.avisos.filter(x => !x.urge && (x.m || !x.e || x.e.sin_fecha || x.f >= HOY)),
+      pasados = X.avisos.filter(x => !x.urge && x.e && !x.e.sin_fecha && x.f < HOY);
     cabecera(false);
     const prox = u[0], an = (D.animo || []).find(a => EMPRESAS[empresa][1].test(a.proyecto || ""));
     const hoy = `<div class="hoy">${prox ? `<button type="button" data-aviso="${X.avisos.indexOf(prox)}"><b class="c1">${esc(prox.w)}</b><span>${esc(prox.t)}</span></button>` : `<div><b>–</b><span>Nada anunciado</span></div>`}
@@ -349,7 +359,8 @@ const VISTAS = {
       <p class="hoy-pie">Lo de hoy en radios, medios, Defensoría y SUTRAN. No cambia el nivel de riesgo.</p>`;
     return hoy + (u.length ? `<h2>Atender</h2><ul>${u.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<h2>Atender</h2><p class="vacio">Nada anunciado en su zona ni en sus rutas.</p>`)
       + `<h2>Para seguir</h2>` + (r.length ? `<ul>${r.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas ni notas sobre la empresa.</p>`)
-      + `<p class="pie">Datos al ${dia(D.creado)}. <a href="informe.html?e=${empresa.toLowerCase().replace(/^las /, "")}" target="_blank" rel="noopener">Informe del mes en PDF</a></p>`;
+      + (pasados.length ? `<h2>Pasados</h2><ul>${pasados.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : "")
+      + `<p class="pie">Datos al ${dia(D.creado)}. <a href="informe.html?e=${empresa.toLowerCase().replace(/^las /, "")}" target="_blank" rel="noopener">Informe del mes en PDF</a> · <a href="#" data-tour>Ver el recorrido</a></p>`;
   },
   operaciones() {
     cabecera(false);
@@ -546,6 +557,7 @@ function detalleAviso(k) {
       <p class="aclara">${u === "00" ? "Paro nacional, puede cortar cualquier tramo por carretera." : u.length < 6 ? `La nota solo dice ${esc(lugar(u))}.` : ""}${adh.length
         ? ` Según la prensa, en su ruta se suman ${esc(y(adh.map(lugar)))}.` : ""}${ret.length ? ` Se desligaron ${esc(y(ret.map(lugar)))}.` : ""}${!suman.size && antes.length
         ? ` En protestas pasadas de ${esc(String(e.actor).toLowerCase())} en su ruta, bloquearon en ${esc(y(antes.slice(0, 3).map(([v, k]) => `${lugar(v)} (${k} ${k > 1 ? "veces" : "vez"})`)))}. Fuente, base de protestas EGPP.` : ""}</p>` : ""}
+    ${e.cita ? `<h2>Lo que se dijo</h2><blockquote class="cita">«${esc(e.cita)}»<small>${esc(e.medio)}${(m => m ? `, ${+m[1]} ${MES[+m[2] - 1]} ${m[3]}` : "")(/(\d\d)\/(\d\d)\/\d{4} (\d\d:\d\d)/.exec(e.titular || ""))}</small></blockquote>` : ""}
     <h2>La nota</h2><a class="fuente" href="${esc(e.enlace)}" target="_blank" rel="noopener"><small>${esc(e.medio)}</small>${esc(e.titular)}</a>${SEL ? VER : ""}`;
 }
 
@@ -821,6 +833,38 @@ function conectar() {
   document.querySelectorAll("[data-distrito]").forEach(b => b.onclick = () => abrir(detalleDistrito(b.dataset.distrito, b.dataset.dcapa || "extractivo")));
   document.querySelectorAll("[data-ruta]").forEach(b => b.onclick = () => { const h = document.getElementById("ruta-hoy"); if (h) h.scrollIntoView({ behavior: "smooth", block: "start" }); });
   document.querySelectorAll("[data-vermapa]").forEach(b => b.onclick = () => { PAIS_VISTA = actual === "pais"; ir("mapa"); });
+  document.querySelectorAll("[data-tour]").forEach(b => b.onclick = e => { e.preventDefault(); tour(0); });
+}
+
+// Recorrido de 4 pasos la primera vez: cada paso abre su pestaña, ilumina un elemento y explica en dos frases
+const PASOS = () => [
+  ["avisos", "#vista h2", "Monitoreo", "Lo que dicen hoy radios, medios, la Defensoría y la SUTRAN. En Atender está lo que puede frenar a la empresa, cada aviso con su fuente."],
+  ["operaciones", ".tres", "Riesgo", "Tres riesgos distintos: Zona, Operación y Carretera. Los porcentajes son nivel de riesgo a 3 meses, no una fecha. Toque uno para ver el porqué."],
+  [ANCHO.matches ? "operaciones" : "mapa", "#mapa", "Su ruta en el mapa", "Los distritos de su ruta de salida, más oscuro es más riesgo. Toque un tramo y el camión lo recorre."],
+  ["pais", ANCHO.matches ? ".leyenda-via .capas" : "nav [data-v=pais]", "País", "Todo el Perú con tres capas: Zona, Operación y Carretera. Toque una zona para ver su porqué."]];
+function tour(i) {
+  const pasos = PASOS(), fin = () => { guardar("tremor-tour", "1"); document.getElementById("tour-luz")?.remove(); document.getElementById("tour-caja")?.remove(); removeEventListener("resize", tour.pon); };
+  if (i >= pasos.length) return fin();
+  const [vista, sel, titulo, texto] = pasos[i];
+  if (actual !== vista) ir(vista);
+  let luz = document.getElementById("tour-luz"), caja = document.getElementById("tour-caja");
+  if (!luz) { luz = document.body.appendChild(Object.assign(document.createElement("div"), { id: "tour-luz" })); caja = document.body.appendChild(Object.assign(document.createElement("div"), { id: "tour-caja" })); }
+  caja.innerHTML = `<h3>${titulo}</h3><p>${texto}</p><div><button type="button" class="sig">${i + 1 < pasos.length ? "Siguiente" : "Listo"}</button><button type="button" class="salta">Saltar</button><small>${i + 1} de ${pasos.length}</small></div>`;
+  caja.querySelector(".sig").onclick = () => tour(i + 1); caja.querySelector(".salta").onclick = fin;
+  tour.pon = () => {  // el recorte sobre el elemento (más la lista que sigue a un título) y la tarjeta donde quepa
+    const el = document.querySelector(sel); if (!el) return tour(i + 1);
+    let r = el.getBoundingClientRect(); const sig = el.nextElementSibling;
+    if (el.tagName === "H2" && sig?.tagName === "UL") { const q = sig.getBoundingClientRect(); r = { top: r.top, left: r.left, right: Math.max(r.right, q.right), bottom: Math.min(q.bottom, innerHeight - 70) }; }
+    const m = 6; Object.assign(luz.style, { top: r.top - m + "px", left: r.left - m + "px", width: r.right - r.left + 2 * m + "px", height: r.bottom - r.top + 2 * m + "px" });
+    const h = caja.offsetHeight, w = caja.offsetWidth, abajo = r.bottom + 12, arriba = r.top - 12 - h;
+    const top = abajo + h < innerHeight - 70 ? abajo : arriba > 16 ? arriba : Math.min(r.bottom, innerHeight - 70) - h - 12;
+    let left = Math.min(Math.max(16, r.left), innerWidth - w - 16);
+    if (top > r.top && top < r.bottom) left = r.left > w + 32 ? 16 : r.left + 16;  // no cabe fuera: al costado del elemento o en su esquina
+    Object.assign(caja.style, { top: top + "px", left: left + "px" });
+  };
+  removeEventListener("resize", tour.ant); addEventListener("resize", tour.pon); tour.ant = tour.pon;
+  setTimeout(tour.pon, actual !== vista || i === 0 ? 350 : 50);
+  onkeydown = e => { if (e.key === "Escape") fin(); };
 }
 document.querySelector("nav").onclick = e => { const b = e.target.closest("button"); if (b) { SEL = null; PAIS_VISTA = false; ir(b.dataset.v); } };
 
@@ -923,6 +967,7 @@ Promise.all([cargar(), CADENA]).then(([d, c]) => {
   ir("avisos");
   const dz = new URLSearchParams(location.search).get("d");  // abre la ficha del distrito del aviso
   if (dz && A.has(dz)) { ir("pais"); abrir(detalleDistrito(dz)); }
+  else if (!guardado("tremor-tour")) setTimeout(() => tour(0), 900);  // la primera vez, el recorrido
 }).catch(() => { document.getElementById("vista").innerHTML = `<p class="vacio">No se pudieron cargar los datos. Revise su conexión y vuelva a abrir.</p>`; });
 </script>
 </body>
