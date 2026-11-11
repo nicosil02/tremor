@@ -154,8 +154,8 @@ flowchart LR
 
 Tres workflows de GitHub Actions mantienen todo al día y publican la base en la rama `datos`:
 
-- `defensoria.yml` cada hora, con la Defensoría, la SUTRAN y la prensa;
-- `radio.yml` tres veces al día, de lunes a sábado;
+- `defensoria.yml` cada media hora, con la Defensoría, la SUTRAN, la prensa y la reputación;
+- `radio.yml` cinco veces al día, de lunes a sábado;
 - `modelo.yml` el día 20 de cada mes.
 
 **Modelos y APIs, y por qué.**
