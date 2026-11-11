@@ -218,18 +218,24 @@ la prensa se leen para el país entero.
 
 | Pieza | Demo de hoy | Con contrato |
 |---|---|---|
-| LLM | Groq en cupo gratuito: unas 200 notas al día, el resto espera al día siguiente | Todas las notas el mismo día, unas 3 000 al día. Con Claude Sonnet 5.5 (US$2 por millón de tokens de entrada y US$10 de salida) son unos 135 millones de entrada y 27 de salida al mes, cerca de **US$540 al mes**, o la mitad en lote. Un modelo más grande puede escribir el informe de cada cliente por unos pocos dólares más |
+| LLM | Groq en cupo gratuito: unas 200 notas al día, el resto espera al día siguiente | Todas las notas el mismo día, unas 3 000 al día (135 millones de tokens de entrada y 27 de salida al mes). El grueso lo codifica Claude Haiku 5.5 (US$0,10 por millón de entrada y US$0,50 de salida), unos **US$27 al mes**, o la mitad en lote. Los casos dudosos, los datos de cada cliente y su informe mensual pasan a Claude Sonnet 5.5 (US$2 y US$10), unos US$60 más. Total, cerca de **US$90 al mes** |
 | Radio | Máquinas de GitHub en CPU, tres franjas al día, de lunes a sábado. Gratis porque el repo es público | Servidor con GPU propio, más radios, más horas y quechua y aimara completos: **US$500 a 800 al mes** |
 | Página, datos y alertas | GitHub Pages, sin costo | Servidor propio con acceso por cliente y avisos por correo o WhatsApp (centavos por conversación): **US$50 a 100 al mes** |
 | Tráfico en las rutas | Cupo gratuito | Tiempos de viaje de cada tramo cada hora: **unos US$50 al mes** |
-| **Total** | **US$0** | **US$1 150 a 1 500 al mes** |
+| **Total** | **US$0** | **US$700 a 1 050 al mes** |
+
+**Por qué esos modelos.** Codificar una nota es extraer campos con un manual cerrado: no pide el modelo más grande,
+pide uno barato y constante. Haiku 5.5 cuesta menos que los modelos abiertos de pago (Kimi, DeepSeek o
+`gpt-oss-120b`) y no manda los datos de los clientes a servidores fuera de su control; `gpt-oss-120b` en Groq queda de
+respaldo, como hoy. Antes de cambiar, el nuevo modelo se mide contra las notas ya revisadas a mano y solo se adopta si
+iguala el acuerdo actual.
 
 **Por qué la radio cuesta.** No hay forma de leer una radio más rápido de lo que habla: hay que grabarla mientras
 transmite y luego pasar el audio a texto, que es lo que más cálculo consume. Con tres franjas de una hora en 280
 radios son unas 840 horas de audio al día. En CPU eso ocupa decenas de máquinas. Una GPU lo transcribe varias decenas
 de veces más rápido, y por eso conviene pagarla cuando hay contrato.
 
-**Costo por cliente.** Con el supuesto de una operación que recibe unos 40 avisos al mes, 300 notas y 60 fragmentos de radio codificados para su zona y un informe mensual: unos US$25 al mes en tokens y US$30 de servidor y mensajería, cerca de **US$55 por cliente**, frente a los US$1 500 del plan; el resto del costo es fijo y se reparte.
+**Costo por cliente.** Con el supuesto de una operación que recibe unos 40 avisos al mes, 300 notas y 60 fragmentos de radio codificados para su zona y un informe mensual: unos US$5 al mes en tokens (sus datos y su informe con Sonnet 5.5; las notas públicas se codifican una sola vez para todos) y US$30 de servidor y mensajería, cerca de **US$35 por cliente**, frente a los US$1 500 del plan; el resto del costo es fijo y se reparte.
 
 Cada plan cubre por sí solo el costo de operar. Un piloto o un cliente Estándar pagan US$1 500 al mes, y el plan Empresa unos US$2 500. Desde ahí, cada cliente adicional es casi todo margen,
 porque su informe y sus alertas salen de los mismos datos. Mientras haya pocos clientes, la revisión de los avisos dudosos y del informe
