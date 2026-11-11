@@ -16,6 +16,12 @@ const PAL = palabras as [string, number, number][][];
 // cuadro en que el locutor empieza a decir una palabra de la frase i
 const en = (i: number, w: string) => S[i] + Math.round((PAL[i].find(([p]) => p.startsWith(w))?.[1] ?? 0) * 30);
 
+// música de fondo (public/musica.wav, de musica.py): 0.25 en los silencios y 0.15 mientras habla el locutor, con 10 cuadros de rampa
+const musica = (f: number) => {
+  const habla = Math.min(...S.map((s, i) => Math.max(s - f, f - (s + D[i]), 0)));  // cuadros hasta la voz más cercana (0 = hablando)
+  return interpolate(habla, [0, 10], [0.15, 0.25], { extrapolateRight: "clamp" });
+};
+
 const BLOQUEO = 190; // km de la ruta, en la Bajada a Arequipa
 const TRAMOS: [string, number, number][] = [["Mina a Callalli", 9, 25], ["Bajada a Arequipa", 29, 189], ["Puerto de Matarani", 29, 262], ["Al Callao por la Panamericana", 25, LARGO]];
 const MINA = geo.mina as [number, number];
@@ -353,5 +359,6 @@ export const Vuelo: React.FC = () => (
     <Mapa3D camara={camara} preparar={preparar} cuadro={cuadro} lugares={LUGARES}>{(xy) => <Tramos xy={xy} />}</Mapa3D>
     <Bloqueo /><Costo /><Aviso /><QueEs /><Monitorea /><Telefono /><Riesgo /><Salida /><Prueba /><Cierre /><Subtitulo />
     {S.map((s, i) => <Sequence key={i} from={s}><Audio src={staticFile(`voz/${String(i).padStart(2, "0")}.wav`)} /></Sequence>)}
+    <Audio src={staticFile("musica.wav")} volume={musica} />
   </AbsoluteFill>
 );
