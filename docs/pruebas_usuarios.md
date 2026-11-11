@@ -19,6 +19,7 @@ Probó la app de Bateas en computadora, con el mapa y la ruta, mientras convers�
 ## 2. Analista de una consultora ambiental (11 de noviembre)
 
 Revisó la landing y la app publicadas. Su consultora trabaja con empresas que tienen operaciones en zonas de conflicto.
+Notas en [`research/03-consultora-ambiental.md`](research/03-consultora-ambiental.md).
 
 | Lo que dijo | Qué cambió o qué sigue |
 |---|---|
