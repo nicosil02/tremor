@@ -427,9 +427,13 @@ def menciones(con):
     desde = (date.today() - timedelta(days=30)).isoformat()
     con.execute("CREATE TABLE IF NOT EXISTS nota_tema (nota_id TEXT PRIMARY KEY, tema TEXT, p_tema REAL, tono INTEGER, p_tono REAL)")
     # tema y tono del transformer (tremor.clasifica); si la nota aún no pasó por él, el tono del léxico
-    m = tabla(con, "SELECT m.proyecto, m.fecha, m.medio, m.origen, COALESCE(t.tono, m.tono) AS tono, t.tema, n.titular, n.resumen, n.enlace "
+    con.execute("CREATE TABLE IF NOT EXISTS mencion_dicho (nota_id TEXT, proyecto TEXT, dicho TEXT, PRIMARY KEY (nota_id, proyecto))")
+    m = tabla(con, "SELECT m.proyecto, m.fecha, m.medio, m.origen, COALESCE(t.tono, m.tono) AS tono, t.tema, n.titular, n.resumen, n.enlace, "
+                   "d.dicho "
                    "FROM mencion m JOIN nota n ON n.id = m.nota_id LEFT JOIN nota_tema t ON t.nota_id = m.nota_id "
-                   f"WHERE m.fecha >= '{desde}' AND COALESCE(n.filtro, '') NOT IN ({RUIDO}) ORDER BY m.fecha DESC")
+                   "LEFT JOIN mencion_dicho d ON d.nota_id = m.nota_id AND d.proyecto = m.proyecto "
+                   f"WHERE m.fecha >= '{desde}' AND COALESCE(n.filtro, '') NOT IN ({RUIDO}) "
+                   "AND COALESCE(d.dicho, '') NOT LIKE 'no habla%' ORDER BY m.fecha DESC")  # el LLM leyó que no era del proyecto
     if not len(m):
         return []
     m["google"] = m.enlace.str.contains("news.google")
