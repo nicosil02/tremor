@@ -105,8 +105,9 @@ def cambios(web, z, enviados):
         # marcha de un gremio que solo pasa por la ruta (municipales, docentes, salud): esa fue ruido para Bateas
         elif (e.get("estado") == "anunciada" and f and f < hoy() and f >= (date.today() - timedelta(days=3)).isoformat()
               and (ub in z or re.search(r"bloque|toma|paro", acc, re.I)) and not re.search(SECTOR, e.get("actor") or "", re.I)):
-            yield ("nohubo:" + orig, f"❔ *SIN NOTICIA DE QUE SE REALIZARA*\n\n{que}: la fecha pasó y la prensa no informó que se "
-                   f"hiciera. Pudo levantarse o no tener cobertura; conviene confirmarlo en la zona.", None)
+            anun = (f" Lo anunció {e.get('medio')}" + (f" el {dia(e['fecha_anuncio'])}" if e.get("fecha_anuncio") else "") + ".") if e.get("medio") else ""
+            yield ("nohubo:" + orig, f"❔ *SIN NOTICIA DE QUE SE REALIZARA*\n_{e.get('titular') or que}_\n\n{que}: la fecha pasó y la prensa "
+                   f"no informó que se hiciera.{anun} Pudo levantarse o no tener cobertura; conviene confirmarlo en la zona.{fuente}", None)
 
 
 def hoy():
