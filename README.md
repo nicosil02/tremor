@@ -146,7 +146,7 @@ flowchart LR
   RAD -->|ffmpeg + Whisper / MMS| PRE
   SUT --> DB
   EST --> DB
-  DB --> MOD[Modelo<br>logística, Lasso, árbol,<br>bosque, boosting, ensamble]
+  DB --> MOD[Modelo<br>Logistic regression, Lasso,<br>Decision tree, Random forest,<br>Gradient boosting, Ensemble]
   MOD --> DB
   DB --> WEB[web.json]
   WEB --> PAG[GitHub Pages<br>inicio, app e informe]
