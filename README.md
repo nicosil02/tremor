@@ -118,6 +118,9 @@ cliente está listo en `tremor/acceso.py` y se activa con el contrato.
 Como hoy ningún tramo tiene un paro, cada caso se puede ver con `?prueba=corte`, `aviso` o `lento`, por ejemplo
 https://nicosil02.github.io/tremor/app.html?e=Bateas&prueba=corte (el aviso dice "prueba").
 
+**Video de respaldo (72 s):** https://github.com/nicosil02/tremor/releases/download/demo/tremor-demo.mp4. Se genera con
+Remotion desde [`video/`](video/) con los datos reales de la app.
+
 | Todo el país | Una empresa | Una unidad |
 |---|---|---|
 | ![País](docs/img/1-pais.png) | ![Empresa](docs/img/2-empresa.png) | ![Unidad](docs/img/3-unidad.png) |
