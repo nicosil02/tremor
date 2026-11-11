@@ -110,7 +110,9 @@ REPUTACION = ("Lees menciones recientes de una empresa minera en prensa y radio 
               'Responde JSON {"proyecto": "nombre del proyecto o unidad concreta si se distingue; si no, el de la empresa", '
               '"motivos": "1 a 3 frases claras de por qué hablan de la empresa", '
               '"accion": "medida anunciada: qué, quién (por rol, nunca nombres de personas) y cuándo; null si no hay", '
-              '"cita": "una frase literal de hasta 25 palabras", "cita_de": "medio y fecha de la cita"}. '
+              '"cita": "una frase literal de hasta 25 palabras", "cita_de": "medio y fecha de la cita", '
+              '"relevante": "true solo si de verdad hablan de la empresa o su proyecto (conflicto, ambiente, laboral, judicial, '
+              'comunidades, operación); false si son homónimos, publicidad o menciones de pasada"}. '
               "Solo con lo que dicen los textos, nada inventado.")
 
 
@@ -129,22 +131,27 @@ def reputacion(con, alias, semana=None):
     for proyecto, n, base, alza, neg, aviso in filas:
         if not re.search(alias, proyecto, re.I) or not (neg >= 0.5 or aviso or (base >= 2 and alza >= 2)):
             continue
-        ms = con.execute("SELECT n.titular, n.resumen, n.medio, m.fecha, m.tono, n.enlace FROM mencion m JOIN nota n ON n.id = m.nota_id "
+        ms = con.execute("SELECT n.titular, n.resumen, n.medio, m.fecha, m.tono, n.enlace, m.origen FROM mencion m JOIN nota n ON n.id = m.nota_id "
                          "WHERE m.proyecto = ? ORDER BY m.fecha DESC, m.tono LIMIT 6", (proyecto,)).fetchall()
         lineas = "\n".join(f"- {f} {medio} ({'negativa' if t < 0 else 'positiva' if t > 0 else 'neutra'}): {tit}. {(res or '')[:400]}"
-                           for tit, res, medio, f, t, _ in ms)
+                           for tit, res, medio, f, t, _, _ in ms)
+        prensa = next((x for x in ms if x[6] != "radio" and x[5]), None)  # la fuente con enlace legible: una nota, no un stream
         try:
-            r = chat_json(con, REPUTACION, f"Empresa o proyecto: {proyecto}\n{lineas}", "reputacion1")
+            r = chat_json(con, REPUTACION, f"Empresa o proyecto: {proyecto}\n{lineas}", "reputacion2")
+            if not isinstance(r, dict) or not r.get("relevante") or not r.get("motivos"):  # homónimos, publicidad: no es reputación
+                continue
         except (SinCuota, RespuestaInvalida) as e:
             print(f"  reputación de {proyecto} sin motivos: {str(e)[:80]}")
+            if not prensa:  # sin el LLM, la radio sola no basta: muchos alias son homónimos
+                continue
             r = {}
-        fuente = next((x for x in ms if x[5]), None)
+        f0 = prensa or ms[0]
         texto = (f"📣 *REPUTACIÓN · {r.get('proyecto') or proyecto}*\n_Se dispara lo que se dice de la empresa en radio y prensa_\n\n"
                  f"📊 {n:.0f} menciones en 7 días" + (f", ×{alza:g} lo habitual" if base >= 1 else "") + f", {neg:.0%} negativas"
                  + (f"\n\n🔎 *Por qué:* {r['motivos']}" if r.get("motivos") else "")
                  + (f"\n\n⚠️ *Medida anunciada:* {r['accion']}" if r.get("accion") else "")
                  + (f"\n\n🗣 «{r['cita']}»" + (f" ({r['cita_de']})" if r.get("cita_de") else "") if r.get("cita") else "")
-                 + (f"\n\n📰 *Fuente:* [{fuente[2]}]({fuente[5]})" if fuente else ""))
+                 + (f"\n\n📰 *Fuente:* [{prensa[2]}]({prensa[5]})" if prensa else f"\n\n📻 *Oído en:* {f0[2]}, {dia(f0[3])}"))
         yield (f"reputacion:{proyecto}:{semana}", texto, None)
 
 
