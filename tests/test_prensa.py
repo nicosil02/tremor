@@ -397,3 +397,14 @@ def test_anuncio_y_fecha_relativa():
     assert fecha_relativa("marcha el proximo martes", "2026-11-10") == "2026-11-17"
     assert fecha_relativa("bloqueo manana en la via", "2026-11-10") == "2026-11-11"
     assert fecha_relativa("esta manana bloquearon", "2026-11-10") is None
+
+
+def test_animo_historia_mensual():
+    import sqlite3
+    import pandas as pd
+    from tremor.animo import historia
+    con = sqlite3.connect(":memory:")
+    m = pd.DataFrame({"proyecto": ["A", "A", "B", "A"], "fecha": ["2026-11-01", "2026-11-05", "2026-11-05", "2026-10-30"], "tono": [-1, 1, -1, -1]})
+    a = pd.DataFrame({"proyecto": ["A", "B"], "alza": [2.5, 1.0]})
+    historia(con, m, a, "2026-11"); historia(con, m, a, "2026-11")  # dos corridas: se reemplaza, no se duplica
+    assert con.execute("SELECT proyecto, menciones, negativas, tono, alza FROM animo_mes ORDER BY proyecto").fetchall() == [("A", 2, 1, 0.0, 2.5), ("B", 1, 1, -1.0, 1.0)]

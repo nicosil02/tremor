@@ -219,3 +219,43 @@ def test_seguimiento_solo_con_noticia():
     assert [c for c, _, _ in salida] == [f"hubo:evento:040505:Bloqueo de vías:{ayer}", f"cae:evento:040505:Paro:{ayer}"]
     assert all("https://x.pe/n" in t for _, t, _ in salida)  # nunca sin fuente
     assert not any("?" in t or "❔" in t for _, t, _ in salida)
+
+
+def test_reputacion_se_dispara_con_motivos_del_llm(monkeypatch):
+    """Avisa solo del proyecto que se dispara (negativas ≥ 50%, o pico/racha, o alza con base) y que el LLM confirma que
+    de verdad habla de la empresa; sin cupo, sale con cifras solo si hay prensa (la radio sola tiene homónimos)."""
+    from tremor.avisos import reputacion
+    from tremor.llm import SinCuota
+    con = sqlite3.connect(":memory:")
+    con.executescript("""
+        CREATE TABLE animo (proyecto, menciones_7d, base_7d, alza, pct_negativo, aviso);
+        INSERT INTO animo VALUES ('Minera Bateas', 6, 0.5, 6, 0.67, 'pico negativo el 2026-11-10 (4 menciones)'),
+                                 ('Minera Bateas', 2, 0.5, 2, 1.0, NULL),      -- pocas menciones: no
+                                 ('Minera Raura', 5, 1, 5, 0.2, NULL),         -- ni negativa ni base: no
+                                 ('Tía María (Southern)', 7, 0, 7, 0.71, NULL);  -- homónimo en la radio
+        CREATE TABLE nota (id, titular, resumen, medio, enlace);
+        INSERT INTO nota VALUES (1, 'Comuneros de Caylloma anuncian paro contra Bateas', 'Reclaman por el agua.', 'Diario Correo', 'https://x.pe/1'),
+                                (2, 'Radio Calor, en vivo 10/11/2026 (3)', 'dicen que la minera contamina el río', 'Radio Calor', 'https://stream/x.m3u8'),
+                                (3, 'Radio Kebuena, en vivo 09/11/2026 (1)', 'saludos para tía María en su cumpleaños', 'Radio Kebuena', 'https://stream/y.m3u8');
+        CREATE TABLE mencion (nota_id, proyecto, fecha, tono, origen);
+        INSERT INTO mencion VALUES (1, 'Minera Bateas', '2026-11-10', -1, 'web'), (2, 'Minera Bateas', '2026-11-09', -1, 'radio'),
+                                   (3, 'Tía María (Southern)', '2026-11-09', 0, 'radio');
+    """)
+    pedidos = []
+    def llm(con, s, u, v):
+        pedidos.append(u)
+        if "Tía María" in u:
+            return {"proyecto": "Tía María", "motivos": None, "relevante": False}
+        return {"proyecto": "Minera Bateas", "motivos": "Comuneros reclaman por el agua.", "accion": "Paro de comuneros de Caylloma, sin fecha",
+                "cita": "la minera contamina el río", "cita_de": "Radio Calor, 9 nov", "relevante": True}
+    monkeypatch.setattr("tremor.llm.chat_json", llm)
+    (clave, texto, png), = reputacion(con, r"minera bateas|\bbateas\b|southern|t[ií]a mar[ií]a", "2026-W46")
+    assert clave == "reputacion:Minera Bateas:2026-W46" and png is None and len(pedidos) == 2  # Tía María: homónimo, no sale
+    assert "6 menciones en 7 días" in texto and "67% negativas" in texto and "lo habitual" not in texto  # base corta: sin alza
+    assert "Comuneros reclaman" in texto and "Paro de comuneros" in texto and "«la minera contamina el río»" in texto
+    assert "[Diario Correo](https://x.pe/1)" in texto and "m3u8" not in texto  # la fuente es la nota, no un stream
+    assert "Diario Correo" in pedidos[0] and "contamina" in pedidos[0]
+    monkeypatch.setattr("tremor.llm.chat_json", lambda *a: (_ for _ in ()).throw(SinCuota("sin cupo")))
+    (_, texto, _), = reputacion(con, r"bateas", "2026-W46")       # sin cupo pero con prensa: cifras, nunca inventa
+    assert "6 menciones" in texto and "Por qué" not in texto and "«" not in texto
+    assert list(reputacion(con, r"t[ií]a mar[ií]a", "2026-W46")) == []  # sin cupo y solo radio: nada

@@ -108,6 +108,55 @@ def cambios(web, z, enviados):
                    f"la medida se llevó a cabo.{fuente}", None)
 
 
+REPUTACION = ("Lees menciones recientes de una empresa minera en prensa y radio del Perú (transcripciones con errores). "
+              'Responde JSON {"proyecto": "nombre del proyecto o unidad concreta si se distingue; si no, el de la empresa", '
+              '"motivos": "1 a 3 frases claras de por qué hablan de la empresa", '
+              '"accion": "medida anunciada: qué, quién (por rol, nunca nombres de personas) y cuándo; null si no hay", '
+              '"cita": "una frase literal de hasta 25 palabras", "cita_de": "medio y fecha de la cita", '
+              '"relevante": "true solo si de verdad hablan de la empresa o su proyecto (conflicto, ambiente, laboral, judicial, '
+              'comunidades, operación); false si son homónimos, publicidad o menciones de pasada"}. '
+              "Solo con lo que dicen los textos, nada inventado.")
+
+
+def reputacion(con, alias, semana=None):
+    """📣 cuando se dispara lo que se dice de un proyecto de la empresa (índice de ánimo de tremor.animo): menciones y
+    tono, y los motivos, la medida anunciada y una cita que escribe el LLM con las 6 menciones más recientes. Sin cupo,
+    sale solo con las cifras. Una vez por semana y proyecto.
+    ponytail: umbrales a ojo: la base de 8 semanas aún es corta (la radio empezó en noviembre), por eso el alza solo
+    cuenta con base ≥ 2 menciones por semana; el pico o la racha negativa (columna aviso) ya vienen calibrados."""
+    from tremor.llm import chat_json, SinCuota, RespuestaInvalida
+    semana = semana or date.today().strftime("%G-W%V")
+    try:
+        filas = con.execute("SELECT proyecto, menciones_7d, base_7d, alza, pct_negativo, aviso FROM animo WHERE menciones_7d >= 3").fetchall()
+    except sqlite3.OperationalError:
+        return
+    for proyecto, n, base, alza, neg, aviso in filas:
+        if not re.search(alias, proyecto, re.I) or not (neg >= 0.5 or aviso or (base >= 2 and alza >= 2)):
+            continue
+        ms = con.execute("SELECT n.titular, n.resumen, n.medio, m.fecha, m.tono, n.enlace, m.origen FROM mencion m JOIN nota n ON n.id = m.nota_id "
+                         "WHERE m.proyecto = ? ORDER BY m.fecha DESC, m.tono LIMIT 6", (proyecto,)).fetchall()
+        lineas = "\n".join(f"- {f} {medio} ({'negativa' if t < 0 else 'positiva' if t > 0 else 'neutra'}): {tit}. {(res or '')[:400]}"
+                           for tit, res, medio, f, t, _, _ in ms)
+        prensa = next((x for x in ms if x[6] != "radio" and x[5]), None)  # la fuente con enlace legible: una nota, no un stream
+        try:
+            r = chat_json(con, REPUTACION, f"Empresa o proyecto: {proyecto}\n{lineas}", "reputacion2")
+            if not isinstance(r, dict) or not r.get("relevante") or not r.get("motivos"):  # homónimos, publicidad: no es reputación
+                continue
+        except (SinCuota, RespuestaInvalida) as e:
+            print(f"  reputación de {proyecto} sin motivos: {str(e)[:80]}")
+            if not prensa:  # sin el LLM, la radio sola no basta: muchos alias son homónimos
+                continue
+            r = {}
+        f0 = prensa or ms[0]
+        texto = (f"📣 *REPUTACIÓN · {r.get('proyecto') or proyecto}*\n_Se dispara lo que se dice de la empresa en radio y prensa_\n\n"
+                 f"📊 {n:.0f} menciones en 7 días" + (f", ×{alza:g} lo habitual" if base >= 1 else "") + f", {neg:.0%} negativas"
+                 + (f"\n\n🔎 *Por qué:* {r['motivos']}" if r.get("motivos") else "")
+                 + (f"\n\n⚠️ *Medida anunciada:* {r['accion']}" if r.get("accion") else "")
+                 + (f"\n\n🗣 «{r['cita']}»" + (f" ({r['cita_de']})" if r.get("cita_de") else "") if r.get("cita") else "")
+                 + (f"\n\n📰 *Fuente:* [{prensa[2]}]({prensa[5]})" if prensa else f"\n\n📻 *Oído en:* {f0[2]}, {dia(f0[3])}"))
+        yield (f"reputacion:{proyecto}:{semana}", texto, None)
+
+
 def hoy():
     """La fecha en el Perú (GitHub corre en UTC: después de las 19:00 de Lima ya es mañana)."""
     return (datetime.now(timezone.utc) - timedelta(hours=5)).date().isoformat()
@@ -390,7 +439,7 @@ def main(dias=7, reenviar=False, muestra=False):  # 7: GitHub a veces corre el w
                 e["emitido"], e["dicho"], extra = r
                 e.update({k: v for k, v in extra.items() if v})
         enviados = {c for (c,) in con.execute("SELECT clave FROM aviso_enviado WHERE empresa = ?", (nombre,))}
-        ruta = [x for x in [*lentas(con, nombre), *cambios(web, z, enviados)] if (f"{x[0]}|{nombre}",) not in ya]
+        ruta = [x for x in [*lentas(con, nombre), *cambios(web, z, enviados), *reputacion(con, alias)] if (f"{x[0]}|{nombre}",) not in ya]
         for clave, texto, png in [*piezas(nombre, evs, rad, rie, unidad, web["vecinos"], tramos), *ruta]:
             if muestra:
                 d = DATOS / "exportes" / "muestra"; d.mkdir(parents=True, exist_ok=True)
