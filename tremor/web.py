@@ -120,6 +120,10 @@ def datos(con):
         texto = dict(con.execute("""SELECT en.evento_id, group_concat(n.titular || '. ' || coalesce(n.resumen, ''), ' ')
                                     FROM evento_nota en JOIN nota n ON n.id = en.nota_id GROUP BY 1"""))
         leido = [leer(texto.get(i, "")) for i in ev.id]
+        # la radio no tiene titular: el aviso lleva la frase del fragmento donde se nombra la medida, para que se pueda juzgar
+        radio = dict(con.execute("""SELECT en.evento_id, n.resumen FROM evento_nota en JOIN nota n ON n.id = en.nota_id
+                                    WHERE n.consulta = 'radio' AND n.resumen IS NOT NULL"""))
+        ev["cita"] = [cita(radio.get(i)) for i in ev.id]
         try:  # gremios que se retiran, leídos por el LLM (codificar.retiros)
             gremios = {}
             for i, g in con.execute("SELECT en.evento_id, r.gremios FROM evento_nota en JOIN retiro_nota r ON r.nota_id = en.nota_id"):
@@ -374,6 +378,19 @@ def distritos_nombrados(titular, ubigeo):
     if len(u) != 4:
         return []
     return [d for n, d in DISTRITOS.get(u, {}).items() if re.search(rf"\b{re.escape(n)}\b", t)]
+
+
+def cita(texto, ancho=140):
+    """La frase de un fragmento de radio alrededor de la medida (paro, bloqueo, marcha…), recortada a palabras enteras."""
+    from tremor.prensa.codificar import MEDIDA
+    m = MEDIDA.search(texto or "")
+    if not m:
+        return None
+    a, b = max(0, m.start() - ancho), min(len(texto), m.end() + ancho)
+    t = texto[a:b].strip()
+    if a: t = "…" + t.split(" ", 1)[-1]
+    if b < len(texto): t = t.rsplit(" ", 1)[0] + "…"
+    return t
 
 
 def leer(texto):

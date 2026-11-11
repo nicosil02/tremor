@@ -34,3 +34,11 @@ def test_elegir_bing():
            "<link>http://www.bing.com/news/apiclick.aspx?ref=1&amp;url=https%3a%2f%2flarepublica.pe%2fparo&amp;c=2</link></item>")
     assert elegir_bing(rss, "Transportistas de carga pesada anuncian paro nacional de 72 horas") == "https://larepublica.pe/paro"
     assert elegir_bing(rss, "Ronderos bloquean la vía en Cajamarca") is None
+
+
+def test_cita_de_radio_alrededor_de_la_medida():
+    from tremor.web import cita
+    t = "somos noticia provincial y para que aquellas que quieren hacer una marcha hoy a favor del candidato esto está hoy en la agenda y después vamos con el abogado constitucionalista que nos explica el artículo"
+    c = cita(t, ancho=40)
+    assert "marcha hoy" in c and c.startswith("…") and c.endswith("…") and len(c) < 120
+    assert cita("saludos a los oyentes de Chivay") is None
