@@ -129,9 +129,10 @@ def ahora() -> str:
     return datetime.now().isoformat(timespec="seconds")
 
 
-def conectar(ruta: Path = RUTA_DB) -> sqlite3.Connection:
+def conectar(ruta: Path = RUTA_DB, hilos: bool = False) -> sqlite3.Connection:
+    """`hilos=True`: la conexión se usa desde varios hilos (la radio en vivo), siempre bajo un candado del que llama."""
     Path(ruta).parent.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(ruta, timeout=120)  # varios procesos (modelo, prensa, radio) escriben a la vez
+    con = sqlite3.connect(ruta, timeout=120, check_same_thread=not hilos)  # varios procesos (modelo, prensa, radio) escriben a la vez
     con.row_factory = sqlite3.Row
     con.executescript(ESQUEMA)
     # Columnas añadidas después de la primera versión (bases ya creadas).

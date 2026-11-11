@@ -98,7 +98,7 @@ def modelo_whisper():
 
 def vivo(empresa=None, provincias=None, minutos=None, hilos=4, segundos=60):
     from tremor.avisos import enviar
-    con = conectar()
+    con = conectar(hilos=True)  # los hilos escriben bajo el candado `bd`
     provincias = provincias or provincias_de(con, empresa)
     lista = emisoras(provincias)
     modelo, disp = modelo_whisper()
