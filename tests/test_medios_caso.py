@@ -6,12 +6,13 @@ from tremor.web import medios_recientes
 
 def test_medios_del_caso_piden_contraparte_o_conflicto():
     con = sqlite3.connect(":memory:")
-    con.execute("CREATE TABLE nota (medio, publicado, titular, resumen, enlace, filtro)")
+    con.execute("CREATE TABLE nota (medio, publicado, titular, resumen, enlace, filtro, consulta)")
     hoy = date.today().isoformat()
-    con.executemany("INSERT INTO nota VALUES (?, ?, ?, ?, ?, NULL)", [
-        ("A", hoy, "Papa rinde homenaje a la independencia", "", "x"),
-        ("B", hoy, "Independencia: comuneros reclaman a Raura", "", "y"),
-        ("C", hoy, "Chuicuni anuncia paro", "", "z"),
+    con.executemany("INSERT INTO nota VALUES (?, ?, ?, ?, ?, NULL, ?)", [
+        ("A", hoy, "Papa rinde homenaje a la independencia", "", "x", None),
+        ("B", hoy, "Independencia: comuneros reclaman a Raura", "", "y", None),
+        ("C", hoy, "Chuicuni anuncia paro", "", "z", None),
+        ("D", hoy, "Radio X, en vivo", "Chuicuni anuncia paro", "w", "radio"),
     ])
     out = medios_recientes(con, ["Independencia - Raura", "Comunidad Campesina de Chuicuni", "Minera Las Bambas (II)"])
     assert [m["medio"] for m in out[0]] == ["B"]

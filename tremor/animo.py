@@ -38,7 +38,9 @@ PROYECTOS = {
     "Inmaculada (Hochschild)": (r"inmaculada|hochschild", "Ayacucho", ["Paucar del Sara Sara", "Parinacochas"]),
     "Marcona (Shougang)": (r"shougang|marcona", "Ica", ["Nazca"]),
     "Lagunas Norte (Boroo)": (r"lagunas norte|barrick|boroo", "La Libertad", ["Santiago de Chuco"]),
-    "Minera Poderosa": (r"minera poderosa|la poderosa", "La Libertad", ["Pataz"]),
+    # "la poderosa" sola también es una radio (La Poderosa Mix) y frase de prédica: solo cuenta con contexto minero
+    "Minera Poderosa": (r"minera poderosa|^(?=.*\b(?:minas?|miner[oa]s?|pataz|vijus|socav[oó]n)\b).*\bla poderosa\b(?!\s+mix)",
+                        "La Libertad", ["Pataz"]),
     "Minera Bateas": (r"minera bateas|\bbateas\b", "Arequipa", ["Caylloma"]),
     "Raura": (r"\braura\b", "Huánuco", ["Lauricocha"]),
     "Volcan": (r"minera volcan|volcan compa", "Pasco", ["Pasco"]),
@@ -87,7 +89,7 @@ def actualizar(con, hoy=None):
                         "WHERE publicado IS NOT NULL", con)
     filas = []
     for r in notas.itertuples():
-        for nombre, frase in menciones(f"{r.titular}. {r.resumen or ''}"):
+        for nombre, frase in menciones(f"{r.titular}. {r.resumen or ''}".replace(r.medio or "\0", "")):  # sin el nombre del medio
             neg, pos, t = tono(frase)
             filas.append((r.id, nombre, r.fecha, r.medio, "radio" if r.consulta == "radio" else "web", neg, pos, t))
     m = pd.DataFrame(filas, columns=["nota_id", "proyecto", "fecha", "medio", "origen", "negativos", "positivos", "tono"])

@@ -497,7 +497,8 @@ def medios_recientes(con, nombres, dias=60):
     hasta el guion) en titulares y resúmenes de los últimos 60 días."""
     desde = (date.today() - timedelta(days=dias)).isoformat()
     n = tabla(con, f"SELECT medio, substr(publicado, 1, 10) AS fecha, titular, resumen, enlace FROM nota WHERE publicado >= '{desde}' "
-                   "AND COALESCE(filtro, '') != 'medio_extranjero' ORDER BY publicado DESC")
+                   "AND COALESCE(filtro, '') != 'medio_extranjero' AND COALESCE(consulta, '') != 'radio' "  # un fragmento de radio no tiene titular legible
+                   "ORDER BY publicado DESC")
     texto = (n.titular.fillna("") + " " + n.resumen.fillna("")).str.lower()
     out = []
     for nom in nombres:
