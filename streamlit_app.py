@@ -15,9 +15,8 @@ st.set_page_config(page_title="Tremor", layout="wide", initial_sidebar_state="co
 
 def operaciones():
     # sin márgenes ni cabecera: la app ocupa toda la ventana
-    st.markdown("<style>.block-container{padding:0;max-width:100%} header[data-testid=stHeader]{height:0}"
-                "iframe{display:block}</style>", unsafe_allow_html=True)
-    componentes.iframe(APP, height=900, scrolling=True)
+    st.markdown("<style>.block-container{padding:3.5rem 0 0;max-width:100%} iframe{display:block}</style>", unsafe_allow_html=True)
+    componentes.iframe(APP, height=860, scrolling=True)  # debajo de la barra de Streamlit, que da paso a los datos del modelo
 
 
 st.navigation([st.Page(operaciones, title="Operaciones", default=True),
