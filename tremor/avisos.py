@@ -103,7 +103,10 @@ def cambios(web, z, enviados):
                    f"{que}: anuncian que no se suman: {quienes}. El resto de la convocatoria sigue.{fuente}", None)
         # Si la prensa informa que la protesta avisada se hizo, se dice con su fuente. Si no hay noticia, no se manda
         # nada: un aviso con signo de interrogación y sin fuente resta credibilidad
-        elif e.get("estado") == "ocurrida" and f and f <= hoy() and e.get("enlace"):
+        # solo de lo que se avisó como anunciado (tiene fecha de anuncio anterior) y pasó en los últimos 3 días: lo que ya
+        # llegó como ocurrido no se repite (un bloqueo del 4 nov volvió a salir el 11 como "se realizó")
+        elif (e.get("estado") == "ocurrida" and f and e.get("fecha_anuncio") and e["fecha_anuncio"] < f and e.get("enlace")
+              and (date.today() - timedelta(days=3)).isoformat() <= f <= hoy()):
             yield ("hubo:" + orig, f"📍 *SE REALIZÓ*\n_{e.get('titular') or que}_\n\n{que}: según {e.get('medio') or 'la prensa'}, "
                    f"la medida se llevó a cabo.{fuente}", None)
 

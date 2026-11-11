@@ -209,12 +209,15 @@ def test_seguimiento_solo_con_noticia():
     from datetime import date, timedelta
     from tremor.avisos import cambios
     ayer = (date.today() - timedelta(days=1)).isoformat()
-    ev = lambda i, acc, estado, enlace="https://x.pe/n": {"ubigeo": "040505", "accion": acc, "actor": "Comuneros", "fecha_evento": ayer,
-                                                          "estado": estado, "medio": "Radio Uno", "enlace": enlace, "titular": f"Nota {i}"}
-    web = {"eventos": [ev(1, "Marcha", "anunciada"),           # la fecha pasó y nadie informó: nada
-                       ev(2, "Bloqueo de vías", "ocurrida"),   # la prensa dice que se hizo: aviso con fuente
-                       ev(3, "Paro", "suspendida")]}           # se levantó: aviso con fuente
-    enviados = {f"evento:040505:{e['accion']}:{ayer}" for e in web["eventos"]}
+    hace8 = (date.today() - timedelta(days=8)).isoformat()
+    ev = lambda i, acc, estado, enlace="https://x.pe/n", f=ayer, anun=None: {"ubigeo": "040505", "accion": acc, "actor": "Comuneros", "fecha_evento": f,
+                                                          "fecha_anuncio": anun, "estado": estado, "medio": "Radio Uno", "enlace": enlace, "titular": f"Nota {i}"}
+    web = {"eventos": [ev(1, "Marcha", "anunciada", anun=hace8),             # la fecha pasó y nadie informó: nada
+                       ev(2, "Bloqueo de vías", "ocurrida", anun=hace8),     # anunciada antes y la prensa dice que se hizo: aviso con fuente
+                       ev(3, "Paro", "suspendida"),                          # se levantó: aviso con fuente
+                       ev(4, "Toma", "ocurrida"),                            # nunca fue anunciada: ya llegó como ocurrida, nada
+                       ev(5, "Bloqueo", "ocurrida", f=hace8, anun=hace8)]}   # de hace 8 días: nada
+    enviados = {f"evento:040505:{e['accion']}:{e['fecha_evento']}" for e in web["eventos"]}
     salida = list(cambios(web, {"040505"}, enviados))
     assert [c for c, _, _ in salida] == [f"hubo:evento:040505:Bloqueo de vías:{ayer}", f"cae:evento:040505:Paro:{ayer}"]
     assert all("https://x.pe/n" in t for _, t, _ in salida)  # nunca sin fuente
