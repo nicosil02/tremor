@@ -195,24 +195,27 @@ def test_seguimiento_de_lo_avisado():
     ayer = (date.fromisoformat(hoy()) - timedelta(days=1)).isoformat()
     ev = lambda **k: {"ubigeo": "040701", "accion": "Paro", "fecha_evento": "2026-12-01", "estado": "anunciada", **k}
     web = {"eventos": [ev(suspendido=True, postergado=True), ev(accion="Marcha", retiran=["040108", "150101"], gremios_retiran=["transportistas de carga de Islay"]),
-                       ev(accion="Bloqueo", fecha_evento=ayer), ev(accion="Toma", suspendido=True)]}
+                       ev(accion="Bloqueo", fecha_evento=ayer, estado="ocurrida", medio="RPP", enlace="https://x.pe/b"), ev(accion="Toma", suspendido=True)]}
     z = {"040701": "Cailloma", "040108": "en su ruta"}
     enviados = {"evento:040701:Paro:2026-12-01", "evento:040701:Marcha:2026-12-01", f"evento:040701:Bloqueo:{ayer}"}
     xs = {c.split(":")[0]: t for c, t, _ in cambios(web, z, enviados)}
-    assert set(xs) == {"cae", "retira", "nohubo"}          # la toma no se avisó antes: su suspensión tampoco
+    assert set(xs) == {"cae", "retira", "hubo"}            # la toma no se avisó antes: su suspensión tampoco
+    assert "SE REALIZÓ" in xs["hubo"] and "https://x.pe/b" in xs["hubo"]
     assert "POSTERGADA" in xs["cae"] and "La Joya" in xs["retira"] and "transportistas de carga de Islay" in xs["retira"] and "Lima" not in xs["retira"]
 
 
-def test_sin_noticia_solo_de_lo_que_frena():
+def test_seguimiento_solo_con_noticia():
+    """Lo avisado se sigue solo cuando hay noticia: se realizó (con fuente) o se suspendió. Sin noticia, nada."""
     from datetime import date, timedelta
     from tremor.avisos import cambios
     ayer = (date.today() - timedelta(days=1)).isoformat()
-    ev = lambda i, ub, acc, actor: {"ubigeo": ub, "accion": acc, "actor": actor, "fecha_evento": ayer, "fecha_anuncio": ayer, "estado": "anunciada",
-                                    "medio": "Radio Uno", "enlace": "https://x.pe/n", "titular": f"Nota {i}"}
-    web = {"eventos": [ev(1, "040701", "Marcha", "Trabajadores municipales"),   # en la ruta, gremio que no corta vías: nada
-                       ev(2, "040701", "Bloqueo de vías", "Transportistas de carga"),  # en la ruta y corta: avisa
-                       ev(3, "040505", "Marcha", "Comuneros")]}                  # en la zona: avisa
-    enviados = {f"evento:{e['ubigeo']}:{e['accion']}:{ayer}" for e in web["eventos"]}
+    ev = lambda i, acc, estado, enlace="https://x.pe/n": {"ubigeo": "040505", "accion": acc, "actor": "Comuneros", "fecha_evento": ayer,
+                                                          "estado": estado, "medio": "Radio Uno", "enlace": enlace, "titular": f"Nota {i}"}
+    web = {"eventos": [ev(1, "Marcha", "anunciada"),           # la fecha pasó y nadie informó: nada
+                       ev(2, "Bloqueo de vías", "ocurrida"),   # la prensa dice que se hizo: aviso con fuente
+                       ev(3, "Paro", "suspendida")]}           # se levantó: aviso con fuente
+    enviados = {f"evento:040505:{e['accion']}:{ayer}" for e in web["eventos"]}
     salida = list(cambios(web, {"040505"}, enviados))
-    assert [c for c, _, _ in salida] == [f"nohubo:evento:040701:Bloqueo de vías:{ayer}", f"nohubo:evento:040505:Marcha:{ayer}"]
-    assert all("Lo anunció Radio Uno" in t and "https://x.pe/n" in t for _, t, _ in salida)  # nunca sin fuente
+    assert [c for c, _, _ in salida] == [f"hubo:evento:040505:Bloqueo de vías:{ayer}", f"cae:evento:040505:Paro:{ayer}"]
+    assert all("https://x.pe/n" in t for _, t, _ in salida)  # nunca sin fuente
+    assert not any("?" in t or "❔" in t for _, t, _ in salida)

@@ -101,13 +101,11 @@ def cambios(web, z, enviados):
             quienes = ", ".join([*gre, *(mayus(lugar(u)) for u in ret)])
             yield (f"retira:{orig}:{'-'.join(ret + gre)}", f"↩️ *SE RETIRAN DE LA PROTESTA*\n_{e.get('titular') or que}_\n\n"
                    f"{que}: anuncian que no se suman: {quienes}. El resto de la convocatoria sigue.{fuente}", None)
-        # "sin noticia" solo de lo que podía frenar a la empresa: en su zona, o una medida que corta vías; no de una
-        # marcha de un gremio que solo pasa por la ruta (municipales, docentes, salud): esa fue ruido para Bateas
-        elif (e.get("estado") == "anunciada" and f and f < hoy() and f >= (date.today() - timedelta(days=3)).isoformat()
-              and (ub in z or re.search(r"bloque|toma|paro", acc, re.I)) and not re.search(SECTOR, e.get("actor") or "", re.I)):
-            anun = (f" Lo anunció {e.get('medio')}" + (f" el {dia(e['fecha_anuncio'])}" if e.get("fecha_anuncio") else "") + ".") if e.get("medio") else ""
-            yield ("nohubo:" + orig, f"❔ *SIN NOTICIA DE QUE SE REALIZARA*\n_{e.get('titular') or que}_\n\n{que}: la fecha pasó y la prensa "
-                   f"no informó que se hiciera.{anun} Pudo levantarse o no tener cobertura; conviene confirmarlo en la zona.{fuente}", None)
+        # Si la prensa informa que la protesta avisada se hizo, se dice con su fuente. Si no hay noticia, no se manda
+        # nada: un aviso con signo de interrogación y sin fuente resta credibilidad
+        elif e.get("estado") == "ocurrida" and f and f <= hoy() and e.get("enlace"):
+            yield ("hubo:" + orig, f"📍 *SE REALIZÓ*\n_{e.get('titular') or que}_\n\n{que}: según {e.get('medio') or 'la prensa'}, "
+                   f"la medida se llevó a cabo.{fuente}", None)
 
 
 def hoy():
