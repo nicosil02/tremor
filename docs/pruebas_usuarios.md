@@ -1,6 +1,6 @@
 # Pruebas con usuarios
 
-Cuatro personas ajenas al desarrollo probaron la app publicada y la landing. Se nombran por su rol. Cada comentario va con
+Cinco personas ajenas al desarrollo probaron la app publicada y la landing. Se nombran por su rol. Cada comentario va con
 lo que cambió por él.
 
 ## 1. Analista sénior del Servicio de Asesoría Empresarial de APOYO Consultoría (10 de noviembre, videollamada)
@@ -43,6 +43,14 @@ Recorrió la landing y la demo sin explicación previa.
 |---|---|
 | No basta con ver los bloqueos o tomas contra la operación: hay que resaltar también las vías de interés de cada operación, porque ahí está el valor adicional. | La ruta de salida de cada unidad es parte central de la app. La pestaña Riesgo muestra la **Carretera** (cortes de hoy en su ruta, según la SUTRAN, las radios y los medios) y cada tramo con su estado; el mapa pinta los distritos de la ruta y los avisos incluyen las protestas que pasan por ella aunque estén lejos de la mina. |
 
-## 5. Pendiente
+## 5. Relaciones comunitarias de una empresa minera
 
-Una prueba con una persona de relaciones comunitarias de una minera.
+Probó la landing y la demo durante una conversación (notas en
+[`research/01-relaciones-comunitarias.md`](research/01-relaciones-comunitarias.md)).
+
+| Lo que dijo | Qué cambió o qué sigue |
+|---|---|
+| Pagan una asesoría que les alerta de la conflictividad, pero sin insights cercanos ni enfoque predictivo. Intentaron un modelo propio con IA y no pudieron sistematizar la información de la Defensoría. | Confirma el núcleo de Tremor, la Defensoría ordenada caso por caso más el pronóstico de la zona. |
+| Sería más valioso si la empresa aporta su propia información, para una solución a medida. | Plan Empresa con los datos del cliente (quejas, incidentes, relacionamiento) como variables del modelo de su zona. |
+| El registro de conflictos en curso de la Defensoría llega con un mes de rezago. | Mientras tanto, la prensa y las radios cubren ese mes, y la página lo dice. |
+| Escribir a la Defensoría para armar con ellos un seguimiento de protestas en tiempo real. | Carta a la Defensoría pendiente. |
