@@ -11,15 +11,15 @@ Proyecto final de la Diplomatura Q-Lab PUCP (issue #204 de `d2cml-ai/Data-Scienc
 
 ## 1. One-liner
 
-Avisamos a mineras medianas, petroleras y concesionarias dónde está subiendo el riesgo de un paro, un bloqueo o una
-toma contra sus operaciones, con sus razones, leyendo cada día la Defensoría, la SUTRAN, la prensa y las radios
+Avisamos a la mediana minería de los paros y bloqueos anunciados cerca de sus operaciones y en su ruta de salida, y
+estimamos dónde sube el riesgo con sus razones, leyendo cada día la Defensoría, la SUTRAN, la prensa y las radios
 locales con IA.
 
 ## 2. Founder
 
-Nicolás Silva Andújar, politólogo, predocente de la PUCP y consultor de asuntos públicos en Vali Consultores,
-después de mi paso por APOYO Consultoría. He trabajado asuntos públicos para empresas de los sectores Pharma, Crop y
-Tech, energía, hidrocarburos y minería. Trabajo en lo que este
+Nicolás Silva Andújar, politólogo y consultor de asuntos públicos en Vali Consultores, después de mi paso por APOYO
+Consultoría. He trabajado asuntos públicos para empresas de energía, hidrocarburos, minería y finanzas, y también de
+Pharma, Crop y Tech. Trabajo en lo que este
 producto resuelve: explicarle a una empresa qué está pasando con el Estado y con la sociedad alrededor de su
 negocio, antes de que le cueste. Llevo años leyendo los reportes de conflictos de la Defensoría y construyendo
 herramientas de monitoreo de datos públicos, y Tremor junta las dos cosas.
