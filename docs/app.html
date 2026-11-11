@@ -345,7 +345,7 @@ const VISTAS = {
     cabecera(false);
     const prox = u[0], an = (D.animo || []).find(a => EMPRESAS[empresa][1].test(a.proyecto || ""));
     const hoy = `<div class="hoy">${prox ? `<button type="button" data-aviso="${X.avisos.indexOf(prox)}"><b class="c1">${esc(prox.w)}</b><span>${esc(prox.t)}</span></button>` : `<div><b>–</b><span>Nada anunciado</span></div>`}
-      <div><b>${an ? Math.round(an.menciones_7d) : 0}</b><span>${an ? `Menciones en 7 días, ${pct(an.pct_negativo)} negativas` : "Sin menciones en los últimos 7 días"}</span></div></div>
+      <div><b>${an ? Math.round(an.menciones_7d) : 0}</b><span>${an ? `Reputación: menciones en 7 días, ${pct(an.pct_negativo)} negativas` : "Reputación: sin menciones en 7 días"}</span></div></div>
       <p class="hoy-pie">Lo de hoy en radios, medios, Defensoría y SUTRAN. No cambia el nivel de riesgo.</p>`;
     return hoy + (u.length ? `<h2>Atender</h2><ul>${u.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<h2>Atender</h2><p class="vacio">Nada anunciado en su zona ni en sus rutas.</p>`)
       + `<h2>Para seguir</h2>` + (r.length ? `<ul>${r.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas ni notas sobre la empresa.</p>`)

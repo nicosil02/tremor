@@ -67,7 +67,7 @@ su riesgo y un informe mensual listo para enviar.
 - **Monitoreo en vivo.** La prensa regional, la SUTRAN y 286 radios locales de 139 provincias se leen cada día.
   Un LLM codifica cada nota con el manual de la base de protestas de la PUCP. Las protestas anunciadas aparecen
   como alerta antes de que ocurran.
-- **Avisos por Telegram.** Cada cliente recibe en su chat solo lo que toca a sus operaciones y su ruta: protestas
+- **Avisos por WhatsApp.** Cada cliente recibe en su chat solo lo que toca a sus operaciones y su ruta: protestas
   anunciadas, bloqueos de la SUTRAN y tramos lentos, con qué hacer. Si el paro se suspende o los gremios se retiran,
   también se avisa.
 - **Su ruta de salida.** Cada tramo de la mina al puerto, con el riesgo de los distritos que cruza y el tiempo de
@@ -145,7 +145,7 @@ flowchart LR
   MOD --> DB
   DB --> WEB[web.json]
   WEB --> PAG[GitHub Pages<br>inicio, app e informe]
-  DB --> TG[Bot de Telegram<br>avisos por cliente]
+  DB --> TG[Avisos por chat<br>WhatsApp; hoy Telegram]
   DB --> MCP[Servidor MCP]
 ```
 
@@ -210,6 +210,8 @@ transmite y luego pasar el audio a texto, que es lo que más cálculo consume. C
 radios son unas 840 horas de audio al día. En CPU eso ocupa decenas de máquinas. Una GPU lo transcribe varias decenas
 de veces más rápido, y por eso conviene pagarla cuando hay contrato.
 
+**Costo por cliente.** Con el supuesto de una operación que recibe unos 40 avisos al mes, 300 notas y 60 fragmentos de radio codificados para su zona y un informe mensual: unos US$25 al mes en tokens y US$30 de servidor y mensajería, cerca de **US$55 por cliente**, frente a los US$1 500 del plan; el resto del costo es fijo y se reparte.
+
 Cada plan cubre por sí solo el costo de operar. Un piloto o una operación pagan US$1 500 al mes, y el plan Empresa unos US$3 300. Desde ahí, cada cliente adicional es casi todo margen,
 porque su informe y sus alertas salen de los mismos datos. Mientras haya pocos clientes, la revisión de los avisos dudosos y del informe
 mensual la hace el fundador; un analista a medio tiempo (unos US$800 al mes) entra a partir del tercer cliente.
@@ -266,7 +268,7 @@ el ejecutor.
 - los lectores de la Defensoría, la prensa, la SUTRAN y la radio;
 - el modelo y su evaluación;
 - la página de inicio, la app, el informe y los vehículos 3D de la ruta;
-- el bot de avisos por Telegram;
+- el bot de avisos por chat (hoy Telegram; WhatsApp con el contrato);
 - los workflows;
 - las pruebas.
 
