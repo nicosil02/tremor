@@ -1,0 +1,50 @@
+# Radio en vivo desde GitHub, gratis y sin una máquina propia: una corrida se queda escuchando las radios de la zona y
+# la ruta de una empresa (hasta 5,5 h, el tope de GitHub) y manda al chat cada paro, bloqueo o toma en el mismo minuto.
+# Se lanza a mano (Actions → Radio en vivo → Run workflow), por ejemplo antes de una demo. Sin GPU rota entre las radios.
+name: Radio en vivo
+
+on:
+  workflow_dispatch:
+    inputs:
+      empresa:
+        description: "Empresa cliente (como en docs/app.html)"
+        default: "Bateas"
+      minutos:
+        description: "Cuántos minutos escuchar (máx. 330)"
+        default: "180"
+      hilos:
+        description: "Radios a la vez (la máquina tiene 4 núcleos)"
+        default: "4"
+
+jobs:
+  vivo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Caché del modelo Whisper
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: radio-modelos-v2
+
+      - run: |
+          pip install -r requirements.txt faster-whisper
+          sudo apt-get install -y -qq ffmpeg
+          mkdir -p datos && git fetch --depth 1 origin datos && git show origin/datos:tremor.db.gz | gunzip > datos/tremor.db
+
+      - name: Escuchar en vivo
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          MIN="${{ inputs.minutos }}"; [ "$MIN" -gt 330 ] && MIN=330
+          python -m tremor.radio vivo --empresa "${{ inputs.empresa }}" --minutos "$MIN" --hilos "${{ inputs.hilos }}"
