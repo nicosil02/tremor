@@ -1,8 +1,7 @@
 """Tremor en Streamlit Community Cloud: la página publicada (landing y app) a pantalla completa, sin barra ni menú.
 
 Sin acceso por usuario para que cualquiera pueda revisar la demo. El acceso por cliente (una cuenta ve solo su
-empresa) está listo en `tremor.acceso` para cuando haya clientes. Los datos del modelo se exploran con
-`streamlit run paginas/explorar.py`.
+empresa) está listo en `tremor.acceso` para cuando haya clientes.
 
     streamlit run streamlit_app.py
 """

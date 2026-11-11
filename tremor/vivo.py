@@ -10,8 +10,6 @@ franjas, para que la corrida normal lo codifique y agrupe.
 Whisper small en GPU si hay CUDA (int8_float16), si no en CPU. Sin TELEGRAM_* en el entorno los avisos solo se imprimen."""
 import json
 import os
-import re
-import sys
 import tempfile
 import threading
 import time

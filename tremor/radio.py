@@ -26,6 +26,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 from tremor.db import RAIZ, ahora, conectar
+from tremor.lugares import norm
 import re
 
 from tremor.prensa.recolectar import LIMA, NO_ES, id_nota
@@ -53,9 +54,9 @@ def directo(url):
     YouTube bloquea las IP de datacenter: yt-dlp sale por WARP (YT_DLP_PROXY), como tv-en-vivo de Base_legislativa."""
     if "youtube.com" not in url:
         return url
-    import yt_dlp
     opciones = {"quiet": True, "no_warnings": True, **({"proxy": p} if (p := os.environ.get("YT_DLP_PROXY")) else {})}
     try:
+        import yt_dlp  # dentro del try: sin yt-dlp esa radio se salta y el resto sigue
         with yt_dlp.YoutubeDL(opciones) as ydl:
             info = ydl.extract_info(url, download=False)
     except Exception as e:
@@ -96,16 +97,11 @@ def trozos(texto, n=TROZO):
     return salida + ([actual.strip()] if actual.strip() else [])
 
 
-def _ascii(x):
-    import unicodedata
-    return unicodedata.normalize("NFKD", x).encode("ascii", "ignore").decode().upper().strip()
-
-
 def lengua(radio) -> str:
     """Adaptador MMS de la radio: aimara, quechua del sur (Cusco-Collao) o chanka."""
-    if _ascii(radio["provincia"]) in AIMARA:
+    if norm(radio["provincia"]).upper() in AIMARA:
         return "ayr"
-    return "quz" if _ascii(radio["departamento"]) in QUECHUA_SUR else "quy"
+    return "quz" if norm(radio["departamento"]).upper() in QUECHUA_SUR else "quy"
 
 
 def no_castellano(segs, voz, duracion, ventana=VENTANA, min_voz=20, cps=4):

@@ -50,4 +50,4 @@ def test_mencion_de_radio_alrededor_del_proyecto():
     t = "saludos a los oyentes " * 20 + "los comuneros dicen que Las Bambas contamina el río y anuncian un paro " + "música " * 30
     r = alrededor(t, ALIAS["Las Bambas (MMG)"], ancho=40)
     assert "Las Bambas contamina" in r and r.startswith("…") and r.endswith("…") and len(r) < 140
-    assert alrededor("sin la empresa", ALIAS["Las Bambas (MMG)"]) == "sin la empresa"
+    assert alrededor("sin la empresa", ALIAS["Las Bambas (MMG)"]) is None
