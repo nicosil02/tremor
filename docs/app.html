@@ -203,6 +203,9 @@
   .hoy-pie { margin: 6px 16px 0; font-size: 13px; color: var(--tinta-2); }
   .rep-cab { margin: 0 16px 4px; font-size: 15px; color: var(--tinta-2); } .rep-cab b { font-size: 26px; font-weight: 750; color: var(--tinta); margin-right: 4px; }
   .rep-aviso { margin: 0 16px 6px; font-size: 13px; font-weight: 600; color: var(--rojo); }
+  .rep-barra { display: flex; gap: 2px; height: 14px; margin: 4px 16px 6px; border-radius: 7px; overflow: hidden; } .rep-barra i { display: block; }
+  .rep-ley { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0 16px 8px; font-size: 13px; color: var(--tinta-2); }
+  .rep-ley i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; }
   .pie { padding: 18px 16px; font-size: 14px; color: var(--tinta-2); } .pie a { color: var(--tinta-2); }
   /* Recorrido la primera vez: un recorte iluminado (sombra enorme) y una tarjeta con el paso */
   #tour-luz { position: fixed; z-index: 50; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(28, 38, 41, .6); pointer-events: none; }
@@ -367,7 +370,11 @@ const VISTAS = {
       const a = Math.max(0, i - 70), b = Math.min(t.length, i + 70); return (a ? "…" : "") + t.slice(a, b).trim() + (b < t.length ? "…" : ""); };
     const cab = an && an.menciones_7d ? `<b>${Math.round(an.menciones_7d)}</b> menciones en 7 días${an.base_7d >= 1 ? `, ×${Math.round(an.alza)} lo habitual` : ""}, ${pct(an.pct_negativo)} críticas`
       : `<b>0</b> menciones esta semana${an && an.base_7d ? `, lo habitual son ${an.base_7d} por semana` : ""}`;
-    const rep = `<h2>Reputación</h2><p class="rep-cab">${cab}</p>${an && an.aviso ? `<p class="rep-aviso">${esc(an.aviso.replace(/(\d{4})-(\d{2})-(\d{2})/g, (_, y, m, d) => dia(`${y}-${m}-${d}`)))}</p>` : ""}
+    // barra apilada de la semana por tono, para ver de un vistazo cuánto es crítico
+    const todas = (D.menciones || []).filter(m => alias.test(m.proyecto || "") && dias(m.fecha) >= -6), nT = t => todas.filter(m => String(m.tono) === t).length;
+    const barra = todas.length ? `<div class="rep-barra" role="img" aria-label="${nT("-1")} críticas, ${nT("0")} neutras, ${nT("1")} favorables">${["-1", "0", "1"].map(t => nT(t) ? `<i style="flex:${nT(t)};background:${TONO[t][0]}"></i>` : "").join("")}</div>
+      <p class="rep-ley">${["-1", "0", "1"].filter(t => nT(t)).map(t => `<span><i style="background:${TONO[t][0]}"></i>${nT(t)} ${TONO[t][1].toLowerCase()}${nT(t) > 1 ? "s" : ""}</span>`).join("")}</p>` : "";
+    const rep = `<h2>Reputación</h2><p class="rep-cab">${cab}</p>${barra}${an && an.aviso ? `<p class="rep-aviso">${esc(an.aviso.replace(/(\d{4})-(\d{2})-(\d{2})/g, (_, y, m, d) => dia(`${y}-${m}-${d}`)))}</p>` : ""}
       ${ms.length ? `<ul>${ms.map(m => { const k = X.avisos.findIndex(x => x.m === m), [col, tn] = TONO[String(m.tono)] || TONO["0"], aire = /, en vivo /.test(m.titular || "");
         return `<li><button type="button" class="fila"${k >= 0 ? ` data-aviso="${k}"` : ""}><i style="background:${col}"></i><span class="t">${esc(aire ? ventana(m.resumen || "", alias) : m.titular.replace(/^[^:]{2,25}:\s*/, ""))}</span><span class="w">${esc(dia(m.fecha))}</span><span class="s">${tn}, ${esc(TEMA[m.tema] || "en medios")}, ${esc(m.medio)}</span></button></li>`; }).join("")}</ul>`
         : `<p class="vacio">Nadie habló de la empresa en radios ni medios esta semana.</p>`}`;

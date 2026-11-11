@@ -418,6 +418,9 @@ def focos(con, n=5):
     return out
 
 
+RUIDO = "'religioso', 'musica_o_ruido', 'aviso', 'medio_extranjero'"  # fragmentos que no hablan de nadie
+
+
 def menciones(con):
     """Lo que dijeron radio y medios de cada proyecto en los últimos 30 días: titular, quién, cuándo, el tono y un
     fragmento. Una por titular (la misma nota llega por el feed del medio y por Google News: se queda el enlace directo)."""
@@ -426,7 +429,7 @@ def menciones(con):
     # tema y tono del transformer (tremor.clasifica); si la nota aún no pasó por él, el tono del léxico
     m = tabla(con, "SELECT m.proyecto, m.fecha, m.medio, m.origen, COALESCE(t.tono, m.tono) AS tono, t.tema, n.titular, n.resumen, n.enlace "
                    "FROM mencion m JOIN nota n ON n.id = m.nota_id LEFT JOIN nota_tema t ON t.nota_id = m.nota_id "
-                   f"WHERE m.fecha >= '{desde}' ORDER BY m.fecha DESC")
+                   f"WHERE m.fecha >= '{desde}' AND COALESCE(n.filtro, '') NOT IN ({RUIDO}) ORDER BY m.fecha DESC")
     if not len(m):
         return []
     m["google"] = m.enlace.str.contains("news.google")

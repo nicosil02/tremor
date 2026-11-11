@@ -86,7 +86,7 @@ def provincias():
 
 def actualizar(con, hoy=None):
     notas = pd.read_sql("SELECT id, medio, titular, resumen, substr(publicado, 1, 10) AS fecha, consulta FROM nota "
-                        "WHERE publicado IS NOT NULL", con)
+                        "WHERE publicado IS NOT NULL AND COALESCE(filtro, '') NOT IN ('religioso', 'musica_o_ruido', 'aviso', 'medio_extranjero')", con)
     filas = []
     for r in notas.itertuples():
         for nombre, frase in menciones(f"{r.titular}. {r.resumen or ''}".replace(r.medio or "\0", "")):  # sin el nombre del medio
