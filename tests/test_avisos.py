@@ -201,3 +201,34 @@ def test_seguimiento_de_lo_avisado():
     xs = {c.split(":")[0]: t for c, t, _ in cambios(web, z, enviados)}
     assert set(xs) == {"cae", "retira", "nohubo"}          # la toma no se avisó antes: su suspensión tampoco
     assert "POSTERGADA" in xs["cae"] and "La Joya" in xs["retira"] and "transportistas de carga de Islay" in xs["retira"] and "Lima" not in xs["retira"]
+
+
+def test_reputacion_se_dispara_con_motivos_del_llm(monkeypatch):
+    """Avisa solo del proyecto que se dispara (negativas ≥ 50%, o pico/racha, o alza con base), con lo que escribe el LLM;
+    sin cupo, igual sale con las cifras."""
+    from tremor.avisos import reputacion
+    con = sqlite3.connect(":memory:")
+    con.executescript("""
+        CREATE TABLE animo (proyecto, menciones_7d, base_7d, alza, pct_negativo, aviso);
+        INSERT INTO animo VALUES ('Minera Bateas', 6, 0.5, 6, 0.67, 'pico negativo el 2026-11-10 (4 menciones)'),
+                                 ('Minera Bateas', 2, 0.5, 2, 1.0, NULL),      -- pocas menciones: no
+                                 ('Minera Raura', 5, 1, 5, 0.2, NULL);         -- ni negativa ni base: no
+        CREATE TABLE nota (id, titular, resumen, medio, enlace);
+        INSERT INTO nota VALUES (1, 'Comuneros de Caylloma anuncian paro contra Bateas', 'Reclaman por el agua.', 'Radio Uno', 'https://x.pe/1'),
+                                (2, 'Radio Calor, en vivo 10/11/2026 (3)', 'dicen que la minera contamina el río', 'Radio Calor', NULL);
+        CREATE TABLE mencion (nota_id, proyecto, fecha, tono);
+        INSERT INTO mencion VALUES (1, 'Minera Bateas', '2026-11-10', -1), (2, 'Minera Bateas', '2026-11-09', -1);
+    """)
+    pedidos = []
+    monkeypatch.setattr("tremor.llm.chat_json", lambda con, s, u, v: pedidos.append(u) or {
+        "proyecto": "Minera Bateas", "motivos": "Comuneros reclaman por el agua.", "accion": "Paro de comuneros de Caylloma, sin fecha",
+        "cita": "la minera contamina el río", "cita_de": "Radio Calor, 9 nov"})
+    (clave, texto, png), = reputacion(con, r"minera bateas|\bbateas\b", "2026-W46")
+    assert clave == "reputacion:Minera Bateas:2026-W46" and png is None
+    assert "6 menciones en 7 días" in texto and "67% negativas" in texto and "lo habitual" not in texto  # base corta: sin alza
+    assert "Comuneros reclaman" in texto and "Paro de comuneros" in texto and "«la minera contamina el río»" in texto and "https://x.pe/1" in texto
+    assert "Radio Uno" in pedidos[0] and "contamina" in pedidos[0]
+    from tremor.llm import SinCuota
+    monkeypatch.setattr("tremor.llm.chat_json", lambda *a: (_ for _ in ()).throw(SinCuota("sin cupo")))
+    (_, texto, _), = reputacion(con, r"bateas", "2026-W46")
+    assert "6 menciones" in texto and "Por qué" not in texto and "«" not in texto  # nunca inventa
