@@ -11,6 +11,7 @@ import sqlite3
 import sys
 import unicodedata
 from datetime import date, timedelta
+from pathlib import Path
 
 import pandas as pd
 
@@ -108,11 +109,12 @@ def datos(con):
         zonas.setdefault(u, {})[o] = {"m0": int(mejor.m.iloc[0]), "y": mejor.y.astype(int).tolist(),
                                       "pct": mejor.pct.round(3).tolist(), "ingenuo": ing.round(3).tolist()}
     desde = (date.today() - timedelta(days=45)).isoformat()
+    fuera = ",".join(descartados()) or "0"  # eventos falsos revisados a mano (tremor/descartados.csv): no salen ni avisan
     ev = tabla(con, "SELECT * FROM (SELECT e.*, n.enlace, n.medio, n.titular, ROW_NUMBER() OVER (PARTITION BY e.id ORDER BY "
                     "(n.enlace LIKE '%news.google%') + (n.medio IN ('Facebook', 'Instagram', 'YouTube', 'TikTok', 'X')), "
                     "-length(COALESCE(n.resumen, '')), n.publicado) AS k "
                     "FROM evento_prensa e JOIN evento_nota en ON en.evento_id = e.id JOIN nota n ON n.id = en.nota_id "
-                    f"WHERE COALESCE(e.fecha_evento, e.fecha_anuncio) >= '{desde}') WHERE k = 1 "
+                    f"WHERE COALESCE(e.fecha_evento, e.fecha_anuncio) >= '{desde}' AND e.id NOT IN ({fuera})) WHERE k = 1 "
                     "ORDER BY COALESCE(fecha_evento, fecha_anuncio) DESC").drop(columns="k")
     if len(ev):  # lo que dice el cuerpo de las notas: quién se suma, quién se retira, si se suspendió, si es transporte urbano
         texto = dict(con.execute("""SELECT en.evento_id, group_concat(n.titular || '. ' || coalesce(n.resumen, ''), ' ')
@@ -438,6 +440,12 @@ def sutran(con):
     for x in s:
         x["fuentes"] = json.loads(x["fuentes"] or "[]")
     return s
+
+
+def descartados():
+    """Ids de evento_prensa descartados a mano (tremor/descartados.csv: id, motivo), p. ej. un fragmento de radio mal leído."""
+    with open(Path(__file__).with_name("descartados.csv"), encoding="utf-8") as f:
+        return {r["id"] for r in csv.DictReader(f) if r["id"].strip().isdigit()}
 
 
 def radios_provincia():

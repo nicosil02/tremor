@@ -54,7 +54,7 @@ def zona(con, empresa, vecinos):
     return z
 
 
-SECTOR = r"transportistas urbanos|docente|maestr|profesor|m[eé]dic|enfermer|salud|judicial|estatal|municipal|universit|estudiant"
+SECTOR = r"transportistas urbanos|docente|maestr|profesor|m[eé]dic|enfermer|salud|judicial|estatal|municipal|universit|estudiant|partidari|pol[ií]tic"
 
 
 def eventos(web, z, alias, desde):
