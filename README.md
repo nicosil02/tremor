@@ -11,13 +11,15 @@ Proyecto final de la Diplomatura Q-Lab PUCP (issue #204 de `d2cml-ai/Data-Scienc
 
 ## 1. One-liner
 
-Avisamos a mineras medianas, petroleras y concesionarias dónde está subiendo el riesgo de un paro, un bloqueo o una
-toma contra sus operaciones, con sus razones, leyendo cada día la Defensoría, la SUTRAN, la prensa y las radios
+Avisamos a las empresas extractivas (minería, hidrocarburos y energía) de los paros y bloqueos anunciados cerca de sus
+operaciones y en su ruta de salida, y estimamos dónde sube el riesgo con sus razones, leyendo cada día la Defensoría, la SUTRAN, la prensa y las radios
 locales con IA.
 
 ## 2. Founder
 
-Nicolás Silva Andújar, politólogo, predocente de la PUCP y consultor de asuntos públicos. Trabajo en lo que este
+Nicolás Silva Andújar, politólogo y consultor de asuntos públicos en Vali Consultores, después de mi paso por APOYO
+Consultoría. He trabajado asuntos públicos para empresas de energía, hidrocarburos, minería y finanzas, y también de
+Pharma, Crop y Tech. Trabajo en lo que este
 producto resuelve: explicarle a una empresa qué está pasando con el Estado y con la sociedad alrededor de su
 negocio, antes de que le cueste. Llevo años leyendo los reportes de conflictos de la Defensoría y construyendo
 herramientas de monitoreo de datos públicos, y Tremor junta las dos cosas.
@@ -144,7 +146,7 @@ flowchart LR
   RAD -->|ffmpeg + Whisper / MMS| PRE
   SUT --> DB
   EST --> DB
-  DB --> MOD[Modelo<br>logística, Lasso, árbol,<br>bosque, boosting, ensamble]
+  DB --> MOD[Modelo<br>Logistic regression, Lasso,<br>Decision tree, Random forest,<br>Gradient boosting, Ensemble]
   MOD --> DB
   DB --> WEB[web.json]
   WEB --> PAG[GitHub Pages<br>inicio, app e informe]
@@ -190,11 +192,25 @@ presupuesto ya paga monitoreo de medios y reportes de consultoras.
 
 | Plan | Qué incluye | Precio |
 |---|---|---|
-| Piloto | Una operación y su ruta por 3 meses, para medir si avisó algo que el equipo no sabía | US$4 500 en total |
-| Operación | Mapa, alertas diarias, radio y prensa de su zona e informe mensual | US$1 500 al mes por operación |
-| Empresa | Grupos de 3 a 5 operaciones, informe a medida e integración de sus propios registros de quejas y compromisos | US$40 000 al año |
+| Piloto | Una operación y su ruta por 3 meses. Al cierre, Tremor frente al registro de incidentes de la empresa: cuántos avisó antes | US$4 500 en total |
+| Estándar | Hasta dos operaciones: alertas, reputación, predicción, mapa y ruta, su registro de incidentes y reportes de campo en el mapa y los avisos, e informe mensual | US$1 500 al mes (operación adicional, US$500) |
+| Empresa | Hasta cinco operaciones, modelo de su zona entrenado también con su historia de quejas, incidentes y compromisos, analista que revisa los avisos dudosos, informe a medida y reunión trimestral | US$30 000 al año |
 
-Un solo día de paralización evitado o acortado en una mina mediana paga varios años del plan.
+Se cobra por empresa y no por operación, porque una segunda unidad casi no suma costo (la misma base, el mismo modelo
+y las mismas fuentes) y la empresa la gestiona con el mismo equipo. Lo que separa un plan de otro es cuánto se adapta
+Tremor a la empresa. Como referencia, Meltwater o Brandwatch rondan entre US$26 000 y US$50 000 al año, y ninguno
+lee la Defensoría ni predice.
+
+**Sus datos, sin enviar archivos.** El equipo de relaciones comunitarias ya lleva un registro de quejas, incidentes y
+compromisos, casi siempre en Excel, SharePoint o un sistema de gestión de grupos de interés. Tremor se conecta con
+permiso de solo lectura a donde ya está y recibe los reportes de campo en cualquier formato (texto, audio, fotos de
+actas o un Excel por WhatsApp o correo). Todo eso entra al sistema como un insumo más, junto a la Defensoría, la
+prensa y la radio, y se ordena de forma automática (actor, reclamo, lugar y fecha), sin que la empresa limpie nada.
+El detalle de cada empresa queda separado y solo se usa en su zona. Al modelo general entra solo de forma agregada,
+sin la empresa ni el detalle de sus registros. En el piloto miden qué tanto avisó Tremor; en Estándar se ven
+en el mapa y los avisos; en Empresa además entrenan el modelo de su zona.
+
+Un solo día de paralización evitado o acortado en una operación mediana paga varios años del plan.
 
 **Cuánto cuesta operarlo.** La demo corre gratis para probar la idea. Con un contrato, el costo sube a propósito
 para que el servicio no falle ni se pierda nada. Casi todo es fijo y se reparte entre los clientes, porque las radios y
@@ -202,20 +218,26 @@ la prensa se leen para el país entero.
 
 | Pieza | Demo de hoy | Con contrato |
 |---|---|---|
-| LLM | Groq en cupo gratuito: unas 200 notas al día, el resto espera al día siguiente | Todas las notas el mismo día, unas 3 000 al día. Con Claude Sonnet 5.5 (US$2 por millón de tokens de entrada y US$10 de salida) son unos 135 millones de entrada y 27 de salida al mes, cerca de **US$540 al mes**, o la mitad en lote. Un modelo más grande puede escribir el informe de cada cliente por unos pocos dólares más |
+| LLM | Groq en cupo gratuito: unas 200 notas al día, el resto espera al día siguiente | Todas las notas el mismo día, unas 3 000 al día (135 millones de tokens de entrada y 27 de salida al mes). El grueso lo codifica Claude Haiku 5.5 (US$0,10 por millón de entrada y US$0,50 de salida), unos **US$27 al mes**, o la mitad en lote. Los casos dudosos, los datos de cada cliente y su informe mensual pasan a Claude Sonnet 5.5 (US$2 y US$10), unos US$60 más. Total, cerca de **US$90 al mes** |
 | Radio | Máquinas de GitHub en CPU, tres franjas al día, de lunes a sábado. Gratis porque el repo es público | Servidor con GPU propio, más radios, más horas y quechua y aimara completos: **US$500 a 800 al mes** |
 | Página, datos y alertas | GitHub Pages, sin costo | Servidor propio con acceso por cliente y avisos por correo o WhatsApp (centavos por conversación): **US$50 a 100 al mes** |
 | Tráfico en las rutas | Cupo gratuito | Tiempos de viaje de cada tramo cada hora: **unos US$50 al mes** |
-| **Total** | **US$0** | **US$1 150 a 1 500 al mes** |
+| **Total** | **US$0** | **US$700 a 1 050 al mes** |
+
+**Por qué esos modelos.** Codificar una nota es extraer campos con un manual cerrado: no pide el modelo más grande,
+pide uno barato y constante. Haiku 5.5 cuesta menos que los modelos abiertos de pago (Kimi, DeepSeek o
+`gpt-oss-120b`) y sus condiciones comerciales no usan los datos de los clientes para entrenar; `gpt-oss-120b` en Groq queda de
+respaldo, como hoy. Antes de cambiar, el nuevo modelo se mide contra las notas ya revisadas a mano y solo se adopta si
+iguala el acuerdo actual.
 
 **Por qué la radio cuesta.** No hay forma de leer una radio más rápido de lo que habla: hay que grabarla mientras
 transmite y luego pasar el audio a texto, que es lo que más cálculo consume. Con tres franjas de una hora en 280
 radios son unas 840 horas de audio al día. En CPU eso ocupa decenas de máquinas. Una GPU lo transcribe varias decenas
 de veces más rápido, y por eso conviene pagarla cuando hay contrato.
 
-**Costo por cliente.** Con el supuesto de una operación que recibe unos 40 avisos al mes, 300 notas y 60 fragmentos de radio codificados para su zona y un informe mensual: unos US$25 al mes en tokens y US$30 de servidor y mensajería, cerca de **US$55 por cliente**, frente a los US$1 500 del plan; el resto del costo es fijo y se reparte.
+**Costo por cliente.** Con el supuesto de una operación que recibe unos 40 avisos al mes, 300 notas y 60 fragmentos de radio codificados para su zona y un informe mensual: unos US$5 al mes en tokens (sus datos y su informe con Sonnet 5.5; las notas públicas se codifican una sola vez para todos) y US$30 de servidor y mensajería, cerca de **US$35 por cliente**, frente a los US$1 500 del plan; el resto del costo es fijo y se reparte.
 
-Cada plan cubre por sí solo el costo de operar. Un piloto o una operación pagan US$1 500 al mes, y el plan Empresa unos US$3 300. Desde ahí, cada cliente adicional es casi todo margen,
+Cada plan cubre por sí solo el costo de operar. Un piloto o un cliente Estándar pagan US$1 500 al mes, y el plan Empresa unos US$2 500. Desde ahí, cada cliente adicional es casi todo margen,
 porque su informe y sus alertas salen de los mismos datos. Mientras haya pocos clientes, la revisión de los avisos dudosos y del informe
 mensual la hace el fundador; un analista a medio tiempo (unos US$800 al mes) entra a partir del tercer cliente.
 
@@ -237,8 +259,16 @@ Para salir de la demo, lo que pidieron quienes la probaron ([pruebas con usuario
 
 - un piloto pagado que mida aciertos y falsas alarmas en una operación real;
 - la radio en vivo en un servidor propio, las 24 horas;
-- cámaras con visión por computadora en los puntos de corte de la ruta, para medir la paralización real (vehículos
-  detenidos, gente que se dirige al lugar), con las cámaras públicas y, si el cliente lo autoriza, las suyas.
+- medir la paralización real y no solo el anuncio, en tres capas:
+  1. el tránsito de cada tramo de la ruta, que ya se mide: si un tramo se frena muy por debajo de lo normal el día de
+     un paro anunciado, el bloqueo queda confirmado;
+  2. cámaras en los puntos de corte, leídas con visión por computadora (un modelo abierto como YOLO cuenta vehículos
+     detenidos y gente reunida, un cuadro por minuto, en el mismo servidor de la radio). Primero las del cliente, que
+     ya tiene cámaras cerca de sus operaciones y a veces sistemas que detectan esto: Tremor recibe sus alertas en vez
+     de repetir el trabajo. Después, las cámaras públicas que existan en la ruta;
+  3. el satélite, solo para cambios lentos en torno a la operación (campamentos, minería informal, deforestación),
+     con Sentinel-2 y Sentinel-1, gratuitos y cada 5 a 12 días. No sirve para ver un bloqueo a tiempo.
+  Con eso cada aviso pasa de "anunciado" a "confirmado", y las horas reales de paralización mejoran el modelo.
 
 **Riesgos.** La base de la PUCP es de uso académico y no se redistribuye. ACLED autorizó publicar sus datos en
 Tremor. La versión comercial necesita el permiso de la PUCP o seguir solo con las fuentes públicas propias.

@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tremor. Alerta temprana de conflictos para la mediana minería</title>
-<meta name="description" content="Tremor monitorea fuentes oficiales, prensa regional y radios locales en castellano, quechua y aimara, y avisa a las empresas mineras medianas las medidas de fuerza anunciadas y las vías interrumpidas en torno a sus operaciones y su ruta de salida.">
+<title>Tremor. Alerta temprana de conflictos para operaciones extractivas</title>
+<meta name="description" content="Tremor monitorea fuentes oficiales, prensa regional y radios locales en castellano, quechua y aimara, y avisa a las empresas extractivas las medidas de fuerza anunciadas y las vías interrumpidas en torno a sus operaciones y su ruta de salida.">
 <meta property="og:title" content="Tremor">
-<meta property="og:description" content="Alerta temprana de paros y bloqueos para la mediana minería.">
+<meta property="og:description" content="Alerta temprana de paros y bloqueos para operaciones extractivas.">
 <meta property="og:image" content="https://nicosil02.github.io/tremor/video/ruta.jpg">
 <meta name="theme-color" content="#f8faf9">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='%23b4542a'/%3E%3C/svg%3E">
@@ -227,9 +227,9 @@
   .resultados .mas { margin-top: 40px; max-width: 70ch; color: var(--tinta-2); }
 
   .fases { background: var(--piedra); }
-  .linea { list-style: none; margin: 64px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; position: relative; }
+  .linea { list-style: none; margin: 64px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; position: relative; }
   .linea::before { content: ""; position: absolute; left: 0; right: 0; top: 9px; height: 3px; background: #c9d1d0; }
-  .linea::after { content: ""; position: absolute; left: 0; top: 9px; height: 3px; width: 100%; background: var(--cobre); transform-origin: left; transform: scaleX(var(--avance, .18)); }
+  .linea::after { content: ""; position: absolute; left: 0; top: 9px; height: 3px; width: 100%; background: var(--cobre); transform-origin: left; transform: scaleX(var(--avance, .14)); }
   .linea li { position: relative; padding-top: 40px; }
   .linea li::before { content: ""; position: absolute; left: 0; top: 0; width: 21px; height: 21px; border-radius: 50%; background: var(--piedra); border: 4px solid var(--gris); z-index: 1; }
   .linea li.hoy::before { background: var(--cobre); border-color: var(--cobre); box-shadow: 0 0 0 6px var(--cobre-1); }
@@ -249,6 +249,8 @@
   .plan li + li { margin-top: 6px; }
   .planes-pie { display: flex; flex-wrap: wrap; gap: 20px 32px; align-items: center; justify-content: space-between; margin-top: 28px; }
   .planes-pie p { color: var(--tinta-2); max-width: 56ch; }
+  .suyos { color: var(--tinta-2); max-width: 75ch; margin-top: 28px; }
+  .suyos b { color: var(--tinta); }
 
   .nosotros { background: var(--piedra); }
   .nosotros blockquote { margin: 0; font: 720 clamp(26px, 3vw, 40px)/1.2 Archivo; font-variation-settings: var(--media); letter-spacing: -.015em; max-width: 28ch; }
@@ -314,7 +316,7 @@
     .lift { grid-template-columns: 1fr; gap: 20px; }
     .linea { grid-template-columns: 1fr; gap: 32px; padding-left: 40px; }
     .linea::before, .linea::after { left: 9px; right: auto; top: 0; bottom: 0; width: 3px; height: auto; transform: none; }
-    .linea::after { height: 33%; }
+    .linea::after { height: 25%; }
     .linea li { padding-top: 0; }
     .linea li::before { left: -40px; }
     .planes { grid-template-columns: 1fr; border-bottom: 0; }
@@ -342,7 +344,7 @@
 <main>
   <section class="portada">
     <div class="texto">
-      <h1 class="entra">Alerta temprana de paros y bloqueos para la mediana minería</h1>
+      <h1 class="entra">Alerta temprana de paros y bloqueos para operaciones extractivas</h1>
       <p class="bajada entra">Tremor monitorea fuentes oficiales, prensa nacional y regional y radios locales, y avisa a su equipo las medidas de fuerza anunciadas y las vías interrumpidas en torno a sus unidades y su ruta de salida.</p>
       <div class="acciones entra">
         <a class="btn lleno" href="app.html">Ver la demostración</a>
@@ -564,7 +566,8 @@
       <ol class="linea">
         <li class="hoy"><small>Fase 1, disponible</small><h3>Conflictos y vías interrumpidas</h3><p>Paros, bloqueos y tomas anunciados en prensa y radio, y vías cerradas reportadas por la SUTRAN.</p></li>
         <li><small>Fase 2, en preparación</small><h3>Clima y emergencias</h3><p>Huaicos, lluvias intensas, heladas y sequías registradas por el INDECI y la ANA sobre su ruta.</p></li>
-        <li><small>Fase 3, planificada</small><h3>Interrupción logística integral</h3><p>Cierre de puertos por oleaje, tránsito en tiempo real y estado del ferrocarril, en un solo índice por ruta.</p></li>
+        <li><small>Fase 3, con el primer contrato</small><h3>Paralización medida</h3><p>Cámaras en los puntos de corte de la ruta, leídas con visión por computadora, y el tránsito de cada tramo confirman un bloqueo y miden cuánto dura. El satélite vigila cada mes los cambios en torno a la operación.</p></li>
+        <li><small>Fase 4, planificada</small><h3>Interrupción logística integral</h3><p>Cierre de puertos por oleaje, tránsito en tiempo real y estado del ferrocarril, en un solo índice por ruta.</p></li>
       </ol>
     </div>
   </section>
@@ -576,16 +579,17 @@
       <div class="planes">
         <div class="plan"><h3>Piloto</h3><p class="para">Tres meses con su operación principal.</p>
           <p class="precio">US$4 500</p><p class="unidad">pago único por tres meses</p>
-          <ul><li>Una operación y su ruta de salida</li><li>Avisos por WhatsApp y acceso a la plataforma</li><li>Revisión de resultados al cierre</li></ul></div>
-        <div class="plan dest"><h3>Operación</h3><p class="para">Para la mediana minería, que suele operar una o dos unidades.</p>
-          <p class="precio">US$1 500</p><p class="unidad">mensual por operación</p>
-          <ul><li>Alertas, seguimiento y predicción</li><li>Riesgo, mapa y ruta de salida</li><li>Informe mensual para la gerencia</li></ul></div>
+          <ul><li>Una operación y su ruta de salida</li><li>Avisos por WhatsApp y acceso a la plataforma</li><li>Al cierre, Tremor frente a su propio registro de incidentes: cuántos avisó antes</li></ul></div>
+        <div class="plan dest"><h3>Estándar</h3><p class="para">Para empresas con una o dos operaciones.</p>
+          <p class="precio">US$1 500</p><p class="unidad">mensual, hasta dos operaciones</p>
+          <ul><li>Alertas, reputación y predicción</li><li>Riesgo, mapa y ruta de salida</li><li>Su registro de incidentes y los reportes de campo, en el mapa y los avisos</li><li>Informe mensual para la gerencia</li><li>Operación adicional, US$500 al mes</li></ul></div>
         <div class="plan"><h3>Empresa</h3><p class="para">Para grupos con tres operaciones o más.</p>
-          <p class="precio">US$40 000</p><p class="unidad">anual</p>
-          <ul><li>Hasta cinco operaciones, desde US$667 al mes cada una</li><li>Informe a medida</li><li>Integración con sus registros de quejas y compromisos</li></ul></div>
+          <p class="precio">US$30 000</p><p class="unidad">anual, hasta cinco operaciones</p>
+          <ul><li>Modelo de su zona entrenado también con su historia de quejas, incidentes y compromisos</li><li>Un analista revisa los avisos dudosos</li><li>Informe a medida y reunión trimestral con la gerencia</li></ul></div>
       </div>
+      <p class="suyos"><b>Sus datos, sin enviar archivos.</b> Tremor lee el registro donde su equipo ya lo lleva (Excel, SharePoint, Google Drive o su sistema de gestión de grupos de interés) y recibe los reportes de campo en cualquier formato. Entran al sistema como un insumo más, junto a la Defensoría, la prensa y la radio, y se ordenan de forma automática. El detalle queda separado y solo se usa en su zona; al modelo general aporta solo en agregado, sin identificar a su empresa.</p>
       <div class="planes-pie">
-        <p>Para una mina mediana, evitar o acortar un solo día de paralización cubre varios años del servicio.</p>
+        <p>Para una operación mediana, evitar o acortar un solo día de paralización cubre varios años del servicio.</p>
         <a class="btn lleno" href="mailto:nicolas.silva@pucp.edu.pe?subject=Piloto%20de%20Tremor">Solicitar un piloto</a>
       </div>
     </div>
@@ -599,7 +603,7 @@
       <div class="fundador">
         <p class="quien">Nicolás Silva Andújar<span>Fundador</span></p>
         <div class="bio">
-          <p>Politólogo, predocente de la Pontificia Universidad Católica del Perú y consultor en asuntos públicos. Su trabajo consiste en explicar a las empresas lo que ocurre con el Estado y la sociedad en torno a su negocio, antes de que se traduzca en costos.</p>
+          <p>Politólogo y consultor en asuntos públicos en Vali Consultores, después de su paso por APOYO Consultoría. Ha trabajado asuntos públicos para empresas de energía, hidrocarburos, minería y finanzas, y también de Pharma, Crop y Tech. Su trabajo consiste en explicar a las empresas lo que ocurre con el Estado y la sociedad en torno a su negocio, antes de que se traduzca en costos.</p>
           <ul>
             <li>Ha integrado equipos de investigación sobre protesta social y conflictividad.</li>
             <li>Ha construido plataformas de monitoreo legislativo y de medios para Perú y Ecuador, con alertas diarias para clientes.</li>
@@ -752,7 +756,7 @@ if (window.gsap && !quieto) {
   } });
 
   // Hoja de ruta
-  gsap.fromTo(".linea", { "--avance": 0 }, { "--avance": .18, ease: "none", scrollTrigger: { trigger: ".linea", start: "top 85%", end: "top 45%", scrub: true } });
+  gsap.fromTo(".linea", { "--avance": 0 }, { "--avance": .14, ease: "none", scrollTrigger: { trigger: ".linea", start: "top 85%", end: "top 45%", scrub: true } });
   gsap.from(".linea li", { opacity: 0, y: 24, duration: .8, stagger: .15, ease: "expo.out", scrollTrigger: { trigger: ".linea", start: "top 80%" } });
 
   gsap.utils.toArray(".planes .plan, .nosotros blockquote, .nosotros .vision, .fundador, .cierre .ancho > *").forEach(el =>
