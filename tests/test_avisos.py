@@ -207,10 +207,12 @@ def test_sin_noticia_solo_de_lo_que_frena():
     from datetime import date, timedelta
     from tremor.avisos import cambios
     ayer = (date.today() - timedelta(days=1)).isoformat()
-    ev = lambda i, ub, acc, actor: {"ubigeo": ub, "accion": acc, "actor": actor, "fecha_evento": ayer, "estado": "anunciada", "enlace": ""}
+    ev = lambda i, ub, acc, actor: {"ubigeo": ub, "accion": acc, "actor": actor, "fecha_evento": ayer, "fecha_anuncio": ayer, "estado": "anunciada",
+                                    "medio": "Radio Uno", "enlace": "https://x.pe/n", "titular": f"Nota {i}"}
     web = {"eventos": [ev(1, "040701", "Marcha", "Trabajadores municipales"),   # en la ruta, gremio que no corta vías: nada
                        ev(2, "040701", "Bloqueo de vías", "Transportistas de carga"),  # en la ruta y corta: avisa
                        ev(3, "040505", "Marcha", "Comuneros")]}                  # en la zona: avisa
     enviados = {f"evento:{e['ubigeo']}:{e['accion']}:{ayer}" for e in web["eventos"]}
-    claves = [c for c, _, _ in cambios(web, {"040505"}, enviados)]
-    assert claves == [f"nohubo:evento:040701:Bloqueo de vías:{ayer}", f"nohubo:evento:040505:Marcha:{ayer}"]
+    salida = list(cambios(web, {"040505"}, enviados))
+    assert [c for c, _, _ in salida] == [f"nohubo:evento:040701:Bloqueo de vías:{ayer}", f"nohubo:evento:040505:Marcha:{ayer}"]
+    assert all("Lo anunció Radio Uno" in t and "https://x.pe/n" in t for _, t, _ in salida)  # nunca sin fuente
