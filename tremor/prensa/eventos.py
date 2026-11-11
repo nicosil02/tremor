@@ -269,13 +269,6 @@ def validar(con, mes: str) -> str:
         zona |= {u for c in CADENA.values() if isinstance(c, dict) for t in c.get("tramos", []) for u in t["ubigeos"]}
         cli = [x for x in det if x[0]["ubigeo"] in zona]
         out.append(f"  en zonas de clientes: {sum(bool(x[2]) for x in cli)}/{len(cli)}")
-        con.execute("""CREATE TABLE IF NOT EXISTS deteccion_mes (mes TEXT PRIMARY KEY, acciones INT, detectadas INT,
-            socio INT, socio_detectadas INT, clientes INT, clientes_detectadas INT, anunciadas INT, anticipacion_dias REAL,
-            calculado TEXT)""")
-        con.execute("INSERT OR REPLACE INTO deteccion_mes VALUES (?,?,?,?,?,?,?,?,?,datetime('now'))",
-                    (mes, len(acc), len(hit), len(socio), sum(bool(x[2]) for x in socio), len(cli), sum(bool(x[2]) for x in cli),
-                     len(ant), median(ant) if ant else None))
-        con.commit()
         # precisión por fuente (EMBERS): de los eventos de prensa que dicen "ocurrió" con lugar, cuántos tienen una acción
         # de la Defensoría cerca. Es un piso: la Defensoría no registra toda protesta (las urbanas, menos).
         fuente = {i: next(f for f in ("radio", "google", "rss", "archivo") if f in cs) for i, cs in con.execute(
@@ -285,14 +278,10 @@ def validar(con, mes: str) -> str:
         dentro = [e for e in ev if desde <= e["fecha"] <= hasta and e["ubigeo"] != "00" and e["estado"] == "ocurrida"]
         conf = {e["id"] for e in dentro if any(e in es for r, f, es in hit)}
         hit_f = Counter(fuente.get(e["id"]) for r, f, es in hit for e in es[:1])
-        con.execute("CREATE TABLE IF NOT EXISTS deteccion_fuente (mes TEXT, fuente TEXT, eventos INT, confirmados INT, "
-                    "detectadas INT, PRIMARY KEY (mes, fuente))")
         filas = []
         for fu in ("rss", "google", "radio", "archivo"):
             xs = [e for e in dentro if fuente.get(e["id"]) == fu]
             filas.append((mes, fu, len(xs), sum(e["id"] in conf for e in xs), hit_f[fu]))
-        con.executemany("INSERT OR REPLACE INTO deteccion_fuente VALUES (?,?,?,?,?)", filas)
-        con.commit()
         out.append(f"  precisión: {len(conf)}/{len(dentro)} eventos ocurridos con lugar coinciden con la Defensoría; por "
                    "fuente (confirmados/eventos, detectadas): " + "; ".join(f"{f} {c}/{n}, {d}" for _, f, n, c, d in filas))
         por_dep = Counter(r["departamento"] for r, f, es in det); hit_dep = Counter(r["departamento"] for r, f, es in hit)

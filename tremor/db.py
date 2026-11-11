@@ -115,13 +115,6 @@ CREATE TABLE IF NOT EXISTS sutran_alerta (     -- alertas viales de la SUTRAN; l
     visto_primero TEXT NOT NULL, visto_ultimo TEXT NOT NULL, interrumpido_alguna_vez INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS llm_cache (clave TEXT PRIMARY KEY, respuesta TEXT NOT NULL, modelo TEXT, creado TEXT);
-CREATE TABLE IF NOT EXISTS corrida (
-    id INTEGER PRIMARY KEY,
-    paso TEXT NOT NULL,
-    inicio TEXT NOT NULL, fin TEXT,
-    nuevos INTEGER DEFAULT 0, errores INTEGER DEFAULT 0,
-    detalle TEXT
-);
 """
 
 

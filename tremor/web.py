@@ -381,16 +381,9 @@ def distritos_nombrados(titular, ubigeo):
 
 
 def cita(texto, ancho=140):
-    """La frase de un fragmento de radio alrededor de la medida (paro, bloqueo, marcha…), recortada a palabras enteras."""
+    """La frase de un fragmento de radio alrededor de la medida (paro, bloqueo, marcha…)."""
     from tremor.prensa.codificar import MEDIDA
-    m = MEDIDA.search(texto or "")
-    if not m:
-        return None
-    a, b = max(0, m.start() - ancho), min(len(texto), m.end() + ancho)
-    t = texto[a:b].strip()
-    if a: t = "…" + t.split(" ", 1)[-1]
-    if b < len(texto): t = t.rsplit(" ", 1)[0] + "…"
-    return t
+    return alrededor(texto, MEDIDA, ancho)
 
 
 def leer(texto):
@@ -441,17 +434,20 @@ def menciones(con):
     m["resumen"] = m.resumen.fillna("").str.split(r'"use strict"|The post |\[…\]', regex=True).str[0].str.strip()
     # en radio, el fragmento alrededor de donde se nombra al proyecto; en prensa, el inicio del resumen
     from tremor.animo import ALIAS
-    m["resumen"] = [alrededor(t, ALIAS.get(p)) if o == "radio" else t[:300] for t, o, p in zip(m.resumen, m.origen, m.proyecto)]
+    m["resumen"] = [alrededor(t, ALIAS.get(p)) or t[:300] if o == "radio" else t[:300] for t, o, p in zip(m.resumen, m.origen, m.proyecto)]
     return registros(m.drop(columns="google"))
 
 
 def alrededor(texto, rx, ancho=150):
-    """El trozo de `texto` alrededor de la primera coincidencia de `rx`; si no la hay, el inicio."""
-    mm = rx.search(texto) if rx else None
+    """El trozo de `texto` alrededor de la primera coincidencia de `rx`, recortado a palabras enteras; sin ella, None."""
+    mm = rx.search(texto or "") if rx else None
     if not mm:
-        return texto[:300]
+        return None
     a, b = max(0, mm.start() - ancho), min(len(texto), mm.end() + ancho)
-    return ("…" if a else "") + texto[a:b].strip() + ("…" if b < len(texto) else "")
+    t = texto[a:b].strip()
+    if a: t = "…" + t.split(" ", 1)[-1]
+    if b < len(texto): t = t.rsplit(" ", 1)[0] + "…"
+    return t
 
 
 def calibracion(con):

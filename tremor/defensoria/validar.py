@@ -19,7 +19,7 @@ def procesar(doc) -> dict:
     secs = x.secciones(doc, pags)
     portada = "\n".join(s["texto"] for s in secs if s["titulo"] == "sec-portada")
     tot = x.totales(portada or "\n".join(t for _, t in pags[:6]))
-    fichas, pagina_de = [], {}
+    fichas = []
     for s in secs:
         if s["canonica"] == "fichas_activos":
             for f in x.fichas(s["texto"]):

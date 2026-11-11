@@ -54,7 +54,7 @@ def zona(con, empresa, vecinos):
     return z
 
 
-SECTOR = r"transportistas urbanos|docente|maestr|profesor|m[eé]dic|enfermer|salud|judicial|estatal|municipal|universit|estudiant|partidari|pol[ií]tic"
+SECTOR = r"transportistas urbanos|docente|maestr|profesor|m[eé]dic|enfermer|obstetr|salud|judicial|estatal|municipal|universit|estudiant|administrativ|partidari|pol[ií]tic"  # la misma lista en docs/app.html (armar)
 
 
 def eventos(web, z, alias, desde):
@@ -326,7 +326,7 @@ def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
                  f"📈 *Nivel:* {n}, {pct(r['p'])} (lo habitual en la zona es {pct(r['normal'])})\n\n"
                  f"⚠️ *¿Qué puede pasar?*\nUn paro, bloqueo o toma contra una operación minera en el distrito o sus vecinos. "
                  f"Todavía no hay una protesta anunciada contra la empresa.\n\n"
-                 + (f"🔎 *¿Por qué sube?*\n" + "\n".join(porque) + "\n\n" if porque else "")
+                 + ("🔎 *¿Por qué sube?*\n" + "\n".join(porque) + "\n\n" if porque else "")
                  + "✅ *Qué hacer*\nReforzar el seguimiento de la zona y el diálogo con las comunidades vecinas.\n\n"
                  f"🔗 *Conoce más aquí:* {APP}?e={quote(nombre)}&d={r['ubigeo']}")
         mapa = cerca(r["ubigeo"], [u for u, x in unidad.items() if x == r["unidad"]])

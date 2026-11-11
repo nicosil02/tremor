@@ -2,54 +2,38 @@
 import argparse
 import sys
 
-from tremor.db import ahora, conectar
+from tremor.db import conectar
 from tremor.defensoria import catalogo, validar as val
 
 
-def _registrar(con, paso, inicio, nuevos=0, errores=0, detalle=""):
-    con.execute(
-        "INSERT INTO corrida (paso, inicio, fin, nuevos, errores, detalle) VALUES (?, ?, ?, ?, ?, ?)",
-        (paso, inicio, ahora(), nuevos, errores, detalle),
-    )
-    con.commit()
-
-
 def descubrir(con, completo):
-    inicio = ahora()
     nuevos = catalogo.descubrir(con, completo=completo)
     rescatados = catalogo.buscar_en_wayback(con)
     print(f"Listado: {nuevos} documentos nuevos. Wayback: {rescatados} rescatados.")
-    _registrar(con, "descubrir", inicio, nuevos + rescatados)
     return 0
 
 
 def descargar(con):
-    inicio = ahora()
     ok, errores = catalogo.descargar(con)
     print(f"Descargados: {ok}. Con error: {errores}.")
-    _registrar(con, "descargar", inicio, ok, errores)
     return 1 if errores else 0
 
 
 def identificar(con):
-    inicio = ahora()
     r = catalogo.identificar(con)
     print(f"Portadas leídas: {r['leidos']}. Número distinto al del título: {len(r['discrepancias'])}.")
     for url, pista, real in r["discrepancias"]:
         print(f"  {url.rsplit('/', 1)[-1]}: título {pista}, portada {real}")
-    _registrar(con, "identificar", inicio, r["leidos"], 0, repr(r["discrepancias"]))
     return 0
 
 
 def extraer(con, num=None):
-    inicio = ahora()
     if num is not None:  # reprocesar un reporte: se borra lo suyo y se vuelve a leer
         for tabla, col in [("caso_mes", "reporte_num"), ("seccion", "reporte_num"), ("accion_protesta", "reporte_num"),
                            ("victimas", "reporte_num"), ("reporte", "num")]:
             con.execute(f"DELETE FROM {tabla} WHERE {col} = ?", (num,))
     cuenta = val.validar(con, desde=num or 1)
     print("Reportes extraídos: " + (", ".join(f"{k}: {v}" for k, v in cuenta.items()) or "0 nuevos"))
-    _registrar(con, "extraer", inicio, sum(cuenta.values()), cuenta.get("fallido", 0), repr(cuenta))
     return 0
 
 

@@ -501,13 +501,13 @@ def afinar(entrena, objetivo):
     a, b = entrena[entrena.m + HORIZONTE < VALIDA], entrena[entrena.m >= VALIDA - 1]
     yb, disj = b[objetivo].to_numpy(), objetivo.startswith("z")
     pred = {}
-    for nombre, opciones in GRILLA.items():
-        ps = [modelos()[nombre].set_params(**o).fit(a[VARIABLES], a[objetivo]).predict_proba(b[VARIABLES])[:, 1]
+    for mod, opciones in GRILLA.items():
+        ps = [modelos()[mod].set_params(**o).fit(a[VARIABLES], a[objetivo]).predict_proba(b[VARIABLES])[:, 1]
               for o in opciones]
         nota = [precision_top(b, s, yb, disjuntas=disj) for s in ps]
         k = int(np.argmax(nota))
-        AFINADO[objetivo, nombre], pred[nombre] = opciones[k], ps[k]
-        print(f"  {objetivo}: {nombre} {AFINADO[objetivo, nombre]} (validación {nota[k]:.3f})", flush=True)
+        AFINADO[objetivo, mod], pred[mod] = opciones[k], ps[k]
+        print(f"  {objetivo}: {mod} {AFINADO[objetivo, mod]} (validación {nota[k]:.3f})", flush=True)
     pred["ensamble"] = np.mean([pred[n] for n in MIEMBROS], axis=0)
     return b, pred
 
