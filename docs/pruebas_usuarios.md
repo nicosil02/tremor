@@ -1,6 +1,6 @@
 # Pruebas con usuarios
 
-Personas ajenas al desarrollo probaron la app publicada y la landing. Se nombran por su rol. Cada comentario va con
+Cuatro personas ajenas al desarrollo probaron la app publicada y la landing. Se nombran por su rol. Cada comentario va con
 lo que cambió por él.
 
 ## 1. Analista sénior del Servicio de Asesoría Empresarial de APOYO Consultoría (10 de noviembre, videollamada)
@@ -27,6 +27,22 @@ Revisó la landing y la app publicadas. Su consultora trabaja con empresas que t
 | Lo ideal sería un valor real de las paralizaciones, con cámaras o computer vision. Las cámaras cerca de las operaciones ya detectan gente que se dirige al lugar o tráfico atorado. | Fase siguiente, con presupuesto: leer las cámaras públicas en los puntos de corte de la ruta (conteo de vehículos detenidos y de personas) y, si el cliente lo autoriza, sus propias cámaras. El satélite queda solo para cambios en la operación. |
 | Antes de vender, asegurarse de que el producto funciona, e invertir para salir de la demo. | Un piloto pagado con una operación y su ruta, con los aciertos y falsas alarmas medidos al cierre; la radio en vivo, en un servidor propio y no en GitHub Actions. |
 
-## 3. Pendiente
+## 3. Prueba de experiencia de usuario, persona 1
+
+Recorrió la landing y la demo sin explicación previa.
+
+| Lo que dijo | Qué cambió |
+|---|---|
+| Al entrar a la demo no se entiende para qué sirve cada parte; recomendó un mini tutorial. | La primera vez que se abre la app sale un recorrido de cinco pasos que explica Monitoreo, Riesgo y País, los tres riesgos y el mapa. Se puede volver a ver con "Ver el recorrido". |
+
+## 4. Prueba de experiencia de usuario, persona 2
+
+Recorrió la landing y la demo sin explicación previa.
+
+| Lo que dijo | Qué cambió |
+|---|---|
+| No basta con ver los bloqueos o tomas contra la operación: hay que resaltar también las vías de interés de cada operación, porque ahí está el valor adicional. | La ruta de salida de cada unidad es parte central de la app. La pestaña Riesgo muestra la **Carretera** (cortes de hoy en su ruta, según la SUTRAN, las radios y los medios) y cada tramo con su estado; el mapa pinta los distritos de la ruta y los avisos incluyen las protestas que pasan por ella aunque estén lejos de la mina. |
+
+## 5. Pendiente
 
 Una prueba con una persona de relaciones comunitarias de una minera.
