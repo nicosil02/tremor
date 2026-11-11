@@ -160,8 +160,9 @@ def senal(con):
 
 DICHO = ("Lees la transcripción automática, con errores, de un fragmento de radio peruana donde se nombra a una empresa o proyecto "
          "extractivo. Escribe en UNA oración de máximo 25 palabras, en castellano llano, qué se dijo sobre ese proyecto y quién lo dijo "
-         "(por rol: un dirigente, un locutor, la propia empresa en un aviso, un comunero…), sin nombres de personas. Si el fragmento no "
-         "habla del proyecto o es publicidad, música o prédica, di exactamente \"no habla del proyecto\". "
+         "(por rol: un dirigente, un locutor, un comunero, una autoridad…), sin nombres de personas. Cuenta solo lo que se opina o "
+         "informa SOBRE la operación: reclamos, apoyos, denuncias, acuerdos, anuncios. Si son saludos a trabajadores o vecinos, una "
+         "mención de pasada, publicidad de la propia empresa, música o prédica, di exactamente \"no habla del proyecto\". "
          'Responde JSON {"dicho": "<oración>"}.')
 
 
