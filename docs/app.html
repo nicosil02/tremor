@@ -99,6 +99,8 @@
   .medidor.r-zona .m-num b { color: #8a6d1f; }
   .m-pie button.enlace { all: unset; cursor: pointer; color: var(--tinta-2); border-bottom: 1px solid var(--linea); } .m-pie button.enlace:focus-visible { outline: 3px solid var(--cobre); }
   .nv { font-weight: 700; font-size: 15px; padding: 3px 8px; border-radius: 6px; } .nv-bajo { background: #eef1ef; color: var(--tinta-2); } .nv-medio { background: #f6e6d8; color: #8a4a1f; }
+  .nv-habitual { background: #eef1ef; color: var(--tinta-2); } .nv-baja { background: #e3efe8; color: var(--verde); } .nv-sube { background: #f1cdb4; color: #7a2e10; }
+  .nv small { font-weight: 500; font-size: 12px; opacity: .85; }
   .nv-alto { background: #f1cdb4; color: #7a2e10; } .nv-crítico { background: #8a3213; color: #fff; }
   .m-barra { position: relative; display: grid; grid-template-columns: 10fr 15fr 25fr 10fr; gap: 2px; height: 10px; margin: 16px 0 34px; }
   .m-barra i { border-radius: 3px; } .m-barra .b1 { background: #efe3d8; } .m-barra .b2 { background: #e3a67c; } .m-barra .b3 { background: #c8642f; } .m-barra .b4 { background: #8a3213; }
@@ -261,6 +263,9 @@ const razones = txt => String(txt || "").replace(/^en la zona \(distrito y vecin
 const nivel = p => p >= 0.5 ? "Crítico" : p >= 0.25 ? "Alto" : p >= 0.1 ? "Medio" : "Bajo";
 const nivelZ = p => p >= 0.7 ? "Crítico" : p >= 0.5 ? "Alto" : p >= 0.3 ? "Medio" : "Bajo";  // la tensión en la zona corre más alta
 const flecha = d => d > 0.01 ? "↑" : d < -0.01 ? "↓" : "";
+// Frente a lo habitual de la misma zona (±5 puntos): "Sube", "Habitual" o "Baja". Sin historial, el nivel del país
+const estado = (p, normal) => normal == null ? nivel(p) : p - normal >= 0.05 ? "Sube" : p - normal <= -0.05 ? "Baja" : "Habitual";
+const chipEstado = (p, normal) => `<span class="nv nv-${estado(p, normal).toLowerCase()}">${estado(p, normal)}${normal != null ? ` <small>habitual ${pct(normal)}</small>` : ""}</span>`;
 const pct = p => `${Math.round(p * 100)}%`;
 const opera = o => /^operación/.test(o.etapa || "");
 const accion = e => { const a = String(e.accion || "").toLowerCase();
@@ -387,14 +392,14 @@ const VISTAS = {
     cabecera(false);
     const op = X.unidades.filter(opera), otras = X.unidades.filter(o => !opera(o));
     const filaOp = o => `<li><button type="button" class="fila" data-op="${esc(o.unidad)}"><i style="background:${o.p >= .25 ? "var(--cobre-4)" : "#e3a67c"}"></i>
-      <span class="t">${esc(o.unidad)}</span><span class="pct">${o.p == null ? "–" : pct(o.p)}<small>${o.p == null ? "" : `${nivel(o.p)} ${flecha(o.p - (o.normal ?? o.p))}`}</small></span>
+      <span class="t">${esc(o.unidad)}</span><span class="pct">${o.p == null ? "–" : pct(o.p)}<small>${o.p == null ? "" : `${estado(o.p, o.normal)} ${flecha(o.p - (o.normal ?? o.p))}`}</small></span>
       <span class="s" style="grid-column:2">${esc(lugar(o.ubigeo))}</span></button></li>`;
     const nMal = X.cadena.filter(r => r.estado[0] !== "ok").length, o1 = (op.length ? op : otras).find(o => o.p != null);
     // Tres riesgos distintos: la zona y la operación son niveles a 3 meses del modelo; la carretera es lo de hoy
     const chip = (p, f) => `<span class="nv nv-${f(p).toLowerCase()}">${f(p)}</span>`;
     const tres = `<ol class="tres">
       <li><button type="button" class="r-zona" ${o1 ? `data-distrito="${o1.ubigeo}" data-dcapa="fuerza"` : ""}><small>Zona</small><b>${o1 && o1.pz != null ? pct(o1.pz) + chip(o1.pz, nivelZ) : "–"}</b><span>Tensión social: cualquier protesta en la zona</span></button></li>
-      <li><button type="button" class="r-op" ${o1 ? `data-distrito="${o1.ubigeo}"` : ""}><small>Operación</small><b>${o1 ? pct(o1.p) + chip(o1.p, nivel) : "–"}</b><span>Paro, bloqueo o toma contra la mina</span></button></li>
+      <li><button type="button" class="r-op" ${o1 ? `data-distrito="${o1.ubigeo}"` : ""}><small>Operación</small><b>${o1 ? pct(o1.p) + chipEstado(o1.p, o1.normal) : "–"}</b><span>Paro, bloqueo o toma contra la mina</span></button></li>
       <li><button type="button" class="r-via${nMal ? " mal" : ""}" data-ruta><small>Carretera</small><b>${X.cadena.length ? (nMal ? `${nMal} ${nMal > 1 ? "tramos" : "tramo"}` : "Libre") : "–"}</b><span>Cortes en su ruta hoy, según SUTRAN y radios</span></button></li></ol>
       <p class="hoy-pie">Toque uno para ver el porqué.</p>`;
     return tres + `<h2>Operación, por unidad</h2><ul>${(op.length ? op : otras).map(filaOp).join("")}</ul>`
@@ -483,7 +488,7 @@ function detalleOp(nom) {
   const estado = estadoCaso;
   cabecera(true, "Riesgo");
   foto(o); ver([o.ubigeo], o.unidad);
-  return `<div class="foto" id="foto"><div><h3>${esc(o.unidad)}</h3><p>${esc(lugar(o.ubigeo))}</p></div><small>Imagen Esri, Maxar</small></div><div class="grande"><b>${o.p == null ? "–" : pct(o.p)}</b><span>${o.p == null ? "Sin cálculo" : `Riesgo ${nivel(o.p).toLowerCase()} ${flecha(o.p - (o.normal ?? o.p))}`}
+  return `<div class="foto" id="foto"><div><h3>${esc(o.unidad)}</h3><p>${esc(lugar(o.ubigeo))}</p></div><small>Imagen Esri, Maxar</small></div><div class="grande"><b>${o.p == null ? "–" : pct(o.p)}</b><span>${o.p == null ? "Sin cálculo" : `${o.normal != null ? `${estado(o.p, o.normal)}, habitual ${pct(o.normal)}` : `Riesgo ${nivel(o.p).toLowerCase()}`} ${flecha(o.p - (o.normal ?? o.p))}`}
       <small>${cal(o.p)}</small><small>${o.normal != null ? `Lo habitual en la zona, ${pct(o.normal)}` : ""}</small><small>Octubre a diciembre</small></span></div>${VER}`
     + (por[0] ? `<h2>Por qué</h2><ul class="por">${por.map(p => `<li>${esc(p.replace(/\s*\(.*?\)/g, "").replace(/^1 certificaciones ambientales/, "1 certificación ambiental"))}</li>`).join("")}</ul>` : "")
     + fiscal(o.unidad)
@@ -515,7 +520,7 @@ function detalleDistrito(u, capa = "extractivo") {
   const otra = Z ? a.prob_zona_extractivo : a.prob_zona;
   cabecera(true, Z ? "Zona" : "Operación"); ver([u], lugar(u));
   return `<div class="dz-cab"><h3>${esc(lugar(u))}</h3><p>${esc(donde)}</p></div>
-    ${p == null ? `<p class="vacio">Sin cálculo para este distrito.</p>` : `<div class="medidor ${Z ? "r-zona" : "r-op"}"><div class="m-num"><b>${pct(p)}</b><span class="nv nv-${nv(p).toLowerCase()}">${nv(p)} ${nh != null ? flecha(p - nh) : ""}</span></div>
+    ${p == null ? `<p class="vacio">Sin cálculo para este distrito.</p>` : `<div class="medidor ${Z ? "r-zona" : "r-op"}"><div class="m-num"><b>${pct(p)}</b><span class="nv nv-${(nh != null ? estado(p, nh) : nv(p)).toLowerCase()}">${nh != null ? estado(p, nh) : nv(p)} ${nh != null ? flecha(p - nh) : ""}</span></div>
       <div class="m-barra"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i><em style="left:${x(p)}%"></em>${nh != null ? `<u style="left:${x(nh)}%"><span>${Z ? "promedio minero" : "habitual"} ${pct(nh)}</span></u>` : ""}</div>
       <p class="m-pie"><b>${Z ? "Zona" : "Operación"}</b>: ${Z ? "tensión social, cualquier paro, marcha o bloqueo en el distrito y sus vecinos" : "paro, bloqueo o toma contra la mina"}, octubre a diciembre. ${Z ? "La marca es el promedio de las zonas mineras del país." : cal(p)}</p>
       ${otra == null ? "" : `<p class="m-pie"><button type="button" class="enlace" data-distrito="${u}" data-dcapa="${Z ? "extractivo" : "fuerza"}"><b>${Z ? "Operación" : "Zona"}</b>: ${pct(+otra)} ${(Z ? nivel : nivelZ)(+otra).toLowerCase()} ›</button></p>`}</div>`}${VER}
