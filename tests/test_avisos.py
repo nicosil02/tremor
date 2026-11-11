@@ -195,7 +195,7 @@ def test_seguimiento_de_lo_avisado():
     ayer = (date.fromisoformat(hoy()) - timedelta(days=1)).isoformat()
     ev = lambda **k: {"ubigeo": "040701", "accion": "Paro", "fecha_evento": "2026-12-01", "estado": "anunciada", **k}
     web = {"eventos": [ev(suspendido=True, postergado=True), ev(accion="Marcha", retiran=["040108", "150101"], gremios_retiran=["transportistas de carga de Islay"]),
-                       ev(accion="Bloqueo", fecha_evento=ayer, estado="ocurrida", medio="RPP", enlace="https://x.pe/b"), ev(accion="Toma", suspendido=True)]}
+                       ev(accion="Bloqueo", fecha_evento=ayer, fecha_anuncio="2026-11-01", estado="ocurrida", medio="RPP", enlace="https://x.pe/b"), ev(accion="Toma", suspendido=True)]}
     z = {"040701": "Cailloma", "040108": "en su ruta"}
     enviados = {"evento:040701:Paro:2026-12-01", "evento:040701:Marcha:2026-12-01", f"evento:040701:Bloqueo:{ayer}"}
     xs = {c.split(":")[0]: t for c, t, _ in cambios(web, z, enviados)}
