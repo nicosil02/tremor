@@ -178,7 +178,7 @@ python -c "import gzip,shutil;shutil.copyfileobj(gzip.open('tremor.db.gz'),open(
 python -m tremor.web && cp datos/exportes/web.json docs/web.json
 python -m http.server -d docs 8000        # abrir http://localhost:8000
 streamlit run streamlit_app.py            # la misma app más los datos del modelo, como en Streamlit Cloud
-python -m pytest -q                       # 156 pruebas
+python -m pytest -q                       # 165 pruebas
 ```
 
 ## 7. Modelo de negocio
@@ -232,6 +232,13 @@ ya existen y se actualizan a diario:
 - emergencias, de INDECI.
 
 Eso abre la puerta a exportadores, operadores logísticos y aseguradoras.
+
+Para salir de la demo, lo que pidieron quienes la probaron ([pruebas con usuarios](docs/pruebas_usuarios.md)):
+
+- un piloto pagado que mida aciertos y falsas alarmas en una operación real;
+- la radio en vivo en un servidor propio, las 24 horas;
+- cámaras con visión por computadora en los puntos de corte de la ruta, para medir la paralización real (vehículos
+  detenidos, gente que se dirige al lugar), con las cámaras públicas y, si el cliente lo autoriza, las suyas.
 
 **Riesgos.** La base de la PUCP es de uso académico y no se redistribuye. ACLED autorizó publicar sus datos en
 Tremor. La versión comercial necesita el permiso de la PUCP o seguir solo con las fuentes públicas propias.

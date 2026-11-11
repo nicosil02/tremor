@@ -1,6 +1,6 @@
 # Pruebas con usuarios
 
-Dos personas ajenas al desarrollo probaron la app publicada y la landing. Se nombran por su rol. Cada comentario va con
+Personas ajenas al desarrollo probaron la app publicada y la landing. Se nombran por su rol. Cada comentario va con
 lo que cambió por él.
 
 ## 1. Analista sénior del Servicio de Asesoría Empresarial de APOYO Consultoría (10 de noviembre, videollamada)
@@ -16,6 +16,17 @@ Probó la app de Bateas en computadora, con el mapa y la ruta, mientras convers�
 | Para los cortes que no son conflicto no hace falta un modelo: "hay cosas tan simples… que es solo consolidar lo que existe". | La capa **Carretera** muestra los cortes de la SUTRAN sin modelo y lo dice: "no es pronóstico". |
 | El monitoreo sirve también para la reputación, aunque no sea un conflicto, y las menciones podrían alimentar el modelo. | El índice de menciones y tono se llama **Reputación**, se guarda mes a mes para probarlo como variable cuando haya historia, y dispara un aviso cuando se sale de lo habitual. |
 
-## 2. Pendiente
+## 2. Analista de una consultora ambiental (11 de noviembre)
 
-Segunda prueba por hacer, con una persona de relaciones comunitarias de una minera.
+Revisó la landing y la app publicadas. Su consultora trabaja con empresas que tienen operaciones en zonas de conflicto.
+
+| Lo que dijo | Qué cambió o qué sigue |
+|---|---|
+| La página le pareció "bastante de utilidad". | Sin cambios. |
+| Las empresas ya tienen seguimiento de medios y social listening, pero cada cosa por separado. Por una tarifa como la de Tremor, que junta el monitoreo y le suma la predicción, estarían dispuestas a pagar. | Confirma la propuesta de valor y el rango de precios de los planes. Lo que se vende es la integración más el pronóstico, no otra herramienta de monitoreo. |
+| Lo ideal sería un valor real de las paralizaciones, con cámaras o computer vision. Las cámaras cerca de las operaciones ya detectan gente que se dirige al lugar o tráfico atorado. | Fase siguiente, con presupuesto: leer las cámaras públicas en los puntos de corte de la ruta (conteo de vehículos detenidos y de personas) y, si el cliente lo autoriza, sus propias cámaras. El satélite queda solo para cambios en la operación. |
+| Antes de vender, asegurarse de que el producto funciona, e invertir para salir de la demo. | Un piloto pagado con una operación y su ruta, con los aciertos y falsas alarmas medidos al cierre; la radio en vivo, en un servidor propio y no en GitHub Actions. |
+
+## 3. Pendiente
+
+Una prueba con una persona de relaciones comunitarias de una minera.
