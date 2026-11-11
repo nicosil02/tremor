@@ -190,9 +190,21 @@ presupuesto ya paga monitoreo de medios y reportes de consultoras.
 
 | Plan | Qué incluye | Precio |
 |---|---|---|
-| Piloto | Una operación y su ruta por 3 meses, para medir si avisó algo que el equipo no sabía | US$4 500 en total |
-| Operación | Mapa, alertas diarias, radio y prensa de su zona e informe mensual | US$1 500 al mes por operación |
-| Empresa | Grupos de 3 a 5 operaciones, informe a medida e integración de sus propios registros de quejas y compromisos | US$40 000 al año |
+| Piloto | Una operación y su ruta por 3 meses. Al cierre, Tremor frente al registro de incidentes de la empresa: cuántos avisó antes | US$4 500 en total |
+| Mediana minería | Hasta dos operaciones: alertas, reputación, predicción, mapa y ruta, su registro de incidentes y reportes de campo en el mapa y los avisos, e informe mensual | US$1 500 al mes (operación adicional, US$500) |
+| Empresa | Hasta cinco operaciones, modelo de su zona entrenado también con su historia de quejas, incidentes y compromisos, analista que revisa los avisos dudosos, informe a medida y reunión trimestral | US$30 000 al año |
+
+Se cobra por empresa y no por operación, porque una segunda unidad casi no suma costo (la misma base, el mismo modelo
+y las mismas fuentes) y la empresa la gestiona con el mismo equipo. Lo que separa un plan de otro es cuánto se adapta
+Tremor a la empresa. Como referencia, en 2018 el Congreso pagó unos S/10 000 al mes por monitoreo de medios, y
+Meltwater o Brandwatch rondan entre US$26 000 y US$50 000 al año; ninguno lee la Defensoría ni predice.
+
+**Sus datos, sin enviar archivos.** El equipo de relaciones comunitarias ya lleva un registro de quejas, incidentes y
+compromisos, casi siempre en Excel, SharePoint o un sistema de gestión de grupos de interés. Tremor se conecta con
+permiso de solo lectura a donde ya está, y también recibe reportes de campo por WhatsApp, en texto o en audio. El mismo
+codificador que ordena la prensa y la radio (actor, reclamo, lugar y fecha, con el manual de la EGPP) ordena cada
+registro, sin importar el formato. Esos datos quedan separados por empresa y solo sirven para su zona. En el piloto
+miden qué tanto avisó Tremor; en Mediana minería se ven en el mapa y los avisos; en Empresa además entran al modelo.
 
 Un solo día de paralización evitado o acortado en una mina mediana paga varios años del plan.
 
@@ -215,7 +227,7 @@ de veces más rápido, y por eso conviene pagarla cuando hay contrato.
 
 **Costo por cliente.** Con el supuesto de una operación que recibe unos 40 avisos al mes, 300 notas y 60 fragmentos de radio codificados para su zona y un informe mensual: unos US$25 al mes en tokens y US$30 de servidor y mensajería, cerca de **US$55 por cliente**, frente a los US$1 500 del plan; el resto del costo es fijo y se reparte.
 
-Cada plan cubre por sí solo el costo de operar. Un piloto o una operación pagan US$1 500 al mes, y el plan Empresa unos US$3 300. Desde ahí, cada cliente adicional es casi todo margen,
+Cada plan cubre por sí solo el costo de operar. Un piloto o un cliente de Mediana minería pagan US$1 500 al mes, y el plan Empresa unos US$2 500. Desde ahí, cada cliente adicional es casi todo margen,
 porque su informe y sus alertas salen de los mismos datos. Mientras haya pocos clientes, la revisión de los avisos dudosos y del informe
 mensual la hace el fundador; un analista a medio tiempo (unos US$800 al mes) entra a partir del tercer cliente.
 
