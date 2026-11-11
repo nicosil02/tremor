@@ -11,8 +11,8 @@ Proyecto final de la Diplomatura Q-Lab PUCP (issue #204 de `d2cml-ai/Data-Scienc
 
 ## 1. One-liner
 
-Avisamos a la mediana minería de los paros y bloqueos anunciados cerca de sus operaciones y en su ruta de salida, y
-estimamos dónde sube el riesgo con sus razones, leyendo cada día la Defensoría, la SUTRAN, la prensa y las radios
+Avisamos a las empresas extractivas (minería, hidrocarburos y energía) de los paros y bloqueos anunciados cerca de sus
+operaciones y en su ruta de salida, y estimamos dónde sube el riesgo con sus razones, leyendo cada día la Defensoría, la SUTRAN, la prensa y las radios
 locales con IA.
 
 ## 2. Founder
@@ -193,7 +193,7 @@ presupuesto ya paga monitoreo de medios y reportes de consultoras.
 | Plan | Qué incluye | Precio |
 |---|---|---|
 | Piloto | Una operación y su ruta por 3 meses. Al cierre, Tremor frente al registro de incidentes de la empresa: cuántos avisó antes | US$4 500 en total |
-| Mediana minería | Hasta dos operaciones: alertas, reputación, predicción, mapa y ruta, su registro de incidentes y reportes de campo en el mapa y los avisos, e informe mensual | US$1 500 al mes (operación adicional, US$500) |
+| Estándar | Hasta dos operaciones: alertas, reputación, predicción, mapa y ruta, su registro de incidentes y reportes de campo en el mapa y los avisos, e informe mensual | US$1 500 al mes (operación adicional, US$500) |
 | Empresa | Hasta cinco operaciones, modelo de su zona entrenado también con su historia de quejas, incidentes y compromisos, analista que revisa los avisos dudosos, informe a medida y reunión trimestral | US$30 000 al año |
 
 Se cobra por empresa y no por operación, porque una segunda unidad casi no suma costo (la misma base, el mismo modelo
@@ -207,10 +207,10 @@ permiso de solo lectura a donde ya está y recibe los reportes de campo en cualq
 actas o un Excel por WhatsApp o correo). Todo eso entra al sistema como un insumo más, junto a la Defensoría, la
 prensa y la radio, y se ordena de forma automática (actor, reclamo, lugar y fecha), sin que la empresa limpie nada.
 El detalle de cada empresa queda separado y solo se usa en su zona. Al modelo general entra solo de forma agregada,
-sin la empresa ni el detalle de sus registros. En el piloto miden qué tanto avisó Tremor; en Mediana minería se ven
+sin la empresa ni el detalle de sus registros. En el piloto miden qué tanto avisó Tremor; en Estándar se ven
 en el mapa y los avisos; en Empresa además entrenan el modelo de su zona.
 
-Un solo día de paralización evitado o acortado en una mina mediana paga varios años del plan.
+Un solo día de paralización evitado o acortado en una operación mediana paga varios años del plan.
 
 **Cuánto cuesta operarlo.** La demo corre gratis para probar la idea. Con un contrato, el costo sube a propósito
 para que el servicio no falle ni se pierda nada. Casi todo es fijo y se reparte entre los clientes, porque las radios y
@@ -231,7 +231,7 @@ de veces más rápido, y por eso conviene pagarla cuando hay contrato.
 
 **Costo por cliente.** Con el supuesto de una operación que recibe unos 40 avisos al mes, 300 notas y 60 fragmentos de radio codificados para su zona y un informe mensual: unos US$25 al mes en tokens y US$30 de servidor y mensajería, cerca de **US$55 por cliente**, frente a los US$1 500 del plan; el resto del costo es fijo y se reparte.
 
-Cada plan cubre por sí solo el costo de operar. Un piloto o un cliente de Mediana minería pagan US$1 500 al mes, y el plan Empresa unos US$2 500. Desde ahí, cada cliente adicional es casi todo margen,
+Cada plan cubre por sí solo el costo de operar. Un piloto o un cliente Estándar pagan US$1 500 al mes, y el plan Empresa unos US$2 500. Desde ahí, cada cliente adicional es casi todo margen,
 porque su informe y sus alertas salen de los mismos datos. Mientras haya pocos clientes, la revisión de los avisos dudosos y del informe
 mensual la hace el fundador; un analista a medio tiempo (unos US$800 al mes) entra a partir del tercer cliente.
 
