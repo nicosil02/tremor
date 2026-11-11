@@ -108,9 +108,22 @@ def actualizar(con, hoy=None):
     a = a.reset_index(names="proyecto").assign(provincias=lambda d: d.proyecto.map(lambda n: " ".join(prov[n])),
                                                hasta=str(hoy), creado=ahora())
     a.to_sql("animo", con, if_exists="replace", index=False)
+    historia(con, m, a, str(hoy)[:7])
     (DATOS / "exportes").mkdir(parents=True, exist_ok=True)
     a.to_csv(DATOS / "exportes" / "animo.csv", index=False)
     return m, a
+
+
+def historia(con, m, a, mes):
+    """El mes en curso del índice queda en animo_mes (se reemplaza en cada corrida): con un año de historia se puede
+    probar la reputación como variable del modelo."""
+    con.execute("CREATE TABLE IF NOT EXISTS animo_mes (proyecto TEXT, mes TEXT, menciones INTEGER, negativas INTEGER, "
+                "tono REAL, alza REAL, PRIMARY KEY (proyecto, mes))")
+    mm = m[m.fecha.str.startswith(mes)]
+    alza = a.set_index("proyecto").alza
+    filas = [(p, mes, len(g), int((g.tono < 0).sum()), float(g.tono.mean()), float(alza.get(p, 0))) for p, g in mm.groupby("proyecto")]
+    con.executemany("INSERT OR REPLACE INTO animo_mes VALUES (?, ?, ?, ?, ?, ?)", filas)
+    con.commit()
 
 
 def avisos(reciente, previo):
