@@ -196,15 +196,17 @@ presupuesto ya paga monitoreo de medios y reportes de consultoras.
 
 Se cobra por empresa y no por operación, porque una segunda unidad casi no suma costo (la misma base, el mismo modelo
 y las mismas fuentes) y la empresa la gestiona con el mismo equipo. Lo que separa un plan de otro es cuánto se adapta
-Tremor a la empresa. Como referencia, en 2018 el Congreso pagó unos S/10 000 al mes por monitoreo de medios, y
-Meltwater o Brandwatch rondan entre US$26 000 y US$50 000 al año; ninguno lee la Defensoría ni predice.
+Tremor a la empresa. Como referencia, Meltwater o Brandwatch rondan entre US$26 000 y US$50 000 al año, y ninguno
+lee la Defensoría ni predice.
 
 **Sus datos, sin enviar archivos.** El equipo de relaciones comunitarias ya lleva un registro de quejas, incidentes y
 compromisos, casi siempre en Excel, SharePoint o un sistema de gestión de grupos de interés. Tremor se conecta con
-permiso de solo lectura a donde ya está, y también recibe reportes de campo por WhatsApp, en texto o en audio. El mismo
-codificador que ordena la prensa y la radio (actor, reclamo, lugar y fecha, con el manual de la EGPP) ordena cada
-registro, sin importar el formato. Esos datos quedan separados por empresa y solo sirven para su zona. En el piloto
-miden qué tanto avisó Tremor; en Mediana minería se ven en el mapa y los avisos; en Empresa además entran al modelo.
+permiso de solo lectura a donde ya está y recibe los reportes de campo en cualquier formato (texto, audio, fotos de
+actas o un Excel por WhatsApp o correo). Todo eso entra al sistema como un insumo más, junto a la Defensoría, la
+prensa y la radio, y se ordena de forma automática (actor, reclamo, lugar y fecha), sin que la empresa limpie nada.
+El detalle de cada empresa queda separado y solo se usa en su zona. Al modelo general entra solo de forma agregada,
+sin la empresa ni el detalle de sus registros. En el piloto miden qué tanto avisó Tremor; en Mediana minería se ven
+en el mapa y los avisos; en Empresa además entrenan el modelo de su zona.
 
 Un solo día de paralización evitado o acortado en una mina mediana paga varios años del plan.
 
