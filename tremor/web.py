@@ -431,8 +431,20 @@ def menciones(con):
         return []
     m["google"] = m.enlace.str.contains("news.google")
     m = m.sort_values(["google", "fecha"], ascending=[True, False]).drop_duplicates(["proyecto", "titular"]).sort_values("fecha", ascending=False)
-    m["resumen"] = m.resumen.fillna("").str.split(r'"use strict"|The post |\[…\]', regex=True).str[0].str.strip().str.slice(0, 300)
+    m["resumen"] = m.resumen.fillna("").str.split(r'"use strict"|The post |\[…\]', regex=True).str[0].str.strip()
+    # en radio, el fragmento alrededor de donde se nombra al proyecto; en prensa, el inicio del resumen
+    from tremor.animo import ALIAS
+    m["resumen"] = [alrededor(t, ALIAS.get(p)) if o == "radio" else t[:300] for t, o, p in zip(m.resumen, m.origen, m.proyecto)]
     return registros(m.drop(columns="google"))
+
+
+def alrededor(texto, rx, ancho=150):
+    """El trozo de `texto` alrededor de la primera coincidencia de `rx`; si no la hay, el inicio."""
+    mm = rx.search(texto) if rx else None
+    if not mm:
+        return texto[:300]
+    a, b = max(0, mm.start() - ancho), min(len(texto), mm.end() + ancho)
+    return ("…" if a else "") + texto[a:b].strip() + ("…" if b < len(texto) else "")
 
 
 def calibracion(con):
