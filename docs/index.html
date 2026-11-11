@@ -227,9 +227,9 @@
   .resultados .mas { margin-top: 40px; max-width: 70ch; color: var(--tinta-2); }
 
   .fases { background: var(--piedra); }
-  .linea { list-style: none; margin: 64px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; position: relative; }
+  .linea { list-style: none; margin: 64px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; position: relative; }
   .linea::before { content: ""; position: absolute; left: 0; right: 0; top: 9px; height: 3px; background: #c9d1d0; }
-  .linea::after { content: ""; position: absolute; left: 0; top: 9px; height: 3px; width: 100%; background: var(--cobre); transform-origin: left; transform: scaleX(var(--avance, .18)); }
+  .linea::after { content: ""; position: absolute; left: 0; top: 9px; height: 3px; width: 100%; background: var(--cobre); transform-origin: left; transform: scaleX(var(--avance, .14)); }
   .linea li { position: relative; padding-top: 40px; }
   .linea li::before { content: ""; position: absolute; left: 0; top: 0; width: 21px; height: 21px; border-radius: 50%; background: var(--piedra); border: 4px solid var(--gris); z-index: 1; }
   .linea li.hoy::before { background: var(--cobre); border-color: var(--cobre); box-shadow: 0 0 0 6px var(--cobre-1); }
@@ -316,7 +316,7 @@
     .lift { grid-template-columns: 1fr; gap: 20px; }
     .linea { grid-template-columns: 1fr; gap: 32px; padding-left: 40px; }
     .linea::before, .linea::after { left: 9px; right: auto; top: 0; bottom: 0; width: 3px; height: auto; transform: none; }
-    .linea::after { height: 33%; }
+    .linea::after { height: 25%; }
     .linea li { padding-top: 0; }
     .linea li::before { left: -40px; }
     .planes { grid-template-columns: 1fr; border-bottom: 0; }
@@ -566,7 +566,8 @@
       <ol class="linea">
         <li class="hoy"><small>Fase 1, disponible</small><h3>Conflictos y vías interrumpidas</h3><p>Paros, bloqueos y tomas anunciados en prensa y radio, y vías cerradas reportadas por la SUTRAN.</p></li>
         <li><small>Fase 2, en preparación</small><h3>Clima y emergencias</h3><p>Huaicos, lluvias intensas, heladas y sequías registradas por el INDECI y la ANA sobre su ruta.</p></li>
-        <li><small>Fase 3, planificada</small><h3>Interrupción logística integral</h3><p>Cierre de puertos por oleaje, tránsito en tiempo real y estado del ferrocarril, en un solo índice por ruta.</p></li>
+        <li><small>Fase 3, con el primer contrato</small><h3>Paralización medida</h3><p>Cámaras en los puntos de corte de la ruta, leídas con visión por computadora, y el tránsito de cada tramo confirman un bloqueo y miden cuánto dura. El satélite vigila cada mes los cambios en torno a la operación.</p></li>
+        <li><small>Fase 4, planificada</small><h3>Interrupción logística integral</h3><p>Cierre de puertos por oleaje, tránsito en tiempo real y estado del ferrocarril, en un solo índice por ruta.</p></li>
       </ol>
     </div>
   </section>
@@ -755,7 +756,7 @@ if (window.gsap && !quieto) {
   } });
 
   // Hoja de ruta
-  gsap.fromTo(".linea", { "--avance": 0 }, { "--avance": .18, ease: "none", scrollTrigger: { trigger: ".linea", start: "top 85%", end: "top 45%", scrub: true } });
+  gsap.fromTo(".linea", { "--avance": 0 }, { "--avance": .14, ease: "none", scrollTrigger: { trigger: ".linea", start: "top 85%", end: "top 45%", scrub: true } });
   gsap.from(".linea li", { opacity: 0, y: 24, duration: .8, stagger: .15, ease: "expo.out", scrollTrigger: { trigger: ".linea", start: "top 80%" } });
 
   gsap.utils.toArray(".planes .plan, .nosotros blockquote, .nosotros .vision, .fundador, .cierre .ancho > *").forEach(el =>

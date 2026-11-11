@@ -226,7 +226,7 @@ la prensa se leen para el país entero.
 
 **Por qué esos modelos.** Codificar una nota es extraer campos con un manual cerrado: no pide el modelo más grande,
 pide uno barato y constante. Haiku 5.5 cuesta menos que los modelos abiertos de pago (Kimi, DeepSeek o
-`gpt-oss-120b`) y no manda los datos de los clientes a servidores fuera de su control; `gpt-oss-120b` en Groq queda de
+`gpt-oss-120b`) y sus condiciones comerciales no usan los datos de los clientes para entrenar; `gpt-oss-120b` en Groq queda de
 respaldo, como hoy. Antes de cambiar, el nuevo modelo se mide contra las notas ya revisadas a mano y solo se adopta si
 iguala el acuerdo actual.
 
@@ -259,8 +259,16 @@ Para salir de la demo, lo que pidieron quienes la probaron ([pruebas con usuario
 
 - un piloto pagado que mida aciertos y falsas alarmas en una operación real;
 - la radio en vivo en un servidor propio, las 24 horas;
-- cámaras con visión por computadora en los puntos de corte de la ruta, para medir la paralización real (vehículos
-  detenidos, gente que se dirige al lugar), con las cámaras públicas y, si el cliente lo autoriza, las suyas.
+- medir la paralización real y no solo el anuncio, en tres capas:
+  1. el tránsito de cada tramo de la ruta, que ya se mide: si un tramo se frena muy por debajo de lo normal el día de
+     un paro anunciado, el bloqueo queda confirmado;
+  2. cámaras en los puntos de corte, leídas con visión por computadora (un modelo abierto como YOLO cuenta vehículos
+     detenidos y gente reunida, un cuadro por minuto, en el mismo servidor de la radio). Primero las del cliente, que
+     ya tiene cámaras cerca de sus operaciones y a veces sistemas que detectan esto: Tremor recibe sus alertas en vez
+     de repetir el trabajo. Después, las cámaras públicas que existan en la ruta;
+  3. el satélite, solo para cambios lentos en torno a la operación (campamentos, minería informal, deforestación),
+     con Sentinel-2 y Sentinel-1, gratuitos y cada 5 a 12 días. No sirve para ver un bloqueo a tiempo.
+  Con eso cada aviso pasa de "anunciado" a "confirmado", y las horas reales de paralización mejoran el modelo.
 
 **Riesgos.** La base de la PUCP es de uso académico y no se redistribuye. ACLED autorizó publicar sus datos en
 Tremor. La versión comercial necesita el permiso de la PUCP o seguir solo con las fuentes públicas propias.
