@@ -201,6 +201,8 @@
   .tres span { grid-column: 2; font-size: 14px; line-height: 1.3; color: var(--tinta-2); }
   .r-zona { --acento: #8a6d1f; } .r-op { --acento: var(--cobre-4); } .r-via { --acento: var(--verde); } .r-via.mal { --acento: var(--rojo); }
   .hoy-pie { margin: 6px 16px 0; font-size: 13px; color: var(--tinta-2); }
+  .rep-cab { margin: 0 16px 4px; font-size: 15px; color: var(--tinta-2); } .rep-cab b { font-size: 26px; font-weight: 750; color: var(--tinta); margin-right: 4px; }
+  .rep-aviso { margin: 0 16px 6px; font-size: 13px; font-weight: 600; color: var(--rojo); }
   .pie { padding: 18px 16px; font-size: 14px; color: var(--tinta-2); } .pie a { color: var(--tinta-2); }
   /* Recorrido la primera vez: un recorte iluminado (sombra enorme) y una tarjeta con el paso */
   #tour-luz { position: fixed; z-index: 50; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(28, 38, 41, .6); pointer-events: none; }
@@ -350,15 +352,27 @@ function cabecera(atras, txt) {
 const VISTAS = {
   avisos() {
     // Atender: anunciado para hoy o después. Para seguir: sin fecha, gremios que no cortan vías y menciones. Pasados: ya ocurrió o la fecha pasó
-    const u = X.avisos.filter(x => x.urge), r = X.avisos.filter(x => !x.urge && (x.m || !x.e || x.e.sin_fecha || x.f >= HOY)),
+    const u = X.avisos.filter(x => x.urge), r = X.avisos.filter(x => !x.urge && !x.m && (!x.e || x.e.sin_fecha || x.f >= HOY)),
       pasados = X.avisos.filter(x => !x.urge && x.e && !x.e.sin_fecha && x.f < HOY);
     cabecera(false);
     const prox = u[0], an = (D.animo || []).find(a => EMPRESAS[empresa][1].test(a.proyecto || ""));
     const hoy = `<div class="hoy">${prox ? `<button type="button" data-aviso="${X.avisos.indexOf(prox)}"><b class="c1">${esc(prox.w)}</b><span>${esc(prox.t)}</span></button>` : `<div><b>–</b><span>Nada anunciado</span></div>`}
-      <div><b>${an ? Math.round(an.menciones_7d) : 0}</b><span>${an ? `Reputación: menciones en 7 días, ${pct(an.pct_negativo)} negativas` : "Reputación: sin menciones en 7 días"}</span></div></div>
+      <div><b>${an ? Math.round(an.menciones_7d) : 0}</b><span>${an ? `Reputación: menciones en 7 días, ${pct(an.pct_negativo)} críticas` : "Reputación: sin menciones en 7 días"}</span></div></div>
       <p class="hoy-pie">Lo de hoy en radios, medios, Defensoría y SUTRAN. No cambia el nivel de riesgo.</p>`;
+    // Reputación: lo que se dice de la empresa en radio y prensa esta semana, frente a lo habitual, y las últimas menciones
+    const alias = EMPRESAS[empresa][1], ms = (D.menciones || []).filter(m => alias.test(m.proyecto || "")).slice(0, 6);
+    const TONO = { "-1": ["var(--rojo)", "Crítica"], "0": ["var(--gris)", "Neutra"], "1": ["var(--verde)", "Favorable"] };
+    // de un fragmento de radio, la frase donde se nombra a la empresa (±70 letras), no el inicio del fragmento
+    const ventana = (t, rx) => { const i = t.search(rx); if (i < 0) return t.slice(0, 110).trim() + "…";
+      const a = Math.max(0, i - 70), b = Math.min(t.length, i + 70); return (a ? "…" : "") + t.slice(a, b).trim() + (b < t.length ? "…" : ""); };
+    const cab = an && an.menciones_7d ? `<b>${Math.round(an.menciones_7d)}</b> menciones en 7 días${an.base_7d >= 1 ? `, ×${Math.round(an.alza)} lo habitual` : ""}, ${pct(an.pct_negativo)} críticas`
+      : `<b>0</b> menciones esta semana${an && an.base_7d ? `, lo habitual son ${an.base_7d} por semana` : ""}`;
+    const rep = `<h2>Reputación</h2><p class="rep-cab">${cab}</p>${an && an.aviso ? `<p class="rep-aviso">${esc(an.aviso.replace(/(\d{4})-(\d{2})-(\d{2})/g, (_, y, m, d) => dia(`${y}-${m}-${d}`)))}</p>` : ""}
+      ${ms.length ? `<ul>${ms.map(m => { const k = X.avisos.findIndex(x => x.m === m), [col, tn] = TONO[String(m.tono)] || TONO["0"], aire = /, en vivo /.test(m.titular || "");
+        return `<li><button type="button" class="fila"${k >= 0 ? ` data-aviso="${k}"` : ""}><i style="background:${col}"></i><span class="t">${esc(aire ? ventana(m.resumen || "", alias) : m.titular.replace(/^[^:]{2,25}:\s*/, ""))}</span><span class="w">${esc(dia(m.fecha))}</span><span class="s">${tn}, ${esc(TEMA[m.tema] || "en medios")}, ${esc(m.medio)}</span></button></li>`; }).join("")}</ul>`
+        : `<p class="vacio">Nadie habló de la empresa en radios ni medios esta semana.</p>`}`;
     return hoy + (u.length ? `<h2>Atender</h2><ul>${u.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<h2>Atender</h2><p class="vacio">Nada anunciado en su zona ni en sus rutas.</p>`)
-      + `<h2>Para seguir</h2>` + (r.length ? `<ul>${r.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas ni notas sobre la empresa.</p>`)
+      + rep + `<h2>Para seguir</h2>` + (r.length ? `<ul>${r.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas ni notas sobre la empresa.</p>`)
       + (pasados.length ? `<h2>Pasados</h2><ul>${pasados.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : "")
       + `<p class="pie">Datos al ${dia(D.creado)}. <a href="informe.html?e=${empresa.toLowerCase().replace(/^las /, "")}" target="_blank" rel="noopener">Informe del mes en PDF</a> · <a href="#" data-tour>Ver el recorrido</a></p>`;
   },
