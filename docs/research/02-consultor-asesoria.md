@@ -1,4 +1,4 @@
-# Conversación 02 — Analista sénior, Servicio de Asesoría Empresarial de una consultora económica (clientes mineros)
+# Conversación 02 — Analista sénior, Servicio de Asesoría Empresarial de APOYO Consultoría
 
 - Fecha y medio: 10/11/2026, videollamada (Zoom)
 - Duración: grabados los últimos 10 min; el resto, en notas del autor
