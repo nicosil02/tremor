@@ -105,8 +105,10 @@ paro. Es ordenar todas las zonas por riesgo con razones verificables y avisar cu
 ## 6. Demo
 
 **URL:** https://nicosil02.github.io/tremor/. El inicio explica qué hacemos, los planes y quién está detrás. Desde
-**Ver la demo** se entra a la app de una empresa, por ejemplo Bateas. **Acceso de clientes** lleva a la misma app
-con usuario y contraseña (`streamlit_app.py`): cada cliente ve solo su operación y el equipo ve todas.
+**Ver la demo** se entra a la app de una empresa, por ejemplo Bateas, y **Acceso de clientes** a la de la empresa
+que se elija. La misma app corre en Streamlit Community Cloud, con todas las mineras y la página de datos del
+modelo: **https://tremormonitor.streamlit.app/** (`streamlit_app.py`). El acceso con usuario y contraseña por
+cliente está listo en `tremor/acceso.py` y se activa con el contrato.
 
 - **Monitoreo:** lo que dicen hoy radios, medios, la Defensoría y la SUTRAN, y qué atender;
 - **Riesgo:** los tres niveles, Zona, Operación y Carretera, cada unidad y cada tramo de su ruta (al tocar un
@@ -169,7 +171,7 @@ git fetch origin datos && git show origin/datos:tremor.db.gz > tremor.db.gz
 python -c "import gzip,shutil;shutil.copyfileobj(gzip.open('tremor.db.gz'),open('datos/tremor.db','wb'))"
 python -m tremor.web && cp datos/exportes/web.json docs/web.json
 python -m http.server -d docs 8000        # abrir http://localhost:8000
-streamlit run streamlit_app.py            # con acceso por cliente; las cuentas van en .streamlit/secrets.toml
+streamlit run streamlit_app.py            # la misma app más los datos del modelo, como en Streamlit Cloud
 python -m pytest -q                       # 156 pruebas
 ```
 
