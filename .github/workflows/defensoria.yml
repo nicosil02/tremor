@@ -4,7 +4,7 @@ name: defensoria
 
 on:
   schedule:
-    - cron: "0 * * * *"     # cada hora: una protesta anunciada debe aparecer pronto (el LLM codifica lo que su cupo alcance)
+    - cron: "*/30 * * * *"  # cada media hora: una protesta anunciada debe aparecer pronto (el LLM codifica lo que su cupo alcance)
   workflow_dispatch:
     inputs:
       reenviar:
@@ -62,11 +62,13 @@ jobs:
           python -m tremor.oefa || true   # fiscalización del OEFA: se baja una sola vez (el portal no publica desde abr 2025)
           python -m tremor.oefa dfai || true   # sanciones DFAI y Tribunal (gob.pe) y reincidentes (RUIAS): solo lo nuevo
 
-      - name: SUTRAN (alertas viales vigentes, y qué dicen los medios de cada bloqueo)
+      - name: SUTRAN (alertas viales vigentes, y qué dicen los medios de cada bloqueo) y reputación
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python -m tremor.sutran
+        run: |
+          python -m tremor.sutran
+          python -m tremor.animo   # menciones y tono por proyecto, y la oración del LLM de cada mención: no espera a la corrida de radio
 
       - name: Tiempo de viaje de cada tramo de la ruta del cliente (TomTom, tráfico en vivo)
         env:
