@@ -201,3 +201,16 @@ def test_seguimiento_de_lo_avisado():
     xs = {c.split(":")[0]: t for c, t, _ in cambios(web, z, enviados)}
     assert set(xs) == {"cae", "retira", "nohubo"}          # la toma no se avisó antes: su suspensión tampoco
     assert "POSTERGADA" in xs["cae"] and "La Joya" in xs["retira"] and "transportistas de carga de Islay" in xs["retira"] and "Lima" not in xs["retira"]
+
+
+def test_sin_noticia_solo_de_lo_que_frena():
+    from datetime import date, timedelta
+    from tremor.avisos import cambios
+    ayer = (date.today() - timedelta(days=1)).isoformat()
+    ev = lambda i, ub, acc, actor: {"ubigeo": ub, "accion": acc, "actor": actor, "fecha_evento": ayer, "estado": "anunciada", "enlace": ""}
+    web = {"eventos": [ev(1, "040701", "Marcha", "Trabajadores municipales"),   # en la ruta, gremio que no corta vías: nada
+                       ev(2, "040701", "Bloqueo de vías", "Transportistas de carga"),  # en la ruta y corta: avisa
+                       ev(3, "040505", "Marcha", "Comuneros")]}                  # en la zona: avisa
+    enviados = {f"evento:{e['ubigeo']}:{e['accion']}:{ayer}" for e in web["eventos"]}
+    claves = [c for c, _, _ in cambios(web, {"040505"}, enviados)]
+    assert claves == [f"nohubo:evento:040701:Bloqueo de vías:{ayer}", f"nohubo:evento:040505:Marcha:{ayer}"]

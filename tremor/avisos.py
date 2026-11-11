@@ -54,7 +54,7 @@ def zona(con, empresa, vecinos):
     return z
 
 
-SECTOR = r"transportistas urbanos|docente|maestr|profesor|m[eé]dic|enfermer|salud|judicial|estatal|universit|estudiant"
+SECTOR = r"transportistas urbanos|docente|maestr|profesor|m[eé]dic|enfermer|salud|judicial|estatal|municipal|universit|estudiant"
 
 
 def eventos(web, z, alias, desde):
@@ -101,7 +101,10 @@ def cambios(web, z, enviados):
             quienes = ", ".join([*gre, *(mayus(lugar(u)) for u in ret)])
             yield (f"retira:{orig}:{'-'.join(ret + gre)}", f"↩️ *SE RETIRAN DE LA PROTESTA*\n_{e.get('titular') or que}_\n\n"
                    f"{que}: anuncian que no se suman: {quienes}. El resto de la convocatoria sigue.{fuente}", None)
-        elif e.get("estado") == "anunciada" and f and f < hoy() and f >= (date.today() - timedelta(days=3)).isoformat():
+        # "sin noticia" solo de lo que podía frenar a la empresa: en su zona, o una medida que corta vías; no de una
+        # marcha de un gremio que solo pasa por la ruta (municipales, docentes, salud): esa fue ruido para Bateas
+        elif (e.get("estado") == "anunciada" and f and f < hoy() and f >= (date.today() - timedelta(days=3)).isoformat()
+              and (ub in z or re.search(r"bloque|toma|paro", acc, re.I)) and not re.search(SECTOR, e.get("actor") or "", re.I)):
             yield ("nohubo:" + orig, f"❔ *SIN NOTICIA DE QUE SE REALIZARA*\n\n{que}: la fecha pasó y la prensa no informó que se "
                    f"hiciera. Pudo levantarse o no tener cobertura; conviene confirmarlo en la zona.", None)
 
