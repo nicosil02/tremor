@@ -51,6 +51,7 @@ jobs:
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         run: |
           [ "$(date -u +%H)" = "11" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] || exit 0
           python -m tremor.empresas cargar || echo "Operaciones: el servidor del OEFA no respondió, quedan las del día anterior"
@@ -69,6 +70,7 @@ jobs:
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         run: |
           python -m tremor.sutran
           python -m tremor.animo   # menciones y tono por proyecto, y la oración del LLM de cada mención: no espera a la corrida de radio
@@ -82,12 +84,14 @@ jobs:
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         run: python -m tremor.contexto
 
       - name: Prensa
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         run: python -m tremor.prensa todo
 
       - name: Perfil por distrito (EGPP)
