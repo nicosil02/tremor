@@ -93,6 +93,9 @@ def actualizar(con, hoy=None):
             neg, pos, t = tono(frase)
             filas.append((r.id, nombre, r.fecha, r.medio, "radio" if r.consulta == "radio" else "web", neg, pos, t))
     m = pd.DataFrame(filas, columns=["nota_id", "proyecto", "fecha", "medio", "origen", "negativos", "positivos", "tono"])
+    tabla_dicho(con)  # el tono que dio el LLM al leer la mención manda sobre el del léxico
+    m = m.merge(pd.read_sql("SELECT nota_id, proyecto, tono AS t_llm FROM mencion_dicho WHERE tono IS NOT NULL", con), "left", on=["nota_id", "proyecto"])
+    m["tono"] = m.pop("t_llm").fillna(m.tono)
     m.to_sql("mencion", con, if_exists="replace", index=False)
     hoy = hoy or date.today()
     m["dias"] = (pd.Timestamp(hoy) - pd.to_datetime(m.fecha)).dt.days
@@ -163,32 +166,46 @@ DICHO = ("Lees una nota de prensa o la transcripción automática, con errores, 
          "(por rol: un dirigente, un locutor, un comunero, una autoridad…), sin nombres de personas. Cuenta solo lo que se opina o "
          "informa SOBRE la operación: reclamos, apoyos, denuncias, acuerdos, anuncios. Si son saludos a trabajadores o vecinos, una "
          "mención de pasada, publicidad de la propia empresa, música o prédica, di exactamente \"no habla del proyecto\". "
-         'Responde JSON {"dicho": "<oración>"}.')
+         "Di también el tono HACIA la empresa: \"favorable\" si cuenta algo bueno que hizo (una entrega, una obra, un programa, "
+         "un acuerdo, un premio) o alguien la apoya o la celebra; \"critica\" si alguien le reclama, la denuncia, la rechaza o "
+         "protesta contra ella, o se le atribuye un daño; \"neutra\" si solo informa sin juzgarla (un proceso judicial, una "
+         "cifra, un accidente sin culpable, un anuncio del Estado). "
+         'Responde JSON {"dicho": "<oración>", "tono": "favorable" | "critica" | "neutra"}.')
+TONO_LLM = {"favorable": 1, "critica": -1, "crítica": -1}
+
+
+def tabla_dicho(con):
+    con.execute("CREATE TABLE IF NOT EXISTS mencion_dicho (nota_id TEXT, proyecto TEXT, dicho TEXT, tono INTEGER, PRIMARY KEY (nota_id, proyecto))")
+    if "tono" not in [c[1] for c in con.execute("PRAGMA table_info(mencion_dicho)")]:  # bases de antes del tono
+        con.execute("ALTER TABLE mencion_dicho ADD COLUMN tono INTEGER")
 
 
 def dicho(con, max_solicitudes=60):
-    """Qué pasó o qué se dijo del proyecto en cada mención de los últimos 30 días, radio y prensa, en una oración del LLM
-    (tabla mencion_dicho): es el título de la mención en la app. Sin cupo, se sigue en la próxima corrida."""
+    """Qué pasó o qué se dijo del proyecto en cada mención de los últimos 30 días, radio y prensa, en una oración del LLM,
+    y su tono hacia la empresa (tabla mencion_dicho): es el título de la mención en la app y el color de la barra de
+    reputación. El léxico y el transformer se equivocaban ("entrega camión volquete a la comunidad" salía crítica).
+    Las que quedaron sin tono se vuelven a pedir. Sin cupo, se sigue en la próxima corrida."""
     from tremor.llm import chat_json, SinCuota, RespuestaInvalida
-    con.execute("CREATE TABLE IF NOT EXISTS mencion_dicho (nota_id TEXT, proyecto TEXT, dicho TEXT, PRIMARY KEY (nota_id, proyecto))")
+    tabla_dicho(con)
     desde = (date.today() - timedelta(days=30)).isoformat()
     xs = con.execute("""SELECT m.nota_id, m.proyecto, CASE WHEN m.origen = 'radio' THEN n.resumen ELSE n.titular || '. ' || COALESCE(n.resumen, '') END
                         FROM mencion m JOIN nota n ON n.id = m.nota_id
                         WHERE m.fecha >= ? AND COALESCE(n.filtro, '') NOT IN ('religioso', 'musica_o_ruido', 'aviso', 'medio_extranjero')
-                          AND NOT EXISTS (SELECT 1 FROM mencion_dicho d WHERE d.nota_id = m.nota_id AND d.proyecto = m.proyecto)
+                          AND NOT EXISTS (SELECT 1 FROM mencion_dicho d WHERE d.nota_id = m.nota_id AND d.proyecto = m.proyecto AND d.tono IS NOT NULL)
                         ORDER BY m.fecha DESC""", (desde,)).fetchall()[:max_solicitudes]
     hechas = 0
     for nota_id, proyecto, texto in xs:
         mm = ALIAS[proyecto].search(texto) if proyecto in ALIAS else None
         trozo = texto[max(0, mm.start() - 400):mm.end() + 400] if mm else texto[:800]
         try:
-            r = chat_json(con, DICHO, f"Proyecto: {proyecto}\n\n{trozo}", "dicho1")
+            r = chat_json(con, DICHO, f"Proyecto: {proyecto}\n\n{trozo}", "dicho2")
         except SinCuota as e:
             print(f"  dicho de menciones pendiente: {str(e)[:80]}")
             break
         except RespuestaInvalida:
             continue
-        con.execute("INSERT OR REPLACE INTO mencion_dicho VALUES (?, ?, ?)", (nota_id, proyecto, (r.get("dicho") or "").strip()[:300]))
+        con.execute("INSERT OR REPLACE INTO mencion_dicho VALUES (?, ?, ?, ?)", (nota_id, proyecto, (r.get("dicho") or "").strip()[:300],
+                                                                              TONO_LLM.get(str(r.get("tono")).strip().lower(), 0)))
         hechas += 1
     con.commit()
     return hechas
@@ -198,7 +215,10 @@ def main():
     sys.stdout.reconfigure(encoding="utf-8")
     con = conectar()
     m, a = actualizar(con)
-    print(f"{dicho(con)} menciones de radio resumidas por el LLM")
+    n = dicho(con)
+    if n:  # el índice se rehace con los tonos recién leídos
+        m, a = actualizar(con)
+    print(f"{n} menciones resumidas por el LLM")
     print(f"{len(m)} menciones en {m.nota_id.nunique()} notas ({(m.origen == 'radio').sum()} de radio)")
     print(a[a.menciones_7d > 0][["proyecto", "menciones_7d", "base_7d", "alza", "pct_negativo", "tono_7d"]]
           .sort_values("menciones_7d", ascending=False).to_string(index=False))

@@ -461,3 +461,23 @@ def test_suspende_solo_si_lo_dice():
     assert not suspende("El gremio no suspenderá la huelga.")
     assert suspende("Transportistas levantan paro previsto para este martes tras acuerdo con el MTC")
     assert suspende("Se suspendió el paro agrario en Arequipa")
+
+
+def test_tono_de_la_mencion_lo_da_el_llm(monkeypatch):
+    # "entrega camión volquete" salía crítica con el léxico y el transformer: ahora manda lo que lee el LLM
+    import sqlite3
+    from datetime import date
+    import tremor.llm
+    from tremor import animo
+    con = sqlite3.connect(":memory:")
+    hoy = date.today().isoformat()
+    con.execute("CREATE TABLE nota (id TEXT, medio TEXT, titular TEXT, resumen TEXT, publicado TEXT, consulta TEXT, filtro TEXT)")
+    con.execute("INSERT INTO nota VALUES ('n1', 'Diario', 'Las Bambas entrega camión volquete a la comunidad tras el reclamo y la protesta', '', ?, 'web', NULL)", (hoy,))
+    con.execute("CREATE TABLE mencion_dicho (nota_id TEXT, proyecto TEXT, dicho TEXT, PRIMARY KEY (nota_id, proyecto))")  # base antigua, sin tono
+    monkeypatch.setattr(animo, "DATOS", __import__("pathlib").Path(__import__("tempfile").mkdtemp()))
+    m, _ = animo.actualizar(con, date.today())
+    assert m.tono.iloc[0] < 0  # el léxico ve "reclamo"
+    monkeypatch.setattr(tremor.llm, "chat_json", lambda *a, **k: {"dicho": "La empresa entregó un volquete.", "tono": "favorable"})
+    assert animo.dicho(con) == 1 and animo.dicho(con) == 0  # con tono ya no se vuelve a pedir
+    m, a = animo.actualizar(con, date.today())
+    assert m.tono.iloc[0] == 1 and a.set_index("proyecto").pct_negativo.max() == 0
