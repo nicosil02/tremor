@@ -342,6 +342,8 @@ proyecto están en [`.specify/memory/constitution.md`](.specify/memory/constitut
 - **Datos abiertos del Estado:** INEI, MEF, BCRP, MINEM, OEFA, ONPE, SENACE, ANA, INDECI, MTC, SERNANP y Cultura.
 - **GEOPERÚ (MINAM):** concesiones mineras del catastro de INGEMMET por titular, cruzadas con el territorio de las
   comunidades (`tremor.concesiones`, `docs/concesiones.json`).
+- **REINFO (MINEM):** inscripciones vigentes de mineros en formalización por distrito (`tremor.reinfo`). Solo el
+  conteo por lugar: no se guarda el nombre ni el RUC de nadie.
 - **OpenStreetMap:** el trazo de las carreteras de cada ruta, por el ruteo abierto de OSRM (© colaboradores de
   OpenStreetMap, licencia ODbL). Se calcula una vez con `tremor.tarjeta.caminos` y queda en `docs/caminos.json`.
 

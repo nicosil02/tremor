@@ -176,6 +176,7 @@ def datos(con):
             "cobertura": cobertura(con),
             "vecinos": vecinos(con),
             "casos": casos_zona(con),
+            "informal": informal(con),
             # PCM (Willaqniki) y MINAM (OGASA): el último informe de cada uno, solo casos ubicados en provincia o distrito
             "estado": registros(tabla(con, """SELECT fuente, documento, nombre, lower(nivel) AS nivel, ubigeo, situacion, fecha, medida, enlace
                 FROM caso_estado e WHERE length(ubigeo) >= 4 AND orden = (SELECT MAX(orden) FROM caso_estado WHERE fuente = e.fuente)""")),
@@ -526,6 +527,38 @@ def casos_zona(con):
     c["medios"] = medios_recientes(con, c.nombre)
     c["expediente"] = expediente(con, c.id)
     return registros(c.drop(columns="id"))
+
+
+ILEGAL = re.compile(r"miner[ií]a (?:ilegal|informal)|mineros? (?:ilegal|informal)|\breinfo\b", re.I)
+
+
+def ubicar_ilegal(texto, dep_consulta, idx, deps):
+    """Dónde pasa una nota sobre minería ilegal: la provincia o el distrito que nombra, solo si su departamento es el
+    de la búsqueda o la nota lo nombra (ancla contra homónimos: "Santa Rosa" hay en medio país). None si no."""
+    t = _norm(texto)
+    ancla = {c for c, n in deps.items() if n == _norm(dep_consulta or "") or re.search(rf"\b{re.escape(n)}\b", t)}
+    regiones = set(deps.values())  # "minería ilegal en Cajamarca" habla de la región, no de la provincia del mismo nombre
+    # el lugar va con mayúscula en la nota: "matapalo" es también un árbol y "progreso", una palabra cualquiera
+    propios = _norm(" ".join(re.findall(r"[A-ZÁÉÍÓÚÑ][\wáéíóúñ]*(?: (?:(?:de|del|la|los|las) )*[A-ZÁÉÍÓÚÑ][\wáéíóúñ]*)*", texto)))
+    cand = {u for k, us in idx.items() if k not in regiones and re.search(rf"\b{re.escape(k)}\b", propios) for u in us if u[:2] in ancla}
+    return max(cand, key=len) if cand and len({u[:4] for u in cand}) == 1 else None  # una sola provincia; gana el distrito
+
+
+def informal(con, dias=60):
+    """Minería informal e ilegal: inscripciones vigentes en el REINFO por distrito (tremor.reinfo) y las notas de los
+    últimos 60 días que hablan de minería ilegal o informal, ubicadas en su provincia o distrito."""
+    import csv
+    deps = {r["ubigeo"][:2]: _norm(r["region"]) for r in csv.DictReader(open(RAIZ / "tremor" / "ubigeo.csv", encoding="utf-8"))}
+    reinfo = {u: int(v) for u, v in con.execute("SELECT ubigeo, valor FROM distrito_variable WHERE variable = 'reinfo_vigentes'")}
+    desde, notas, idx = (date.today() - timedelta(days=dias)).isoformat(), [], _lugares()
+    for medio, f, tit, res, enlace, dep in con.execute(
+            "SELECT medio, substr(publicado, 1, 10), titular, resumen, enlace, departamento_consulta FROM nota WHERE publicado >= ? "
+            "AND COALESCE(filtro, '') != 'medio_extranjero' AND COALESCE(consulta, '') != 'radio' ORDER BY publicado DESC", (desde,)):
+        texto = f"{tit}. {res or ''}"
+        m = ILEGAL.search(texto)  # el lugar tiene que estar cerca de la mención: un resumen de varias noticias engaña
+        if m and (u := ubicar_ilegal(texto[max(0, m.start() - 300):m.end() + 300], dep, idx, deps)):
+            notas.append({"ubigeo": u, "fecha": f, "medio": medio, "titular": tit, "enlace": enlace})
+    return {"reinfo": reinfo, "notas": notas}
 
 
 def expediente(con, ids, meses=24):
