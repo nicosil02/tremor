@@ -350,7 +350,9 @@ def leer_decreto(texto: str) -> dict | None:
     if k < 0:
         return None
     art1 = re.split(r"Art[ií]culo 2\b", texto[k:k + 2500])[0]
-    if not ORDEN.search(art1.lower()):
+    # de orden interno: lo dice el artículo 1 o, en los antiguos ("Prorrogar el Estado de Emergencia en el distrito de
+    # Cocachacra"), el decreto invoca el artículo 137 de la Constitución; los de desastres van por la ley del SINAGERD
+    if not ORDEN.search(art1.lower()) and not re.search("art[ií]culo 137", texto[max(0, k - 5000):k + 3000], re.I):
         return None
     c = texto.rfind("CONSIDERANDO", 0, k)
     motivo = (texto[c if c >= 0 else max(0, k - 2500):k] + art1).lower()  # el PDF trae otras normas antes
@@ -424,13 +426,20 @@ def texto_decreto(i, titulo="") -> str:
     return (pub[0] + " " if pub else "") + t[max(0, k - 8000):k + 2500] if k >= 0 else ""
 
 
-def emergencias(con, desde=2006, max_meses=24):
+def emergencias(con, desde=2006, max_meses=24, releer=False):
     """Lee de a max_meses los meses aún no buscados (más el actual y el anterior, que siguen creciendo), guarda cada
     decreto en `decreto_emergencia` y rehace en distrito_mes emergencia_conflicto y emergencia_crimen: 1 en cada mes
     que el distrito estuvo bajo estado de emergencia por esa causa (un decreto puede tener las dos)."""
     con.execute("""CREATE TABLE IF NOT EXISTS decreto_emergencia (id TEXT PRIMARY KEY, titulo TEXT, causas TEXT,
                    inicio TEXT, dias INTEGER, lugares TEXT)""")
     con.execute("CREATE TABLE IF NOT EXISTS decreto_emergencia_mes (m INTEGER PRIMARY KEY)")
+    if releer:  # tras cambiar la regla: vuelve a leer los que quedaron sin causa (desastres, o los que la regla no entendió)
+        natural = re.compile("desastre|peligro|lluvia|sanitaria|h[ií]dric|helada|sismo|contaminaci|huaico|incendio|friaje|"
+                             "sequ[ií]a|inundaci|ambiental|bajas temperaturas|Fuerzas Armadas|Exoneran", re.I)
+        con.executemany("DELETE FROM decreto_emergencia WHERE id = ?", [(i,) for i, t in con.execute(
+            "SELECT id, titulo FROM decreto_emergencia WHERE causas IS NULL") if not natural.search(t or "")])
+        con.execute("DELETE FROM decreto_emergencia_mes")
+        con.commit()
     hoy = date.today().year * 12 + date.today().month - 1
     hechos = {m for (m,) in con.execute("SELECT m FROM decreto_emergencia_mes")}
     pendientes = [m for m in range(desde * 12, hoy - 1) if m not in hechos][:max_meses] + [hoy - 1, hoy]
@@ -471,7 +480,8 @@ if __name__ == "__main__":
     j = sub.add_parser("jne"); j.add_argument("--desde", type=int, default=2010); j.add_argument("--anios", type=int, nargs="*")
     c = sub.add_parser("contraloria"); c.add_argument("--desde", type=int, default=2017)
     e = sub.add_parser("emergencias"); e.add_argument("--desde", type=int, default=2006); e.add_argument("--max-meses", type=int, default=24)
+    e.add_argument("--releer", action="store_true")
     a = ap.parse_args()
     sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
     {"mef_mensual": lambda con: mef_mensual(con, a.desde), "jne": lambda con: jne(con, a.desde, a.anios),
-     "contraloria": lambda con: contraloria(con, a.desde), "emergencias": lambda con: emergencias(con, a.desde, a.max_meses)}[a.cmd](conectar())
+     "contraloria": lambda con: contraloria(con, a.desde), "emergencias": lambda con: emergencias(con, a.desde, a.max_meses, a.releer)}[a.cmd](conectar())

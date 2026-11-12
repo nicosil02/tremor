@@ -34,3 +34,16 @@ def test_crimen_distritos_y_provincia_entera():
 def test_desastre_no_es_orden_interno():
     assert leer_decreto("CONSIDERANDO: Que, las lluvias intensas; DECRETA: Artículo 1.- Declarar el Estado de Emergencia "
                         "en el distrito de Huantán por peligro inminente. Artículo 2.- Acciones") is None
+
+
+def test_decreto_antiguo_sin_decir_orden_interno():
+    # DS 030-2007-PCM (Tía María): el artículo 1 solo prorroga; es de orden interno porque invoca el artículo 137
+    from datetime import date
+    from tremor.gobierno import leer_decreto
+    t = ("Fecha de publicación: 31/03/2007 Prorrogan Estado de Emergencia en el distrito de Cocachacra CONSIDERANDO: Que, "
+         "de conformidad con el inciso 1) del artículo 137 de la Constitución Política del Perú; DECRETA: Artículo 1º.- "
+         "Prórroga de Estado de Emergencia Prorrogar por el término de quince (15) días, a partir del 1 de abril de 2007, el "
+         "Estado de Emergencia en el distrito de Cocachacra, de la provincia de Islay del departamento de Arequipa. "
+         "Artículo 2º.- Suspensión del ejercicio de Derechos Constitucionales.")
+    d = leer_decreto(t)
+    assert d["inicio"] == date(2007, 4, 1) and d["dias"] == 15 and d["lugares"] == {"040702"} and d["causas"] == {"hereda"}

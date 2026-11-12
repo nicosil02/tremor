@@ -204,6 +204,27 @@ def de_radio(con, e):
     return None
 
 
+def decretos(con, z, dias=7):
+    """Estados de emergencia de orden interno (El Peruano) que empiezan en los últimos 7 días y nombran distritos de la
+    zona del cliente: restringen reuniones y tránsito, y suelen seguir a un conflicto o a crimen organizado. Un aviso
+    por decreto. Sin la tabla (tremor.gobierno emergencias) no hay nada."""
+    desde = (date.today() - timedelta(days=dias)).isoformat()
+    try:
+        filas = con.execute("SELECT id, titulo, causas, inicio, dias, lugares FROM decreto_emergencia WHERE causas IS NOT NULL "
+                            "AND inicio >= ? ORDER BY inicio", (desde,)).fetchall()
+    except sqlite3.OperationalError:
+        return
+    for i, titulo, causas, inicio, n, lugares in filas:
+        suyos = sorted(set(json.loads(lugares)) & set(z))
+        if not suyos:
+            continue
+        donde = ", ".join(mayus(lugar(u)) for u in suyos[:4]) + (f" y {len(suyos) - 4} distritos más" if len(suyos) > 4 else "")
+        motivo = {"crimen": "por criminalidad", "conflicto": "por conflicto social", "conflicto,crimen": "por conflicto social y criminalidad"}.get(causas, "")
+        yield (f"emergencia:{i}", f"🚨 *ESTADO DE EMERGENCIA {'PRORROGADO' if 'prorrog' in titulo.lower() else 'EN SU ZONA'}*\n_{titulo}_\n\n"
+               f"Rige {n} días desde el {dia(inicio)} {motivo}. En su zona: {donde}.\n\n"
+               f"📰 *Fuente:* [El Peruano](https://busquedas.elperuano.pe/dispositivo/NL/{i})", None)
+
+
 def lentas(con, nombre, ahora_=None):
     """Tramos de su ruta que TomTom mide lentos o cerrados en las últimas 3 horas, con la causa (tiempos.causa). Un
     aviso por tramo y día. Sin la tabla (sin clave de TomTom) no hay nada."""
@@ -442,7 +463,7 @@ def main(dias=7, reenviar=False, muestra=False):  # 7: GitHub a veces corre el w
                 e["emitido"], e["dicho"], extra = r
                 e.update({k: v for k, v in extra.items() if v})
         enviados = {c for (c,) in con.execute("SELECT clave FROM aviso_enviado WHERE empresa = ?", (nombre,))}
-        ruta = [x for x in [*lentas(con, nombre), *cambios(web, z, enviados), *reputacion(con, alias)] if (f"{x[0]}|{nombre}",) not in ya]
+        ruta = [x for x in [*lentas(con, nombre), *decretos(con, z), *cambios(web, z, enviados), *reputacion(con, alias)] if (f"{x[0]}|{nombre}",) not in ya]
         for clave, texto, png in [*piezas(nombre, evs, rad, rie, unidad, web["vecinos"], tramos), *ruta]:
             if muestra:
                 d = DATOS / "exportes" / "muestra"; d.mkdir(parents=True, exist_ok=True)
