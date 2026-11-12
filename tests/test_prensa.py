@@ -207,11 +207,11 @@ def test_cadena_llm_salta_proveedores_sin_clave(monkeypatch):
     assert [m for m, _, _ in llm.cadena()] == ["a", "c"]
     monkeypatch.setenv("GEMINI_API_KEY", "y")
     assert [m for m, _, _ in llm.cadena()] == ["a", "b", "c"]
-    monkeypatch.setenv("LLM_MODEL", "a,mistral:m")
-    monkeypatch.delenv("MISTRAL_API_KEY", raising=False)
+    monkeypatch.setenv("LLM_MODEL", "a,nvidia:m")
+    monkeypatch.delenv("NVIDIA_API_KEY", raising=False)
     assert [m for m, _, _ in llm.cadena()] == ["a"]
-    monkeypatch.setenv("MISTRAL_API_KEY", "z")
-    assert llm.cadena()[1] == ("m", "https://api.mistral.ai/v1", "z")
+    monkeypatch.setenv("NVIDIA_API_KEY", "z")
+    assert llm.cadena()[1] == ("m", "https://integrate.api.nvidia.com/v1", "z")
 
 
 def test_filtro_radio():

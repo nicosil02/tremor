@@ -1,7 +1,7 @@
 """LLM por endpoints compatibles con OpenAI (constitución III).
 
 LLM_MODEL es una cadena separada por comas; cada modelo usa la clave de su proveedor y, si agota su cupo diario,
-sigue el siguiente (cada modelo tiene su propio cupo). Prefijos: `gemini:` (GEMINI_API_KEY), `mistral:` (MISTRAL_API_KEY); sin prefijo,
+sigue el siguiente (cada modelo tiene su propio cupo). Prefijos: `gemini:` (GEMINI_API_KEY), `nvidia:` (NVIDIA_API_KEY); sin prefijo,
 LLM_BASE_URL + LLM_API_KEY (Groq). Un proveedor sin clave se salta.
 Cada respuesta se guarda en llm_cache por contenido: volver a correr no gasta cuota.
 """
@@ -16,10 +16,9 @@ from tremor.db import RAIZ, ahora
 
 CADENA = ("openai/gpt-oss-120b,gemini:gemini-3.6-flash,gemini:gemini-3.5-flash,gemini:gemini-3-flash-preview,"
           "gemini:gemini-3.8-flash,gemini:gemini-3.7-flash,gemini:gemini-3.5-flash-lite,gemini:gemini-3.1-flash-lite,"
-          "mistral:mistral-large-latest,mistral:mistral-small-latest,"
-          "openai/gpt-oss-20b")  # cada modelo, su propio cupo diario; el saturado o retirado cede al siguiente
+          "openai/gpt-oss-20b,nvidia:google/gemma-4-31b-it,nvidia:openai/gpt-oss-20b")  # cada modelo, su propio cupo diario; el saturado o retirado cede al siguiente
 PROVEEDORES = {"gemini": ("https://generativelanguage.googleapis.com/v1beta/openai", "GEMINI_API_KEY"),
-               "mistral": ("https://api.mistral.ai/v1", "MISTRAL_API_KEY")}
+               "nvidia": ("https://integrate.api.nvidia.com/v1", "NVIDIA_API_KEY")}  # build.nvidia.com, gratis para prototipos
 
 
 def _env():
@@ -68,13 +67,13 @@ def chat_json(con, sistema: str, usuario: str, version: str) -> dict:
     if not modelos:
         raise SinCuota("Falta LLM_API_KEY (o GEMINI_API_KEY) en .env")
     for m, url, clave in modelos:
-        if m in AGOTADOS:
+        if (m, url) in AGOTADOS:  # por proveedor: Groq y NVIDIA sirven un modelo con el mismo nombre
             continue
         try:
             return _llamar(con, url, clave, m, clave_de(m), sistema, usuario)
         except SinCuota as e:
             print(f"  {m} sin cupo: {str(e)[:90]}")
-            AGOTADOS.add(m)
+            AGOTADOS.add((m, url))
     raise SinCuota("todos los modelos sin cupo")
 
 
