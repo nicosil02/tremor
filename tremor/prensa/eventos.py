@@ -42,6 +42,15 @@ def mismo_evento(x, y) -> bool:
     return abs((x["fecha"] - y["fecha"]).days) <= margen
 
 
+def fecha_creible(fecha: str | None, publicado: str | None) -> str | None:
+    """Una nota con "el 23 de octubre" publicada en noviembre habla del octubre que pasó; el LLM la pone en el del año
+    siguiente. Nadie anuncia una protesta con más de seis meses: esa fecha retrocede un año."""
+    f, p = _f(fecha), _f(publicado)
+    if f and p and (f - p).days > 180:
+        return f.replace(year=f.year - 1, day=min(f.day, 28) if f.month == 2 else f.day).isoformat()
+    return fecha
+
+
 def _moda(vals):
     vals = [v for v in vals if v]
     return Counter(vals).most_common(1)[0][0] if vals else None
@@ -58,6 +67,7 @@ def agrupar(con) -> int:
     # operación; van con ubigeo "00". El resto sin lugar suele ser de otro país o no se puede ubicar.
     for r in filas:
         r["ubigeo"] = r["ubigeo"] or "00"
+        r["fecha_evento"] = fecha_creible(r["fecha_evento"], r["publicado"])
         r["fecha"] = _f(r["fecha_evento"]) or _f(r["publicado"])
     padre = list(range(len(filas)))
 

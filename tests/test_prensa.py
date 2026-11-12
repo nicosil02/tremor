@@ -529,3 +529,12 @@ def test_llm_json_roto_no_tumba_la_corrida(monkeypatch):
     r.json = lambda: {"choices": [{"message": {"content": None}}]}  # el modelo gastó la salida razonando
     with pytest.raises(llm.RespuestaInvalida):
         llm._llamar(sqlite3.connect(":memory:"), "http://x", "k", "m", "c", "s", "u")
+
+
+def test_fecha_del_evento_a_mas_de_seis_meses_es_del_anio_pasado():
+    from tremor.prensa.eventos import fecha_creible
+    # "Gamarra anuncia paralización el 23 de octubre", publicada el 11 nov: el LLM la puso en octubre de 2027
+    assert fecha_creible("2027-10-23", "2026-11-11T15:00-05:00") == "2026-10-23"
+    assert fecha_creible("2026-11-16", "2026-11-11T15:00-05:00") == "2026-11-16"  # anuncio normal
+    assert fecha_creible("2027-01-05", "2026-11-11") == "2027-01-05"  # cruza el año, sigue cerca
+    assert fecha_creible(None, "2026-11-11") is None
