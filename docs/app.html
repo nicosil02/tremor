@@ -153,8 +153,8 @@
   dl.datos { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 14px 16px 4px; }
   dl.datos dt { font-size: 14px; font-weight: 700; color: var(--tinta-2); padding-top: 2px; } dl.datos dd { margin: 0; }
   ol.cadena li.nada::before { background: var(--linea); } ol.cadena li.nada b { color: var(--tinta-2); font-weight: 600; }
-  .leyenda-via .alt { display: block; font: inherit; font-weight: 400; font-size: 13px; color: var(--tinta-2); text-align: left; padding: 6px 0; margin: 0; border: 0; background: none; cursor: pointer; }
-  .leyenda-via .alt[aria-pressed="false"] span, .leyenda-via .alt[aria-pressed="false"] i { opacity: .5; } .leyenda-via .alt u { font-weight: 600; color: var(--tinta); }
+  .leyenda-via .alt { display: flex; align-items: center; font-weight: 400; font-size: 13px; color: var(--tinta-2); padding: 6px 0; cursor: pointer; }
+  .leyenda-via .alt input { width: 18px; height: 18px; margin: 0 8px 0 0; accent-color: #8f74e0; flex: none; }
   .leyenda-via .capas { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 4px; }
   .leyenda-via .capas button { font: inherit; font-size: 13px; font-weight: 600; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--linea); background: #fff; color: var(--tinta-2); cursor: pointer; }
   .leyenda-via .capas button[aria-pressed="true"] { background: var(--cobre-4); border-color: var(--cobre-4); color: #fff; }
@@ -770,15 +770,15 @@ const ley = () => { const c = CAPAS_MAPA[CAPA]; return (actual === "pais" || PAI
   : (FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Su ruta de salida")  // el % de la vía ya está en el panel: el mapa dice qué es cada color
   + (SEL ? (SEL.tr.length ? `<small><i class="rojo"></i>${/se suma/.test(SEL.etq) ? "Anunciaron que se suman" : SEL.tr2.length ? "Más probable" : "Tramos que puede cortar"}${SEL.tr2.length ? `<br><i class="naranja"></i>Posible` : ""}<br><i class="punto"></i>${/se suma/.test(SEL.etq) ? "Base que se suma" : SEL.etq ? "Donde más bloquearon antes" : "Dónde es la protesta"}</small>` : "")
     : `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`)
-  + (CONCES[empresa] ? `<button type="button" class="alt" data-alt="conces" aria-pressed="${!OFF.has("conces")}"><i class="conces"></i><span>Sus concesiones mineras (al acercarse)</span> <u>${OFF.has("conces") ? "Mostrar" : "Ocultar"}</u></button>` : ""); };
+  + (CONCES[empresa] ? `<label class="alt"><input type="checkbox" data-alt="conces"${OFF.has("conces") ? "" : " checked"}><i class="conces"></i>Sus concesiones mineras (al acercarse)</label>` : ""); };
 // Capas de contexto: se apagan y encienden tocando su renglón de la leyenda. Lo que avisa (ruta, riesgo, cortes) no se apaga.
 const ALT = { conces: ["conces-f", "conces"] }, OFF = new Set();
 try { JSON.parse(localStorage.getItem("capasOff") || "[]").forEach(k => OFF.add(k)); } catch {}
 const alternar = () => mapa && Object.entries(ALT).forEach(([k, ls]) => ls.forEach(l => mapa.getLayer(l) && mapa.setLayoutProperty(l, "visibility", OFF.has(k) ? "none" : "visible")));
-document.addEventListener("click", e => { const b = e.target.closest("[data-alt]"); if (!b) return;
-  const k = b.dataset.alt; OFF.has(k) ? OFF.delete(k) : OFF.add(k);
+document.addEventListener("change", e => { const b = e.target.closest("[data-alt]"); if (!b) return;
+  const k = b.dataset.alt; b.checked ? OFF.delete(k) : OFF.add(k);
   try { localStorage.setItem("capasOff", JSON.stringify([...OFF])); } catch {}
-  alternar(); document.querySelectorAll(".leyenda-via").forEach(l => l.innerHTML = ley()); });
+  alternar(); });
 document.addEventListener("click", e => { const b = e.target.closest("[data-capa]"); if (!b) return;
   CAPA = b.dataset.capa; document.querySelectorAll(".leyenda-via").forEach(l => l.innerHTML = ley()); peru();
   if (actual === "pais" && !pila.length) { document.getElementById("vista").innerHTML = VISTAS.pais(); conectar(); } });  // la lista del panel sigue a la capa
