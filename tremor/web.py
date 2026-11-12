@@ -423,9 +423,11 @@ def menciones(con):
     fragmento. Una por titular (la misma nota llega por el feed del medio y por Google News: se queda el enlace directo)."""
     desde = (date.today() - timedelta(days=30)).isoformat()
     con.execute("CREATE TABLE IF NOT EXISTS nota_tema (nota_id TEXT PRIMARY KEY, tema TEXT, p_tema REAL, tono INTEGER, p_tono REAL)")
-    # tema y tono del transformer (tremor.clasifica); si la nota aún no pasó por él, el tono del léxico
-    con.execute("CREATE TABLE IF NOT EXISTS mencion_dicho (nota_id TEXT, proyecto TEXT, dicho TEXT, PRIMARY KEY (nota_id, proyecto))")
-    m = tabla(con, "SELECT m.proyecto, m.fecha, m.medio, m.origen, COALESCE(t.tono, m.tono) AS tono, t.tema, n.titular, n.resumen, n.enlace, "
+    # el tono lo da el LLM que resume la mención (tremor.animo.dicho); si aún no la leyó, el del transformer
+    # (tremor.clasifica, que también da el tema) y al final el del léxico
+    from tremor.animo import tabla_dicho
+    tabla_dicho(con)
+    m = tabla(con, "SELECT m.proyecto, m.fecha, m.medio, m.origen, COALESCE(d.tono, t.tono, m.tono) AS tono, t.tema, n.titular, n.resumen, n.enlace, "
                    "d.dicho "
                    "FROM mencion m JOIN nota n ON n.id = m.nota_id LEFT JOIN nota_tema t ON t.nota_id = m.nota_id "
                    "LEFT JOIN mencion_dicho d ON d.nota_id = m.nota_id AND d.proyecto = m.proyecto "
