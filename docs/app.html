@@ -380,26 +380,22 @@ const VISTAS = {
     cabecera(false);
     const prox = u[0], an = (D.animo || []).find(a => EMPRESAS[empresa][1].test(a.proyecto || ""));
     // Reputación: las menciones de la semana por tono; tocar un color de la barra deja solo esas
-    const TONO = { "-1": ["var(--rojo)", "Crítica"], "0": ["#9aa6a5", "Neutra"], "1": ["var(--verde)", "Favorable"] };
+    // "p": el LLM todavía no la leyó (sin cupo). No se le pone tono: el anterior, por palabras, se equivocaba
+    const TONO = { "-1": ["var(--rojo)", "Crítica", "críticas"], "0": ["#9aa6a5", "Neutra", "neutras"], "1": ["var(--verde)", "Favorable", "favorables"], p: ["#dfe5e4", "Sin clasificar", "sin clasificar"] };
+    const tk = m => m.voz == null ? "p" : String(m.tono);
     const alias = EMPRESAS[empresa][1], todas = (D.menciones || []).filter(m => alias.test(m.proyecto || "") && dias(m.fecha) >= -6);
-    const nT = t => todas.filter(m => String(m.tono) === t).length, ms = todas.filter(m => !TONO_F || String(m.tono) === TONO_F).slice(0, 8);
+    const nT = t => todas.filter(m => tk(m) === t).length, ms = todas.filter(m => !TONO_F || tk(m) === TONO_F).slice(0, 8);
+    const crit = todas.length > nT("p") ? `, ${pct(nT("-1") / (todas.length - nT("p")))} críticas` : "";  // de las ya leídas
     const hoy = `<div class="hoy">${prox ? `<button type="button" data-aviso="${X.avisos.indexOf(prox)}"><b class="c1">${esc(prox.w)}</b><span>${esc(prox.t)}</span></button>` : `<div><b>–</b><span>Nada anunciado</span></div>`}
-      <div><b>${todas.length}</b><span>${todas.length ? `Reputación: menciones en 7 días, ${pct(nT("-1") / todas.length)} críticas` : "Reputación: sin menciones en 7 días"}</span></div></div>
+      <div><b>${todas.length}</b><span>${todas.length ? `Reputación: menciones en 7 días${crit}` : "Reputación: sin menciones en 7 días"}</span></div></div>
       <p class="hoy-pie">Lo de hoy en radios, medios, Defensoría y SUTRAN. No cambia el nivel de riesgo.</p>`;
-    const cab = todas.length ? `<b>${todas.length}</b> menciones en 7 días${an && an.base_7d >= 1 ? `, ×${Math.round(todas.length / an.base_7d)} lo habitual` : ""}, ${pct(nT("-1") / todas.length)} críticas`
+    const cab = todas.length ? `<b>${todas.length}</b> menciones en 7 días${an && an.base_7d >= 1 ? `, ×${Math.round(todas.length / an.base_7d)} lo habitual` : ""}${crit}`
       : `<b>0</b> menciones esta semana${an && an.base_7d ? `, lo habitual son ${an.base_7d} por semana` : ""}`;
-    const seg = t => nT(t) ? `<button type="button" data-tono="${t}" aria-pressed="${TONO_F === t}" style="flex:${nT(t)};background:${TONO[t][0]}" title="${TONO[t][1]}s"></button>` : "";
-    const barra = todas.length ? `<div class="rep-barra${TONO_F ? " filtra" : ""}" role="group" aria-label="Menciones por tono">${["-1", "0", "1"].map(seg).join("")}</div>
-      <p class="rep-ley">${["-1", "0", "1"].filter(t => nT(t)).map(t => `<button type="button" data-tono="${t}" aria-pressed="${TONO_F === t}"><i style="background:${TONO[t][0]}"></i>${nT(t)} ${TONO[t][1].toLowerCase()}${nT(t) > 1 ? "s" : ""}</button>`).join("")}${TONO_F ? `<button type="button" data-tono="${TONO_F}" class="todas">Ver todas</button>` : ""}</p>` : "";
-    // Quién habla: lo que se oye en la zona no es lo que publica Lima, y la prensa del sector o una ONG no son opinión
-    // pública. Y de lo favorable, cuánto lo dice la propia empresa.
-    const QUIEN = { zona: "En la zona", region: "Otras regiones", nacional: "Prensa nacional", sector: "Prensa del sector", organizacion: "Organizaciones", otros: "Otros medios" };
-    const cuenta = xs => [[-1, "crítica"], [1, "favorable"], [0, "neutra"]].map(([t, n]) => [xs.filter(m => +m.tono === t).length, n]).filter(c => c[0]).map(([k, n]) => `${k} ${n}${k > 1 ? "s" : ""}`).join(", ");
-    const fav = todas.filter(m => +m.tono === 1), suyas = fav.filter(m => m.voz === "empresa").length;
-    const porQuien = todas.some(m => m.quien) ? `<ul class="por rep-quien">${Object.entries(QUIEN).map(([k, t]) => [t, todas.filter(m => m.quien === k)]).filter(g => g[1].length)
-      .map(([t, xs]) => `<li><b>${t}</b>: ${cuenta(xs)}</li>`).join("")}${suyas ? `<li>De ${fav.length === 1 ? "la favorable" : `las ${fav.length} favorables`}, ${suyas} ${suyas === 1 ? "la dice" : "las dice"} la propia empresa</li>` : ""}</ul>` : "";
-    const rep = `<h2 id="reputacion">Reputación</h2><p class="rep-cab">${cab}</p>${barra}${porQuien}${an && an.aviso ? `<p class="rep-aviso">${esc(an.aviso.replace(/(\d{4})-(\d{2})-(\d{2})/g, (_, y, m, d) => dia(`${y}-${m}-${d}`)))}</p>` : ""}
-      ${ms.length ? `<ul>${ms.map(m => { const k = X.avisos.findIndex(x => x.m === m), [col, tn] = TONO[String(m.tono)] || TONO["0"], aire = /, en vivo /.test(m.titular || "");
+    const seg = t => nT(t) ? `<button type="button" data-tono="${t}" aria-pressed="${TONO_F === t}" style="flex:${nT(t)};background:${TONO[t][0]}" title="${TONO[t][2]}"></button>` : "";
+    const barra = todas.length ? `<div class="rep-barra${TONO_F ? " filtra" : ""}" role="group" aria-label="Menciones por tono">${["-1", "0", "1", "p"].map(seg).join("")}</div>
+      <p class="rep-ley">${["-1", "0", "1", "p"].filter(t => nT(t)).map(t => `<button type="button" data-tono="${t}" aria-pressed="${TONO_F === t}"><i style="background:${TONO[t][0]}"></i>${nT(t)} ${nT(t) > 1 ? TONO[t][2] : TONO[t][1].toLowerCase()}</button>`).join("")}${TONO_F ? `<button type="button" data-tono="${TONO_F}" class="todas">Ver todas</button>` : ""}</p>` : "";
+    const rep = `<h2 id="reputacion">Reputación</h2><p class="rep-cab">${cab}</p>${barra}${an && an.aviso ? `<p class="rep-aviso">${esc(an.aviso.replace(/(\d{4})-(\d{2})-(\d{2})/g, (_, y, m, d) => dia(`${y}-${m}-${d}`)))}</p>` : ""}
+      ${ms.length ? `<ul>${ms.map(m => { const k = X.avisos.findIndex(x => x.m === m), [col, tn] = TONO[tk(m)] || TONO["0"], aire = /, en vivo /.test(m.titular || "");
         return `<li><button type="button" class="fila"${k >= 0 ? ` data-aviso="${k}"` : ` data-mencion="${D.menciones.indexOf(m)}"`}><i style="background:${col}"></i><span class="t">${esc(m.dicho || (aire ? `Hablan de ${m.proyecto} en ${m.medio}` : m.titular.replace(/^[^:]{2,25}:\s*/, "")))}</span><span class="w">${esc(dia(m.fecha))}</span><span class="s">${tn}, ${esc(TEMA[m.tema] || "en medios")}, ${esc(m.medio)}${m.voz === "empresa" ? " (lo dice la empresa)" : m.voz === "comunidad" ? " (lo dice la comunidad)" : ""}${m.otros ? ` y ${m.otros} ${m.otros > 1 ? "medios" : "medio"} más` : ""}</span></button></li>`; }).join("")}</ul>`
         : `<p class="vacio">Nadie habló de la empresa en radios ni medios esta semana.</p>`}`;
     return hoy + (u.length ? `<h2>Atender</h2><ul>${u.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<h2>Atender</h2><p class="vacio">Nada anunciado en su zona ni en sus rutas.</p>`)
@@ -616,7 +612,7 @@ function detalleAviso(k) {
   const x = typeof k === "number" ? X.avisos[k] : k;
   cabecera(true, x.tipo);
   if (x.m || x.sutran) ver(null);
-  if (x.m) { const m = x.m, tono = m.tono < 0 ? ["tono-neg", "Crítico con la empresa"] : m.tono > 0 ? ["tono-pos", "Favorable a la empresa"] : null;
+  if (x.m) { const m = x.m, tono = m.voz == null ? null : m.tono < 0 ? ["tono-neg", "Crítico con la empresa"] : m.tono > 0 ? ["tono-pos", "Favorable a la empresa"] : null;
     const aire = /, en vivo /.test(m.titular || ""), hora = aire ? (m.titular.match(/\d\d:\d\d/) || [""])[0] : "";
     // radio: lo que se dijo según el LLM como título, el fragmento literal entre comillas y el enlace para escucharla
     return `<div class="nota"><h3>${esc(m.dicho || (aire ? `Hablan de ${m.proyecto} en la radio` : m.titular))}</h3><p class="meta">${esc(m.medio)}${m.otros ? ` y ${m.otros} ${m.otros > 1 ? "medios" : "medio"} más` : ""}, ${dia(m.fecha)}${hora ? ` ${hora}` : ""}${tono ? `. <b class="${tono[0]}">${tono[1]}</b>` : ""}</p>
