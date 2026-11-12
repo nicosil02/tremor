@@ -440,3 +440,13 @@ def test_parsear_gobpe():
     assert a["medio"] == "Policía Nacional" and a["resumen"] == "En Chumbivilcas."
     assert b["publicado"] == "2026-10-20T00:02-05:00" and b["enlace"] is None
     assert list(parsear_gobpe("<html>sin resultados</html>", "PCM")) == []
+
+
+def test_cuerpo_gobpe():
+    from tremor.prensa.recolectar import cuerpo_gobpe
+    pag = ('<html><head><meta content="Con relación a lo hechos..." name="description" /><script>var x = 1;</script></head>'
+           '<body><h1>Comunicado N. ° 16 - 2025</h1><p>16 de setiembre de 2025 - 3:37 p. m.</p>'
+           '<p>Con relación a los hechos en Corihuayrachina:</p><p>Se mantenía el bloqueo de la vía férrea.</p>'
+           '<svg><path d="M32"/></svg></body></html>')
+    assert cuerpo_gobpe(pag) == "Con relación a los hechos en Corihuayrachina: Se mantenía el bloqueo de la vía férrea."
+    assert cuerpo_gobpe("<p>sin fecha</p>") == ""

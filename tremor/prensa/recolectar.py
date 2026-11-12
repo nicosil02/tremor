@@ -174,6 +174,14 @@ def parsear_gobpe(pagina: str, medio: str):
                "publicado": pub, "enlace": "https://www.gob.pe" + enlace[1] if enlace else None, "fuente_url": ""}
 
 
+def cuerpo_gobpe(pagina: str, n=1500) -> str:
+    """El texto de una nota de gob.pe: va después de la fecha de publicación. Los comunicados de la Policía se
+    titulan solo "Comunicado N° 32-2026" y la búsqueda trae apenas la primera línea; el bloqueo está más abajo."""
+    t = " ".join(_limpio(re.sub(r"<(script|style|svg)\b.*?</\1>", " ", pagina, flags=re.S)).split())
+    f = re.search(r"\d+ de \w+ de \d{4} - \d+:\d\d [ap]\. m\.", t)
+    return t[f.end():f.end() + n].strip() if f else ""
+
+
 def _guardar(con, notas, consulta, dep):
     nuevas = 0
     for n in notas:
@@ -224,6 +232,13 @@ def recolectar(con, desde: date | None = None, hasta: date | None = None, pausa=
                 print(f"  gob.pe {medio}: {e.__class__.__name__}")
                 continue
             notas = list(parsear_gobpe(r.text, medio)); vistas += len(notas)
+            for x in notas:  # "Comunicado N° 32-2026": se lee la página, solo la primera vez
+                if re.match(r"comunicado", x["titular"], re.I) and x["enlace"] and not con.execute(
+                        "SELECT 1 FROM nota WHERE id = ?", (id_nota(medio, x["titular"]),)).fetchone():
+                    try:
+                        x["resumen"] = cuerpo_gobpe(requests.get(x["enlace"], timeout=60, headers=UA).text)[:1000] or x["resumen"]
+                    except requests.RequestException:
+                        pass
             nuevas += _guardar(con, notas, f"gobpe:{slug}", None)
     dias =[(None, None)] if not desde else [(desde + timedelta(d), desde + timedelta(d + 1))
                                              for d in range(((hasta or desde) - desde).days + 1)]
