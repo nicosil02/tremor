@@ -526,3 +526,6 @@ def test_llm_json_roto_no_tumba_la_corrida(monkeypatch):
     monkeypatch.setattr(llm.requests, "post", lambda *a, **k: r)
     with pytest.raises(llm.RespuestaInvalida):
         llm._llamar(sqlite3.connect(":memory:"), "http://x", "k", "m", "c", "s", "u")
+    r.json = lambda: {"choices": [{"message": {"content": None}}]}  # el modelo gastó la salida razonando
+    with pytest.raises(llm.RespuestaInvalida):
+        llm._llamar(sqlite3.connect(":memory:"), "http://x", "k", "m", "c", "s", "u")
