@@ -427,7 +427,7 @@ def menciones(con):
     # transformer (tremor.clasifica) y, para el tono, al final el del léxico
     from tremor.animo import tabla_dicho
     tabla_dicho(con)
-    m = tabla(con, "SELECT m.proyecto, m.fecha, m.medio, m.origen, COALESCE(d.tono, t.tono, m.tono) AS tono, COALESCE(d.tema, t.tema) AS tema, n.titular, n.resumen, n.enlace, "
+    m = tabla(con, "SELECT m.proyecto, m.fecha, m.medio, m.origen, COALESCE(d.tono, t.tono, m.tono) AS tono, COALESCE(d.tema, t.tema) AS tema, d.voz, n.titular, n.resumen, n.enlace, "
                    "d.dicho "
                    "FROM mencion m JOIN nota n ON n.id = m.nota_id LEFT JOIN nota_tema t ON t.nota_id = m.nota_id "
                    "LEFT JOIN mencion_dicho d ON d.nota_id = m.nota_id AND d.proyecto = m.proyecto "
@@ -440,7 +440,8 @@ def menciones(con):
     m = una_por_historia(m).sort_values("fecha", ascending=False)
     m["resumen"] = m.resumen.fillna("").str.split(r'"use strict"|The post |\[…\]', regex=True).str[0].str.strip()
     # en radio, el fragmento alrededor de donde se nombra al proyecto; en prensa, el inicio del resumen
-    from tremor.animo import ALIAS
+    from tremor.animo import ALIAS, quien
+    m["quien"] = [quien(med, p) for med, p in zip(m.medio, m.proyecto)]  # zona, nacional, sector u organizacion
     m["resumen"] = [alrededor(t, ALIAS.get(p)) or t[:300] if o == "radio" else t[:300] for t, o, p in zip(m.resumen, m.origen, m.proyecto)]
     return registros(m.drop(columns="google"))
 
