@@ -78,8 +78,9 @@ su riesgo y un informe mensual listo para enviar.
 - **Su ruta de salida.** Cada tramo de la mina al puerto, con el riesgo de los distritos que cruza y el tiempo de
   viaje medido cada hora. Al tocar un tramo, un camión o el tren en 3D lo recorre: se detiene en un bloqueo, avisa
   una protesta anunciada y va más lento si hay tráfico.
-- **Contexto de cada zona.** Comunidades campesinas y nativas, conflictos abiertos en la Defensoría, rutas de
-  salida, canon, producción minera del MINEM y lo que se reclama.
+- **Contexto de cada zona.** Comunidades campesinas y nativas, conflictos abiertos en la Defensoría, mesas de
+  diálogo y casos en crisis que siguen la PCM y el MINAM, rutas de salida, canon, producción minera del MINEM y lo
+  que se reclama.
 
 **El insight.** El cliente ya sabe que Challhuahuacho es conflictivo. Lo que no sabe es cuándo una zona está peor
 que su propio normal, ni lo que se dice en la radio de la provincia esta mañana. El valor no es adivinar el día del
@@ -139,12 +140,14 @@ flowchart LR
     PRE[Prensa RSS<br>y Google News]
     RAD[Radios locales<br>en vivo]
     SUT[SUTRAN API]
+    EJE[PCM, Policía, Mininter, MINAM<br>notas de gob.pe e informes PDF]
     EST[INEI, MEF, BCRP, MINEM,<br>OEFA, ONPE, SENACE, ANA]
   end
   DEF -->|pdfplumber| DB[(SQLite<br>tremor.db)]
   PRE -->|LLM con salida JSON| DB
   RAD -->|ffmpeg + Whisper / MMS| PRE
   SUT --> DB
+  EJE -->|notas: LLM con salida JSON<br>informes: pymupdf + LLM| DB
   EST --> DB
   DB --> MOD[Modelo<br>Logistic regression, Lasso,<br>Decision tree, Random forest,<br>Gradient boosting, Ensemble]
   MOD --> DB
@@ -331,6 +334,11 @@ proyecto están en [`.specify/memory/constitution.md`](.specify/memory/constitut
   publican agregados por distrito.
 - **ACLED:** valida el modelo. Se publica en la rama `datos` con autorización de ACLED. Cita: Armed Conflict
   Location & Event Data (ACLED), www.acleddata.com.
+- **Ejecutivo:** notas y comunicados de la PCM, la Policía, el Mininter, el MINAM, el MINEM, el OEFA y la ANA en
+  gob.pe (entran como prensa); la revista Willaqniki de la PCM (casos en crisis y en riesgo inminente, trimestral,
+  desde 2021) y el informe mensual de la OGASA del MINAM (mesas de diálogo socioambientales). Estos informes no
+  entran al modelo, porque empiezan en 2021 y el modelo aprende de 2010 a 2020. La idea de sumarlos vino de
+  PulsoTerritorial, el proyecto de un compañero del diplomado.
 - **Datos abiertos del Estado:** INEI, MEF, BCRP, MINEM, OEFA, ONPE, SENACE, ANA, INDECI, MTC, SERNANP y Cultura.
 
 Código bajo la [licencia](LICENSE) del repositorio.

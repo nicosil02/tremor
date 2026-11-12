@@ -46,7 +46,7 @@ jobs:
       - name: Defensoría
         run: python -m tremor.defensoria todo
 
-      - name: Operaciones y proyectos (una vez al día; OEFA, cartera del MINEM, SENACE y decretos de El Peruano)
+      - name: Operaciones y proyectos (una vez al día; OEFA, cartera del MINEM, SENACE, decretos de El Peruano, PCM y MINAM)
         continue-on-error: true  # si la OEFA o el MINEM están caídos, sigue con las operaciones del día anterior
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
@@ -61,6 +61,7 @@ jobs:
           done
           python -m tremor.oefa || true   # fiscalización del OEFA: se baja una sola vez (el portal no publica desde abr 2025)
           python -m tremor.oefa dfai || true   # sanciones DFAI y Tribunal (gob.pe) y reincidentes (RUIAS): solo lo nuevo
+          python -m tremor.estado || true   # casos de la PCM (Willaqniki) y del MINAM (OGASA): solo los informes nuevos
           python -m tremor.compromisos || true   # compromisos con fecha de la Defensoría; guarda las páginas y solo baja el PDF del reporte nuevo
 
       - name: SUTRAN (alertas viales vigentes, y qué dicen los medios de cada bloqueo) y reputación

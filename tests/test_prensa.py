@@ -429,6 +429,29 @@ def test_dicho_de_menciones_de_radio(monkeypatch):
     assert dict(con.execute("SELECT nota_id, dicho FROM mencion_dicho")) == {"a": "Comuneros dicen que la minera contamina el río.", "b": "No habla del proyecto"}
 
 
+def test_parsear_gobpe():
+    from tremor.prensa.recolectar import parsear_gobpe
+    pag = ('<script>x = {"total_count":2,"results":[{"publication":" 9 de noviembre de 2026 -  1:15 p. m.",'
+           '"name_with_parent":"PNP restablece el tránsito en la vía bloqueada","content":"En Chumbivilcas.",'
+           '"url":"<a class=\\"x\\" href=\\"/institucion/pnp/noticias/1-pnp\\">t</a>"},'
+           '{"publication":"20 de octubre de 2026 - 12:02 a. m.","name_with_parent":"Comunicado","url":""}]}</script>')
+    a, b = parsear_gobpe(pag, "Policía Nacional")
+    assert a["publicado"] == "2026-11-09T13:15-05:00" and a["enlace"] == "https://www.gob.pe/institucion/pnp/noticias/1-pnp"
+    assert a["medio"] == "Policía Nacional" and a["resumen"] == "En Chumbivilcas."
+    assert b["publicado"] == "2026-10-20T00:02-05:00" and b["enlace"] is None
+    assert list(parsear_gobpe("<html>sin resultados</html>", "PCM")) == []
+
+
+def test_cuerpo_gobpe():
+    from tremor.prensa.recolectar import cuerpo_gobpe
+    pag = ('<html><head><meta content="Con relación a lo hechos..." name="description" /><script>var x = 1;</script></head>'
+           '<body><h1>Comunicado N. ° 16 - 2025</h1><p>16 de setiembre de 2025 - 3:37 p. m.</p>'
+           '<p>Con relación a los hechos en Corihuayrachina:</p><p>Se mantenía el bloqueo de la vía férrea.</p>'
+           '<svg><path d="M32"/></svg></body></html>')
+    assert cuerpo_gobpe(pag) == "Con relación a los hechos en Corihuayrachina: Se mantenía el bloqueo de la vía férrea."
+    assert cuerpo_gobpe("<p>sin fecha</p>") == ""
+
+
 def test_suspende_solo_si_lo_dice():
     from tremor.prensa.codificar import suspende
     # el aviso falso del 12 nov: la nota decía que el paro se ratifica y que no hay acuerdo "que permita levantar la medida"
