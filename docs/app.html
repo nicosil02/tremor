@@ -92,7 +92,8 @@
   .pulso span { position: absolute; left: 50%; top: 22px; transform: translateX(-50%); white-space: nowrap; padding: 3px 8px; border-radius: 6px; background: #fff; font-weight: 700; font-size: 13px;
     box-shadow: 0 2px 8px rgb(28 38 41 / .2); }
   .leyenda-via i { display: inline-block; width: 18px; height: 4px; margin: 0 6px 3px 0; vertical-align: middle; }
-  .leyenda-via i.rojo { background: #d7261e; } 
+  .leyenda-via i.rojo { background: #d7261e; } .leyenda-via i.conces { width: 14px; height: 10px; background: rgb(183 156 255 / .45); outline: 1.5px dashed #8f74e0; }
+
   .dz-cab { padding: 14px 16px 0; } .dz-cab h3 { margin: 0; font-size: 26px; font-weight: 750; letter-spacing: -0.01em; } .dz-cab p { margin: 2px 0 0; color: var(--tinta-2); }
   .medidor { padding: 12px 16px 4px; } .m-num { display: flex; align-items: baseline; gap: 12px; }
   .m-num b { font-size: 56px; line-height: 1; font-weight: 750; color: var(--cobre-4); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
@@ -502,7 +503,7 @@ function detalleOp(nom) {
     + fiscal(o.unidad)
     + `<h2>Qué pasó</h2>` + (av.length ? `<ul>${av.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas cerca en 45 días.</p>`)
     + `<h2>Conflictos con comunidades</h2><p class="nota-fuente">Registrados por la Defensoría del Pueblo</p>` + (cs.length ? `<ul>${cs.map(c => fila("", 0, titulo(String(c.nombre).replace(/^(comunidad(es)? (campesinas?|nativas?)|cc\.?|c\.c\.)\s+(de(l)?\s+)?/i, "").split(/\s+[-–]\s+/)[0]),
-        estado(c), c.medios && c.medios[0] ? `${dia(c.medios[0].fecha)}, ${c.medios[0].titular}` : `Defensoría, ${MES[c.mes - 1]}`, `data-caso="${X.casos.indexOf(c)}"`)).join("")}</ul>` : `<p class="vacio">Sin conflictos vigentes ante la Defensoría.</p>`) + delEstado(o.zona);
+        estado(c), c.medios && c.medios[0] ? `${dia(c.medios[0].fecha)}, ${c.medios[0].titular}` : `Defensoría, ${MES[c.mes - 1]}`, `data-caso="${X.casos.indexOf(c)}"`)).join("")}</ul>` : `<p class="vacio">Sin conflictos vigentes ante la Defensoría.</p>`) + dentro(o.zona) + delEstado(o.zona);
 }
 
 function detalleDistrito(u, capa = "extractivo") {
@@ -628,6 +629,13 @@ function detalleAviso(k) {
 // protesta o TomTom ve una demora, se detiene en el distrito más expuesto con el motivo. three.js por el importmap;
 // los modelos se arman con geometría en docs/vehiculos3d.js.
 const CAMINOS = fetch("caminos.json").then(r => r.json()).catch(() => ({}));
+// Concesiones de cada cliente (catastro minero, GEOPERÚ) y las comunidades con territorio dentro (tremor.concesiones)
+let CONCES = {}; fetch("concesiones.json").then(r => r.json()).then(c => CONCES = c).catch(() => {});
+function dentro(zona) {
+  const xs = ((CONCES[empresa] || {}).pisa || []).filter(x => zona.has(x.u)).slice(0, 8);
+  return xs.length ? `<h2>Comunidades dentro de sus concesiones</h2><p class="nota-fuente">Catastro minero (GEOPERÚ) y territorios de la base de pueblos indígenas</p>
+    <ul class="por">${xs.map(x => `<li>${esc(x.n)}, ${esc(titulo(lugar(x.u)).split(",")[0])}: ${Math.round(x.pct * 100)}% de su territorio${x.caso ? ". Tiene un conflicto abierto" : ""}</li>`).join("")}</ul>` : "";
+}
 const TRES = () => (TRES.p ??= Promise.all([import("three"), import("./vehiculos3d.js")]));
 async function vehiculo(tren) {
   const [THREE, modelos] = await TRES(), g = tren ? modelos.tren(THREE) : modelos.camion(THREE);
@@ -746,7 +754,8 @@ const ley = () => { const c = CAPAS_MAPA[CAPA]; return (actual === "pais" || PAI
     <span class="esc">${c[2] ? `<span><i class="punto"></i>Protesta anunciada</span>` : ""}<span><i class="punto negro"></i>Vía cortada (SUTRAN)</span><span><i class="via-l"></i>Vía, al acercarse</span></span></small>`
   : (FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Su ruta de salida")  // el % de la vía ya está en el panel: el mapa dice qué es cada color
   + (SEL ? (SEL.tr.length ? `<small><i class="rojo"></i>${/se suma/.test(SEL.etq) ? "Anunciaron que se suman" : SEL.tr2.length ? "Más probable" : "Tramos que puede cortar"}${SEL.tr2.length ? `<br><i class="naranja"></i>Posible` : ""}<br><i class="punto"></i>${/se suma/.test(SEL.etq) ? "Base que se suma" : SEL.etq ? "Donde más bloquearon antes" : "Dónde es la protesta"}</small>` : "")
-    : `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`); };
+    : `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`)
+  + (CONCES[empresa] ? `<small><i class="conces"></i>Sus concesiones mineras (al acercarse)</small>` : ""); };
 document.addEventListener("click", e => { const b = e.target.closest("[data-capa]"); if (!b) return;
   CAPA = b.dataset.capa; document.querySelectorAll(".leyenda-via").forEach(l => l.innerHTML = ley()); peru();
   if (actual === "pais" && !pila.length) { document.getElementById("vista").innerHTML = VISTAS.pais(); conectar(); } });  // la lista del panel sigue a la capa
@@ -984,6 +993,14 @@ function verMapa() {
     fs.forEach(f => { const o = X.unidades.find(u => u.unidad === f.properties.unidad); f.properties.p = o && o.p != null ? pct(o.p) : ""; f.properties.op = o && opera(o) ? 1 : 0; });
     const pintar = () => {
       const fc = { type: "FeatureCollection", features: fs };
+      // contorno de sus concesiones, bajo los puntos de sus unidades
+      const cg = { type: "Feature", properties: {}, geometry: (CONCES[empresa] || {}).geo || { type: "Polygon", coordinates: [] } };
+      if (mapa.getSource("conces")) mapa.getSource("conces").setData(cg);
+      else {
+        mapa.addSource("conces", { type: "geojson", data: cg });
+        mapa.addLayer({ id: "conces-f", type: "fill", source: "conces", minzoom: 7, paint: { "fill-color": "#b79cff", "fill-opacity": 0.16 } });
+        mapa.addLayer({ id: "conces", type: "line", source: "conces", minzoom: 7, paint: { "line-color": "#d5c4ff", "line-width": 1.6, "line-dasharray": [3, 2] } });  // violeta: el amarillo es de las carreteras
+      }
       if (mapa.getSource("ops")) mapa.getSource("ops").setData(fc);
       else {
         mapa.addSource("ops", { type: "geojson", data: fc });
