@@ -440,8 +440,9 @@ def menciones(con):
     m = una_por_historia(m).sort_values("fecha", ascending=False)
     m["resumen"] = m.resumen.fillna("").str.split(r'"use strict"|The post |\[…\]', regex=True).str[0].str.strip()
     # en radio, el fragmento alrededor de donde se nombra al proyecto; en prensa, el inicio del resumen
-    from tremor.animo import ALIAS, quien
-    m["quien"] = [quien(med, p) for med, p in zip(m.medio, m.proyecto)]  # zona, nacional, sector u organizacion
+    from tremor.animo import ALIAS, medios_regionales, quien
+    regionales = medios_regionales(con)
+    m["quien"] = [quien(med, p, regionales) for med, p in zip(m.medio, m.proyecto)]  # zona, region, nacional, sector, organizacion u otros
     m["resumen"] = [alrededor(t, ALIAS.get(p)) or t[:300] if o == "radio" else t[:300] for t, o, p in zip(m.resumen, m.origen, m.proyecto)]
     return registros(m.drop(columns="google"))
 

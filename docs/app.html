@@ -393,7 +393,7 @@ const VISTAS = {
       <p class="rep-ley">${["-1", "0", "1"].filter(t => nT(t)).map(t => `<button type="button" data-tono="${t}" aria-pressed="${TONO_F === t}"><i style="background:${TONO[t][0]}"></i>${nT(t)} ${TONO[t][1].toLowerCase()}${nT(t) > 1 ? "s" : ""}</button>`).join("")}${TONO_F ? `<button type="button" data-tono="${TONO_F}" class="todas">Ver todas</button>` : ""}</p>` : "";
     // Quién habla: lo que se oye en la zona no es lo que publica Lima, y la prensa del sector o una ONG no son opinión
     // pública. Y de lo favorable, cuánto lo dice la propia empresa.
-    const QUIEN = { zona: "En la zona", nacional: "Nacional y otras regiones", sector: "Prensa del sector", organizacion: "Organizaciones" };
+    const QUIEN = { zona: "En la zona", region: "Otras regiones", nacional: "Prensa nacional", sector: "Prensa del sector", organizacion: "Organizaciones", otros: "Otros medios" };
     const cuenta = xs => [[-1, "crítica"], [1, "favorable"], [0, "neutra"]].map(([t, n]) => [xs.filter(m => +m.tono === t).length, n]).filter(c => c[0]).map(([k, n]) => `${k} ${n}${k > 1 ? "s" : ""}`).join(", ");
     const fav = todas.filter(m => +m.tono === 1), suyas = fav.filter(m => m.voz === "empresa").length;
     const porQuien = todas.some(m => m.quien) ? `<ul class="por rep-quien">${Object.entries(QUIEN).map(([k, t]) => [t, todas.filter(m => m.quien === k)]).filter(g => g[1].length)

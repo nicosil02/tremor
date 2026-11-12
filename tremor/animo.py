@@ -59,12 +59,16 @@ POSITIVO = re.compile(r"\bacuerdo|di[aá]logo|mesa de (?:trabajo|desarrollo)|ben
                       r"responsabilidad social|levant(?:an|aron) (?:el )?(?:paro|bloqueo)|tregua", re.I)
 ALIAS = {n: re.compile(a, re.I) for n, (a, _, _) in PROYECTOS.items()}
 # Quién habla, por el medio: la prensa minera suele publicar lo que manda la empresa y las organizaciones tienen agenda
-# propia; ninguna de las dos es opinión pública. Listas a mano: se amplían cuando aparezca un medio nuevo.
-SECTOR = re.compile(r"rumbo minero|proactivo|minart|miner[ií]a & energ|energiminas|business empresarial|tiempo minero|"
-                    r"horizonte minero|desde adentro|bnamericas|mining|iimp|snmpe", re.I)
-ORGANIZACION = re.compile(r"cooperacci|observatorio de conflictos|muqui|servindi|pressenza|derechos humanos sin fronteras|"
-                          r"aidesep|conacami|cnddhh", re.I)
-REGIONAL = {"macronorte": "La Libertad"}  # medios regionales que llegan por Google News, sin feed propio
+# propia; ninguna de las dos es opinión pública. Por palabras del nombre, no por lista de medios: una revista minera
+# nueva entra sola.
+SECTOR = re.compile(r"miner|mining|proactivo|minart|energiminas|energ[ií]a|business|empresarial|negocios|desde adentro|"
+                    r"bnamericas|iimp|snmpe|gesti[oó]n|semana econ[oó]mica", re.I)
+ORGANIZACION = re.compile(r"cooperacci|observatorio|muqui|servindi|pressenza|derechos humanos|aidesep|conacami|cnddhh|"
+                          r"grufides|wayka|convoca", re.I)
+NACIONAL = re.compile(r"^(rpp|el comercio|la rep[uú]blica|correo|expreso|per[uú] ?21|gesti[oó]n|infobae|am[eé]rica|canal n|"
+                      r"tv ?per[uú]|andina|exitosa|diario uno|ojo ?p[uú]blico|idl|la raz[oó]n|trome|latina|panamericana|atv|"
+                      r"rcr|el peruano|caretas|hildebrandt|sudaca|epicentro|la encerrona|willax|pbo)", re.I)
+REGIONAL = {"macronorte": "La Libertad"}  # medios regionales que llegan por Google News y no se deducen de otra forma
 
 
 @functools.lru_cache
@@ -75,15 +79,44 @@ def _departamento_medio():
                 **{m.lower(): d for m, (_, d) in FEEDS.items() if d}, **REGIONAL}
 
 
-def quien(medio, proyecto):
-    """Desde dónde se habla del proyecto: 'sector', 'organizacion', 'zona' (radio o medio del departamento del proyecto)
-    o 'nacional' (el resto: prensa de Lima y medios de otras regiones)."""
-    if SECTOR.search(medio or ""):
-        return "sector"
-    if ORGANIZACION.search(medio or ""):
+def medios_regionales(con, minimo=3, parte=0.8):
+    """{medio: departamento} deducido de la base: un medio cuyas notas salen casi todas de la búsqueda de un mismo
+    departamento es de ahí (Infobae sale en todos y no pasa). Así un medio regional nuevo se ubica solo."""
+    n = {}
+    for medio, dep, k in con.execute("SELECT lower(medio), departamento_consulta, COUNT(*) FROM nota WHERE medio IS NOT NULL "
+                                     "AND departamento_consulta IS NOT NULL AND consulta != 'radio' GROUP BY 1, 2"):
+        n.setdefault(medio, {})[dep] = k
+    return {m: max(d, key=d.get) for m, d in n.items() if sum(d.values()) >= minimo and max(d.values()) / sum(d.values()) >= parte}
+
+
+def departamento_de(medio, aprendidos=None):
+    """Departamento del medio: por la lista de radios y feeds, por lo aprendido de la base o porque lo lleva en el nombre
+    ("Diario La Opinión Ica"). None si no se sabe."""
+    from tremor.lugares import catalogo
+    m = (medio or "").lower()
+    dep = _departamento_medio().get(m) or (aprendidos or {}).get(m)
+    if dep:
+        return norm(dep)
+    regiones, provincias, _, _ = catalogo()
+    palabras = " " + norm(medio or "") + " "
+    return next((r for r in regiones if f" {r} " in palabras),  # el departamento o, si no, una provincia de un solo departamento
+                next((r for r, c in regiones.items() for p, cs in provincias.items()
+                      if len(p) >= 5 and f" {p} " in palabras and {x[:2] for x in cs} == {c}), None))
+
+
+def quien(medio, proyecto, aprendidos=None):
+    """Desde dónde se habla del proyecto: 'sector', 'organizacion', 'zona' (radio o medio del departamento del proyecto),
+    'region' (medio de otro departamento) o 'nacional' (prensa de alcance nacional). Lo que no se sabe ubicar queda en
+    'otros': no se le cuelga a nadie."""
+    conocido = (medio or "").lower() in _departamento_medio()  # una radio o un feed de la lista no se juzga por el nombre
+    if not conocido and ORGANIZACION.search(medio or ""):
         return "organizacion"
-    dep = _departamento_medio().get((medio or "").lower())
-    return "zona" if dep and norm(dep) == norm(PROYECTOS.get(proyecto, ("", dep))[1]) else "nacional"
+    if not conocido and SECTOR.search(medio or ""):
+        return "sector"
+    dep = departamento_de(medio, aprendidos)
+    if dep and (conocido or not NACIONAL.search(medio or "")):
+        return "zona" if dep == norm(PROYECTOS.get(proyecto, ("", dep))[1]) else "region"
+    return "nacional" if NACIONAL.search(medio or "") else "otros"
 
 
 
