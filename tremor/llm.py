@@ -1,7 +1,7 @@
 """LLM por endpoints compatibles con OpenAI (constitución III).
 
 LLM_MODEL es una cadena separada por comas; cada modelo usa la clave de su proveedor y, si agota su cupo diario,
-sigue el siguiente (cada modelo tiene su propio cupo). Prefijos: `gemini:` (GEMINI_API_KEY); sin prefijo,
+sigue el siguiente (cada modelo tiene su propio cupo). Prefijos: `gemini:` (GEMINI_API_KEY), `nvidia:` (NVIDIA_API_KEY); sin prefijo,
 LLM_BASE_URL + LLM_API_KEY (Groq). Un proveedor sin clave se salta.
 Cada respuesta se guarda en llm_cache por contenido: volver a correr no gasta cuota.
 """
@@ -16,8 +16,9 @@ from tremor.db import RAIZ, ahora
 
 CADENA = ("openai/gpt-oss-120b,gemini:gemini-3.6-flash,gemini:gemini-3.5-flash,gemini:gemini-3-flash-preview,"
           "gemini:gemini-3.8-flash,gemini:gemini-3.7-flash,gemini:gemini-3.5-flash-lite,gemini:gemini-3.1-flash-lite,"
-          "openai/gpt-oss-20b")  # cada modelo, su propio cupo diario; el saturado o retirado cede al siguiente
-GEMINI = "https://generativelanguage.googleapis.com/v1beta/openai"
+          "openai/gpt-oss-20b,nvidia:google/gemma-4-31b-it,nvidia:openai/gpt-oss-20b")  # cada modelo, su propio cupo diario; el saturado o retirado cede al siguiente
+PROVEEDORES = {"gemini": ("https://generativelanguage.googleapis.com/v1beta/openai", "GEMINI_API_KEY"),
+               "nvidia": ("https://integrate.api.nvidia.com/v1", "NVIDIA_API_KEY")}  # build.nvidia.com, gratis para prototipos
 
 
 def _env():
@@ -36,8 +37,9 @@ def cadena() -> list[tuple[str, str, str]]:
     salida = []
     for m in os.environ.get("LLM_MODEL", CADENA).split(","):
         m = m.strip()
-        if m.startswith("gemini:"):
-            salida.append((m[7:], GEMINI, os.environ.get("GEMINI_API_KEY", "")))
+        if m.partition(":")[0] in PROVEEDORES:
+            url, clave = PROVEEDORES[m.partition(":")[0]]
+            salida.append((m.partition(":")[2], url, os.environ.get(clave, "")))
         elif m:
             salida.append((m, os.environ.get("LLM_BASE_URL", "https://api.groq.com/openai/v1").rstrip("/"),
                            os.environ.get("LLM_API_KEY", "")))
@@ -65,13 +67,13 @@ def chat_json(con, sistema: str, usuario: str, version: str) -> dict:
     if not modelos:
         raise SinCuota("Falta LLM_API_KEY (o GEMINI_API_KEY) en .env")
     for m, url, clave in modelos:
-        if m in AGOTADOS:
+        if (m, url) in AGOTADOS:  # por proveedor: Groq y NVIDIA sirven un modelo con el mismo nombre
             continue
         try:
             return _llamar(con, url, clave, m, clave_de(m), sistema, usuario)
         except SinCuota as e:
             print(f"  {m} sin cupo: {str(e)[:90]}")
-            AGOTADOS.add(m)
+            AGOTADOS.add((m, url))
     raise SinCuota("todos los modelos sin cupo")
 
 
@@ -105,7 +107,10 @@ def _llamar(con, url, clave, modelo, k, sistema, usuario) -> dict:
         r.raise_for_status()
         texto = r.json()["choices"][0]["message"]["content"]
         texto = texto.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-        datos = json.loads(texto)
+        try:
+            datos = json.loads(texto)
+        except json.JSONDecodeError as e:  # el modelo devolvió JSON roto: esa nota se salta, la corrida sigue
+            raise RespuestaInvalida(f"JSON roto: {e}")
         con.execute("INSERT OR REPLACE INTO llm_cache VALUES (?, ?, ?, ?)", (k, texto, modelo, ahora()))
         con.commit()
         return datos

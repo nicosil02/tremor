@@ -207,6 +207,11 @@ def test_cadena_llm_salta_proveedores_sin_clave(monkeypatch):
     assert [m for m, _, _ in llm.cadena()] == ["a", "c"]
     monkeypatch.setenv("GEMINI_API_KEY", "y")
     assert [m for m, _, _ in llm.cadena()] == ["a", "b", "c"]
+    monkeypatch.setenv("LLM_MODEL", "a,nvidia:m")
+    monkeypatch.delenv("NVIDIA_API_KEY", raising=False)
+    assert [m for m, _, _ in llm.cadena()] == ["a"]
+    monkeypatch.setenv("NVIDIA_API_KEY", "z")
+    assert llm.cadena()[1] == ("m", "https://integrate.api.nvidia.com/v1", "z")
 
 
 def test_filtro_radio():
@@ -510,3 +515,14 @@ def test_quien_habla_del_proyecto():
     assert quien("La República", "Minera Poderosa") == "nacional"
     assert quien("Rumbo Minero", "Minera Poderosa") == "sector"
     assert quien("Observatorio de Conflictos Mineros", "Minera Poderosa") == "organizacion"
+
+
+def test_llm_json_roto_no_tumba_la_corrida(monkeypatch):
+    import sqlite3
+    import pytest
+    from tremor import llm
+    r = type("R", (), {"status_code": 200, "text": "", "headers": {}, "raise_for_status": lambda s: None,
+                       "json": lambda s: {"choices": [{"message": {"content": '{"dicho": "sin cerrar'}}]}})()
+    monkeypatch.setattr(llm.requests, "post", lambda *a, **k: r)
+    with pytest.raises(llm.RespuestaInvalida):
+        llm._llamar(sqlite3.connect(":memory:"), "http://x", "k", "m", "c", "s", "u")
