@@ -478,6 +478,7 @@ def main(dias=7, reenviar=False, muestra=False):  # 7: GitHub a veces corre el w
                     (d / f"{base}.png").write_bytes(png)
                 continue
             if enviar(texto, png):
+                print(f"  aviso enviado a {nombre}: {clave}")  # la clave, no el texto: para auditar repetidos en el log
                 con.execute("INSERT OR IGNORE INTO aviso_enviado VALUES (?, ?, ?)", (clave, nombre, ahora()))
                 con.commit()
     # en CSV para que la corrida siempre publique la base cuando se avisó algo (si no, la siguiente reenvía lo mismo)
