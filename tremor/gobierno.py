@@ -355,7 +355,9 @@ def leer_decreto(texto: str) -> dict | None:
     c = texto.rfind("CONSIDERANDO", 0, k)
     motivo = (texto[c if c >= 0 else max(0, k - 2500):k] + art1).lower()  # el PDF trae otras normas antes
     crimen = CRIMEN_DS.search(motivo)
-    causas = {c for c, si in (("crimen", crimen), ("conflicto", CONFLICTO_DS.search(motivo) or not crimen)) if si}
+    causas = {c for c, si in (("crimen", crimen), ("conflicto", CONFLICTO_DS.search(motivo))) if si}
+    if not causas:  # sin motivo nombrado: la prórroga hereda la causa del decreto anterior; la declaratoria es conflicto
+        causas = {"hereda"} if re.search(r"prorrog", art1.lower()) else {"conflicto"}
     inicio = re.search(r"a partir del? (\d{1,2}) de (\w+) de (\d{4})", norm(art1))
     pub = re.search(r"Fecha de publicaci[oó]n: (\d\d)/(\d\d)/(\d{4})", texto)
     meses = "enero febrero marzo abril mayo junio julio agosto setiembre octubre noviembre diciembre".split()
@@ -371,7 +373,7 @@ def leer_decreto(texto: str) -> dict | None:
 
 def _peruano(binario=False, **params):
     ruta = params.pop("ruta", "")
-    for espera in (2, 10, 30, 90):  # el servidor corta el SSL si se le pide muy seguido
+    for espera in (1, 10, 30, 90):  # el servidor corta el SSL si se le pide muy seguido
         time.sleep(espera)
         try:
             r = requests.get(PERUANO + ruta, headers=UA, timeout=120, params=params)
@@ -388,26 +390,25 @@ def _peruano(binario=False, **params):
 
 
 def decretos_mes(m: int) -> dict:
-    """{id: título} de los decretos de estado de emergencia publicados en el mes m (anio*12 + mes - 1). Se busca
-    semana por semana y paginando: la búsqueda de un mes entero se corta. Se filtra por el título y no por la
-    institución: los de 2026 salen como Secretaría del Consejo de Ministros, no como PCM."""
-    d, filas = date(m // 12, m % 12 + 1, 1), {}
-    while d.month == m % 12 + 1 and d <= date.today():
-        hasta = min(date.fromordinal(d.toordinal() + 6), date(m // 12 + (m % 12 + 1) // 12, (m % 12 + 1) % 12 + 1, 1) - timedelta(1))
-        inicio = 0
-        while True:
-            tarjetas = TARJETA.findall(_peruano(query='"estado de emergencia"', tipoPublicacion="NL", ci="ONLY",
-                                                start=inicio, fechaIni=d.strftime("%Y%m%d"), fechaFin=hasta.strftime("%Y%m%d")))
-            filas |= {i: html.unescape(t).strip() for e, i, t in tarjetas if re.search(r"[Ee]stado de [Ee]mergencia", t)}
-            if len(tarjetas) < 20 or inicio > 200:
-                break
-            inicio += 20
-        d = date.fromordinal(hasta.toordinal() + 1)
+    """{id: título} de los decretos de estado de emergencia publicados en el mes m (anio*12 + mes - 1). Se pagina
+    mientras salgan títulos de emergencia (antes de ~2012 la frase exacta no filtra y el resto es ruido). Se filtra
+    por el título y no por la institución: los de 2026 salen como Secretaría del Consejo de Ministros, no como PCM."""
+    ini = date(m // 12, m % 12 + 1, 1)
+    fin = date((m + 1) // 12, (m + 1) % 12 + 1, 1) - timedelta(1)
+    filas = {}
+    for inicio in range(0, 200, 20):
+        tarjetas = TARJETA.findall(_peruano(query='"estado de emergencia"', tipoPublicacion="NL", ci="ONLY", start=inicio,
+                                            fechaIni=ini.strftime("%Y%m%d"), fechaFin=fin.strftime("%Y%m%d")))
+        nuevas = {i: html.unescape(t).strip() for e, i, t in tarjetas if re.search(r"[Ee]stado de [Ee]mergencia", t)}
+        filas |= nuevas
+        if len(tarjetas) < 20 or not nuevas:
+            break
     return filas
 
 
-def texto_decreto(i) -> str:
-    """Los considerandos finales y los artículos de un decreto, con su fecha de publicación."""
+def texto_decreto(i, titulo="") -> str:
+    """Los considerandos y los artículos de un decreto, con su fecha de publicación. El PDF es la página entera del
+    diario, con otras normas: se lee desde la última vez que aparece el título (la primera es el sumario)."""
     pagina = _peruano(ruta=f"dispositivo/NL/{i}")
     t = html.unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", pagina)))
     pdf = re.search(r"/api/archivo/file/[\w-]+/\*/[\w-]+\.pdf", pagina)
@@ -415,13 +416,15 @@ def texto_decreto(i) -> str:
         import pymupdf
         with pymupdf.open(stream=_peruano(binario=True, ruta=pdf[0][1:]), filetype="pdf") as doc:
             cuerpo = " ".join(p.get_text() for p in doc)
-        t = (re.search(r"Fecha de publicaci[oó]n: \d\d/\d\d/\d{4}", t) or [""])[0] + " " + re.sub(r"-\s+(?=[a-záéíóúñ])", "", re.sub(r"\s+", " ", cuerpo))
+        cuerpo = re.sub(r"-\s+(?=[a-záéíóúñ])", "", re.sub(r"\s+", " ", cuerpo))
+        aqui = [m.start() for m in re.finditer(r"\W+".join(map(re.escape, titulo.split()[:8])), cuerpo, re.I)] if titulo else []
+        t = (re.search(r"Fecha de publicaci[oó]n: \d\d/\d\d/\d{4}", t) or [""])[0] + " " + cuerpo[aqui[-1] if aqui else 0:]
     k = max(t.find("DECRETA:"), t.find("DECRETA :"))
     pub = re.search(r"Fecha de publicaci[oó]n: \d\d/\d\d/\d{4}", t)
     return (pub[0] + " " if pub else "") + t[max(0, k - 8000):k + 2500] if k >= 0 else ""
 
 
-def emergencias(con, desde=2010, max_meses=24):
+def emergencias(con, desde=2006, max_meses=24):
     """Lee de a max_meses los meses aún no buscados (más el actual y el anterior, que siguen creciendo), guarda cada
     decreto en `decreto_emergencia` y rehace en distrito_mes emergencia_conflicto y emergencia_crimen: 1 en cada mes
     que el distrito estuvo bajo estado de emergencia por esa causa (un decreto puede tener las dos)."""
@@ -436,7 +439,7 @@ def emergencias(con, desde=2010, max_meses=24):
         for i, titulo in decretos_mes(m).items():
             if i in vistos:
                 continue
-            d = leer_decreto(texto_decreto(i)) or {}
+            d = leer_decreto(texto_decreto(i, titulo)) or {}
             con.execute("INSERT OR REPLACE INTO decreto_emergencia VALUES (?, ?, ?, ?, ?, ?)",
                         (i, titulo, ",".join(sorted(d.get("causas", ()))) or None, str(d.get("inicio") or "") or None,
                          d.get("dias"), json.dumps(sorted(d.get("lugares", ())))))
@@ -444,11 +447,16 @@ def emergencias(con, desde=2010, max_meses=24):
             con.execute("INSERT OR IGNORE INTO decreto_emergencia_mes VALUES (?)", (m,))
         con.commit()
         print(f"  {m // 12}-{m % 12 + 1:02d} buscado", flush=True)
-    filas = set()
-    for causas, inicio, dias, lugares in con.execute("SELECT causas, inicio, dias, lugares FROM decreto_emergencia WHERE causas IS NOT NULL"):
-        f = date.fromisoformat(inicio)
+    filas, ultima = set(), {}  # ultima: distrito → causas del último decreto que lo nombró
+    for causas, inicio, dias, lugares in con.execute("SELECT causas, inicio, dias, lugares FROM decreto_emergencia "
+                                                     "WHERE causas IS NOT NULL ORDER BY inicio"):
+        lugares, f = json.loads(lugares), date.fromisoformat(inicio)
+        if causas == "hereda":
+            previas = Counter(ultima.get(u, "conflicto") for u in lugares)
+            causas = previas.most_common(1)[0][0] if previas else "conflicto"
+        ultima |= dict.fromkeys(lugares, causas)
         fin = date.fromordinal(f.toordinal() + dias - 1)
-        filas |= {(u, m, f"emergencia_{c}", 1.0) for u in json.loads(lugares)
+        filas |= {(u, m, f"emergencia_{c}", 1.0) for u in lugares
                   for m in range(f.year * 12 + f.month - 1, fin.year * 12 + fin.month) for c in causas.split(",")}
     con.execute(ESQUEMA)
     con.execute("DELETE FROM distrito_mes WHERE variable LIKE 'emergencia_%'")
@@ -462,7 +470,7 @@ if __name__ == "__main__":
     m = sub.add_parser("mef_mensual"); m.add_argument("--desde", type=int, default=2010)
     j = sub.add_parser("jne"); j.add_argument("--desde", type=int, default=2010); j.add_argument("--anios", type=int, nargs="*")
     c = sub.add_parser("contraloria"); c.add_argument("--desde", type=int, default=2017)
-    e = sub.add_parser("emergencias"); e.add_argument("--desde", type=int, default=2010); e.add_argument("--max-meses", type=int, default=24)
+    e = sub.add_parser("emergencias"); e.add_argument("--desde", type=int, default=2006); e.add_argument("--max-meses", type=int, default=24)
     a = ap.parse_args()
     sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
     {"mef_mensual": lambda con: mef_mensual(con, a.desde), "jne": lambda con: jne(con, a.desde, a.anios),
