@@ -340,6 +340,8 @@ proyecto están en [`.specify/memory/constitution.md`](.specify/memory/constitut
   entran al modelo, porque empiezan en 2021 y el modelo aprende de 2010 a 2020. La idea de sumarlos vino de
   PulsoTerritorial, el proyecto de un compañero del diplomado.
 - **Datos abiertos del Estado:** INEI, MEF, BCRP, MINEM, OEFA, ONPE, SENACE, ANA, INDECI, MTC, SERNANP y Cultura.
+- **GEOPERÚ (MINAM):** concesiones mineras del catastro de INGEMMET por titular, cruzadas con el territorio de las
+  comunidades (`tremor.concesiones`, `docs/concesiones.json`).
 - **OpenStreetMap:** el trazo de las carreteras de cada ruta, por el ruteo abierto de OSRM (© colaboradores de
   OpenStreetMap, licencia ODbL). Se calcula una vez con `tremor.tarjeta.caminos` y queda en `docs/caminos.json`.
 
