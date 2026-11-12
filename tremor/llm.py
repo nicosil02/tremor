@@ -108,7 +108,10 @@ def _llamar(con, url, clave, modelo, k, sistema, usuario) -> dict:
         r.raise_for_status()
         texto = r.json()["choices"][0]["message"]["content"]
         texto = texto.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-        datos = json.loads(texto)
+        try:
+            datos = json.loads(texto)
+        except json.JSONDecodeError as e:  # el modelo devolvió JSON roto: esa nota se salta, la corrida sigue
+            raise RespuestaInvalida(f"JSON roto: {e}")
         con.execute("INSERT OR REPLACE INTO llm_cache VALUES (?, ?, ?, ?)", (k, texto, modelo, ahora()))
         con.commit()
         return datos

@@ -515,3 +515,14 @@ def test_quien_habla_del_proyecto():
     assert quien("La República", "Minera Poderosa") == "nacional"
     assert quien("Rumbo Minero", "Minera Poderosa") == "sector"
     assert quien("Observatorio de Conflictos Mineros", "Minera Poderosa") == "organizacion"
+
+
+def test_llm_json_roto_no_tumba_la_corrida(monkeypatch):
+    import sqlite3
+    import pytest
+    from tremor import llm
+    r = type("R", (), {"status_code": 200, "text": "", "headers": {}, "raise_for_status": lambda s: None,
+                       "json": lambda s: {"choices": [{"message": {"content": '{"dicho": "\uZZ"}'}}]}})()
+    monkeypatch.setattr(llm.requests, "post", lambda *a, **k: r)
+    with pytest.raises(llm.RespuestaInvalida):
+        llm._llamar(sqlite3.connect(":memory:"), "http://x", "k", "m", "c", "s", "u")
