@@ -176,6 +176,9 @@ def datos(con):
             "cobertura": cobertura(con),
             "vecinos": vecinos(con),
             "casos": casos_zona(con),
+            # PCM (Willaqniki) y MINAM (OGASA): el último informe de cada uno, solo casos ubicados en provincia o distrito
+            "estado": registros(tabla(con, """SELECT fuente, documento, nombre, lower(nivel) AS nivel, ubigeo, situacion, fecha, medida, enlace
+                FROM caso_estado e WHERE length(ubigeo) >= 4 AND orden = (SELECT MAX(orden) FROM caso_estado WHERE fuente = e.fuente)""")),
             "oefa": oefa_unidades(con), "oefa_empresa": oefa_empresa(con), "tiempos": tiempos_actuales(con),
             "calibracion": calibracion(con),
             "menciones": menciones(con),

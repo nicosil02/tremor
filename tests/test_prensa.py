@@ -427,3 +427,16 @@ def test_dicho_de_menciones_de_radio(monkeypatch):
     monkeypatch.setattr(animo, "date", type("D", (), {"today": staticmethod(lambda: __import__("datetime").date(2026, 11, 11))}))
     assert animo.dicho(con) == 2
     assert dict(con.execute("SELECT nota_id, dicho FROM mencion_dicho")) == {"a": "Comuneros dicen que la minera contamina el río.", "b": "No habla del proyecto"}
+
+
+def test_parsear_gobpe():
+    from tremor.prensa.recolectar import parsear_gobpe
+    pag = ('<script>x = {"total_count":2,"results":[{"publication":" 9 de noviembre de 2026 -  1:15 p. m.",'
+           '"name_with_parent":"PNP restablece el tránsito en la vía bloqueada","content":"En Chumbivilcas.",'
+           '"url":"<a class=\\"x\\" href=\\"/institucion/pnp/noticias/1-pnp\\">t</a>"},'
+           '{"publication":"20 de octubre de 2026 - 12:02 a. m.","name_with_parent":"Comunicado","url":""}]}</script>')
+    a, b = parsear_gobpe(pag, "Policía Nacional")
+    assert a["publicado"] == "2026-11-09T13:15-05:00" and a["enlace"] == "https://www.gob.pe/institucion/pnp/noticias/1-pnp"
+    assert a["medio"] == "Policía Nacional" and a["resumen"] == "En Chumbivilcas."
+    assert b["publicado"] == "2026-10-20T00:02-05:00" and b["enlace"] is None
+    assert list(parsear_gobpe("<html>sin resultados</html>", "PCM")) == []

@@ -498,7 +498,7 @@ function detalleOp(nom) {
     + fiscal(o.unidad)
     + `<h2>Qué pasó</h2>` + (av.length ? `<ul>${av.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas cerca en 45 días.</p>`)
     + `<h2>Conflictos con comunidades</h2><p class="nota-fuente">Registrados por la Defensoría del Pueblo</p>` + (cs.length ? `<ul>${cs.map(c => fila("", 0, titulo(String(c.nombre).replace(/^(comunidad(es)? (campesinas?|nativas?)|cc\.?|c\.c\.)\s+(de(l)?\s+)?/i, "").split(/\s+[-–]\s+/)[0]),
-        estado(c), c.medios && c.medios[0] ? `${dia(c.medios[0].fecha)}, ${c.medios[0].titular}` : `Defensoría, ${MES[c.mes - 1]}`, `data-caso="${X.casos.indexOf(c)}"`)).join("")}</ul>` : `<p class="vacio">Sin conflictos vigentes ante la Defensoría.</p>`);
+        estado(c), c.medios && c.medios[0] ? `${dia(c.medios[0].fecha)}, ${c.medios[0].titular}` : `Defensoría, ${MES[c.mes - 1]}`, `data-caso="${X.casos.indexOf(c)}"`)).join("")}</ul>` : `<p class="vacio">Sin conflictos vigentes ante la Defensoría.</p>`) + delEstado(o.zona);
 }
 
 function detalleDistrito(u, capa = "extractivo") {
@@ -536,8 +536,18 @@ function detalleDistrito(u, capa = "extractivo") {
     ${resto.length ? `<ul class="por">${resto.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
     <h2>Conflictos ante la Defensoría</h2>${cs.length ? `<div class="chips">${porEst.map(([k, n]) => `<span class="ch-${EST[k]}"><i></i><b>${n}</b> ${k}</span>`).join("")}</div>
       <ul class="casos">${cs.map(c => `<li class="ch-${EST[estadoCaso(c)]}"><button type="button" data-dcaso="${D.casos.indexOf(c)}"><i></i><span>${esc(titulo(String(c.nombre).split(/\s+[-–]\s+/)[0]))}</span><small>${esc(titulo(lugar(String(c.ubigeo))))}</small></button></li>`).join("")}</ul>` : `<p class="vacio">Sin conflictos vigentes en la zona.</p>`}
+    ${delEstado(zona)}
     <h2>Protestas recientes</h2>${evs.length ? `<ul>${evs.slice(0, 4).map(e => fila("", 0, `${accion(e)}${e.actor ? ` de ${e.actor.toLowerCase()}` : ""}`, dia(e.fecha_evento), lugar(String(e.ubigeo)))).join("")}</ul>`
       : `<p class="vacio">Ninguna en la prensa en las últimas seis semanas.</p>`}`;
+}
+// Casos que sigue el Ejecutivo (PCM y MINAM) en la zona: distrito exacto o provincia de algún distrito de la zona
+function delEstado(zona) {
+  const es = (D.estado || []).filter(e => e.ubigeo.length === 6 ? zona.has(e.ubigeo) : [...zona].some(z => String(z).startsWith(e.ubigeo)))
+    .sort((a, b) => b.medida - a.medida || String(b.fecha || "").localeCompare(a.fecha || "")).slice(0, 4);
+  const nom = n => String(n).replace(/^(grupo de trabajo|mesa|comisi[oó]n)[^“"]*[“"]/i, "").replace(/[“”".]+$/g, "").replace(/^./, c => c.toUpperCase()).slice(0, 90);
+  return es.length ? `<h2>Lo que sigue el Estado</h2><p class="nota-fuente">Mesas y casos de la PCM y el MINAM, último informe</p><ul>${es.map(e =>
+    fila(e.medida ? "urge" : "", 0, nom(e.nombre), `${e.fuente}, ${e.nivel || "en seguimiento"}`,
+      e.situacion ? `${e.fecha ? dia(e.fecha) + ", " : ""}${e.situacion}` : `${e.documento}, sin novedades del mes`, `data-doc="${esc(e.enlace)}"`)).join("")}</ul>` : "";
 }
 const estadoCaso = c => c.estado === "latente" ? "latente" : /NO HAY/i.test(c.dialogo || "") ? "sin diálogo" : /HAY/i.test(c.dialogo || "") ? "en diálogo" : "activo";
 function detalleCaso(c) {
@@ -862,6 +872,7 @@ function conectar() {
   document.querySelectorAll("[data-op]").forEach(b => b.onclick = () => abrir(detalleOp(b.dataset.op)));
   document.querySelectorAll("[data-caso]").forEach(b => b.onclick = () => abrir(detalleCaso(X.casos[+b.dataset.caso])));
   document.querySelectorAll("[data-dcaso]").forEach(b => b.onclick = () => abrir(detalleCaso(D.casos[+b.dataset.dcaso])));
+  document.querySelectorAll("[data-doc]").forEach(b => b.onclick = () => window.open(b.dataset.doc, "_blank", "noopener"));
   document.querySelectorAll("[data-distrito]").forEach(b => b.onclick = () => abrir(detalleDistrito(b.dataset.distrito, b.dataset.dcapa || "extractivo")));
   document.querySelectorAll("[data-mencion]").forEach(b => b.onclick = () => { const m = D.menciones[+b.dataset.mencion]; abrir(detalleAviso({ m, tipo: TEMA[m.tema] || "En medios" })); });
   document.querySelectorAll("[data-tono]").forEach(b => b.onclick = () => { TONO_F = TONO_F === b.dataset.tono ? null : b.dataset.tono;

@@ -3,6 +3,7 @@
 Se guarda titular, resumen corto (si el feed lo trae), medio, fecha y enlace. Nunca el texto completo.
 """
 import hashlib
+import json
 import re
 import time
 from datetime import date, timedelta, timezone
@@ -81,6 +82,11 @@ FEEDS = {
     "Red Muqui": ("https://muqui.org/feed/", None),
     "DAR": ("https://www.dar.org.pe/feed/", None),
 }
+# Notas y comunicados del Ejecutivo en gob.pe (las últimas 25 de cada institución; probado el 11 nov 2026). La Policía
+# informa desbloqueos y vías liberadas; la PCM, mesas de diálogo y actas. Pasan por el mismo filtro y el mismo LLM.
+GOBPE = {"PCM": "pcm", "Policía Nacional": "pnp", "Mininter": "mininter", "MINAM": "minam", "MINEM": "minem",
+         "OEFA": "oefa", "ANA": "ana"}
+GOBPE_URL = "https://www.gob.pe/busquedas?contenido[]=noticias&sort_by=recent&institucion[]={}"
 DEPARTAMENTOS = ["Amazonas", "Áncash", "Apurímac", "Arequipa", "Ayacucho", "Cajamarca", "Callao", "Cusco",
                  "Huancavelica", "Huánuco", "Ica", "Junín", "La Libertad", "Lambayeque", "Lima", "Loreto",
                  "Madre de Dios", "Moquegua", "Pasco", "Piura", "Puno", "San Martín", "Tacna", "Tumbes", "Ucayali"]
@@ -148,6 +154,26 @@ def parsear(xml: str, medio_fijo=None):
                "fuente_url": fuente[1] if fuente else ""}
 
 
+MESES_ES = "enero febrero marzo abril mayo junio julio agosto setiembre octubre noviembre diciembre".split()
+
+
+def parsear_gobpe(pagina: str, medio: str):
+    """La búsqueda de gob.pe trae los resultados como JSON dentro del HTML; la fecha viene en castellano
+    ("20 de octubre de 2026 -  9:02 p. m.")."""
+    k = pagina.find('"results":')
+    if k < 0:
+        return
+    for x in json.JSONDecoder().raw_decode(pagina[k + 10:])[0]:
+        f = re.search(r"(\d+) de (\w+) de (\d{4}) -\s+(\d+):(\d\d) ([ap])", x.get("publication") or "")
+        pub = None
+        if f and f[2].replace("septiembre", "setiembre") in MESES_ES:
+            h = int(f[4]) % 12 + (12 if f[6] == "p" else 0)
+            pub = f"{f[3]}-{MESES_ES.index(f[2].replace('septiembre', 'setiembre')) + 1:02d}-{int(f[1]):02d}T{h:02d}:{f[5]}-05:00"
+        enlace = re.search(r'href="([^"]+)"', x.get("url") or "")
+        yield {"medio": medio, "titular": _limpio(x.get("name_with_parent")), "resumen": _limpio(x.get("content"))[:600],
+               "publicado": pub, "enlace": "https://www.gob.pe" + enlace[1] if enlace else None, "fuente_url": ""}
+
+
 def _guardar(con, notas, consulta, dep):
     nuevas = 0
     for n in notas:
@@ -191,7 +217,15 @@ def recolectar(con, desde: date | None = None, hasta: date | None = None, pausa=
             limite = (date.today() - timedelta(30)).isoformat()  # feeds abandonados o con años de archivo
             notas = [n for n in parsear(r.text, medio) if (n["publicado"] or "") >= limite]; vistas += len(notas)
             nuevas += _guardar(con, notas, f"feed:{medio}", dep)
-    dias = [(None, None)] if not desde else [(desde + timedelta(d), desde + timedelta(d + 1))
+        for medio, slug in GOBPE.items():
+            try:
+                r = requests.get(GOBPE_URL.format(slug), timeout=60, headers=UA); r.raise_for_status()
+            except requests.RequestException as e:
+                print(f"  gob.pe {medio}: {e.__class__.__name__}")
+                continue
+            notas = list(parsear_gobpe(r.text, medio)); vistas += len(notas)
+            nuevas += _guardar(con, notas, f"gobpe:{slug}", None)
+    dias =[(None, None)] if not desde else [(desde + timedelta(d), desde + timedelta(d + 1))
                                              for d in range(((hasta or desde) - desde).days + 1)]
     for d0, d1 in dias:
         cliente = [(PALABRAS + " (" + " OR ".join(f'"{n}"' for n in g) + ") Perú", None) for g in lugares_cliente(con)]  # sin Perú, "Mara" trae a Mara Lezama
