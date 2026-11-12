@@ -97,6 +97,11 @@ def cambios(web, z, enviados):
             pos = e.get("postergado")
             yield ("cae:" + orig, f"{'⏸' if pos else '✅'} *PROTESTA {'POSTERGADA' if pos else 'SUSPENDIDA'}*\n_{e.get('titular') or que}_\n\n"
                    f"{que}: según la prensa, {'se postergó; todavía sin nueva fecha' if pos else 'se suspendió o se levantó'}.{fuente}", None)
+        # Se avisó que se suspendía y la prensa ya no lo dice (la regla leyó mal una nota, o la corrigieron): se rectifica
+        # una vez, mientras la protesta siga anunciada; quedarse callado deja al cliente con un dato falso
+        elif "cae:" + orig in enviados and e.get("estado") == "anunciada" and f >= hoy():
+            yield ("sigue:" + orig, f"⚠️ *LA PROTESTA SIGUE EN PIE*\n_{e.get('titular') or que}_\n\n"
+                   f"{que}: corrige el aviso anterior de suspensión. Según la prensa, la medida se mantiene.{fuente}", None)
         elif ret or gre:
             quienes = ", ".join([*gre, *(mayus(lugar(u)) for u in ret)])
             yield (f"retira:{orig}:{'-'.join(ret + gre)}", f"↩️ *SE RETIRAN DE LA PROTESTA*\n_{e.get('titular') or que}_\n\n"

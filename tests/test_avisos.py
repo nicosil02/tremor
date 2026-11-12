@@ -262,3 +262,15 @@ def test_reputacion_se_dispara_con_motivos_del_llm(monkeypatch):
     (_, texto, _), = reputacion(con, r"bateas", "2026-W46")       # sin cupo pero con prensa: cifras, nunca inventa
     assert "6 menciones" in texto and "Por qué" not in texto and "«" not in texto
     assert list(reputacion(con, r"t[ií]a mar[ií]a", "2026-W46")) == []  # sin cupo y solo radio: nada
+
+
+def test_rectifica_la_suspension_que_no_fue():
+    # el 12 nov se avisó "suspendida" de un paro que la nota ratificaba: al corregirse, se dice una vez que sigue en pie
+    from datetime import date, timedelta
+    from tremor.avisos import cambios
+    f = (date.today() + timedelta(days=4)).isoformat()
+    e = {"ubigeo": "00", "accion": "Paro", "fecha_evento": f, "estado": "anunciada", "medio": "Diario UNO", "enlace": "https://x.pe/n", "titular": "Ratifican paro"}
+    orig = f"evento:00:Paro:{f}"
+    assert [c for c, _, _ in cambios({"eventos": [e]}, set(), {orig, "cae:" + orig})] == ["sigue:" + orig]
+    assert list(cambios({"eventos": [e]}, set(), {orig})) == []  # nunca se dijo que se suspendía: nada que corregir
+    assert [c for c, _, _ in cambios({"eventos": [{**e, "suspendido": True}]}, set(), {orig, "cae:" + orig})] == ["cae:" + orig]

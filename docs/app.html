@@ -92,7 +92,8 @@
   .pulso span { position: absolute; left: 50%; top: 22px; transform: translateX(-50%); white-space: nowrap; padding: 3px 8px; border-radius: 6px; background: #fff; font-weight: 700; font-size: 13px;
     box-shadow: 0 2px 8px rgb(28 38 41 / .2); }
   .leyenda-via i { display: inline-block; width: 18px; height: 4px; margin: 0 6px 3px 0; vertical-align: middle; }
-  .leyenda-via i.rojo { background: #d7261e; } 
+  .leyenda-via i.rojo { background: #d7261e; } .leyenda-via i.conces { width: 14px; height: 10px; background: rgb(183 156 255 / .45); outline: 1.5px dashed #8f74e0; }
+
   .dz-cab { padding: 14px 16px 0; } .dz-cab h3 { margin: 0; font-size: 26px; font-weight: 750; letter-spacing: -0.01em; } .dz-cab p { margin: 2px 0 0; color: var(--tinta-2); }
   .medidor { padding: 12px 16px 4px; } .m-num { display: flex; align-items: baseline; gap: 12px; }
   .m-num b { font-size: 56px; line-height: 1; font-weight: 750; color: var(--cobre-4); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
@@ -160,6 +161,10 @@
   ol.cadena .est small { display: block; font-size: 11px; font-weight: 500; color: var(--tinta-2); text-align: right; }
   .aclara { margin: 0 16px 4px; font-size: 14px; color: var(--tinta-2); }
   .resumen { margin: 4px 16px 0; line-height: 1.5; max-width: 60ch; }
+  .meses { display: flex; gap: 3px; margin: 6px 16px 2px; } .meses a { flex: 1; height: 22px; border-radius: 3px; background: var(--c, #b9c3c2); }
+  .meses a.ed { box-shadow: inset 0 -5px 0 var(--verde); } .meses-eje { display: flex; justify-content: space-between; margin: 0 16px 4px; font-size: 12px; color: var(--tinta-2); }
+  .pactos { margin: 4px 0 0; padding: 0 16px; list-style: none; } .pactos li { display: flex; gap: 10px; align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--linea); font-size: 15px; }
+  .pactos li > b { flex: none; width: 50px; font-weight: 650; } .pactos li > span { flex: 1; } .pactos small { display: block; color: var(--tinta-2); font-size: 13px; }
   a.fuente { display: block; margin: 8px 16px; padding: 14px 16px; border-radius: 12px; background: #eaefed; color: var(--tinta); text-decoration: none;
     line-height: 1.4; transition: background-color 160ms ease, transform 140ms var(--sal); }
   a.fuente:hover { background: #e0e7e4; } a.fuente:active { transform: scale(0.98); }
@@ -498,7 +503,7 @@ function detalleOp(nom) {
     + fiscal(o.unidad)
     + `<h2>Qué pasó</h2>` + (av.length ? `<ul>${av.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas cerca en 45 días.</p>`)
     + `<h2>Conflictos con comunidades</h2><p class="nota-fuente">Registrados por la Defensoría del Pueblo</p>` + (cs.length ? `<ul>${cs.map(c => fila("", 0, titulo(String(c.nombre).replace(/^(comunidad(es)? (campesinas?|nativas?)|cc\.?|c\.c\.)\s+(de(l)?\s+)?/i, "").split(/\s+[-–]\s+/)[0]),
-        estado(c), c.medios && c.medios[0] ? `${dia(c.medios[0].fecha)}, ${c.medios[0].titular}` : `Defensoría, ${MES[c.mes - 1]}`, `data-caso="${X.casos.indexOf(c)}"`)).join("")}</ul>` : `<p class="vacio">Sin conflictos vigentes ante la Defensoría.</p>`);
+        estado(c), c.medios && c.medios[0] ? `${dia(c.medios[0].fecha)}, ${c.medios[0].titular}` : `Defensoría, ${MES[c.mes - 1]}`, `data-caso="${X.casos.indexOf(c)}"`)).join("")}</ul>` : `<p class="vacio">Sin conflictos vigentes ante la Defensoría.</p>`) + dentro(o.zona) + informal(o.zona) + delEstado(o.zona);
 }
 
 function detalleDistrito(u, capa = "extractivo") {
@@ -536,10 +541,48 @@ function detalleDistrito(u, capa = "extractivo") {
     ${resto.length ? `<ul class="por">${resto.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
     <h2>Conflictos ante la Defensoría</h2>${cs.length ? `<div class="chips">${porEst.map(([k, n]) => `<span class="ch-${EST[k]}"><i></i><b>${n}</b> ${k}</span>`).join("")}</div>
       <ul class="casos">${cs.map(c => `<li class="ch-${EST[estadoCaso(c)]}"><button type="button" data-dcaso="${D.casos.indexOf(c)}"><i></i><span>${esc(titulo(String(c.nombre).split(/\s+[-–]\s+/)[0]))}</span><small>${esc(titulo(lugar(String(c.ubigeo))))}</small></button></li>`).join("")}</ul>` : `<p class="vacio">Sin conflictos vigentes en la zona.</p>`}
+    ${delEstado(zona)}
     <h2>Protestas recientes</h2>${evs.length ? `<ul>${evs.slice(0, 4).map(e => fila("", 0, `${accion(e)}${e.actor ? ` de ${e.actor.toLowerCase()}` : ""}`, dia(e.fecha_evento), lugar(String(e.ubigeo)))).join("")}</ul>`
       : `<p class="vacio">Ninguna en la prensa en las últimas seis semanas.</p>`}`;
 }
+// Casos que sigue el Ejecutivo (PCM y MINAM) en la zona: distrito exacto o provincia de algún distrito de la zona
+// Minería informal e ilegal en la zona: inscripciones vigentes en el REINFO (informal en formalización; la ilegal no se
+// registra), conflictos de la Defensoría por minería ilegal y lo que dijo la prensa en 60 días
+function informal(zona) {
+  const I = D.informal || { reinfo: {}, notas: [] }, zs = [...zona].map(String);
+  const rs = zs.map(u => [u, I.reinfo[u] || 0]).filter(x => x[1]).sort((a, b) => b[1] - a[1]), total = rs.reduce((s, x) => s + x[1], 0);
+  const cs = X.casos.filter(c => c.tema === "mineria_ilegal" && zona.has(String(c.ubigeo)));
+  const ns = I.notas.filter(n => n.ubigeo.length === 6 ? zona.has(n.ubigeo) : zs.some(z => z.startsWith(n.ubigeo))).slice(0, 3);
+  if (!total && !cs.length && !ns.length) return "";
+  return `<h2>Minería informal e ilegal</h2><p class="nota-fuente">REINFO del MINEM, Defensoría y prensa de 60 días</p><ul class="por">
+    ${total ? `<li>${total.toLocaleString("es-PE")} ${total === 1 ? "inscripción vigente" : "inscripciones vigentes"} de mineros en formalización en la zona${rs.length > 1 ? `; la mayoría en ${esc(titulo(lugar(rs[0][0])).split(",")[0])} (${rs[0][1].toLocaleString("es-PE")})` : ""}</li>` : `<li>Sin mineros en formalización registrados en la zona</li>`}
+    ${cs.length ? `<li>${cs.length} ${cs.length === 1 ? "conflicto" : "conflictos"} ante la Defensoría por minería ilegal o informal</li>` : ""}</ul>
+    ${ns.map(m => `<a class="fuente" href="${esc(m.enlace)}" target="_blank" rel="noopener"><small>${esc(m.medio)}, ${esc(dia(m.fecha))}</small>${esc(m.titular)}</a>`).join("")}`;
+}
+function delEstado(zona) {
+  const es = (D.estado || []).filter(e => e.ubigeo.length === 6 ? zona.has(e.ubigeo) : [...zona].some(z => String(z).startsWith(e.ubigeo)))
+    .sort((a, b) => b.medida - a.medida || String(b.fecha || "").localeCompare(a.fecha || "")).slice(0, 4);
+  const nom = n => String(n).replace(/^(grupo de trabajo|mesa|comisi[oó]n)[^“"]*[“"]/i, "").replace(/[“”".]+$/g, "").replace(/^./, c => c.toUpperCase()).slice(0, 90);
+  return es.length ? `<h2>Lo que sigue el Estado</h2><p class="nota-fuente">Mesas y casos de la PCM y el MINAM, último informe</p><ul>${es.map(e =>
+    fila(e.medida ? "urge" : "", 0, nom(e.nombre), `${e.fuente}, ${e.nivel || "en seguimiento"}`,
+      e.situacion ? `${e.fecha ? dia(e.fecha) + ", " : ""}${e.situacion}` : `${e.documento}, sin novedades del mes`, `data-doc="${esc(e.enlace)}"`)).join("")}</ul>` : "";
+}
 const estadoCaso = c => c.estado === "latente" ? "latente" : /NO HAY/i.test(c.dialogo || "") ? "sin diálogo" : /HAY/i.test(c.dialogo || "") ? "en diálogo" : "activo";
+// Expediente: el estado mes a mes (cada cuadro abre el reporte) y lo que se pactó con fecha, con qué pasó y la página
+// del PDF que lo dice. Las frases no se publican: pueden nombrar personas; están en el PDF.
+const PASO = { "se realizó": ["ok", "Se realizó"], "no se realizó": ["mal", "No se realizó"], mencionado: ["", "Mencionado después, sin decir si se hizo"],
+  "sin noticia": ["", "La Defensoría no volvió a informar sobre esto"], pendiente: ["", "Aún sin reporte que lo cubra"] };
+function expediente(x) {
+  if (!x || !(x.meses.length || x.compromisos.length)) return "";
+  const ms = [...x.meses].reverse(), color = r => r.estado === "latente" ? "#b9c3c2" : r.hechos ? "#d7261e" : "#c8642f";
+  const lin = ms.length ? `<h2>Mes a mes en la Defensoría</h2><div class="meses">${ms.map(r => `<a ${r.dialogo ? 'class="ed" ' : ""}style="--c:${color(r)}" ${r.pdf ? `href="${esc(r.pdf)}" target="_blank" rel="noopener"` : ""} title="${MES[r.m - 1]} ${r.a}: ${esc(r.estado)}${r.hechos ? ", con hechos" : ""}${r.dialogo === true ? ", en diálogo" : r.dialogo === false ? ", sin diálogo" : ""}"></a>`).join("")}</div>
+    <div class="meses-eje"><span>${MES[ms[0].m - 1]} ${ms[0].a}</span><span>${MES[ms.at(-1).m - 1]} ${ms.at(-1).a}</span></div>
+    <p class="meses-eje">Rojo, con hechos en el mes; naranja, activo; gris, latente. Franja verde, en diálogo. Cada mes abre su reporte.</p>` : "";
+  const cs = x.compromisos.slice(0, 8);
+  const pac = cs.length ? `<h2>Lo que se pactó con fecha</h2><ul class="pactos">${cs.map(k => { const [cl, t] = k.estado === "pendiente" && k.fecha >= HOY ? ["", "Por venir"] : PASO[k.estado] || ["", k.estado];
+    return `<li><b>${dia(k.fecha)}<small>${k.fecha.slice(0, 4)}</small></b><span>${k.enlace ? `<a href="${esc(k.enlace)}" target="_blank" rel="noopener">${esc(k.tipo)}</a>` : esc(k.tipo)}<small class="${cl}">${esc(t)}${k.visto ? ` · <a href="${esc(k.visto)}" target="_blank" rel="noopener">dónde lo dice</a>` : ""}</small></span></li>`; }).join("")}</ul>` : "";
+  return lin + pac;
+}
 function detalleCaso(c) {
   const u = String(c.ubigeo), ms = c.medios || [];
   cabecera(true, "Conflictos con comunidades"); ver([u], c.nombre);
@@ -548,6 +591,7 @@ function detalleCaso(c) {
     <dl class="datos"><dt>Dónde</dt><dd>${esc(lugar(u))}</dd>${c.tipo ? `<dt>Tipo</dt><dd>${esc(c.tipo)}</dd>` : ""}
       ${c.quien_reclama ? `<dt>Quién</dt><dd>${esc(c.quien_reclama[0].toUpperCase() + c.quien_reclama.slice(1))}</dd>` : ""}${c.fase ? `<dt>Fase</dt><dd>${esc(c.fase[0].toUpperCase() + c.fase.slice(1))}</dd>` : ""}</dl>
     ${c.resumen ? `<h2>Qué reclaman</h2><p class="resumen">${esc(c.resumen)}</p>` : ""}
+    ${expediente(c.expediente)}
     ${ms.length ? `<h2>En medios</h2>${ms.slice(0, 3).map(m => `<a class="fuente" href="${esc(m.enlace)}" target="_blank" rel="noopener"><small>${esc(m.medio)}, ${esc(dia(m.fecha))}</small>${esc(m.titular)}</a>`).join("")}` : ""}${VER}`;
 }
 function detalleAviso(k) {
@@ -598,6 +642,13 @@ function detalleAviso(k) {
 // protesta o TomTom ve una demora, se detiene en el distrito más expuesto con el motivo. three.js por el importmap;
 // los modelos se arman con geometría en docs/vehiculos3d.js.
 const CAMINOS = fetch("caminos.json").then(r => r.json()).catch(() => ({}));
+// Concesiones de cada cliente (catastro minero, GEOPERÚ) y las comunidades con territorio dentro (tremor.concesiones)
+let CONCES = {}; fetch("concesiones.json").then(r => r.json()).then(c => CONCES = c).catch(() => {});
+function dentro(zona) {
+  const xs = ((CONCES[empresa] || {}).pisa || []).filter(x => zona.has(x.u)).slice(0, 8);
+  return xs.length ? `<h2>Comunidades dentro de sus concesiones</h2><p class="nota-fuente">Catastro minero (GEOPERÚ) y territorios de la base de pueblos indígenas</p>
+    <ul class="por">${xs.map(x => `<li>${esc(x.n)}, ${esc(titulo(lugar(x.u)).split(",")[0])}: ${Math.round(x.pct * 100)}% de su territorio${x.caso ? ". Tiene un conflicto abierto" : ""}</li>`).join("")}</ul>` : "";
+}
 const TRES = () => (TRES.p ??= Promise.all([import("three"), import("./vehiculos3d.js")]));
 async function vehiculo(tren) {
   const [THREE, modelos] = await TRES(), g = tren ? modelos.tren(THREE) : modelos.camion(THREE);
@@ -627,7 +678,7 @@ function capa3d(v, en, L) {
         let r = Math.atan2((adel[0] - atr[0]) * Math.cos(p[1] * Math.PI / 180), adel[1] - atr[1]);
         if (pz.userData.r != null) r = pz.userData.r + (((r - pz.userData.r) / Math.PI + 3) % 2 - 1) * Math.PI * 0.25;  // gira suave, sin saltos
         pz.userData.r = r;
-        const mc = maplibregl.MercatorCoordinate.fromLngLat(p, 0);
+        const mc = maplibregl.MercatorCoordinate.fromLngLat(p, mapa.queryTerrainElevation(p) || 0);  // sobre el relieve, no bajo el cerro
         const k = mc.meterInMercatorCoordinateUnits() * m;
         const l = new THREE.Matrix4().makeTranslation(mc.x, mc.y, mc.z).scale(new THREE.Vector3(k, -k, k))
           .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2)).multiply(new THREE.Matrix4().makeRotationY(Math.PI - r));
@@ -716,7 +767,8 @@ const ley = () => { const c = CAPAS_MAPA[CAPA]; return (actual === "pais" || PAI
     <span class="esc">${c[2] ? `<span><i class="punto"></i>Protesta anunciada</span>` : ""}<span><i class="punto negro"></i>Vía cortada (SUTRAN)</span><span><i class="via-l"></i>Vía, al acercarse</span></span></small>`
   : (FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Su ruta de salida")  // el % de la vía ya está en el panel: el mapa dice qué es cada color
   + (SEL ? (SEL.tr.length ? `<small><i class="rojo"></i>${/se suma/.test(SEL.etq) ? "Anunciaron que se suman" : SEL.tr2.length ? "Más probable" : "Tramos que puede cortar"}${SEL.tr2.length ? `<br><i class="naranja"></i>Posible` : ""}<br><i class="punto"></i>${/se suma/.test(SEL.etq) ? "Base que se suma" : SEL.etq ? "Donde más bloquearon antes" : "Dónde es la protesta"}</small>` : "")
-    : `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`); };
+    : `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`)
+  + (CONCES[empresa] ? `<small><i class="conces"></i>Sus concesiones mineras (al acercarse)</small>` : ""); };
 document.addEventListener("click", e => { const b = e.target.closest("[data-capa]"); if (!b) return;
   CAPA = b.dataset.capa; document.querySelectorAll(".leyenda-via").forEach(l => l.innerHTML = ley()); peru();
   if (actual === "pais" && !pila.length) { document.getElementById("vista").innerHTML = VISTAS.pais(); conectar(); } });  // la lista del panel sigue a la capa
@@ -862,6 +914,7 @@ function conectar() {
   document.querySelectorAll("[data-op]").forEach(b => b.onclick = () => abrir(detalleOp(b.dataset.op)));
   document.querySelectorAll("[data-caso]").forEach(b => b.onclick = () => abrir(detalleCaso(X.casos[+b.dataset.caso])));
   document.querySelectorAll("[data-dcaso]").forEach(b => b.onclick = () => abrir(detalleCaso(D.casos[+b.dataset.dcaso])));
+  document.querySelectorAll("[data-doc]").forEach(b => b.onclick = () => window.open(b.dataset.doc, "_blank", "noopener"));
   document.querySelectorAll("[data-distrito]").forEach(b => b.onclick = () => abrir(detalleDistrito(b.dataset.distrito, b.dataset.dcapa || "extractivo")));
   document.querySelectorAll("[data-mencion]").forEach(b => b.onclick = () => { const m = D.menciones[+b.dataset.mencion]; abrir(detalleAviso({ m, tipo: TEMA[m.tema] || "En medios" })); });
   document.querySelectorAll("[data-tono]").forEach(b => b.onclick = () => { TONO_F = TONO_F === b.dataset.tono ? null : b.dataset.tono;
@@ -918,6 +971,10 @@ function verMapa() {
         tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"] });
       mapa.addLayer({ id: "sombra", type: "hillshade", source: "dem", paint: { "hillshade-exaggeration": 0.3,
         "hillshade-shadow-color": "#56676c", "hillshade-highlight-color": "#ffffff", "hillshade-accent-color": "#56676c" } }, bajo);
+      // relieve en 3D: la carretera se pega al terreno y se ve subir y bajar (otra fuente: compartirla con la sombra la emborrona)
+      mapa.addSource("dem-3d", { type: "raster-dem", encoding: "terrarium", tileSize: 256, maxzoom: 12,
+        tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"] });
+      mapa.setTerrain({ source: "dem-3d", exaggeration: 1.3 });
       mapa.addSource("sat", { type: "raster", tileSize: 256, maxzoom: 18, attribution: "Esri, Maxar",
         tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"] });
       mapa.addLayer({ id: "sat", type: "raster", source: "sat", minzoom: 6.5,
@@ -949,6 +1006,14 @@ function verMapa() {
     fs.forEach(f => { const o = X.unidades.find(u => u.unidad === f.properties.unidad); f.properties.p = o && o.p != null ? pct(o.p) : ""; f.properties.op = o && opera(o) ? 1 : 0; });
     const pintar = () => {
       const fc = { type: "FeatureCollection", features: fs };
+      // contorno de sus concesiones, bajo los puntos de sus unidades
+      const cg = { type: "Feature", properties: {}, geometry: (CONCES[empresa] || {}).geo || { type: "Polygon", coordinates: [] } };
+      if (mapa.getSource("conces")) mapa.getSource("conces").setData(cg);
+      else {
+        mapa.addSource("conces", { type: "geojson", data: cg });
+        mapa.addLayer({ id: "conces-f", type: "fill", source: "conces", minzoom: 7, paint: { "fill-color": "#b79cff", "fill-opacity": 0.16 } });
+        mapa.addLayer({ id: "conces", type: "line", source: "conces", minzoom: 7, paint: { "line-color": "#d5c4ff", "line-width": 1.6, "line-dasharray": [3, 2] } });  // violeta: el amarillo es de las carreteras
+      }
       if (mapa.getSource("ops")) mapa.getSource("ops").setData(fc);
       else {
         mapa.addSource("ops", { type: "geojson", data: fc });
