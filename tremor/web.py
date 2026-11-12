@@ -177,6 +177,7 @@ def datos(con):
             "vecinos": vecinos(con),
             "casos": casos_zona(con),
             "informal": informal(con),
+            "emergencia": emergencia_hoy(con),
             # PCM (Willaqniki) y MINAM (OGASA): el último informe de cada uno, solo casos ubicados en provincia o distrito
             "estado": registros(tabla(con, """SELECT fuente, documento, nombre, lower(nivel) AS nivel, ubigeo, situacion, fecha, medida, enlace
                 FROM caso_estado e WHERE length(ubigeo) >= 4 AND orden = (SELECT MAX(orden) FROM caso_estado WHERE fuente = e.fuente)""")),
@@ -585,6 +586,22 @@ def informal(con, dias=60):
         if m and (u := ubicar_ilegal(texto[max(0, m.start() - 300):m.end() + 300], dep, idx, deps)):
             notas.append({"ubigeo": u, "fecha": f, "medio": medio, "titular": tit, "enlace": enlace})
     return {"reinfo": reinfo, "notas": notas}
+
+
+def emergencia_hoy(con, hoy=None):
+    """{ubigeo: "conflicto" | "crimen" | "conflicto,crimen" | ""}: distritos con un estado de emergencia de orden interno
+    vigente hoy (tremor.gobierno emergencias). La causa es la del mes en distrito_mes, que ya resolvió las prórrogas."""
+    hoy = hoy or date.today()
+    try:
+        filas = con.execute("SELECT lugares FROM decreto_emergencia WHERE causas IS NOT NULL AND inicio <= ? "
+                            "AND date(inicio, '+' || dias || ' days') >= ?", (hoy.isoformat(), hoy.isoformat())).fetchall()
+        causa = {}
+        for u, v in con.execute("SELECT ubigeo, variable FROM distrito_mes WHERE variable IN ('emergencia_conflicto', 'emergencia_crimen') "
+                                "AND m = ? ORDER BY variable", (hoy.year * 12 + hoy.month - 1,)):
+            causa.setdefault(u, []).append(v.split("_")[1])
+    except sqlite3.OperationalError:  # base sin los decretos
+        return {}
+    return {u: ",".join(causa.get(u, ())) for (l,) in filas for u in json.loads(l)}
 
 
 def expediente(con, ids, meses=24):
