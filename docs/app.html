@@ -503,7 +503,7 @@ function detalleOp(nom) {
     + fiscal(o.unidad)
     + `<h2>Qué pasó</h2>` + (av.length ? `<ul>${av.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas cerca en 45 días.</p>`)
     + `<h2>Conflictos con comunidades</h2><p class="nota-fuente">Registrados por la Defensoría del Pueblo</p>` + (cs.length ? `<ul>${cs.map(c => fila("", 0, titulo(String(c.nombre).replace(/^(comunidad(es)? (campesinas?|nativas?)|cc\.?|c\.c\.)\s+(de(l)?\s+)?/i, "").split(/\s+[-–]\s+/)[0]),
-        estado(c), c.medios && c.medios[0] ? `${dia(c.medios[0].fecha)}, ${c.medios[0].titular}` : `Defensoría, ${MES[c.mes - 1]}`, `data-caso="${X.casos.indexOf(c)}"`)).join("")}</ul>` : `<p class="vacio">Sin conflictos vigentes ante la Defensoría.</p>`) + dentro(o.zona) + delEstado(o.zona);
+        estado(c), c.medios && c.medios[0] ? `${dia(c.medios[0].fecha)}, ${c.medios[0].titular}` : `Defensoría, ${MES[c.mes - 1]}`, `data-caso="${X.casos.indexOf(c)}"`)).join("")}</ul>` : `<p class="vacio">Sin conflictos vigentes ante la Defensoría.</p>`) + dentro(o.zona) + informal(o.zona) + delEstado(o.zona);
 }
 
 function detalleDistrito(u, capa = "extractivo") {
@@ -546,6 +546,19 @@ function detalleDistrito(u, capa = "extractivo") {
       : `<p class="vacio">Ninguna en la prensa en las últimas seis semanas.</p>`}`;
 }
 // Casos que sigue el Ejecutivo (PCM y MINAM) en la zona: distrito exacto o provincia de algún distrito de la zona
+// Minería informal e ilegal en la zona: inscripciones vigentes en el REINFO (informal en formalización; la ilegal no se
+// registra), conflictos de la Defensoría por minería ilegal y lo que dijo la prensa en 60 días
+function informal(zona) {
+  const I = D.informal || { reinfo: {}, notas: [] }, zs = [...zona].map(String);
+  const rs = zs.map(u => [u, I.reinfo[u] || 0]).filter(x => x[1]).sort((a, b) => b[1] - a[1]), total = rs.reduce((s, x) => s + x[1], 0);
+  const cs = X.casos.filter(c => c.tema === "mineria_ilegal" && zona.has(String(c.ubigeo)));
+  const ns = I.notas.filter(n => n.ubigeo.length === 6 ? zona.has(n.ubigeo) : zs.some(z => z.startsWith(n.ubigeo))).slice(0, 3);
+  if (!total && !cs.length && !ns.length) return "";
+  return `<h2>Minería informal e ilegal</h2><p class="nota-fuente">REINFO del MINEM, Defensoría y prensa de 60 días</p><ul class="por">
+    ${total ? `<li>${total.toLocaleString("es-PE")} ${total === 1 ? "inscripción vigente" : "inscripciones vigentes"} de mineros en formalización en la zona${rs.length > 1 ? `; la mayoría en ${esc(titulo(lugar(rs[0][0])).split(",")[0])} (${rs[0][1].toLocaleString("es-PE")})` : ""}</li>` : `<li>Sin mineros en formalización registrados en la zona</li>`}
+    ${cs.length ? `<li>${cs.length} ${cs.length === 1 ? "conflicto" : "conflictos"} ante la Defensoría por minería ilegal o informal</li>` : ""}</ul>
+    ${ns.map(m => `<a class="fuente" href="${esc(m.enlace)}" target="_blank" rel="noopener"><small>${esc(m.medio)}, ${esc(dia(m.fecha))}</small>${esc(m.titular)}</a>`).join("")}`;
+}
 function delEstado(zona) {
   const es = (D.estado || []).filter(e => e.ubigeo.length === 6 ? zona.has(e.ubigeo) : [...zona].some(z => String(z).startsWith(e.ubigeo)))
     .sort((a, b) => b.medida - a.medida || String(b.fecha || "").localeCompare(a.fecha || "")).slice(0, 4);
