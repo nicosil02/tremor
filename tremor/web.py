@@ -521,7 +521,34 @@ def casos_zona(con):
         c["resumen"] = c.resumen.fillna(c.pop("resumen_prensa"))
         c["fuentes"] = [json.loads(x) if isinstance(x, str) else [] for x in c.fuentes]
     c["medios"] = medios_recientes(con, c.nombre)
+    c["expediente"] = expediente(con, c.id)
     return registros(c.drop(columns="id"))
+
+
+def expediente(con, ids, meses=24):
+    """Por caso: su estado mes a mes en la Defensoría (con el PDF de cada reporte) y los compromisos con fecha de los
+    últimos dos años, con qué pasó y la página del PDF que lo dice. Sin las frases: pueden nombrar personas."""
+    from tremor.compromisos import tipo
+    pdf = dict(con.execute("SELECT reporte_num, url FROM documento WHERE rol = 'principal' AND formato IN ('pdf', 'html') ORDER BY formato = 'pdf'"))
+    ids = [int(i) for i in ids]
+    marca = ",".join("?" * len(ids))
+    hist = {}
+    for caso, num, a, m, est, dial, hechos in con.execute(f"""SELECT cm.caso_id, cm.reporte_num, r.anio, r.mes, cm.estado,
+            cm.dialogo, cm.con_hechos FROM caso_mes cm JOIN reporte r ON r.num = cm.reporte_num WHERE cm.caso_id IN ({marca})
+            ORDER BY cm.reporte_num DESC""", ids):
+        if len(hist.setdefault(caso, [])) < meses:
+            d = (dial or "").upper()
+            hist[caso].append({"a": a, "m": m, "estado": est, "hechos": hechos,
+                               "dialogo": None if not d else not d.startswith("NO"), "pdf": pdf.get(num)})
+    comp = {}
+    try:
+        filas = con.execute(f"""SELECT caso_id, fecha, frase, estado, enlace, visto_enlace FROM compromiso
+                                WHERE caso_id IN ({marca}) AND fecha >= date('now', '-{meses} months') ORDER BY fecha DESC""", ids)
+        for caso, f, frase, est, enl, visto in filas:
+            comp.setdefault(caso, []).append({"fecha": f, "tipo": tipo(frase), "estado": est, "enlace": enl, "visto": visto})
+    except sqlite3.OperationalError:  # tabla compromiso aún no creada
+        pass
+    return [{"meses": hist.get(i, []), "compromisos": comp.get(i, [])} for i in ids]
 
 
 PREFIJO = re.compile(r"^(comunidad(es)? (campesinas?|nativas?)|comunidad(es)?|cc\.?|c\.c\.|cn|c\.n\.)\s+(de(l)?\s+)?", re.I)
