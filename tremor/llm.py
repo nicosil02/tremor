@@ -16,9 +16,11 @@ from tremor.db import RAIZ, ahora
 
 CADENA = ("openai/gpt-oss-120b,gemini:gemini-3.6-flash,gemini:gemini-3.5-flash,gemini:gemini-3-flash-preview,"
           "gemini:gemini-3.8-flash,gemini:gemini-3.7-flash,gemini:gemini-3.5-flash-lite,gemini:gemini-3.1-flash-lite,"
-          "openai/gpt-oss-20b,nvidia:google/gemma-4-31b-it,nvidia:openai/gpt-oss-20b")  # cada modelo, su propio cupo diario; el saturado o retirado cede al siguiente
+          "nvidia:nvidia/nemotron-3-ultra-550b-a55b,openai/gpt-oss-20b")  # cada modelo, su propio cupo diario; el saturado o retirado cede al siguiente
 PROVEEDORES = {"gemini": ("https://generativelanguage.googleapis.com/v1beta/openai", "GEMINI_API_KEY"),
-               "nvidia": ("https://integrate.api.nvidia.com/v1", "NVIDIA_API_KEY")}  # build.nvidia.com, gratis para prototipos
+               "nvidia": ("https://integrate.api.nvidia.com/v1", "NVIDIA_API_KEY")}  # build.nvidia.com, gratis para prototipos.
+# Probado el 12 nov 2026: nemotron-3-ultra clasifica como el principal pero tarda ~15 s por mención y más de 2 min por
+# lote de prensa, por eso va casi al final. gemma-4-31b tardó 63 s en un saludo y gpt-oss-20b no respondió en 90 s.
 
 
 def _env():
@@ -106,6 +108,8 @@ def _llamar(con, url, clave, modelo, k, sistema, usuario) -> dict:
             raise RespuestaInvalida(f"{r.status_code}: {r.text[:300]}")
         r.raise_for_status()
         texto = r.json()["choices"][0]["message"]["content"]
+        if not texto:  # un modelo que razona puede gastar la salida pensando y no responder: se trata como JSON roto
+            raise RespuestaInvalida("respuesta vacía")
         texto = texto.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
         try:
             datos = json.loads(texto)
