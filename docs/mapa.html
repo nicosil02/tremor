@@ -451,6 +451,7 @@
 const ADMIN = /[?&]admin\b/.test(location.search);
 if (!/[?&]web\b/.test(location.search)) location.replace("app.html" + (ADMIN ? "?admin" : ""));
 let CADENA = {}; fetch("cadena.json").then(r => r.json()).then(c => CADENA = c).catch(() => {});
+let CAMINOS = {}; fetch("caminos.json").then(r => r.json()).then(c => CAMINOS = c).catch(() => {});  // el trazo real de cada tramo (tremor.tarjeta.caminos)
 const FUENTES = ["https://raw.githubusercontent.com/nicosil02/tremor/datos/web.json", "web.json"];
 const BASE = "https://tiles.openfreemap.org/styles/positron";
 const PERU = [[-81.4, -18.4], [-68.6, 0.1]];
@@ -1224,7 +1225,8 @@ function iniciar(D, G, H, C) {
     const suyas = new Set([...zonas].flatMap(rutasDe));
     const vias = D.sutran.filter(s => pais || provs.has(String(s.ubigeo || "").slice(0, 4)) || usanVia(s).some(o => zonas.has(String(o.ubigeo))));
     const capa = pais ? [] : [...suyas];
-    listo.then(() => ["rutas", "rutas-nombre"].forEach(c => map.setFilter(c, ["in", ["get", "r"], ["literal", capa]])));
+    listo.then(() => { ["rutas", "rutas-nombre"].forEach(c => map.setFilter(c, ["in", ["get", "r"], ["literal", capa]]));
+      map.getSource("camino")?.setData({ type: "FeatureCollection", features: [] }); });
     document.getElementById("nota-avisos").textContent = pais
       ? "Vinculados a minería, hidrocarburos o medio ambiente, en los últimos 45 días."
       : "En las provincias de sus operaciones, en los últimos 45 días.";
@@ -1312,7 +1314,18 @@ function iniciar(D, G, H, C) {
             layout: { "text-field": ["get", "t"], "text-font": ["Noto Sans Bold"], "text-size": 15 }, paint: { "text-color": "#fff", "text-halo-color": "rgb(28 38 41 / .9)", "text-halo-width": 2 } });
         }
         const vias = [...new Set(cad.tramos.map(x => x.via).filter(Boolean))];
-        ["rutas", "rutas-nombre"].forEach(k => map.setFilter(k, ["in", ["get", "r"], ["literal", vias]]));
+        // la carretera con sus curvas reales (sobre el relieve se ve subir y bajar); la red nacional simplificada queda
+        // solo para el nombre de la vía, y de línea si aún no hay trazo fino
+        const fino = Object.entries(CAMINOS[Object.keys(CADENA).find(k => CADENA[k] === cad)] || {});
+        const lineas = { type: "FeatureCollection", features: fino.map(([n, cs]) => ({ type: "Feature", properties: { sel: n === r.nombre ? 1 : 0 }, geometry: { type: "LineString", coordinates: cs } })) };
+        if (map.getSource("camino")) map.getSource("camino").setData(lineas);
+        else {
+          map.addSource("camino", { type: "geojson", data: lineas });
+          map.addLayer({ id: "camino", type: "line", source: "camino", layout: { "line-join": "round", "line-cap": "round" },
+            paint: { "line-color": ["case", ["==", ["get", "sel"], 1], "#c2552b", "#f4c35a"], "line-width": ["interpolate", ["linear"], ["zoom"], 6, 2.5, 12, 5] } }, "rutas-nombre");
+        }
+        map.setFilter("rutas", ["in", ["get", "r"], ["literal", fino.length ? [] : vias]]);
+        map.setFilter("rutas-nombre", ["in", ["get", "r"], ["literal", vias]]);
         if (!bb.isEmpty()) map.fitBounds(bb, { padding: pad(80), pitch: 0, duration: 900 }); });
       return;
     }

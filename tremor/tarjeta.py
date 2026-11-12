@@ -153,16 +153,48 @@ def trazar(tramos):
     return out
 
 
+def carretera(pts, fino=0.0001):
+    """El trazo real de la carretera (OpenStreetMap, por el ruteo abierto de OSRM) que pasa por los puntos (lon, lat):
+    con sus curvas y zigzags, para que en el relieve se vea subir y bajar y no cruzar los cerros en recta. Se afina a
+    ~10 m. None si el servicio no responde o si la ruta da un rodeo de más del triple de la recta."""
+    from shapely.geometry import LineString
+    try:
+        r = requests.get("https://router.project-osrm.org/route/v1/driving/" + ";".join(f"{x:.5f},{y:.5f}" for x, y in pts),
+                         params={"overview": "full", "geometries": "geojson"}, timeout=60,
+                         headers={"User-Agent": "tremor (investigacion PUCP)"}).json()
+        cs = r["routes"][0]["geometry"]["coordinates"]
+    except (requests.RequestException, KeyError, IndexError, ValueError):
+        return None
+    largo = lambda xs: sum(map(math.dist, xs, xs[1:]))
+    if largo(cs) > 3 * largo(pts) + 0.2:
+        return None
+    return [list(p) for p in LineString(cs).simplify(fino).coords]
+
+
 def caminos():
-    """docs/caminos.json: cada tramo con su camino por la red vial ({cliente: {tramo: [[lon, lat], ...]}}), para que el
-    camión de la app siga la carretera. Cada tramo sale de su propio punto. Correr al cambiar cadena.json."""
+    """docs/caminos.json: cada tramo con su camino ({cliente: {tramo: [[lon, lat], ...]}}), para que el camión de la app
+    siga la carretera. Cada tramo sale de su propio punto. El trazo es el real de OpenStreetMap (guiado por tres puntos
+    de su vía en la red nacional si se aleja de ella); si falla (o es el tren), queda el de la red nacional, que
+    es más tosco. Correr al cambiar cadena.json."""
+    import time
     out = {}
     for cliente, c in json.load(open(RAIZ / "docs" / "cadena.json", encoding="utf-8")).items():
         for t in c["tramos"]:
             for _, partes in trazar([t]):
                 pts = [p for linea, _ in partes for p in linea]
-                pts = [p for i, p in enumerate(pts) if i == 0 or math.dist(p, pts[i - 1]) > 0.005 or i == len(pts) - 1]
-                out.setdefault(cliente, {})[t["nombre"]] = [[round(x, 4), round(y, 4)] for x, y in pts]
+                red_ = next((linea for linea, por_red in partes if por_red and len(linea) > 8), None)
+                real = None if t.get("rieles") else carretera([pts[0], pts[-1]])
+                time.sleep(1.2)  # el servidor de demostración de OSRM pide una consulta por segundo
+                # si la ruta más corta se va a más de 15 km de su vía (Pillones: hay un atajo que el concentrado no
+                # usa), se la guía con tres puntos de la vía; guiar siempre mete vueltas en U donde el punto cae mal
+                if real and red_ and max(min(math.dist(p, q) for q in real[::3]) for p in red_[::2]) > 0.135:
+                    real = carretera([pts[0], *(red_[len(red_) * k // 4] for k in (1, 2, 3)), pts[-1]]) or real
+                    time.sleep(1.2)
+                if real:
+                    pts = real
+                else:
+                    pts = [p for i, p in enumerate(pts) if i == 0 or math.dist(p, pts[i - 1]) > 0.005 or i == len(pts) - 1]
+                out.setdefault(cliente, {})[t["nombre"]] = [[round(x, 5), round(y, 5)] for x, y in pts]
     (RAIZ / "docs" / "caminos.json").write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
     return out
 
