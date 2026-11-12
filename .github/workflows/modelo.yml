@@ -52,6 +52,9 @@ jobs:
           python -m tremor.produccion
           python -m tremor.empresas proyectos
 
+      - name: Estados de emergencia del mes en El Peruano
+        run: python -m tremor.gobierno emergencias || true
+
       - name: Modelo
         run: python -u -m tremor.modelo
 

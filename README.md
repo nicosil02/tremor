@@ -332,5 +332,8 @@ proyecto están en [`.specify/memory/constitution.md`](.specify/memory/constitut
 - **ACLED:** valida el modelo. Se publica en la rama `datos` con autorización de ACLED. Cita: Armed Conflict
   Location & Event Data (ACLED), www.acleddata.com.
 - **Datos abiertos del Estado:** INEI, MEF, BCRP, MINEM, OEFA, ONPE, SENACE, ANA, INDECI, MTC, SERNANP y Cultura.
+- **Estados de emergencia (El Peruano):** los decretos supremos de la PCM desde 2010. Los pide el Mininter con un
+  informe de la Policía. Se separa crimen (minería ilegal, narcotráfico) de conflicto social y entran al modelo como
+  meses bajo emergencia en la zona.
 
 Código bajo la [licencia](LICENSE) del repositorio.

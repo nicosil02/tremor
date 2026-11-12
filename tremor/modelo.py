@@ -231,6 +231,10 @@ def panel(con):
     CGR = np.roll(G("cgr_con_responsabilidad"), 2, axis=1)  # se publica ~1 mes después de emitirse: 2 de margen
     CGR = ventana(CGR, 12)
     CGR[:, antes(2019)] = np.nan  # el buscador empieza en 2018
+    # Estados de emergencia por orden interno (El Peruano, tremor/gobierno.py): meses-distrito bajo emergencia en 12 meses
+    EMC, EMR = ventana(G("emergencia_conflicto"), 12), ventana(G("emergencia_crimen"), 12)
+    for x in (EMC, EMR):
+        x[:, antes(2011)] = np.nan  # la búsqueda empieza en 2010
     TOT, PRY = ventana(G("dev_total"), 12), ventana(G("dev_proyectos"), 12)
     INV = np.where(TOT > 0, PRY / np.where(TOT > 0, TOT, 1), np.nan)
     INV[:, antes(2011)] = np.nan
@@ -282,6 +286,7 @@ def panel(con):
          "zona_protestas_sin_fuerza_3": zona(ventana(P - F, 3)),  # marchas, plantones, pronunciamientos
          "zona_alza": zona(F3) - zona(ventana(F, 12)) / 4, "zona_emergencias_3": zona(EM),
          "zona_vacancias_12": zona(VAC), "zona_revocatorias_24": zona(REV), "zona_control_12": zona(CGR),
+         "zona_emergencia_conflicto_12": zona(EMC), "zona_emergencia_crimen_12": zona(EMR),
          "inversion_pct_gasto": np.clip(INV, 0, 1), "obras_vs_anio_previo": np.clip(CAE, -1, 5),
          "produccion_usd_12": np.log1p(PR12), "produccion_cambio_3": PRC,
          "zona_produccion_usd_12": np.log1p(zona(np.nan_to_num(PR12))) + 0 * PR12,
@@ -424,7 +429,7 @@ GRUPOS = {
                 "zona_protestas_sin_fuerza_3", "zona_alza", "zona_emergencias_3"],
     "calendario": ["mes_del_anio"],
     "gobierno": ["zona_vacancias_12", "zona_revocatorias_24", "zona_control_12", "inversion_pct_gasto",
-                 "obras_vs_anio_previo"],
+                 "obras_vs_anio_previo", "zona_emergencia_conflicto_12", "zona_emergencia_crimen_12"],
     "anomalias": ["anom_" + c for c in ANOMALIAS],
 }
 VARIABLES = [v for g in GRUPOS.values() for v in g]
@@ -853,8 +858,10 @@ def frase_cambio(g, r, n, sube):
             f"{r.zona_vacancias_12:.0f} pedidos de vacancia o reemplazos de autoridades en la zona en 12 meses" if r.zona_vacancias_12 > 0 else "",
             f"{r.zona_revocatorias_24:.0f} consultas de revocatoria en la zona en 2 años" if r.zona_revocatorias_24 > 0 else "",
             f"{r.zona_control_12:.0f} informes de la Contraloría con responsabilidad en la zona en 12 meses" if r.zona_control_12 > 0 else "",
+            "estado de emergencia por conflicto en la zona en el último año" if r.zona_emergencia_conflicto_12 > 0 else "",
+            "estado de emergencia por crimen o minería ilegal en la zona en el último año" if r.zona_emergencia_crimen_12 > 0 else "",
             f"el gasto en obras del municipio va {r.obras_vs_anio_previo:+.0%} frente al año anterior" if pd.notna(r.obras_vs_anio_previo) else "") if p]
-        return f"{signo}: " + ("; ".join(partes) or "sin vacancias, revocatorias ni informes de control en la zona")
+        return f"{signo}: " + ("; ".join(partes) or "sin vacancias, revocatorias, informes de control ni estados de emergencia en la zona")
     if g == "calendario":
         return f"{signo}: en {MESES[int(r.mes_del_anio) % 12]} suele haber {'más' if sube else 'menos'} protestas"
     if g == "economia":
