@@ -144,10 +144,21 @@ def cargar(con):
         buscar.setdefault(num, set()).add(frase)
         if vn:
             buscar.setdefault(vn, set()).add(vf)
+    # Las páginas ya buscadas se conservan: cada corrida solo baja el PDF del reporte nuevo. Una frase sin página se
+    # vuelve a buscar solo en los tres últimos reportes (allí la falla suele ser de descarga, no del texto).
+    recientes = {n for n, in con.execute("SELECT num FROM reporte ORDER BY num DESC LIMIT 3")}
+    previas = {}
+    for n, fr, p, vn, vf, vp in con.execute("SELECT reporte_num, frase, pagina, visto_num, visto_frase, visto_pagina FROM compromiso"):
+        previas[(n, fr)] = p
+        if vn:
+            previas[(vn, vf)] = vp
     for n, frases in sorted(buscar.items()):
-        if n in pdf and pdf[n][2] == "pdf":
+        paginas[n] = {fr: previas[(n, fr[:600])] for fr in frases
+                      if (n, fr[:600]) in previas and (previas[(n, fr[:600])] or n not in recientes)}
+        nuevas = frases - set(paginas[n])
+        if nuevas and n in pdf and pdf[n][2] == "pdf":
             textos = textos_pdf(pdf[n][1], pdf[n][0])
-            paginas[n] = {fr: pagina_real(textos, fr) for fr in frases}
+            paginas[n] |= {fr: pagina_real(textos, fr) for fr in nuevas}
     salida = []
     for caso, num, f, frase, estado, vn, vf in hallados:
         (url, p), (vurl, vp) = enlace(num, frase), (enlace(vn, vf) if vn else (None, None))
