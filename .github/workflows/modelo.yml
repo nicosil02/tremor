@@ -52,8 +52,10 @@ jobs:
           python -m tremor.produccion
           python -m tremor.empresas proyectos
 
-      - name: Estados de emergencia del mes en El Peruano
-        run: python -m tremor.gobierno emergencias || true
+      - name: Estados de emergencia (El Peruano) y huelgas mineras (MTPE) del mes
+        run: |
+          python -m tremor.gobierno emergencias || true
+          python -m tremor.huelgas || true
 
       - name: Modelo
         run: python -u -m tremor.modelo

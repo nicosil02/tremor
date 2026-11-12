@@ -400,6 +400,12 @@ def contexto(con, p):
     precios = precios.pivot_table(index="m", columns="serie", values="valor").sort_index()
     cambio = np.log(precios).diff(12).rename(columns={"PN01652XM": "cobre_12m", "PN01654XM": "oro_12m"})
     p = p.merge(cambio, left_on="m", right_index=True, how="left")
+    # Huelgas mineras del país en 12 meses (MTPE, tremor/huelgas.py). El reporte sale ~2 meses después: se corre 2.
+    try:
+        h = q("SELECT anio * 12 + mes - 1 AS m, huelgas FROM huelga_mes WHERE sector = 'mineria'").set_index("m").huelgas
+        p["huelgas_mineras_12"] = p.m.map(h.rolling(12).sum().shift(2))
+    except Exception:  # base sin la tabla: el modelo corre sin la variable
+        p["huelgas_mineras_12"] = np.nan
     return p.drop(columns=["anio", "anio_previo", "anio_eleccion", "ccdd", "pim_canon", "poblacion"]).sort_values(
         ["m", "ubigeo"]).reset_index(drop=True)
 
@@ -418,7 +424,7 @@ GRUPOS = {
     "territorio": ["comunidades", "comunidades_pct_territorio", "reserva_indigena_pct_territorio",
                    "lengua_indigena", "autoidentificacion_indigena", "rural", "anp_pct_territorio",
                    "amortiguamiento_pct_territorio", "estres_hidrico", "emergencias_3", "perdida_bosque_ha", "ronda_campesina"],
-    "economia": ["cobre_12m", "oro_12m", "canon_pc", "ejecucion_canon"],
+    "economia": ["cobre_12m", "oro_12m", "canon_pc", "ejecucion_canon", "huelgas_mineras_12"],
     "desarrollo": ["idh", "pobreza_sup", "pobreza_departamento", "sin_agua_red", "sin_electricidad"],
     "gobernanza": ["oficina_ambiental", "atiende_denuncias_ambientales", "participacion_formas", "personal_municipal"],
     "politica": ["meses_a_eleccion", "margen_victoria", "nep_listas", "participacion"],
@@ -743,7 +749,8 @@ def frase(g, r):
         return "; ".join(partes) or "concesiones mineras en el distrito"
     if g == "economia":
         canon = "" if pd.isna(r.canon_pc) else f"; canon S/ {r.canon_pc:,.0f} por habitante"
-        return f"cobre {r.cobre_12m:+.0%} y oro {r.oro_12m:+.0%} en 12 meses{canon}"
+        huelgas = "" if pd.isna(r.huelgas_mineras_12) else f"; {r.huelgas_mineras_12:.0f} huelgas mineras en el país en 12 meses"
+        return f"cobre {r.cobre_12m:+.0%} y oro {r.oro_12m:+.0%} en 12 meses{canon}{huelgas}"
     if g == "desarrollo":
         idh = "s/d" if pd.isna(r.idh) else f"{r.idh:.2f}"
         return (f"IDH {idh}; pobreza hasta {pct(r.pobreza_sup / 100 if pd.notna(r.pobreza_sup) else np.nan)}; "
