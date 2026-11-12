@@ -166,18 +166,35 @@ DICHO = ("Lees una nota de prensa o la transcripción automática, con errores, 
          "(por rol: un dirigente, un locutor, un comunero, una autoridad…), sin nombres de personas. Cuenta solo lo que se opina o "
          "informa SOBRE la operación: reclamos, apoyos, denuncias, acuerdos, anuncios. Si son saludos a trabajadores o vecinos, una "
          "mención de pasada, publicidad de la propia empresa, música o prédica, di exactamente \"no habla del proyecto\". "
-         "Di también el tono HACIA la empresa: \"favorable\" si cuenta algo bueno que hizo (una entrega, una obra, un programa, "
-         "un acuerdo, un premio) o alguien la apoya o la celebra; \"critica\" si alguien le reclama, la denuncia, la rechaza o "
-         "protesta contra ella, o se le atribuye un daño; \"neutra\" si solo informa sin juzgarla (un proceso judicial, una "
-         "cifra, un accidente sin culpable, un anuncio del Estado). "
-         'Responde JSON {"dicho": "<oración>", "tono": "favorable" | "critica" | "neutra"}.')
+         "\n\nDi el TONO: cómo queda la imagen de la empresa ante quien lee o escucha, no si la nota opina.\n"
+         "- \"critica\": la acusan, la denuncian, le reclaman, protestan contra ella, la sancionan, pierde un juicio o se le "
+         "atribuye un daño. Vale aunque el medio solo lo informe y aunque quien acusa sea poco creíble.\n"
+         "- \"favorable\": recibe un premio o reconocimiento, entrega algo, hace una obra o un programa, cumple un acuerdo, "
+         "gana un juicio, o alguien la apoya o la celebra.\n"
+         "- \"neutra\": la empresa es la víctima (un ataque, un robo, mineros ilegales en su concesión), cifras de producción, "
+         "un trámite, un juicio contra otros, o no queda ni bien ni mal.\n"
+         "Di el TEMA, uno solo: \"protesta\" (paro, bloqueo o marcha contra la empresa), \"judicial\" (juicios, fiscalía, "
+         "denuncias penales), \"dialogo\" (mesa, reunión, acuerdo), \"aporte\" (donación, obra o programa social), "
+         "\"reconocimiento\" (premio, certificación, ranking), \"ambiente\" (contaminación, agua, relaves), \"seguridad\" "
+         "(ataques, crimen, minería ilegal, accidentes), \"laboral\" (trabajadores, sindicato, huelga), \"otro\".\n"
+         "Ejemplos:\n"
+         "\"Las Bambas entrega camión volquete a la comunidad de Chila\" → favorable, aporte\n"
+         "\"Minera obtiene el Galardón Plata del Premio Iberoamericano de la Calidad\" → favorable, reconocimiento\n"
+         "\"Duro revés judicial para la minera: la comunidad sigue en alerta\" → critica, judicial\n"
+         "\"Detenido acusa a la minera de contratar sicarios\" → critica, judicial\n"
+         "\"Gobernador pide presencia del ejército tras ataque a la minera\" → neutra, seguridad\n"
+         "\"Fiscalía pide prisión para comuneros por las protestas contra la mina\" → neutra, judicial\n"
+         "\"Comuneros bloquean la vía y exigen que la minera cumpla el convenio\" → critica, protesta\n"
+         'Responde JSON {"dicho": "<oración>", "tono": "favorable" | "critica" | "neutra", "tema": "<tema>"}.')
 TONO_LLM = {"favorable": 1, "critica": -1, "crítica": -1}
+TEMAS_LLM = {"protesta", "judicial", "dialogo", "aporte", "reconocimiento", "ambiente", "seguridad", "laboral", "otro"}
 
 
 def tabla_dicho(con):
-    con.execute("CREATE TABLE IF NOT EXISTS mencion_dicho (nota_id TEXT, proyecto TEXT, dicho TEXT, tono INTEGER, PRIMARY KEY (nota_id, proyecto))")
-    if "tono" not in [c[1] for c in con.execute("PRAGMA table_info(mencion_dicho)")]:  # bases de antes del tono
-        con.execute("ALTER TABLE mencion_dicho ADD COLUMN tono INTEGER")
+    con.execute("CREATE TABLE IF NOT EXISTS mencion_dicho (nota_id TEXT, proyecto TEXT, dicho TEXT, tono INTEGER, tema TEXT, PRIMARY KEY (nota_id, proyecto))")
+    for col in {"tono": "INTEGER", "tema": "TEXT"}.items():  # bases de antes del tono y el tema
+        if col[0] not in [c[1] for c in con.execute("PRAGMA table_info(mencion_dicho)")]:
+            con.execute(f"ALTER TABLE mencion_dicho ADD COLUMN {col[0]} {col[1]}")
 
 
 def dicho(con, max_solicitudes=60):
@@ -191,21 +208,23 @@ def dicho(con, max_solicitudes=60):
     xs = con.execute("""SELECT m.nota_id, m.proyecto, CASE WHEN m.origen = 'radio' THEN n.resumen ELSE n.titular || '. ' || COALESCE(n.resumen, '') END
                         FROM mencion m JOIN nota n ON n.id = m.nota_id
                         WHERE m.fecha >= ? AND COALESCE(n.filtro, '') NOT IN ('religioso', 'musica_o_ruido', 'aviso', 'medio_extranjero')
-                          AND NOT EXISTS (SELECT 1 FROM mencion_dicho d WHERE d.nota_id = m.nota_id AND d.proyecto = m.proyecto AND d.tono IS NOT NULL)
+                          AND NOT EXISTS (SELECT 1 FROM mencion_dicho d WHERE d.nota_id = m.nota_id AND d.proyecto = m.proyecto AND d.tema IS NOT NULL)
                         ORDER BY m.fecha DESC""", (desde,)).fetchall()[:max_solicitudes]
     hechas = 0
     for nota_id, proyecto, texto in xs:
         mm = ALIAS[proyecto].search(texto) if proyecto in ALIAS else None
         trozo = texto[max(0, mm.start() - 400):mm.end() + 400] if mm else texto[:800]
         try:
-            r = chat_json(con, DICHO, f"Proyecto: {proyecto}\n\n{trozo}", "dicho2")
+            r = chat_json(con, DICHO, f"Proyecto: {proyecto}\n\n{trozo}", "dicho3")
         except SinCuota as e:
             print(f"  dicho de menciones pendiente: {str(e)[:80]}")
             break
         except RespuestaInvalida:
             continue
-        con.execute("INSERT OR REPLACE INTO mencion_dicho VALUES (?, ?, ?, ?)", (nota_id, proyecto, (r.get("dicho") or "").strip()[:300],
-                                                                              TONO_LLM.get(str(r.get("tono")).strip().lower(), 0)))
+        tema = str(r.get("tema")).strip().lower().replace("á", "a")
+        con.execute("INSERT OR REPLACE INTO mencion_dicho (nota_id, proyecto, dicho, tono, tema) VALUES (?, ?, ?, ?, ?)",
+                    (nota_id, proyecto, (r.get("dicho") or "").strip()[:300], TONO_LLM.get(str(r.get("tono")).strip().lower(), 0),
+                     tema if tema in TEMAS_LLM else "otro"))
         hechas += 1
     con.commit()
     return hechas

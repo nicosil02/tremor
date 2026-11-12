@@ -254,7 +254,7 @@ const EMPRESAS = {
   "Buenaventura": ["buenaventura", /buenaventura|uchucchacua|yumpag|tambomayo|orcopampa|julcani|san gabriel/i],
 };
 const MES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "set", "oct", "nov", "dic"];
-const TEMA = { protesta: "Protesta", judicial: "Proceso judicial", dialogo: "Diálogo", aporte: "Aporte social", ambiente: "Ambiente", otro: "En medios" };
+const TEMA = { protesta: "Protesta", judicial: "Proceso judicial", dialogo: "Diálogo", aporte: "Aporte social", ambiente: "Ambiente", reconocimiento: "Reconocimiento", seguridad: "Seguridad", laboral: "Laboral", otro: "En medios" };
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const titulo = s => String(s ?? "").toLowerCase().replace(/(^|[\s(-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
 const iso = d => new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
@@ -333,7 +333,7 @@ function armar() {
     avisos.push({ f: String(s.fecha_evento || HOY).slice(0, 10), urge: true, tipo: "Bloqueo", sutran: s, t: `Vía ${s.via} bloqueada`, w: "ahora",
       s: `${titulo(s.distrito || "")}, SUTRAN` });
   const alAire = m => /, en vivo /.test(m.titular || "");  // la radio no tiene titular: "Radio X, en vivo 09/11/2026 19:34 (5)"
-  for (const m of D.menciones || []) if (alias.test(m.proyecto || "") && (/protesta|judicial|dialogo/.test(m.tema) || (m.tema === "ambiente" && m.tono < 0)) && !avisos.some(x => x.e && x.e.titular === m.titular)
+  for (const m of D.menciones || []) if (alias.test(m.proyecto || "") && (/protesta|judicial|dialogo|seguridad/.test(m.tema) || (m.tema === "ambiente" && m.tono < 0)) && !avisos.some(x => x.e && x.e.titular === m.titular)
       && !(alAire(m) && avisos.some(x => x.m && alAire(x.m) && x.m.medio === m.medio && x.f === m.fecha)))  // un aviso por radio y día
     avisos.push({ f: m.fecha, urge: false, tipo: TEMA[m.tema] || "En medios", m, t: alAire(m) ? `Hablan de ${m.proyecto} en la radio` : m.titular.replace(/^[^:]{2,25}:\s*/, ""), w: dia(m.fecha),
       s: `${TEMA[m.tema] || "En medios"}, ${m.medio}` });
@@ -393,7 +393,7 @@ const VISTAS = {
       <p class="rep-ley">${["-1", "0", "1"].filter(t => nT(t)).map(t => `<button type="button" data-tono="${t}" aria-pressed="${TONO_F === t}"><i style="background:${TONO[t][0]}"></i>${nT(t)} ${TONO[t][1].toLowerCase()}${nT(t) > 1 ? "s" : ""}</button>`).join("")}${TONO_F ? `<button type="button" data-tono="${TONO_F}" class="todas">Ver todas</button>` : ""}</p>` : "";
     const rep = `<h2 id="reputacion">Reputación</h2><p class="rep-cab">${cab}</p>${barra}${an && an.aviso ? `<p class="rep-aviso">${esc(an.aviso.replace(/(\d{4})-(\d{2})-(\d{2})/g, (_, y, m, d) => dia(`${y}-${m}-${d}`)))}</p>` : ""}
       ${ms.length ? `<ul>${ms.map(m => { const k = X.avisos.findIndex(x => x.m === m), [col, tn] = TONO[String(m.tono)] || TONO["0"], aire = /, en vivo /.test(m.titular || "");
-        return `<li><button type="button" class="fila"${k >= 0 ? ` data-aviso="${k}"` : ` data-mencion="${D.menciones.indexOf(m)}"`}><i style="background:${col}"></i><span class="t">${esc(m.dicho || (aire ? `Hablan de ${m.proyecto} en ${m.medio}` : m.titular.replace(/^[^:]{2,25}:\s*/, "")))}</span><span class="w">${esc(dia(m.fecha))}</span><span class="s">${tn}, ${esc(TEMA[m.tema] || "en medios")}, ${esc(m.medio)}</span></button></li>`; }).join("")}</ul>`
+        return `<li><button type="button" class="fila"${k >= 0 ? ` data-aviso="${k}"` : ` data-mencion="${D.menciones.indexOf(m)}"`}><i style="background:${col}"></i><span class="t">${esc(m.dicho || (aire ? `Hablan de ${m.proyecto} en ${m.medio}` : m.titular.replace(/^[^:]{2,25}:\s*/, "")))}</span><span class="w">${esc(dia(m.fecha))}</span><span class="s">${tn}, ${esc(TEMA[m.tema] || "en medios")}, ${esc(m.medio)}${m.otros ? ` y ${m.otros} ${m.otros > 1 ? "medios" : "medio"} más` : ""}</span></button></li>`; }).join("")}</ul>`
         : `<p class="vacio">Nadie habló de la empresa en radios ni medios esta semana.</p>`}`;
     return hoy + (u.length ? `<h2>Atender</h2><ul>${u.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<h2>Atender</h2><p class="vacio">Nada anunciado en su zona ni en sus rutas.</p>`)
       + rep + `<h2>Para seguir</h2>` + (r.length ? `<ul>${r.map(x => filaAviso(x, X.avisos.indexOf(x))).join("")}</ul>` : `<p class="vacio">Sin protestas ni notas sobre la empresa.</p>`)
@@ -604,7 +604,7 @@ function detalleAviso(k) {
   if (x.m) { const m = x.m, tono = m.tono < 0 ? ["tono-neg", "Crítico con la empresa"] : m.tono > 0 ? ["tono-pos", "Favorable a la empresa"] : null;
     const aire = /, en vivo /.test(m.titular || ""), hora = aire ? (m.titular.match(/\d\d:\d\d/) || [""])[0] : "";
     // radio: lo que se dijo según el LLM como título, el fragmento literal entre comillas y el enlace para escucharla
-    return `<div class="nota"><h3>${esc(m.dicho || (aire ? `Hablan de ${m.proyecto} en la radio` : m.titular))}</h3><p class="meta">${esc(m.medio)}, ${dia(m.fecha)}${hora ? ` ${hora}` : ""}${tono && m.tema !== "judicial" ? `. <b class="${tono[0]}">${tono[1]}</b>` : ""}</p>
+    return `<div class="nota"><h3>${esc(m.dicho || (aire ? `Hablan de ${m.proyecto} en la radio` : m.titular))}</h3><p class="meta">${esc(m.medio)}${m.otros ? ` y ${m.otros} ${m.otros > 1 ? "medios" : "medio"} más` : ""}, ${dia(m.fecha)}${hora ? ` ${hora}` : ""}${tono ? `. <b class="${tono[0]}">${tono[1]}</b>` : ""}</p>
       ${m.resumen ? `<blockquote class="cita">«${esc(m.resumen)}»${aire ? `<small>Transcripción automática del fragmento; puede tener errores.</small>` : ""}</blockquote>` : ""}<a class="ir" href="${esc(m.enlace)}" target="_blank" rel="noopener">${aire ? "Escuchar" : "Leer en"} ${esc(m.medio)}</a></div>`; }
   if (x.sutran) { const s = x.sutran;
     return `<div class="nota"><h3>${esc(x.t)}</h3><p class="meta">${esc(titulo(s.distrito || ""))}, ${esc(titulo(s.region || ""))}${s.km ? `, km ${esc(s.km)}` : ""}. Según SUTRAN.</p>

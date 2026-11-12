@@ -481,3 +481,18 @@ def test_tono_de_la_mencion_lo_da_el_llm(monkeypatch):
     assert animo.dicho(con) == 1 and animo.dicho(con) == 0  # con tono ya no se vuelve a pedir
     m, a = animo.actualizar(con, date.today())
     assert m.tono.iloc[0] == 1 and a.set_index("proyecto").pct_negativo.max() == 0
+
+
+def test_la_misma_noticia_en_dos_medios_cuenta_una():
+    import pandas as pd
+    from tremor.web import una_por_historia
+    f = lambda medio, titular, dicho, fecha="2026-11-10", origen="web": dict(proyecto="Poderosa", medio=medio, titular=titular, dicho=dicho, fecha=fecha, origen=origen)
+    m = pd.DataFrame([
+        f("Minart", "Compañía Minera Poderosa obtiene el Galardón Plata del Premio Iberoamericano de la Calidad 2026", None),
+        f("ProActivo", "Minera Poderosa obtiene el Galardón Plata del Premio Iberoamericano de la Calidad 2026", None),
+        f("Macronorte", "Duro revés judicial para Minera Poderosa: Sartimbamba sigue en alerta", None),
+        f("Radio A", "Radio A, en vivo 10/11/2026 08:00 (1)", "Un locutor anunció que la minera convoca proveedores locales para un concurso.", origen="radio"),
+        f("Radio B", "Radio B, en vivo 11/11/2026 09:00 (3)", "Un locutor anunció que la minera convoca a proveedores locales para su concurso.", "2026-11-11", "radio"),
+        f("ProActivo", "Minera Poderosa obtiene el Galardón Plata del Premio Iberoamericano de la Calidad 2026", None, "2026-10-01")])  # otro mes: otra historia
+    r = una_por_historia(m)
+    assert list(r.medio) == ["Minart", "Macronorte", "Radio A", "ProActivo"] and list(r.otros) == [1, 0, 1, 0]
