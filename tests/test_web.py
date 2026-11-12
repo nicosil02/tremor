@@ -79,3 +79,17 @@ def test_distritos_nombrados_en_la_provincia():
     assert sorted(distritos_nombrados(t, "1501")) == ["150117", "150135"]
     assert distritos_nombrados(t, "150135") == []           # ya está en un distrito
     assert distritos_nombrados("Paro de docentes en Lima", "1501") == []   # "Lima" es la provincia: no es un distrito
+
+
+def test_emergencia_vigente_hoy():
+    import sqlite3
+    from datetime import date
+    from tremor.web import emergencia_hoy
+    con = sqlite3.connect(":memory:")
+    assert emergencia_hoy(con) == {}  # base sin decretos
+    con.executescript("""CREATE TABLE decreto_emergencia (id, titulo, causas, inicio, dias, lugares);
+        CREATE TABLE distrito_mes (ubigeo, m, variable, valor);
+        INSERT INTO decreto_emergencia VALUES ('a', 't', 'crimen', '2026-10-20', 60, '["130801"]'), ('b', 't', 'hereda', '2026-11-01', 30, '["080907"]'),
+            ('c', 't', 'conflicto', '2026-08-01', 30, '["040101"]'), ('d', 't', NULL, '2026-11-01', 60, '["150101"]');
+        INSERT INTO distrito_mes VALUES ('130801', 24322, 'emergencia_crimen', 1), ('080907', 24322, 'emergencia_conflicto', 1);""")
+    assert emergencia_hoy(con, date(2026, 11, 12)) == {"130801": "crimen", "080907": "conflicto"}  # la vencida y la que no es de orden interno, fuera
