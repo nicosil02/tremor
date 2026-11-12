@@ -423,11 +423,11 @@ def menciones(con):
     fragmento. Una por titular (la misma nota llega por el feed del medio y por Google News: se queda el enlace directo)."""
     desde = (date.today() - timedelta(days=30)).isoformat()
     con.execute("CREATE TABLE IF NOT EXISTS nota_tema (nota_id TEXT PRIMARY KEY, tema TEXT, p_tema REAL, tono INTEGER, p_tono REAL)")
-    # el tono lo da el LLM que resume la mención (tremor.animo.dicho); si aún no la leyó, el del transformer
-    # (tremor.clasifica, que también da el tema) y al final el del léxico
+    # el tono y el tema los da el LLM que resume la mención (tremor.animo.dicho); si aún no la leyó, los del
+    # transformer (tremor.clasifica) y, para el tono, al final el del léxico
     from tremor.animo import tabla_dicho
     tabla_dicho(con)
-    m = tabla(con, "SELECT m.proyecto, m.fecha, m.medio, m.origen, COALESCE(d.tono, t.tono, m.tono) AS tono, t.tema, n.titular, n.resumen, n.enlace, "
+    m = tabla(con, "SELECT m.proyecto, m.fecha, m.medio, m.origen, COALESCE(d.tono, t.tono, m.tono) AS tono, COALESCE(d.tema, t.tema) AS tema, n.titular, n.resumen, n.enlace, "
                    "d.dicho "
                    "FROM mencion m JOIN nota n ON n.id = m.nota_id LEFT JOIN nota_tema t ON t.nota_id = m.nota_id "
                    "LEFT JOIN mencion_dicho d ON d.nota_id = m.nota_id AND d.proyecto = m.proyecto "
@@ -436,12 +436,34 @@ def menciones(con):
     if not len(m):
         return []
     m["google"] = m.enlace.str.contains("news.google")
-    m = m.sort_values(["google", "fecha"], ascending=[True, False]).drop_duplicates(["proyecto", "titular"]).sort_values("fecha", ascending=False)
+    m = m.sort_values(["google", "fecha"], ascending=[True, False]).drop_duplicates(["proyecto", "titular"])
+    m = una_por_historia(m).sort_values("fecha", ascending=False)
     m["resumen"] = m.resumen.fillna("").str.split(r'"use strict"|The post |\[…\]', regex=True).str[0].str.strip()
     # en radio, el fragmento alrededor de donde se nombra al proyecto; en prensa, el inicio del resumen
     from tremor.animo import ALIAS
     m["resumen"] = [alrededor(t, ALIAS.get(p)) or t[:300] if o == "radio" else t[:300] for t, o, p in zip(m.resumen, m.origen, m.proyecto)]
     return registros(m.drop(columns="google"))
+
+
+def una_por_historia(m, dias=4):
+    """La misma noticia en varios medios, o el mismo anuncio repetido en la radio, cuenta una vez: queda la primera fila
+    (el orden de llegada ya prefiere el enlace directo) y en `otros` cuántos medios más la dieron. Es la misma historia
+    si, para el mismo proyecto y a pocos días, comparten la mitad de las palabras del titular o de la oración del LLM.
+    ponytail: parecido de palabras, sin modelo; si junta historias distintas, subir el umbral."""
+    pal = lambda s: set(re.findall(r"[a-z0-9]{4,}", _norm(s if isinstance(s, str) else "")))
+    parecido = lambda a, b: len(a & b) / len(a | b) if a and b else 0
+    vistas, quedan, otros = {}, [], {}
+    for i, r in m.iterrows():
+        t = pal(r.titular) if r.origen != "radio" else set()  # el titular de la radio es la emisora y la hora
+        d, f = pal(r.dicho), date.fromisoformat(r.fecha)
+        igual = next((j for j, t2, d2, f2 in vistas.get(r.proyecto, []) if abs((f - f2).days) <= dias
+                      and (parecido(t, t2) >= 0.5 or parecido(d, d2) >= 0.6)), None)
+        if igual is None:
+            vistas.setdefault(r.proyecto, []).append((i, t, d, f))
+            quedan.append(i)
+        elif r.medio != m.medio[igual]:
+            otros[igual] = otros.get(igual, 0) + 1
+    return m.loc[quedan].assign(otros=[otros.get(i, 0) for i in quedan])
 
 
 def alrededor(texto, rx, ancho=150):
