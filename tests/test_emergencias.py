@@ -73,3 +73,15 @@ def test_distritos_del_anexo_y_frases_que_quedaban_sin_lugar():
     base = "Fecha de publicación: 06/03/2024 CONSIDERANDO: Que, hay bloqueos; DECRETA: Artículo 1.- {} La Policía Nacional del Perú mantiene el control del orden interno. Artículo 2.- x"
     assert leer_decreto(base.format("Prorrogar por treinta (30) días calendario el Estado de Emergencia declarado en el Corredor Vial Sur Apurímac-Cusco-Arequipa."))["vias"] == "sur"
     assert leer_decreto(base.format("Declarar el Estado de Emergencia en los establecimientos penitenciarios de alta peligrosidad.")) is None
+
+
+def test_frases_de_cajon_no_son_el_motivo():
+    # DS de Puno 2023: cita la finalidad de la Policía y el D. Leg. 1095; el motivo eran las protestas, no el crimen
+    from tremor.gobierno import leer_decreto
+    t = ("Fecha de publicación: 07/04/2023 CONSIDERANDO: Que, la Policía Nacional tiene por finalidad garantizar el orden interno; "
+         "así como, prevenir, investigar y combatir la delincuencia; Que, el Decreto Legislativo N° 1095 establece el apoyo de las "
+         "Fuerzas Armadas en casos de tráfico ilícito de drogas, terrorismo o protección de instalaciones estratégicas; DECRETA: "
+         "Artículo 1.- Prorrogar, por sesenta (60) días calendario, el Estado de Emergencia en el departamento Puno, donde el "
+         "control del orden interno se encuentra a cargo de las Fuerzas Armadas. Artículo 2.- x")
+    assert leer_decreto(t)["causas"] == {"hereda"}
+    assert leer_decreto(t.replace("DECRETA:", "Que, persiste el accionar de organizaciones criminales; DECRETA:"))["causas"] == {"crimen"}

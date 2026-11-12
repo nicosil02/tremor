@@ -387,6 +387,10 @@ def leer_decreto(texto: str) -> dict | None:
         return None
     c = texto.rfind("CONSIDERANDO", 0, k)
     motivo = (texto[c if c >= 0 else max(0, k - 2500):k] + art1).lower()  # el PDF trae otras normas antes
+    # frases de cajón que citan casi todos (la finalidad de la Policía y el D. Leg. 1095): no son el motivo. Sin
+    # quitarlas, la emergencia de Puno por las protestas de 2023 salía como crimen
+    motivo = re.sub(r"prevenir, investigar y combatir la delincuencia|en (?:los )?casos de tr[aá]fico il[ií]cito de drogas, "
+                    r"terrorismo [oy] protecci[oó]n de instalaciones estrat[eé]gicas", " ", motivo)
     crimen = CRIMEN_DS.search(motivo)
     causas = {c for c, si in (("crimen", crimen), ("conflicto", CONFLICTO_DS.search(motivo))) if si}
     if not causas:  # sin motivo nombrado: la prórroga hereda la causa del decreto anterior; la declaratoria es conflicto
@@ -482,8 +486,8 @@ def emergencias(con, desde=2006, max_meses=24, releer=False):
                 pass
         return (",".join(sorted(d.get("causas", ()))) or None, str(d.get("inicio") or "") or None, d.get("dias"),
                 json.dumps(sorted(d.get("lugares", ()))))
-    if releer:  # tras mejorar la lectura de lugares: vuelve a leer los que tienen causa y quedaron sin distritos
-        for i, titulo in con.execute("SELECT id, titulo FROM decreto_emergencia WHERE causas IS NOT NULL AND lugares = '[]'").fetchall():
+    if releer:  # tras cambiar una regla: vuelve a leer con las reglas de hoy los que tienen causa
+        for i, titulo in con.execute("SELECT id, titulo FROM decreto_emergencia WHERE causas IS NOT NULL").fetchall():
             con.execute("UPDATE decreto_emergencia SET causas = ?, inicio = ?, dias = ?, lugares = ? WHERE id = ?", (*fila(i, titulo), i))
             con.commit()
     hoy = date.today().year * 12 + date.today().month - 1
