@@ -27,3 +27,10 @@ def test_ubicar_nota_de_mineria_ilegal():
     assert ubicar_ilegal("PNP inmoviliza maquinaria en Yanahuaya por minería ilegal", "Puno", idx, deps) == "211208"
     assert ubicar_ilegal("La minería ilegal amenaza el futuro de Cajamarca", "Cajamarca", idx, deps) is None  # la región, no la provincia
     assert ubicar_ilegal("Operativo contra la minería ilegal en Yanahuaya", None, idx, deps) is None  # sin departamento que la ancle
+
+
+def test_nombres_que_el_reinfo_escribe_distinto():
+    from collections import Counter
+    from tremor.reinfo import por_ubigeo
+    out, fuera = por_ubigeo(Counter({("ICA", "NASCA", "NASCA"): 81, ("PUNO", "SANDIA", "PHARA"): 2, ("X", "Y", "Z"): 1}))
+    assert out == {"110301": 81, "211205": 2} and fuera == 1

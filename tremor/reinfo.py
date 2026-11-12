@@ -4,7 +4,7 @@ El registro es público (pad.minem.gob.pe/REINFO_WEB) y se consulta por páginas
 lugar del derecho minero: nunca el nombre ni el RUC del declarante. Sale a distrito_variable como `reinfo_vigentes`
 (foto, anio 0). Una inscripción en el REINFO es minería informal en vías de formalización; la ilegal no se registra.
 
-    python -m tremor.reinfo            # ~950 páginas, unos 25 min; si se corta, al repetir sigue donde quedó
+    python -m tremor.reinfo            # ~950 páginas, cerca de una hora; si se corta, al repetir sigue donde quedó
 """
 import json
 import sys
@@ -76,11 +76,17 @@ def bajar(pausa=1.0):
     return Counter({tuple(k.split("|")): v for k, v in n.items()})
 
 
+# Distritos que el REINFO escribe distinto que el catálogo del INEI
+OTRO_NOMBRE = {("ICA", "NASCA", "NASCA"): "110301", ("ANCASH", "HUARAZ", "PAMPAS GRANDE"): "020109",
+               ("TACNA", "TACNA", "CORONEL GREGORIO ALBARRACIN LANCHIPA"): "230110",
+               ("HUANUCO", "HUANUCO", "QUISQUI (KICHKI)"): "100106", ("APURIMAC", "AYMARAES", "IHUAYLLO"): "030407"}
+
+
 def por_ubigeo(conteo):
     """{ubigeo: inscripciones} y cuántas quedaron sin distrito reconocido."""
     out, fuera = Counter(), 0
     for (dep, prov, dist), v in conteo.items():
-        u, precision = resolver(region=dep, provincia=prov, distrito=dist)
+        u = OTRO_NOMBRE.get((dep, prov, dist)) or resolver(region=dep, provincia=prov, distrito=dist)[0]
         if u and len(u) == 6:
             out[u] += v
         else:
