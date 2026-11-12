@@ -555,7 +555,7 @@ function informal(zona) {
   const ns = I.notas.filter(n => n.ubigeo.length === 6 ? zona.has(n.ubigeo) : zs.some(z => z.startsWith(n.ubigeo))).slice(0, 3);
   if (!total && !cs.length && !ns.length) return "";
   return `<h2>Minería informal e ilegal</h2><p class="nota-fuente">REINFO del MINEM, Defensoría y prensa de 60 días</p><ul class="por">
-    ${total ? `<li>${total.toLocaleString("es-PE")} ${total === 1 ? "inscripción vigente" : "inscripciones vigentes"} de mineros en formalización en la zona${rs.length > 1 ? `; la mayoría en ${esc(titulo(lugar(rs[0][0])).split(",")[0])} (${rs[0][1].toLocaleString("es-PE")})` : ""}</li>` : `<li>Sin mineros en formalización registrados en la zona</li>`}
+    ${total ? `<li>${total.toLocaleString("es-PE")} ${total === 1 ? "inscripción vigente" : "inscripciones vigentes"} de mineros en formalización en la zona${rs.length > 1 ? `; la mayoría en ${esc(titulo(lugar(rs[0][0])).split(",")[0])} (${rs[0][1].toLocaleString("es-PE")})` : ""}</li>` : Object.keys(I.reinfo).length ? `<li>Sin mineros en formalización registrados en la zona</li>` : ""}
     ${cs.length ? `<li>${cs.length} ${cs.length === 1 ? "conflicto" : "conflictos"} ante la Defensoría por minería ilegal o informal</li>` : ""}</ul>
     ${ns.map(m => `<a class="fuente" href="${esc(m.enlace)}" target="_blank" rel="noopener"><small>${esc(m.medio)}, ${esc(dia(m.fecha))}</small>${esc(m.titular)}</a>`).join("")}`;
 }
