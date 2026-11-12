@@ -8,6 +8,7 @@ import argparse
 import html
 import json
 import re
+import sqlite3
 import sys
 import time
 from collections import Counter, defaultdict
@@ -332,14 +333,38 @@ def lugares_decreto(art1: str) -> set[str]:
     prov = lambda pat, s: {c for n in nombres(pat, s, provincias) for c in provincias[n] if c[:2] in deps}
     salida = set()
     corta = lambda s: re.split(r" para | a fin | con la finalidad| la policia| las fuerzas", s)[0]
-    for tramo in (u for s in t.split(" puntoycoma ") for u in re.split(r" (?:en|por|emergencia) (?=(?:el|los|la|las) (?:distritos?|provincias?) )", re.sub(r"^(?:y )?en ", "", corta(s)))):
+    for tramo in (u for s in t.split(" puntoycoma ") for u in re.split(r" (?:en|por|emergencia|dias) (?=(?:el|los|la|las) (?:distritos?|provincias?) )", re.sub(r"^(?:y )?en ", "", corta(s)))):
         enteras = prov(r"^(?:\w+ )*?(?:la|las) provincias? del? (.+?)" + hasta, tramo) if re.match(r"(?:la|las) provincia", tramo) else set()
         ubica = prov(r"de (?:la|las) provincias? del? (.+?)" + hasta, tramo)
-        ds = nombres(r"distritos? del? (.+?)" + hasta, tramo, distritos)
+        ds = nombres(r"distritos? (?:fronterizos? )?del? (.+?)" + hasta, tramo, distritos)
         salida |= {u for c in distritos.values() for u in c if u[:4] in enteras}
         salida |= {u for n in ds for u in distritos[n] if u[:2] in deps and (u[:4] in ubica or not ubica)}
         if not enteras and not ds and not re.search(r"distrito|provincia", tramo):
-            salida |= {u for c in distritos.values() for u in c if u[:2] in {regiones[n] for n in nombres(r"departamentos? del? (.+?)$", tramo, regiones)}}
+            salida |= {u for c in distritos.values() for u in c if u[:2] in {regiones[n] for n in nombres(r"departamentos? (?:del? )?(.+?)$", tramo, regiones)}}
+    return salida
+
+
+def lugares_anexo(anexo: str) -> set[str]:
+    """Distritos del anexo de un decreto ("en los distritos que se indican en el Anexo"): una tabla numerada con distrito,
+    provincia y departamento, donde la provincia y el departamento solo se escriben en la primera fila de su grupo.
+    Un nombre repetido en el país se resuelve con la provincia vigente; si aun así es ambiguo, no entra."""
+    from tremor.lugares import catalogo
+    regiones, provincias, distritos, _ = catalogo()
+    t = norm(anexo).replace("kimbiri", "quimbiri").replace("tintaypuncu", "tintay puncu")  # como los escribe el INEI
+    deps = {c for n, c in regiones.items() if re.search(rf"\b{n}\b", t)}
+    largo = lambda w, tabla: next((" ".join(w[a:a + k]) for a in range(min(2, len(w))) for k in range(min(5, len(w) - a), 0, -1)
+                                   if " ".join(w[a:a + k]) in tabla), None)
+    salida, prov = set(), set()
+    for fila in re.split(r" \d{1,3} (?=[a-z])", " " + t.split(" total ")[0])[1:]:  # la cabecera queda fuera
+        w = fila.split()
+        d = largo(w, distritos)
+        resto = fila.replace(d, " ", 1) if d else fila
+        p = largo(resto.split(), provincias)
+        if p and {c for c in provincias[p] if c[:2] in deps}:
+            prov = {c for c in provincias[p] if c[:2] in deps}
+        cand = {u for u in distritos.get(d, ()) if u[:2] in deps}
+        cand = {u for u in cand if u[:4] in prov} or (cand if len(cand) == 1 else set())
+        salida |= cand
     return salida
 
 
@@ -354,6 +379,9 @@ def leer_decreto(texto: str) -> dict | None:
     # Cocachacra"), el decreto suspende derechos constitucionales. Invocar el artículo 137 no basta: antes de 2011
     # también lo invocaban los de heladas, sismos y plagas. La emergencia nacional del COVID suspende derechos y no cuenta.
     cuerpo = texto[max(0, k - 5000):k + 4000]
+    # no declara ni prorroga nada en un territorio: precisiones a otro decreto y la emergencia en los penales
+    if re.search(r"prec[ií]s|establecimientos penitenciarios", art1[:400], re.I):
+        return None
     if re.search(r"covid|emergencia nacional|emergencia sanitaria", cuerpo, re.I) or not (
             ORDEN.search(art1.lower()) or re.search(r"suspen\w+ (?:d?el ejercicio de )?(?:los )?derechos constitucionales", cuerpo, re.I)):
         return None
@@ -373,7 +401,13 @@ def leer_decreto(texto: str) -> dict | None:
     else:
         return None
     dias = re.search(r"\((\d+)\) d[ií]as", art1)
-    return {"causas": causas, "inicio": f, "dias": int(dias[1]) if dias else 30, "lugares": lugares_decreto(art1)}
+    lugares = lugares_decreto(art1)
+    if not lugares and "ANEXO:" in texto:  # "en los distritos que se indican en el Anexo"
+        lugares = lugares_anexo(texto.split("ANEXO:", 1)[1])
+    # sin distritos porque nombra la carretera: emergencias() pone los de la vía (tabla distrito_corredor). La
+    # emergencia en toda la Red Vial Nacional queda sin distritos: marcaría medio país y no distingue a nadie.
+    vias = "sur" if not lugares and re.search(r"corredor vial sur", art1, re.I) else None
+    return {"causas": causas, "inicio": f, "dias": int(dias[1]) if dias else 30, "lugares": lugares, "vias": vias}
 
 
 def _peruano(binario=False, **params):
@@ -426,7 +460,10 @@ def texto_decreto(i, titulo="") -> str:
         t = (re.search(r"Fecha de publicaci[oó]n: \d\d/\d\d/\d{4}", t) or [""])[0] + " " + cuerpo[aqui[-1] if aqui else 0:]
     k = max(t.find("DECRETA:"), t.find("DECRETA :"))
     pub = re.search(r"Fecha de publicaci[oó]n: \d\d/\d\d/\d{4}", t)
-    return (pub[0] + " " if pub else "") + t[max(0, k - 8000):k + 2500] if k >= 0 else ""
+    firma = max(k, t.find("Dado en la Casa de Gobierno", k))
+    a = re.search("anexo", t[firma:], re.I)  # la tabla de distritos, tras las firmas
+    anexo = " ANEXO: " + t[firma + a.start():firma + a.start() + 6000] if a else ""
+    return (pub[0] + " " if pub else "") + t[max(0, k - 8000):k + 2500] + anexo if k >= 0 else ""
 
 
 def emergencias(con, desde=2006, max_meses=24, releer=False):
@@ -436,12 +473,18 @@ def emergencias(con, desde=2006, max_meses=24, releer=False):
     con.execute("""CREATE TABLE IF NOT EXISTS decreto_emergencia (id TEXT PRIMARY KEY, titulo TEXT, causas TEXT,
                    inicio TEXT, dias INTEGER, lugares TEXT)""")
     con.execute("CREATE TABLE IF NOT EXISTS decreto_emergencia_mes (m INTEGER PRIMARY KEY)")
-    if releer:  # tras hacer más estricta la regla: vuelve a leer los que tienen causa (los demás seguirían fuera)
-        for i, titulo in con.execute("SELECT id, titulo FROM decreto_emergencia WHERE causas IS NOT NULL").fetchall():
-            d = leer_decreto(texto_decreto(i, titulo)) or {}
-            con.execute("UPDATE decreto_emergencia SET causas = ?, inicio = ?, dias = ?, lugares = ? WHERE id = ?",
-                        (",".join(sorted(d.get("causas", ()))) or None, str(d.get("inicio") or "") or None, d.get("dias"),
-                         json.dumps(sorted(d.get("lugares", ()))), i))
+    def fila(i, titulo):  # (causas, inicio, días, lugares) como se guardan; las carreteras, por sus distritos
+        d = leer_decreto(texto_decreto(i, titulo)) or {}
+        if d.get("vias"):
+            try:
+                d["lugares"] = {u for (u,) in con.execute("SELECT DISTINCT ubigeo FROM distrito_corredor WHERE corredor = 'Corredor Minero del Sur'")}
+            except sqlite3.OperationalError:  # sin la tabla (python -m tremor.distritos vias)
+                pass
+        return (",".join(sorted(d.get("causas", ()))) or None, str(d.get("inicio") or "") or None, d.get("dias"),
+                json.dumps(sorted(d.get("lugares", ()))))
+    if releer:  # tras mejorar la lectura de lugares: vuelve a leer los que tienen causa y quedaron sin distritos
+        for i, titulo in con.execute("SELECT id, titulo FROM decreto_emergencia WHERE causas IS NOT NULL AND lugares = '[]'").fetchall():
+            con.execute("UPDATE decreto_emergencia SET causas = ?, inicio = ?, dias = ?, lugares = ? WHERE id = ?", (*fila(i, titulo), i))
             con.commit()
     hoy = date.today().year * 12 + date.today().month - 1
     hechos = {m for (m,) in con.execute("SELECT m FROM decreto_emergencia_mes")}
@@ -451,10 +494,7 @@ def emergencias(con, desde=2006, max_meses=24, releer=False):
         for i, titulo in decretos_mes(m).items():
             if i in vistos:
                 continue
-            d = leer_decreto(texto_decreto(i, titulo)) or {}
-            con.execute("INSERT OR REPLACE INTO decreto_emergencia VALUES (?, ?, ?, ?, ?, ?)",
-                        (i, titulo, ",".join(sorted(d.get("causas", ()))) or None, str(d.get("inicio") or "") or None,
-                         d.get("dias"), json.dumps(sorted(d.get("lugares", ())))))
+            con.execute("INSERT OR REPLACE INTO decreto_emergencia VALUES (?, ?, ?, ?, ?, ?)", (i, titulo, *fila(i, titulo)))
         if m < hoy - 1:
             con.execute("INSERT OR IGNORE INTO decreto_emergencia_mes VALUES (?)", (m,))
         con.commit()
