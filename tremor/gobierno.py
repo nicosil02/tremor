@@ -328,11 +328,11 @@ def lugares_decreto(art1: str) -> set[str]:
     def nombres(pat, s, tabla):  # el nombre conocido más largo al inicio de cada trozo ("leoncio prado circunscripciones")
         trozos = [n.split() for m in re.finditer(pat, s) for n in LISTA.split(m[1])]
         return [n for w in trozos for n in [next((" ".join(w[:k]) for k in range(len(w), 0, -1) if " ".join(w[:k]) in tabla), None)] if n]
-    hasta = r"(?= de la provincia| de las provincias| del? departamento| de los departamentos| en | de la region| los distritos| el distrito|$)"
+    hasta = r"(?= de la provincia| de las provincias| del? departamento| y departamento| de los departamentos| en | de la region| los distritos| el distrito|$)"
     prov = lambda pat, s: {c for n in nombres(pat, s, provincias) for c in provincias[n] if c[:2] in deps}
     salida = set()
     corta = lambda s: re.split(r" para | a fin | con la finalidad| la policia| las fuerzas", s)[0]
-    for tramo in (u for s in t.split(" puntoycoma ") for u in re.split(r" (?:en|por) (?=(?:el|los|la|las) (?:distritos?|provincias?) )", re.sub(r"^(?:y )?en ", "", corta(s)))):
+    for tramo in (u for s in t.split(" puntoycoma ") for u in re.split(r" (?:en|por|emergencia) (?=(?:el|los|la|las) (?:distritos?|provincias?) )", re.sub(r"^(?:y )?en ", "", corta(s)))):
         enteras = prov(r"^(?:\w+ )*?(?:la|las) provincias? del? (.+?)" + hasta, tramo) if re.match(r"(?:la|las) provincia", tramo) else set()
         ubica = prov(r"de (?:la|las) provincias? del? (.+?)" + hasta, tramo)
         ds = nombres(r"distritos? del? (.+?)" + hasta, tramo, distritos)
@@ -351,8 +351,11 @@ def leer_decreto(texto: str) -> dict | None:
         return None
     art1 = re.split(r"Art[ií]culo 2\b", texto[k:k + 2500])[0]
     # de orden interno: lo dice el artículo 1 o, en los antiguos ("Prorrogar el Estado de Emergencia en el distrito de
-    # Cocachacra"), el decreto invoca el artículo 137 de la Constitución; los de desastres van por la ley del SINAGERD
-    if not ORDEN.search(art1.lower()) and not re.search("art[ií]culo 137", texto[max(0, k - 5000):k + 3000], re.I):
+    # Cocachacra"), el decreto suspende derechos constitucionales. Invocar el artículo 137 no basta: antes de 2011
+    # también lo invocaban los de heladas, sismos y plagas. La emergencia nacional del COVID suspende derechos y no cuenta.
+    cuerpo = texto[max(0, k - 5000):k + 4000]
+    if re.search(r"covid|emergencia nacional|emergencia sanitaria", cuerpo, re.I) or not (
+            ORDEN.search(art1.lower()) or re.search(r"suspen\w+ (?:d?el ejercicio de )?(?:los )?derechos constitucionales", cuerpo, re.I)):
         return None
     c = texto.rfind("CONSIDERANDO", 0, k)
     motivo = (texto[c if c >= 0 else max(0, k - 2500):k] + art1).lower()  # el PDF trae otras normas antes
@@ -433,13 +436,13 @@ def emergencias(con, desde=2006, max_meses=24, releer=False):
     con.execute("""CREATE TABLE IF NOT EXISTS decreto_emergencia (id TEXT PRIMARY KEY, titulo TEXT, causas TEXT,
                    inicio TEXT, dias INTEGER, lugares TEXT)""")
     con.execute("CREATE TABLE IF NOT EXISTS decreto_emergencia_mes (m INTEGER PRIMARY KEY)")
-    if releer:  # tras cambiar la regla: vuelve a leer los que quedaron sin causa (desastres, o los que la regla no entendió)
-        natural = re.compile("desastre|peligro|lluvia|sanitaria|h[ií]dric|helada|sismo|contaminaci|huaico|incendio|friaje|"
-                             "sequ[ií]a|inundaci|ambiental|bajas temperaturas|Fuerzas Armadas|Exoneran", re.I)
-        con.executemany("DELETE FROM decreto_emergencia WHERE id = ?", [(i,) for i, t in con.execute(
-            "SELECT id, titulo FROM decreto_emergencia WHERE causas IS NULL") if not natural.search(t or "")])
-        con.execute("DELETE FROM decreto_emergencia_mes")
-        con.commit()
+    if releer:  # tras hacer más estricta la regla: vuelve a leer los que tienen causa (los demás seguirían fuera)
+        for i, titulo in con.execute("SELECT id, titulo FROM decreto_emergencia WHERE causas IS NOT NULL").fetchall():
+            d = leer_decreto(texto_decreto(i, titulo)) or {}
+            con.execute("UPDATE decreto_emergencia SET causas = ?, inicio = ?, dias = ?, lugares = ? WHERE id = ?",
+                        (",".join(sorted(d.get("causas", ()))) or None, str(d.get("inicio") or "") or None, d.get("dias"),
+                         json.dumps(sorted(d.get("lugares", ()))), i))
+            con.commit()
     hoy = date.today().year * 12 + date.today().month - 1
     hechos = {m for (m,) in con.execute("SELECT m FROM decreto_emergencia_mes")}
     pendientes = [m for m in range(desde * 12, hoy - 1) if m not in hechos][:max_meses] + [hoy - 1, hoy]

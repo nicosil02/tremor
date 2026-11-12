@@ -47,3 +47,13 @@ def test_decreto_antiguo_sin_decir_orden_interno():
          "Artículo 2º.- Suspensión del ejercicio de Derechos Constitucionales.")
     d = leer_decreto(t)
     assert d["inicio"] == date(2007, 4, 1) and d["dias"] == 15 and d["lugares"] == {"040702"} and d["causas"] == {"hereda"}
+
+
+def test_articulo_137_solo_no_basta():
+    # antes de 2011 las heladas y los sismos también invocaban el artículo 137; el COVID suspende derechos y no cuenta
+    from tremor.gobierno import leer_decreto
+    base = "Fecha de publicación: 15/06/2007 CONSIDERANDO: Que, el artículo 137 de la Constitución {} DECRETA: Artículo 1º.- {} Artículo 2º.- {}"
+    assert leer_decreto(base.format("y las bajas temperaturas;", "Declárese en Estado de Emergencia el departamento de Puno, por sesenta (60) días.",
+                                    "El INDECI ejecutará las acciones.")) is None
+    assert leer_decreto(base.format("y la propagación del COVID-19;", "Prorrogar el Estado de Emergencia Nacional por treinta (30) días.",
+                                    "Queda suspendido el ejercicio de los derechos constitucionales.")) is None
