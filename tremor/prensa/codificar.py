@@ -317,7 +317,22 @@ def fecha_relativa(t, pub):
     return None
 
 
-SUSPENDE = re.compile(r"(suspend|levant|desconvoc|posterg|cancel)\w*\s+(el |la |su |del )?(paro|huelga|bloqueo|medida|paralizaci)")
+# Solo un verbo conjugado cuenta ("levantan el paro", "se suspendió la huelga"): un infinitivo o una frase negada no
+# ("no hay acuerdo que permita levantar la medida" iba en una nota que decía que el paro se ratifica).
+_FIN = r"(?:an|aron|[oó]|a|ad[oa]s?|en|ieron|i[oó]|e|id[oa]s?)"
+SUSPENDE = re.compile(rf"\b(?:suspend|levant|desconvoc|posterg|aplaz|reprogram|cancel){_FIN}\s+(?:el |la |su |del |los |las )?"
+                      r"(?:paro|huelga|bloqueo|medida|paralizaci)")
+NIEGA = re.compile(r"\b(?:no|ni|sin|descart\w*|niega\w*|rechaz\w*|pide\w*|piden|exig\w*|si|hasta que)\b[^.;]{0,50}$")
+RATIFICA = re.compile(r"ratific|se mantiene|mantienen|sigue en pie|va el paro|confirman? (?:el|la|su) (?:paro|huelga)")
+
+
+def suspende(texto, verbo=SUSPENDE) -> bool:
+    """Alguna oración dice que la medida se suspendió (o postergó) sin negarlo ni ratificarla en la misma oración."""
+    for o in re.split(r"[.;\n]", texto.lower()):
+        m = verbo.search(o)
+        if m and not NIEGA.search(o[:m.start()]) and not RATIFICA.search(o):
+            return True
+    return False
 
 
 def por_reglas(titular, resumen, publicado):
@@ -354,7 +369,7 @@ def por_reglas(titular, resumen, publicado):
     if fecha and pub and fecha < pub and (date.fromisoformat(pub) - date.fromisoformat(fecha)).days > 3:
         return None  # recuerda algo pasado o es una nota vieja reindexada: espera al LLM
     def estado_de(x):
-        return ("suspendida" if SUSPENDE.search(x) else "anunciada" if ANUNCIA_PAR.search(x) or (fecha and fecha > pub)
+        return ("suspendida" if suspende(x) else "anunciada" if ANUNCIA_PAR.search(x) or (fecha and fecha > pub)
                 else "ocurrida" if OCURRE.search(x) else "anunciada" if PRONTO.search(x) else None)
     estado = estado_de(tit) or estado_de(t) or "ocurrida"
     if not fecha and estado == "ocurrida":

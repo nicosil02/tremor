@@ -450,3 +450,14 @@ def test_cuerpo_gobpe():
            '<svg><path d="M32"/></svg></body></html>')
     assert cuerpo_gobpe(pag) == "Con relación a los hechos en Corihuayrachina: Se mantenía el bloqueo de la vía férrea."
     assert cuerpo_gobpe("<p>sin fecha</p>") == ""
+
+
+def test_suspende_solo_si_lo_dice():
+    from tremor.prensa.codificar import suspende
+    # el aviso falso del 12 nov: la nota decía que el paro se ratifica y que no hay acuerdo "que permita levantar la medida"
+    assert not suspende("Transportistas ratifican paro nacional de 72 horas. No se ha anunciado un acuerdo que permita "
+                        "levantar la medida de fuerza.")
+    assert not suspende("Irán al Congreso para presentar sus demandas y levantar el paro.")
+    assert not suspende("El gremio no suspenderá la huelga.")
+    assert suspende("Transportistas levantan paro previsto para este martes tras acuerdo con el MTC")
+    assert suspende("Se suspendió el paro agrario en Arequipa")
