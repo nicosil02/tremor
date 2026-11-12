@@ -92,7 +92,8 @@
   .pulso span { position: absolute; left: 50%; top: 22px; transform: translateX(-50%); white-space: nowrap; padding: 3px 8px; border-radius: 6px; background: #fff; font-weight: 700; font-size: 13px;
     box-shadow: 0 2px 8px rgb(28 38 41 / .2); }
   .leyenda-via i { display: inline-block; width: 18px; height: 4px; margin: 0 6px 3px 0; vertical-align: middle; }
-  .leyenda-via i.rojo { background: #d7261e; } 
+  .leyenda-via i.rojo { background: #d7261e; } .leyenda-via i.conces { width: 14px; height: 10px; background: rgb(183 156 255 / .45); outline: 1.5px dashed #8f74e0; }
+
   .dz-cab { padding: 14px 16px 0; } .dz-cab h3 { margin: 0; font-size: 26px; font-weight: 750; letter-spacing: -0.01em; } .dz-cab p { margin: 2px 0 0; color: var(--tinta-2); }
   .medidor { padding: 12px 16px 4px; } .m-num { display: flex; align-items: baseline; gap: 12px; }
   .m-num b { font-size: 56px; line-height: 1; font-weight: 750; color: var(--cobre-4); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
@@ -753,7 +754,8 @@ const ley = () => { const c = CAPAS_MAPA[CAPA]; return (actual === "pais" || PAI
     <span class="esc">${c[2] ? `<span><i class="punto"></i>Protesta anunciada</span>` : ""}<span><i class="punto negro"></i>Vía cortada (SUTRAN)</span><span><i class="via-l"></i>Vía, al acercarse</span></span></small>`
   : (FOCO != null ? esc(X.cadena[FOCO].nombre) + ", " + pct(X.cadena[FOCO].p) : SEL ? esc(SEL.t) : "Su ruta de salida")  // el % de la vía ya está en el panel: el mapa dice qué es cada color
   + (SEL ? (SEL.tr.length ? `<small><i class="rojo"></i>${/se suma/.test(SEL.etq) ? "Anunciaron que se suman" : SEL.tr2.length ? "Más probable" : "Tramos que puede cortar"}${SEL.tr2.length ? `<br><i class="naranja"></i>Posible` : ""}<br><i class="punto"></i>${/se suma/.test(SEL.etq) ? "Base que se suma" : SEL.etq ? "Donde más bloquearon antes" : "Dónde es la protesta"}</small>` : "")
-    : `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`); };
+    : `<small>Distritos de su ruta, más oscuro es más riesgo. Toque uno para ver su porcentaje</small>`)
+  + (CONCES[empresa] ? `<small><i class="conces"></i>Sus concesiones mineras (al acercarse)</small>` : ""); };
 document.addEventListener("click", e => { const b = e.target.closest("[data-capa]"); if (!b) return;
   CAPA = b.dataset.capa; document.querySelectorAll(".leyenda-via").forEach(l => l.innerHTML = ley()); peru();
   if (actual === "pais" && !pila.length) { document.getElementById("vista").innerHTML = VISTAS.pais(); conectar(); } });  // la lista del panel sigue a la capa
