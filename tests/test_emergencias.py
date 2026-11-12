@@ -57,3 +57,31 @@ def test_articulo_137_solo_no_basta():
                                     "El INDECI ejecutará las acciones.")) is None
     assert leer_decreto(base.format("y la propagación del COVID-19;", "Prorrogar el Estado de Emergencia Nacional por treinta (30) días.",
                                     "Queda suspendido el ejercicio de los derechos constitucionales.")) is None
+
+
+def test_distritos_del_anexo_y_frases_que_quedaban_sin_lugar():
+    from tremor.gobierno import leer_decreto, lugares_anexo, lugares_decreto
+    # la provincia y el departamento solo van en la primera fila de su grupo; la fila 6 es un centro poblado de Uchuraccay
+    anexo = ("Anexo del Decreto Supremo Nº 081-2024-PCM PRÓRROGA EN DISTRITOS DE LAS PROVINCIAS DE HUANTA Y LA MAR DEL DEPARTAMENTO "
+             "DE AYACUCHO Y DE LA PROVINCIA DE LA CONVENCIÓN DEL DEPARTAMENTO DE CUSCO ÍTEM CENTRO POBLADO DISTRITO PROVINCIA "
+             "DEPARTAMENTO 1 Ayahuanco Huanta Ayacucho 2 Santillana 6 Ccarapa Uchuraccay (*) 10 Anco La Mar 12 Santa Rosa "
+             "20 Kimbiri La Convención Cusco 21 Pichari TOTAL 2 32 6 4")
+    assert lugares_anexo(anexo) == {"050402", "050406", "050410", "050502", "050507", "080907", "080910"}
+    assert len(lugares_decreto("Declárese el Estado de Emergencia por el plazo de sesenta (60) días la Provincia Constitucional del Callao, a fin de mantener el orden interno.")) == 7
+    assert len(lugares_decreto("Prorrogar, por el término de sesenta (60) días calendario, el Estado de Emergencia en el departamento Puno, a partir del 7 de abril de 2023")) == 110
+    assert len(lugares_decreto("el Estado de Emergencia en los distritos fronterizos de Palca, Tacna y La Yarada - Los Palos de la provincia de Tacna y en el distrito fronterizo de Tarata de la provincia de Tarata del departamento de Tacna")) == 4
+    base = "Fecha de publicación: 06/03/2024 CONSIDERANDO: Que, hay bloqueos; DECRETA: Artículo 1.- {} La Policía Nacional del Perú mantiene el control del orden interno. Artículo 2.- x"
+    assert leer_decreto(base.format("Prorrogar por treinta (30) días calendario el Estado de Emergencia declarado en el Corredor Vial Sur Apurímac-Cusco-Arequipa."))["vias"] == "sur"
+    assert leer_decreto(base.format("Declarar el Estado de Emergencia en los establecimientos penitenciarios de alta peligrosidad.")) is None
+
+
+def test_frases_de_cajon_no_son_el_motivo():
+    # DS de Puno 2023: cita la finalidad de la Policía y el D. Leg. 1095; el motivo eran las protestas, no el crimen
+    from tremor.gobierno import leer_decreto
+    t = ("Fecha de publicación: 07/04/2023 CONSIDERANDO: Que, la Policía Nacional tiene por finalidad garantizar el orden interno; "
+         "así como, prevenir, investigar y combatir la delincuencia; Que, el Decreto Legislativo N° 1095 establece el apoyo de las "
+         "Fuerzas Armadas en casos de tráfico ilícito de drogas, terrorismo o protección de instalaciones estratégicas; DECRETA: "
+         "Artículo 1.- Prorrogar, por sesenta (60) días calendario, el Estado de Emergencia en el departamento Puno, donde el "
+         "control del orden interno se encuentra a cargo de las Fuerzas Armadas. Artículo 2.- x")
+    assert leer_decreto(t)["causas"] == {"hereda"}
+    assert leer_decreto(t.replace("DECRETA:", "Que, persiste el accionar de organizaciones criminales; DECRETA:"))["causas"] == {"crimen"}
