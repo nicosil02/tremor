@@ -16,7 +16,7 @@ from pathlib import Path
 import pandas as pd
 
 from tremor.db import DATOS, RAIZ, conectar
-from tremor.prensa.codificar import VERSION
+from tremor.prensa.codificar import VERSION, suspende
 
 DOCS = RAIZ / "docs"
 ALERTA = ["ubigeo", "lugar", "prob", "prob_extractivo", "prob_crisis", "prob_zona", "prob_zona_extractivo", "prob_1m",
@@ -202,8 +202,7 @@ def _lugares():
 
 SUMA = re.compile(r"se suma|sumar[aá]n|sumarse|acatar|respald|adhie|adhes|plegar|participar|bases? de|gremios? de")
 NO = re.compile(r"no (se )?(suma|acata|participa|pleg)|deslig|se retira|desist|no acatar|no se plegar")
-SUSPENDE = re.compile(r"(suspend|levant|desconvoc|posterg|aplaz|reprogram|cancel)\w*\s+(el |la |su |del )?(paro|huelga|bloqueo|medida|paralizaci)")
-POSTERGA = re.compile(r"(posterg|aplaz|reprogram)\w*\s+(el |la |su |del )?(paro|huelga|bloqueo|medida|paralizaci)")
+POSTERGA = re.compile(r"\b(?:posterg|aplaz|reprogram)(?:an|aron|[oó]|a|ad[oa]s?)\s+(?:el |la |su |del )?(?:paro|huelga|bloqueo|medida|paralizaci)")
 CARGA = re.compile(r"carga pesada|transporte de carga|transportistas de carga")  # "carga pesada y mototaxistas" sigue siendo carga
 CORTA = re.compile(r"bloque|quema de llantas|cortaron|cerraron|tomaron|piquete")
 DONDE = re.compile(r"carretera|v[ií]as?\b|puente|ingreso|salida|km\b|kil[oó]metro|avenida|\bav\.|[oó]valo|jir[oó]n|plaza|cruce|desv[ií]o|panamericana|interoce[aá]nica")
@@ -308,8 +307,9 @@ def juntar(evs):
         par["n_notas"] = (par.get("n_notas") or 0) + (e.get("n_notas") or 0)
         for k in ("adhieren", "retiran", "gremios_retiran", "puntos"):
             par[k] = list(dict.fromkeys((par.get(k) or []) + (e.get(k) or [])))
-        par["suspendido"] = bool(par.get("suspendido")) or bool(e.get("suspendido"))
-        par["postergado"] = bool(par.get("postergado")) or bool(e.get("postergado"))
+        otro_dia = e.get("fecha_evento") != par.get("fecha_evento")  # se levantó el paro del martes, no el del 16
+        par["suspendido"] = bool(par.get("suspendido")) or (bool(e.get("suspendido")) and not otro_dia)
+        par["postergado"] = bool(par.get("postergado")) or (bool(e.get("postergado")) and not otro_dia)
         par["urbano"] = (bool(par.get("urbano")) or bool(e.get("urbano"))) and not (par.get("carga") or e.get("carga"))
         par["carga"] = bool(par.get("carga") or e.get("carga"))
         par["plazo"] = max([x for x in (par.get("plazo"), e.get("plazo")) if isinstance(x, str)], default=None)
@@ -395,7 +395,7 @@ def leer(texto):
         destino = ret if NO.search(o) else adh if SUMA.search(o) else None
         if destino is not None:
             destino.update(u for k, us in idx.items() if re.search(rf"\b{re.escape(k)}\b", o) for u in us)
-    return {"adhieren": sorted(adh - ret), "retiran": sorted(ret), "suspendido": bool(SUSPENDE.search(t)), "postergado": bool(POSTERGA.search(t)), "urbano": bool(URBANO.search(t)) and not CARGA.search(t), "carga": bool(CARGA.search(t)), "puntos": puntos(texto), "plazo": plazo(texto)}
+    return {"adhieren": sorted(adh - ret), "retiran": sorted(ret), "suspendido": suspende(t), "postergado": suspende(t, POSTERGA), "urbano": bool(URBANO.search(t)) and not CARGA.search(t), "carga": bool(CARGA.search(t)), "puntos": puntos(texto), "plazo": plazo(texto)}
 
 
 def focos(con, n=5):
