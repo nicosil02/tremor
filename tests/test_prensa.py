@@ -427,3 +427,14 @@ def test_dicho_de_menciones_de_radio(monkeypatch):
     monkeypatch.setattr(animo, "date", type("D", (), {"today": staticmethod(lambda: __import__("datetime").date(2026, 11, 11))}))
     assert animo.dicho(con) == 2
     assert dict(con.execute("SELECT nota_id, dicho FROM mencion_dicho")) == {"a": "Comuneros dicen que la minera contamina el río.", "b": "No habla del proyecto"}
+
+
+def test_suspende_solo_si_lo_dice():
+    from tremor.prensa.codificar import suspende
+    # el aviso falso del 12 nov: la nota decía que el paro se ratifica y que no hay acuerdo "que permita levantar la medida"
+    assert not suspende("Transportistas ratifican paro nacional de 72 horas. No se ha anunciado un acuerdo que permita "
+                        "levantar la medida de fuerza.")
+    assert not suspende("Irán al Congreso para presentar sus demandas y levantar el paro.")
+    assert not suspende("El gremio no suspenderá la huelga.")
+    assert suspende("Transportistas levantan paro previsto para este martes tras acuerdo con el MTC")
+    assert suspende("Se suspendió el paro agrario en Arequipa")
