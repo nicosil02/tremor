@@ -496,3 +496,17 @@ def test_la_misma_noticia_en_dos_medios_cuenta_una():
         f("ProActivo", "Minera Poderosa obtiene el Galardón Plata del Premio Iberoamericano de la Calidad 2026", None, "2026-10-01")])  # otro mes: otra historia
     r = una_por_historia(m)
     assert list(r.medio) == ["Minart", "Macronorte", "Radio A", "ProActivo"] and list(r.otros) == [1, 0, 1, 0]
+
+
+def test_quien_habla_del_proyecto():
+    from tremor.animo import quien
+    assert quien("Radio Surphuy", "Las Bambas (MMG)") == "zona"          # radio de Apurímac
+    assert quien("Radio Uno", "Las Bambas (MMG)") == "region"            # medio de Tacna: otra región
+    assert quien("Diario La Opinión Ica", "Las Bambas (MMG)") == "region"  # el departamento va en el nombre
+    assert quien("El Sol", "Minera Poderosa", {"el sol": "Apurímac"}) == "region"  # aprendido de la base
+    assert quien("Noticias Trujillo", "Minera Poderosa") == "zona"       # provincia de La Libertad
+    assert quien("Portal Desconocido", "Minera Poderosa") == "otros"
+    assert quien("Tiempo Minero", "Minera Poderosa") == "sector"         # revista nueva: por el nombre
+    assert quien("La República", "Minera Poderosa") == "nacional"
+    assert quien("Rumbo Minero", "Minera Poderosa") == "sector"
+    assert quien("Observatorio de Conflictos Mineros", "Minera Poderosa") == "organizacion"

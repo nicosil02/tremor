@@ -5,10 +5,13 @@ negativo. Por reglas (léxico del dominio), no por LLM: cada tono se puede expli
     python -m tremor.animo        # tablas mencion y animo (foto de los últimos 7 días frente a las 8 semanas previas; avisa picos y rachas negativas)
 
 shortcut: diccionario curado de los proyectos más conflictivos; ampliarlo con SENACE/OEFA cuando haya alias limpios."""
+import csv
+import functools
 import re
 import sqlite3
 import sys
 from datetime import date, timedelta
+from pathlib import Path
 
 import pandas as pd
 
@@ -55,6 +58,66 @@ POSITIVO = re.compile(r"\bacuerdo|di[aá]logo|mesa de (?:trabajo|desarrollo)|ben
                       r"empleo|convenio|(?<!in)cumpli[oó]|apoy|financi|construy|entreg|capacit|"
                       r"responsabilidad social|levant(?:an|aron) (?:el )?(?:paro|bloqueo)|tregua", re.I)
 ALIAS = {n: re.compile(a, re.I) for n, (a, _, _) in PROYECTOS.items()}
+# Quién habla, por el medio: la prensa minera suele publicar lo que manda la empresa y las organizaciones tienen agenda
+# propia; ninguna de las dos es opinión pública. Por palabras del nombre, no por lista de medios: una revista minera
+# nueva entra sola.
+SECTOR = re.compile(r"miner|mining|proactivo|minart|energiminas|energ[ií]a|business|empresarial|negocios|desde adentro|"
+                    r"bnamericas|iimp|snmpe|gesti[oó]n|semana econ[oó]mica", re.I)
+ORGANIZACION = re.compile(r"cooperacci|observatorio|muqui|servindi|pressenza|derechos humanos|aidesep|conacami|cnddhh|"
+                          r"grufides|wayka|convoca", re.I)
+NACIONAL = re.compile(r"^(rpp|el comercio|la rep[uú]blica|correo|expreso|per[uú] ?21|gesti[oó]n|infobae|am[eé]rica|canal n|"
+                      r"tv ?per[uú]|andina|exitosa|diario uno|ojo ?p[uú]blico|idl|la raz[oó]n|trome|latina|panamericana|atv|"
+                      r"rcr|el peruano|caretas|hildebrandt|sudaca|epicentro|la encerrona|willax|pbo)", re.I)
+REGIONAL = {"macronorte": "La Libertad"}  # medios regionales que llegan por Google News y no se deducen de otra forma
+
+
+@functools.lru_cache
+def _departamento_medio():
+    from tremor.prensa.recolectar import FEEDS
+    with open(Path(__file__).parent / "radios.csv", encoding="utf-8") as f:
+        return {**{r["medio"].lower(): r["departamento"] for r in csv.DictReader(f)},
+                **{m.lower(): d for m, (_, d) in FEEDS.items() if d}, **REGIONAL}
+
+
+def medios_regionales(con, minimo=3, parte=0.8):
+    """{medio: departamento} deducido de la base: un medio cuyas notas salen casi todas de la búsqueda de un mismo
+    departamento es de ahí (Infobae sale en todos y no pasa). Así un medio regional nuevo se ubica solo."""
+    n = {}
+    for medio, dep, k in con.execute("SELECT lower(medio), departamento_consulta, COUNT(*) FROM nota WHERE medio IS NOT NULL "
+                                     "AND departamento_consulta IS NOT NULL AND consulta != 'radio' GROUP BY 1, 2"):
+        n.setdefault(medio, {})[dep] = k
+    return {m: max(d, key=d.get) for m, d in n.items() if sum(d.values()) >= minimo and max(d.values()) / sum(d.values()) >= parte}
+
+
+def departamento_de(medio, aprendidos=None):
+    """Departamento del medio: por la lista de radios y feeds, por lo aprendido de la base o porque lo lleva en el nombre
+    ("Diario La Opinión Ica"). None si no se sabe."""
+    from tremor.lugares import catalogo
+    m = (medio or "").lower()
+    dep = _departamento_medio().get(m) or (aprendidos or {}).get(m)
+    if dep:
+        return norm(dep)
+    regiones, provincias, _, _ = catalogo()
+    palabras = " " + norm(medio or "") + " "
+    return next((r for r in regiones if f" {r} " in palabras),  # el departamento o, si no, una provincia de un solo departamento
+                next((r for r, c in regiones.items() for p, cs in provincias.items()
+                      if len(p) >= 5 and f" {p} " in palabras and {x[:2] for x in cs} == {c}), None))
+
+
+def quien(medio, proyecto, aprendidos=None):
+    """Desde dónde se habla del proyecto: 'sector', 'organizacion', 'zona' (radio o medio del departamento del proyecto),
+    'region' (medio de otro departamento) o 'nacional' (prensa de alcance nacional). Lo que no se sabe ubicar queda en
+    'otros': no se le cuelga a nadie."""
+    conocido = (medio or "").lower() in _departamento_medio()  # una radio o un feed de la lista no se juzga por el nombre
+    if not conocido and ORGANIZACION.search(medio or ""):
+        return "organizacion"
+    if not conocido and SECTOR.search(medio or ""):
+        return "sector"
+    dep = departamento_de(medio, aprendidos)
+    if dep and (conocido or not NACIONAL.search(medio or "")):
+        return "zona" if dep == norm(PROYECTOS.get(proyecto, ("", dep))[1]) else "region"
+    return "nacional" if NACIONAL.search(medio or "") else "otros"
+
 
 
 def tono(texto):
@@ -177,7 +240,11 @@ DICHO = ("Lees una nota de prensa o la transcripción automática, con errores, 
          "denuncias penales), \"dialogo\" (mesa, reunión, acuerdo), \"aporte\" (donación, obra o programa social), "
          "\"reconocimiento\" (premio, certificación, ranking), \"ambiente\" (contaminación, agua, relaves), \"seguridad\" "
          "(ataques, crimen, minería ilegal, accidentes), \"laboral\" (trabajadores, sindicato, huelga), \"otro\".\n"
-         "Ejemplos:\n"
+         "Di la VOZ, quién habla de la empresa en la nota: \"empresa\" (la propia empresa, su portavoz o su comunicado), "
+         "\"comunidad\" (comuneros, dirigentes, pobladores, frentes de defensa, trabajadores), \"autoridad\" (alcalde, "
+         "gobernador, ministerio, fiscalía, juez, congresista), \"medio\" (el periodista o locutor opina o informa por su "
+         "cuenta) u \"otro\".\n"
+         "Ejemplos (tono, tema):\n"
          "\"Las Bambas entrega camión volquete a la comunidad de Chila\" → favorable, aporte\n"
          "\"Minera obtiene el Galardón Plata del Premio Iberoamericano de la Calidad\" → favorable, reconocimiento\n"
          "\"Duro revés judicial para la minera: la comunidad sigue en alerta\" → critica, judicial\n"
@@ -185,14 +252,15 @@ DICHO = ("Lees una nota de prensa o la transcripción automática, con errores, 
          "\"Gobernador pide presencia del ejército tras ataque a la minera\" → neutra, seguridad\n"
          "\"Fiscalía pide prisión para comuneros por las protestas contra la mina\" → neutra, judicial\n"
          "\"Comuneros bloquean la vía y exigen que la minera cumpla el convenio\" → critica, protesta\n"
-         'Responde JSON {"dicho": "<oración>", "tono": "favorable" | "critica" | "neutra", "tema": "<tema>"}.')
+         'Responde JSON {"dicho": "<oración>", "tono": "favorable" | "critica" | "neutra", "tema": "<tema>", "voz": "<voz>"}.')
 TONO_LLM = {"favorable": 1, "critica": -1, "crítica": -1}
+VOCES_LLM = {"empresa", "comunidad", "autoridad", "medio", "otro"}
 TEMAS_LLM = {"protesta", "judicial", "dialogo", "aporte", "reconocimiento", "ambiente", "seguridad", "laboral", "otro"}
 
 
 def tabla_dicho(con):
-    con.execute("CREATE TABLE IF NOT EXISTS mencion_dicho (nota_id TEXT, proyecto TEXT, dicho TEXT, tono INTEGER, tema TEXT, PRIMARY KEY (nota_id, proyecto))")
-    for col in {"tono": "INTEGER", "tema": "TEXT"}.items():  # bases de antes del tono y el tema
+    con.execute("CREATE TABLE IF NOT EXISTS mencion_dicho (nota_id TEXT, proyecto TEXT, dicho TEXT, tono INTEGER, tema TEXT, voz TEXT, PRIMARY KEY (nota_id, proyecto))")
+    for col in {"tono": "INTEGER", "tema": "TEXT", "voz": "TEXT"}.items():  # bases de antes del tono, el tema y la voz
         if col[0] not in [c[1] for c in con.execute("PRAGMA table_info(mencion_dicho)")]:
             con.execute(f"ALTER TABLE mencion_dicho ADD COLUMN {col[0]} {col[1]}")
 
@@ -208,23 +276,24 @@ def dicho(con, max_solicitudes=60):
     xs = con.execute("""SELECT m.nota_id, m.proyecto, CASE WHEN m.origen = 'radio' THEN n.resumen ELSE n.titular || '. ' || COALESCE(n.resumen, '') END
                         FROM mencion m JOIN nota n ON n.id = m.nota_id
                         WHERE m.fecha >= ? AND COALESCE(n.filtro, '') NOT IN ('religioso', 'musica_o_ruido', 'aviso', 'medio_extranjero')
-                          AND NOT EXISTS (SELECT 1 FROM mencion_dicho d WHERE d.nota_id = m.nota_id AND d.proyecto = m.proyecto AND d.tema IS NOT NULL)
+                          AND NOT EXISTS (SELECT 1 FROM mencion_dicho d WHERE d.nota_id = m.nota_id AND d.proyecto = m.proyecto AND d.voz IS NOT NULL)
                         ORDER BY m.fecha DESC""", (desde,)).fetchall()[:max_solicitudes]
     hechas = 0
     for nota_id, proyecto, texto in xs:
         mm = ALIAS[proyecto].search(texto) if proyecto in ALIAS else None
         trozo = texto[max(0, mm.start() - 400):mm.end() + 400] if mm else texto[:800]
         try:
-            r = chat_json(con, DICHO, f"Proyecto: {proyecto}\n\n{trozo}", "dicho3")
+            r = chat_json(con, DICHO, f"Proyecto: {proyecto}\n\n{trozo}", "dicho4")
         except SinCuota as e:
             print(f"  dicho de menciones pendiente: {str(e)[:80]}")
             break
         except RespuestaInvalida:
             continue
         tema = str(r.get("tema")).strip().lower().replace("á", "a")
-        con.execute("INSERT OR REPLACE INTO mencion_dicho (nota_id, proyecto, dicho, tono, tema) VALUES (?, ?, ?, ?, ?)",
+        voz = str(r.get("voz")).strip().lower()
+        con.execute("INSERT OR REPLACE INTO mencion_dicho (nota_id, proyecto, dicho, tono, tema, voz) VALUES (?, ?, ?, ?, ?, ?)",
                     (nota_id, proyecto, (r.get("dicho") or "").strip()[:300], TONO_LLM.get(str(r.get("tono")).strip().lower(), 0),
-                     tema if tema in TEMAS_LLM else "otro"))
+                     tema if tema in TEMAS_LLM else "otro", voz if voz in VOCES_LLM else "otro"))
         hechas += 1
     con.commit()
     return hechas
