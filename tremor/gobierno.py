@@ -11,7 +11,7 @@ import re
 import sys
 import time
 from collections import Counter, defaultdict
-from datetime import date
+from datetime import date, timedelta
 
 import requests
 
@@ -303,13 +303,185 @@ def contraloria(con, desde=2017):
     print(f"  {len(filas)} filas en {len({f[0] for f in filas})} distritos")
 
 
+# --- Estados de emergencia por orden interno: decretos supremos de la PCM en El Peruano ----------------------------
+# Los pide el Mininter con un informe de la Policía cuando hay bloqueos, conflicto o crimen. El artículo 1 dice desde
+# cuándo, por cuántos días, dónde y para qué ("para hacer frente a la afectación del orden interno por..."). Se separa
+# conflicto social de crimen por reglas; los de lluvias, heladas o peligro inminente no son de orden interno.
+ORDEN = re.compile(r"orden interno|grupos hostiles|organizaciones criminales")
+CONFLICTO_DS = re.compile(r"conflict|\bparo|bloque|protest|\bmoviliza|toma de (local|instalac|carretera|v[ií]a)|disturbio|"
+                          r"manifestaci|comunidades (campesinas|nativas)|grave alteraci[oó]n del orden|actos de violencia de la poblaci")
+CRIMEN_DS = re.compile(r"criminal|delincuen|miner[ií]a ilegal|extorsi|sicariato|narcotr|terroris|tr[aá]fico il[ií]cito|"
+                       r"remanentes|sendero|tala ilegal|crimen organizado|grupos hostiles")
+LISTA = re.compile(r",\s*|\s+y\s+")
+
+
+def lugares_decreto(art1: str) -> set[str]:
+    """Distritos (ubigeo) que nombra el artículo 1. Se parte en tramos "en el distrito.../en la provincia...": la
+    provincia con que empieza un tramo entra entera; la que sigue a un distrito ("de la provincia de Y") solo lo ubica.
+    Si un tramo no nombra distritos ni provincias, entra el departamento entero."""
+    from tremor.lugares import catalogo
+    regiones, provincias, distritos, _ = catalogo()
+    t = norm(art1.replace(";", " PUNTOYCOMA ").replace(",", " y "))
+    t = t.replace("provincia constitucional del callao", "provincia de callao").replace("lima metropolitana", "la provincia de lima")
+    deps = {c for n, c in regiones.items() if re.search(rf"\b{n}\b", t)}  # solo acota la búsqueda: sobrar no estorba
+
+    def nombres(pat, s, tabla):  # el nombre conocido más largo al inicio de cada trozo ("leoncio prado circunscripciones")
+        trozos = [n.split() for m in re.finditer(pat, s) for n in LISTA.split(m[1])]
+        return [n for w in trozos for n in [next((" ".join(w[:k]) for k in range(len(w), 0, -1) if " ".join(w[:k]) in tabla), None)] if n]
+    hasta = r"(?= de la provincia| de las provincias| del? departamento| de los departamentos| en | de la region| los distritos| el distrito|$)"
+    prov = lambda pat, s: {c for n in nombres(pat, s, provincias) for c in provincias[n] if c[:2] in deps}
+    salida = set()
+    corta = lambda s: re.split(r" para | a fin | con la finalidad| la policia| las fuerzas", s)[0]
+    for tramo in (u for s in t.split(" puntoycoma ") for u in re.split(r" (?:en|por) (?=(?:el|los|la|las) (?:distritos?|provincias?) )", re.sub(r"^(?:y )?en ", "", corta(s)))):
+        enteras = prov(r"^(?:\w+ )*?(?:la|las) provincias? del? (.+?)" + hasta, tramo) if re.match(r"(?:la|las) provincia", tramo) else set()
+        ubica = prov(r"de (?:la|las) provincias? del? (.+?)" + hasta, tramo)
+        ds = nombres(r"distritos? del? (.+?)" + hasta, tramo, distritos)
+        salida |= {u for c in distritos.values() for u in c if u[:4] in enteras}
+        salida |= {u for n in ds for u in distritos[n] if u[:2] in deps and (u[:4] in ubica or not ubica)}
+        if not enteras and not ds and not re.search(r"distrito|provincia", tramo):
+            salida |= {u for c in distritos.values() for u in c if u[:2] in {regiones[n] for n in nombres(r"departamentos? del? (.+?)$", tramo, regiones)}}
+    return salida
+
+
+def leer_decreto(texto: str) -> dict | None:
+    """De un decreto supremo de estado de emergencia: causa (crimen si lo nombra; si no, conflicto), inicio, días y distritos.
+    None si no es de orden interno (lluvias, heladas, peligro inminente)."""
+    k = max(texto.find("DECRETA:"), texto.find("DECRETA :"))
+    if k < 0:
+        return None
+    art1 = re.split(r"Art[ií]culo 2\b", texto[k:k + 2500])[0]
+    # de orden interno: lo dice el artículo 1 o, en los antiguos ("Prorrogar el Estado de Emergencia en el distrito de
+    # Cocachacra"), el decreto invoca el artículo 137 de la Constitución; los de desastres van por la ley del SINAGERD
+    if not ORDEN.search(art1.lower()) and not re.search("art[ií]culo 137", texto[max(0, k - 5000):k + 3000], re.I):
+        return None
+    c = texto.rfind("CONSIDERANDO", 0, k)
+    motivo = (texto[c if c >= 0 else max(0, k - 2500):k] + art1).lower()  # el PDF trae otras normas antes
+    crimen = CRIMEN_DS.search(motivo)
+    causas = {c for c, si in (("crimen", crimen), ("conflicto", CONFLICTO_DS.search(motivo))) if si}
+    if not causas:  # sin motivo nombrado: la prórroga hereda la causa del decreto anterior; la declaratoria es conflicto
+        causas = {"hereda"} if re.search(r"prorrog", art1.lower()) else {"conflicto"}
+    inicio = re.search(r"a partir del? (\d{1,2}) de (\w+) de (\d{4})", norm(art1))
+    pub = re.search(r"Fecha de publicaci[oó]n: (\d\d)/(\d\d)/(\d{4})", texto)
+    meses = "enero febrero marzo abril mayo junio julio agosto setiembre octubre noviembre diciembre".split()
+    if inicio and inicio[2].replace("septiembre", "setiembre") in meses:
+        f = date(int(inicio[3]), meses.index(inicio[2].replace("septiembre", "setiembre")) + 1, int(inicio[1]))
+    elif pub:
+        f = date(int(pub[3]), int(pub[2]), int(pub[1]))
+    else:
+        return None
+    dias = re.search(r"\((\d+)\) d[ií]as", art1)
+    return {"causas": causas, "inicio": f, "dias": int(dias[1]) if dias else 30, "lugares": lugares_decreto(art1)}
+
+
+def _peruano(binario=False, **params):
+    ruta = params.pop("ruta", "")
+    for espera in (1, 10, 30, 90):  # el servidor corta el SSL si se le pide muy seguido
+        time.sleep(espera)
+        try:
+            r = requests.get(PERUANO + ruta, headers=UA, timeout=120, params=params)
+            r.raise_for_status()
+            if binario:
+                return r.content
+            try:
+                return r.content.decode("utf-8")
+            except UnicodeDecodeError:  # los decretos antiguos traen el cuerpo en latin-1
+                return r.content.decode("cp1252", "replace")
+        except requests.RequestException:
+            pass
+    raise RuntimeError(f"El Peruano sin respuesta: {params}")
+
+
+def decretos_mes(m: int) -> dict:
+    """{id: título} de los decretos de estado de emergencia publicados en el mes m (anio*12 + mes - 1). Se pagina
+    mientras salgan títulos de emergencia (antes de ~2012 la frase exacta no filtra y el resto es ruido). Se filtra
+    por el título y no por la institución: los de 2026 salen como Secretaría del Consejo de Ministros, no como PCM."""
+    ini = date(m // 12, m % 12 + 1, 1)
+    fin = date((m + 1) // 12, (m + 1) % 12 + 1, 1) - timedelta(1)
+    filas = {}
+    for inicio in range(0, 200, 20):
+        tarjetas = TARJETA.findall(_peruano(query='"estado de emergencia"', tipoPublicacion="NL", ci="ONLY", start=inicio,
+                                            fechaIni=ini.strftime("%Y%m%d"), fechaFin=fin.strftime("%Y%m%d")))
+        nuevas = {i: html.unescape(t).strip() for e, i, t in tarjetas if re.search(r"[Ee]stado de [Ee]mergencia", t)}
+        filas |= nuevas
+        if len(tarjetas) < 20 or not nuevas:
+            break
+    return filas
+
+
+def texto_decreto(i, titulo="") -> str:
+    """Los considerandos y los artículos de un decreto, con su fecha de publicación. El PDF es la página entera del
+    diario, con otras normas: se lee desde la última vez que aparece el título (la primera es el sumario)."""
+    pagina = _peruano(ruta=f"dispositivo/NL/{i}")
+    t = html.unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", pagina)))
+    pdf = re.search(r"/api/archivo/file/[\w-]+/\*/[\w-]+\.pdf", pagina)
+    if ("DECRETA" not in t or "�" in t) and pdf:  # sin texto o con tildes rotas: el PDF de la norma
+        import pymupdf
+        with pymupdf.open(stream=_peruano(binario=True, ruta=pdf[0][1:]), filetype="pdf") as doc:
+            cuerpo = " ".join(p.get_text() for p in doc)
+        cuerpo = re.sub(r"-\s+(?=[a-záéíóúñ])", "", re.sub(r"\s+", " ", cuerpo))
+        aqui = [m.start() for m in re.finditer(r"\W+".join(map(re.escape, titulo.split()[:8])), cuerpo, re.I)] if titulo else []
+        t = (re.search(r"Fecha de publicaci[oó]n: \d\d/\d\d/\d{4}", t) or [""])[0] + " " + cuerpo[aqui[-1] if aqui else 0:]
+    k = max(t.find("DECRETA:"), t.find("DECRETA :"))
+    pub = re.search(r"Fecha de publicaci[oó]n: \d\d/\d\d/\d{4}", t)
+    return (pub[0] + " " if pub else "") + t[max(0, k - 8000):k + 2500] if k >= 0 else ""
+
+
+def emergencias(con, desde=2006, max_meses=24, releer=False):
+    """Lee de a max_meses los meses aún no buscados (más el actual y el anterior, que siguen creciendo), guarda cada
+    decreto en `decreto_emergencia` y rehace en distrito_mes emergencia_conflicto y emergencia_crimen: 1 en cada mes
+    que el distrito estuvo bajo estado de emergencia por esa causa (un decreto puede tener las dos)."""
+    con.execute("""CREATE TABLE IF NOT EXISTS decreto_emergencia (id TEXT PRIMARY KEY, titulo TEXT, causas TEXT,
+                   inicio TEXT, dias INTEGER, lugares TEXT)""")
+    con.execute("CREATE TABLE IF NOT EXISTS decreto_emergencia_mes (m INTEGER PRIMARY KEY)")
+    if releer:  # tras cambiar la regla: vuelve a leer los que quedaron sin causa (desastres, o los que la regla no entendió)
+        natural = re.compile("desastre|peligro|lluvia|sanitaria|h[ií]dric|helada|sismo|contaminaci|huaico|incendio|friaje|"
+                             "sequ[ií]a|inundaci|ambiental|bajas temperaturas|Fuerzas Armadas|Exoneran", re.I)
+        con.executemany("DELETE FROM decreto_emergencia WHERE id = ?", [(i,) for i, t in con.execute(
+            "SELECT id, titulo FROM decreto_emergencia WHERE causas IS NULL") if not natural.search(t or "")])
+        con.execute("DELETE FROM decreto_emergencia_mes")
+        con.commit()
+    hoy = date.today().year * 12 + date.today().month - 1
+    hechos = {m for (m,) in con.execute("SELECT m FROM decreto_emergencia_mes")}
+    pendientes = [m for m in range(desde * 12, hoy - 1) if m not in hechos][:max_meses] + [hoy - 1, hoy]
+    vistos = {i for (i,) in con.execute("SELECT id FROM decreto_emergencia")}
+    for m in pendientes:
+        for i, titulo in decretos_mes(m).items():
+            if i in vistos:
+                continue
+            d = leer_decreto(texto_decreto(i, titulo)) or {}
+            con.execute("INSERT OR REPLACE INTO decreto_emergencia VALUES (?, ?, ?, ?, ?, ?)",
+                        (i, titulo, ",".join(sorted(d.get("causas", ()))) or None, str(d.get("inicio") or "") or None,
+                         d.get("dias"), json.dumps(sorted(d.get("lugares", ())))))
+        if m < hoy - 1:
+            con.execute("INSERT OR IGNORE INTO decreto_emergencia_mes VALUES (?)", (m,))
+        con.commit()
+        print(f"  {m // 12}-{m % 12 + 1:02d} buscado", flush=True)
+    filas, ultima = set(), {}  # ultima: distrito → causas del último decreto que lo nombró
+    for causas, inicio, dias, lugares in con.execute("SELECT causas, inicio, dias, lugares FROM decreto_emergencia "
+                                                     "WHERE causas IS NOT NULL ORDER BY inicio"):
+        lugares, f = json.loads(lugares), date.fromisoformat(inicio)
+        if causas == "hereda":
+            previas = Counter(ultima.get(u, "conflicto") for u in lugares)
+            causas = previas.most_common(1)[0][0] if previas else "conflicto"
+        ultima |= dict.fromkeys(lugares, causas)
+        fin = date.fromordinal(f.toordinal() + dias - 1)
+        filas |= {(u, m, f"emergencia_{c}", 1.0) for u in lugares
+                  for m in range(f.year * 12 + f.month - 1, fin.year * 12 + fin.month) for c in causas.split(",")}
+    con.execute(ESQUEMA)
+    con.execute("DELETE FROM distrito_mes WHERE variable LIKE 'emergencia_%'")
+    guardar(con, sorted(filas), "El Peruano, decretos supremos de estado de emergencia (PCM)")
+    print(f"  {len(filas)} filas distrito-mes en {len({f[0] for f in filas})} distritos")
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(prog="python -m tremor.gobierno")
     sub = ap.add_subparsers(dest="cmd", required=True)
     m = sub.add_parser("mef_mensual"); m.add_argument("--desde", type=int, default=2010)
     j = sub.add_parser("jne"); j.add_argument("--desde", type=int, default=2010); j.add_argument("--anios", type=int, nargs="*")
     c = sub.add_parser("contraloria"); c.add_argument("--desde", type=int, default=2017)
+    e = sub.add_parser("emergencias"); e.add_argument("--desde", type=int, default=2006); e.add_argument("--max-meses", type=int, default=24)
+    e.add_argument("--releer", action="store_true")
     a = ap.parse_args()
     sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
     {"mef_mensual": lambda con: mef_mensual(con, a.desde), "jne": lambda con: jne(con, a.desde, a.anios),
-     "contraloria": lambda con: contraloria(con, a.desde)}[a.cmd](conectar())
+     "contraloria": lambda con: contraloria(con, a.desde), "emergencias": lambda con: emergencias(con, a.desde, a.max_meses, a.releer)}[a.cmd](conectar())

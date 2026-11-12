@@ -53,6 +53,11 @@ jobs:
           python -m tremor.empresas proyectos
           python -m tremor.reinfo || true   # minería informal: inscripciones vigentes en el REINFO por distrito (~950 páginas)
 
+      - name: Estados de emergencia (El Peruano) y huelgas mineras (MTPE) del mes
+        run: |
+          python -m tremor.gobierno emergencias || true
+          python -m tremor.huelgas || true
+
       - name: Modelo
         run: python -u -m tremor.modelo
 

@@ -340,6 +340,9 @@ proyecto están en [`.specify/memory/constitution.md`](.specify/memory/constitut
   entran al modelo, porque empiezan en 2021 y el modelo aprende de 2010 a 2020. La idea de sumarlos vino de
   PulsoTerritorial, el proyecto de un compañero del diplomado.
 - **Datos abiertos del Estado:** INEI, MEF, BCRP, MINEM, OEFA, ONPE, SENACE, ANA, INDECI, MTC, SERNANP y Cultura.
+- **Estados de emergencia (El Peruano):** los decretos supremos de la PCM desde 2006. Los pide el Mininter con un
+  informe de la Policía. Se separa crimen (minería ilegal, narcotráfico) de conflicto social y entran al modelo como
+  meses bajo emergencia en la zona.
 - **GEOPERÚ (MINAM):** concesiones mineras del catastro de INGEMMET por titular, cruzadas con el territorio de las
   comunidades (`tremor.concesiones`, `docs/concesiones.json`).
 - **REINFO (MINEM):** inscripciones vigentes de mineros en formalización por distrito (`tremor.reinfo`). Solo el
