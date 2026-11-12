@@ -522,7 +522,7 @@ def test_llm_json_roto_no_tumba_la_corrida(monkeypatch):
     import pytest
     from tremor import llm
     r = type("R", (), {"status_code": 200, "text": "", "headers": {}, "raise_for_status": lambda s: None,
-                       "json": lambda s: {"choices": [{"message": {"content": '{"dicho": "\uZZ"}'}}]}})()
+                       "json": lambda s: {"choices": [{"message": {"content": '{"dicho": "sin cerrar'}}]}})()
     monkeypatch.setattr(llm.requests, "post", lambda *a, **k: r)
     with pytest.raises(llm.RespuestaInvalida):
         llm._llamar(sqlite3.connect(":memory:"), "http://x", "k", "m", "c", "s", "u")
