@@ -61,6 +61,7 @@ jobs:
           done
           python -m tremor.oefa || true   # fiscalización del OEFA: se baja una sola vez (el portal no publica desde abr 2025)
           python -m tremor.oefa dfai || true   # sanciones DFAI y Tribunal (gob.pe) y reincidentes (RUIAS): solo lo nuevo
+          python -m tremor.gobierno emergencias || true   # decretos de estado de emergencia del mes y del anterior
 
       - name: SUTRAN (alertas viales vigentes, y qué dicen los medios de cada bloqueo) y reputación
         env:
