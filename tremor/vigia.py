@@ -14,7 +14,7 @@ import json
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from tremor.db import DATOS, conectar
 
@@ -85,6 +85,30 @@ def publicar(ultimo):
     return arbol
 
 
+def latido(con, enviar, ahora_=None):
+    """Una vez al día, desde las 8:00 de Lima: un mensaje de que sigue vigilando, con lo hecho en 24 horas. Si un día no
+    llega, el vigilante está caído. Queda en aviso_enviado (clave latido:fecha) para que el relevo no lo repita."""
+    from tremor.avisos import CLIENTE
+    from tremor.prensa.codificar import VERSION
+    lima = (ahora_ or datetime.now(timezone.utc)) - timedelta(hours=5)
+    clave = f"latido:{lima:%Y-%m-%d}"
+    if lima.hour < 8 or con.execute("SELECT 1 FROM aviso_enviado WHERE clave = ?", (clave,)).fetchone():
+        return False
+    ayer = (datetime.now() - timedelta(days=1)).isoformat(timespec="seconds")  # como db.ahora(): hora de la máquina
+    uno = lambda q, *a: con.execute(q, a).fetchone()[0]
+    notas = uno("SELECT count(*) FROM nota WHERE descargado >= ?", ayer)
+    cola = uno("""SELECT count(*) FROM nota n WHERE n.filtro IS NULL AND n.descargado >= ?
+        AND NOT EXISTS (SELECT 1 FROM codificacion c WHERE c.nota_id = n.id AND c.version = ?)""", ayer, VERSION)
+    avisos = uno("SELECT count(*) FROM aviso_enviado WHERE enviado >= ? AND clave NOT LIKE 'latido:%'", ayer)
+    texto = (f"🟢 *Tremor sigue vigilando* · {CLIENTE}\n\nÚltimas 24 horas: {notas} notas recogidas, {cola} en cola de lectura, "
+             f"{avisos} avisos enviados.")
+    if enviar(texto):
+        con.execute("INSERT OR IGNORE INTO aviso_enviado VALUES (?, ?, ?)", (clave, CLIENTE, datetime.now().isoformat(timespec="seconds")))
+        con.commit()
+        return True
+    return False
+
+
 def paso(*args):
     """Un paso que falla (un medio caído, el LLM sin cupo) no tumba al vigilante: se anota y la vuelta sigue."""
     r = subprocess.run([sys.executable, "-m", *args], capture_output=True, text=True, encoding="utf-8", errors="replace")
@@ -109,6 +133,8 @@ def vigilar(minutos, cada=120, reenviar=False):
             paso("tremor.prensa", "agrupar")
             paso("tremor.web")
             paso("tremor.avisos", *(["--reenviar"] if reenviar and n == 0 else []))
+            from tremor.avisos import enviar
+            con = conectar(); latido(con, enviar); con.close()
             arbol = publicar(arbol)
         except (subprocess.CalledProcessError, OSError) as e:  # GitHub no responde: la siguiente vuelta lo reintenta
             print(f"  vuelta fallida: {e}", flush=True)

@@ -173,7 +173,8 @@ COMUNES = {"grau", "mejia", "espinar", "progreso", "castilla", "lampa", "santa c
 def _del_que_recibe_avisos(con):
     """Función texto normalizado → ¿es de la empresa que recibe los avisos o de su zona y su ruta? Sus notas se leen
     primero, para que una cola larga de otras zonas no retrase su aviso. Un nombre que se repite en otra provincia del
-    país o está en COMUNES solo cuenta con contexto: "provincia/distrito de X" o un departamento de la zona en la nota."""
+    país o está en COMUNES solo cuenta con contexto: "provincia/distrito de X", un departamento de la zona o una medida
+    de lucha en la nota ("Espinar bloquea el corredor" sí; "choque en la avenida Espinar" no)."""
     from tremor import avisos
     from tremor.prensa.recolectar import lugares_cliente
     empresa = re.compile(avisos.EMPRESAS[avisos.CLIENTE][1])
@@ -190,7 +191,7 @@ def _del_que_recibe_avisos(con):
     claro = re.compile(rf"\b(?:{junta(claros)})\b")
     dudoso = re.compile(rf"\b(?:{junta(dudosos)})\b")
     contexto = re.compile(rf"\b(?:provincia|distrito) de (?:{junta(dudosos)})\b|\b(?:{junta(d for d, c in deps.items() if c in zona)})\b")
-    return lambda t: bool(empresa.search(t) or claro.search(t) or (dudoso.search(t) and contexto.search(t)))
+    return lambda t: bool(empresa.search(t) or claro.search(t) or (dudoso.search(t) and (contexto.search(t) or EGPP.search(t))))
 
 
 def ordenar(con, filas):

@@ -287,6 +287,21 @@ def test_lugar_comun_necesita_contexto(monkeypatch):
     from tremor.lugares import norm
     monkeypatch.setattr(R, "lugares_cliente", lambda con, solo=None: [["GRAU", "ESPINAR", "CHALLHUAHUACHO", "VELILLE", "SANTO TOMAS"]])
     f = H._del_que_recibe_avisos(None)
-    si = ["Comuneros de Challhuahuacho bloquean el corredor", "Paro en la provincia de Grau", "Espinar: comunidades de Cusco acatan paro"]
+    si = ["Comuneros de Challhuahuacho bloquean el corredor", "Paro en la provincia de Grau", "Espinar: comunidades de Cusco acatan paro", "Espinar bloquea el corredor"]
     no = ["Choque en la avenida Grau de Lima", "Accidente en la avenida Espinar de Miraflores", "Fiesta en Santo Tomás, Amazonas"]
     assert all(f(norm(t)) for t in si) and not any(f(norm(t)) for t in no)
+
+
+def test_latido_una_vez_al_dia():
+    import sqlite3
+    from datetime import datetime, timezone
+    from tremor import vigia
+    con = sqlite3.connect(":memory:")
+    con.executescript("""CREATE TABLE nota (id TEXT, filtro TEXT, descargado TEXT); CREATE TABLE codificacion (nota_id TEXT, version TEXT);
+        CREATE TABLE aviso_enviado (clave TEXT, empresa TEXT, enviado TEXT, PRIMARY KEY (clave, empresa));""")
+    enviados = []
+    enviar = lambda t: enviados.append(t) or True
+    assert not vigia.latido(con, enviar, datetime(2026, 11, 13, 12, 0, tzinfo=timezone.utc))  # 7:00 en Lima: todavía no
+    assert vigia.latido(con, enviar, datetime(2026, 11, 13, 13, 5, tzinfo=timezone.utc))      # 8:05: sale
+    assert not vigia.latido(con, enviar, datetime(2026, 11, 13, 20, 0, tzinfo=timezone.utc))  # el mismo día no se repite
+    assert vigia.latido(con, enviar, datetime(2026, 11, 14, 13, 5, tzinfo=timezone.utc)) and len(enviados) == 2
