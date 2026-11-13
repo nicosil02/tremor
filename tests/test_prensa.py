@@ -538,3 +538,24 @@ def test_fecha_del_evento_a_mas_de_seis_meses_es_del_anio_pasado():
     assert fecha_creible("2026-11-16", "2026-11-11T15:00-05:00") == "2026-11-16"  # anuncio normal
     assert fecha_creible("2027-01-05", "2026-11-11") == "2027-01-05"  # cruza el año, sigue cerca
     assert fecha_creible(None, "2026-11-11") is None
+
+
+def test_vigia_guardar_y_traer(tmp_path):
+    """La memoria del vigilante pasa a otra base sin duplicar ni pisar lo que ya estaba."""
+    import sqlite3
+    from tremor import vigia
+    def nueva():
+        c = sqlite3.connect(":memory:")
+        c.executescript("""CREATE TABLE nota (id TEXT PRIMARY KEY, descargado TEXT); CREATE TABLE codificacion (nota_id TEXT, version TEXT, PRIMARY KEY (nota_id, version));
+            CREATE TABLE llm_cache (clave TEXT PRIMARY KEY, respuesta TEXT, creado TEXT);
+            CREATE TABLE aviso_enviado (clave TEXT, empresa TEXT, enviado TEXT, PRIMARY KEY (clave, empresa));""")
+        return c
+    a, b = nueva(), nueva()
+    a.execute("INSERT INTO nota VALUES ('n1', datetime('now')), ('vieja', '2020-01-01')")
+    a.execute("INSERT INTO codificacion VALUES ('n1', 'v'), ('vieja', 'v')")
+    a.execute("INSERT INTO aviso_enviado VALUES ('evento:x', 'Bateas', '2026-11-12')")
+    b.execute("INSERT INTO aviso_enviado VALUES ('evento:x', 'Bateas', 'antes')")
+    vigia.guardar(a, tmp_path / "v.db")
+    assert vigia.traer(b, tmp_path / "v.db") == 2  # la nota reciente y su lectura; la vieja no viaja, el aviso ya estaba
+    assert vigia.traer(b, tmp_path / "v.db") == 0
+    assert b.execute("SELECT enviado FROM aviso_enviado").fetchall() == [("antes",)]

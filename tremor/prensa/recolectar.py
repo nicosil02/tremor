@@ -6,6 +6,7 @@ import hashlib
 import json
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from html import unescape
@@ -209,18 +210,24 @@ def lugares_cliente(con):
     return [nombres[i:i + 8] for i in range(0, len(nombres), 8)]
 
 
-def recolectar(con, desde: date | None = None, hasta: date | None = None, pausa=1.0) -> tuple[int, int]:
+def recolectar(con, desde: date | None = None, hasta: date | None = None, pausa=1.0, google=True) -> tuple[int, int]:
     """Sin fechas: feeds de los medios + Google News de las últimas 24 h. Con fechas: Google News día a día
     (los feeds solo traen lo reciente; la búsqueda retro trae ~10 notas por consulta)."""
     nuevas = vistas = 0
     if not desde:
-        for medio, (url, dep) in FEEDS.items():
+        def bajar(url):
             try:
                 r = requests.get(url, timeout=30, headers=UA); r.raise_for_status()
                 if r.encoding == "ISO-8859-1" and "charset" not in r.headers.get("content-type", "").lower():
                     r.encoding = "utf-8"  # sin charset, requests supone latin-1 y salen "PaÃ­ses"
+                return r
             except requests.RequestException as e:
-                print(f"  {medio}: {e.__class__.__name__}")
+                return e
+        with ThreadPoolExecutor(16) as pool:  # cada medio es otro servidor: en fila, uno lento frena a los 59
+            bajados = list(pool.map(bajar, [url for url, _ in FEEDS.values()]))
+        for (medio, (url, dep)), r in zip(FEEDS.items(), bajados):
+            if isinstance(r, Exception):
+                print(f"  {medio}: {r.__class__.__name__}")
                 continue
             limite = (date.today() - timedelta(30)).isoformat()  # feeds abandonados o con años de archivo
             notas = [n for n in parsear(r.text, medio) if (n["publicado"] or "") >= limite]; vistas += len(notas)
@@ -244,7 +251,8 @@ def recolectar(con, desde: date | None = None, hasta: date | None = None, pausa=
                                              for d in range(((hasta or desde) - desde).days + 1)]
     for d0, d1 in dias:
         cliente = [(PALABRAS + " (" + " OR ".join(f'"{n}"' for n in g) + ") Perú", None) for g in lugares_cliente(con)]  # sin Perú, "Mara" trae a Mara Lezama
-        for tema, dep in [(t, None) for t in TEMAS] + [(f'{PALABRAS} "{d}" Perú', d) for d in DEPARTAMENTOS] + cliente:
+        # google=False (el vigilante, cada 2 min): solo los feeds y las búsquedas de los lugares del cliente
+        for tema, dep in ([(t, None) for t in TEMAS] + [(f'{PALABRAS} "{d}" Perú', d) for d in DEPARTAMENTOS] if google else []) + cliente:
             q = f"{tema} " + (f"after:{d0} before:{d1}" if d0 else "when:1d")
             try:
                 r = requests.get(GNEWS.format(q=quote(q)), timeout=30, headers=UA); r.raise_for_status()

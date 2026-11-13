@@ -241,7 +241,9 @@
   <button type="button" data-v="mapa">Mapa</button>
 </nav>
 <script>
-const FUENTES = ["https://raw.githubusercontent.com/nicosil02/tremor/datos/web.json", "web.json"];
+// primero lo del vigilante (rama `vivo`, cada pocos minutos); si su sello `vivo` tiene más de 45 min, está caído: la rama `datos`
+const FUENTES = ["https://raw.githubusercontent.com/nicosil02/tremor/vivo/web.json", "https://raw.githubusercontent.com/nicosil02/tremor/datos/web.json", "web.json"];
+const fresco = d => !d.vivo || Date.now() - Date.parse(d.vivo + "Z") < 45 * 60e3;
 // nombre en pantalla: (cómo figura en el OEFA, alias en notas y radio) — los mismos de tremor/avisos.py
 const EMPRESAS = {
   "Bateas": ["minera bateas", /bateas|caylloma|cailloma/i],
@@ -291,7 +293,7 @@ let D, A, E, empresa = LISTA.includes(URL_E) ? URL_E : LISTA.includes(guardado("
 const CADENA = fetch("cadena.json").then(r => r.json()).catch(() => ({}));
 let CAD = {};
 async function cargar() {
-  for (const u of FUENTES) { try { const r = await fetch(u, { cache: "no-cache" }); if (r.ok) return r.json(); } catch {} }
+  for (const u of FUENTES) { try { const r = await fetch(u, { cache: "no-cache" }); if (r.ok) { const d = await r.json(); if (fresco(d)) return d; } } catch {} }
   throw new Error("sin datos");
 }
 const zonaDe = u => [u, ...(D.vecinos[u] || [])];
