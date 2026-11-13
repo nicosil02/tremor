@@ -125,7 +125,7 @@ def test_cola_prioriza_carga(monkeypatch):
              ("b", "Transportistas de carga pesada anuncian paro nacional de 72 horas", "", "2026-11-03", None, "rss")]
     assert [r[0] for r in H.ordenar(None, filas)][0] == "b"
     # y antes que todo, lo de la empresa que recibe los avisos, aunque sea más viejo
-    monkeypatch.setattr(H, "_del_que_recibe_avisos", lambda con: __import__("re").compile("las bambas|challhuahuacho"))
+    monkeypatch.setattr(H, "_del_que_recibe_avisos", lambda con: lambda t: "challhuahuacho" in t)
     filas.append(("c", "Comuneros de Challhuahuacho anuncian asamblea", "", "2026-11-01", None, "rss"))
     assert [r[0] for r in H.ordenar(None, filas)][0] == "c"
 
@@ -278,3 +278,15 @@ def test_rectifica_la_suspension_que_no_fue():
     assert [c for c, _, _ in cambios({"eventos": [e]}, set(), {orig, "cae:" + orig})] == ["sigue:" + orig]
     assert list(cambios({"eventos": [e]}, set(), {orig})) == []  # nunca se dijo que se suspendía: nada que corregir
     assert [c for c, _, _ in cambios({"eventos": [{**e, "suspendido": True}]}, set(), {orig, "cae:" + orig})] == ["cae:" + orig]
+
+
+def test_lugar_comun_necesita_contexto(monkeypatch):
+    """"Grau" o "Espinar" solos pueden ser una avenida: cuentan como zona del cliente solo con contexto."""
+    import tremor.prensa.historia as H
+    import tremor.prensa.recolectar as R
+    from tremor.lugares import norm
+    monkeypatch.setattr(R, "lugares_cliente", lambda con, solo=None: [["GRAU", "ESPINAR", "CHALLHUAHUACHO", "VELILLE", "SANTO TOMAS"]])
+    f = H._del_que_recibe_avisos(None)
+    si = ["Comuneros de Challhuahuacho bloquean el corredor", "Paro en la provincia de Grau", "Espinar: comunidades de Cusco acatan paro"]
+    no = ["Choque en la avenida Grau de Lima", "Accidente en la avenida Espinar de Miraflores", "Fiesta en Santo Tomás, Amazonas"]
+    assert all(f(norm(t)) for t in si) and not any(f(norm(t)) for t in no)

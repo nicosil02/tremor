@@ -166,16 +166,31 @@ def _lugares_con_operacion(con):
 CLIENTE = re.compile(r"carga pesada|transportistas de carga|camioner|paro nacional|paro de transport|miner|\bmina\b|petrol|oleoducto|\blote \d|corredor minero")
 
 
+# Lugares que también son un apellido, una avenida o una palabra corriente: "la avenida Grau", "Mejía dijo"
+COMUNES = {"grau", "mejia", "espinar", "progreso", "castilla", "lampa", "santa cruz", "san pablo", "rio grande", "chilca", "mala", "copa"}
+
+
 def _del_que_recibe_avisos(con):
-    """Regex (sobre texto normalizado) de la empresa que recibe los avisos y de los distritos y provincias de su zona y
-    su ruta: sus notas se leen primero, para que una cola larga de otras zonas no retrase su aviso."""
+    """Función texto normalizado → ¿es de la empresa que recibe los avisos o de su zona y su ruta? Sus notas se leen
+    primero, para que una cola larga de otras zonas no retrase su aviso. Un nombre que se repite en otra provincia del
+    país o está en COMUNES solo cuenta con contexto: "provincia/distrito de X" o un departamento de la zona en la nota."""
     from tremor import avisos
     from tremor.prensa.recolectar import lugares_cliente
+    empresa = re.compile(avisos.EMPRESAS[avisos.CLIENTE][1])
     try:
-        nombres = [norm(n) for g in lugares_cliente(con, avisos.CLIENTE) for n in g]
+        nombres = {norm(n) for g in lugares_cliente(con, avisos.CLIENTE) for n in g}
     except Exception:  # sin base o sin la tabla `operacion`: solo el nombre de la empresa
-        nombres = []
-    return re.compile("|".join([avisos.EMPRESAS[avisos.CLIENTE][1], *(rf"\b{re.escape(n)}\b" for n in nombres)]))
+        return lambda t: bool(empresa.search(t))
+    deps, provs, dists = catalogo()[:3]
+    donde = lambda n: provs.get(n, set()) | {u[:4] for u in dists.get(n, set())}  # provincias donde existe ese nombre
+    dudosos = {n for n in nombres if n in COMUNES or len(donde(n)) > 1}
+    claros = nombres - dudosos
+    zona = {u[:2] for n in claros for u in donde(n)}
+    junta = lambda xs: "|".join(sorted(re.escape(x) for x in xs)) or "(?!)"
+    claro = re.compile(rf"\b(?:{junta(claros)})\b")
+    dudoso = re.compile(rf"\b(?:{junta(dudosos)})\b")
+    contexto = re.compile(rf"\b(?:provincia|distrito) de (?:{junta(dudosos)})\b|\b(?:{junta(d for d, c in deps.items() if c in zona)})\b")
+    return lambda t: bool(empresa.search(t) or claro.search(t) or (dudoso.search(t) and contexto.search(t)))
 
 
 def ordenar(con, filas):
@@ -190,7 +205,7 @@ def ordenar(con, filas):
         t = norm(f"{r[1]} {r[2] or ''}")
         valor = 2 * bool(EGPP.search(t)) + bool(lugar and lugar.search(t))
         if not (r[5] or "").startswith("historia:"):  # lo vivo: primero lo del cliente que recibe avisos, luego lo minero
-            return (0, -(6 * bool(suyo.search(t)) + 3 * bool(CLIENTE.search(t)) + valor))
+            return (0, -(6 * suyo(t) + 3 * bool(CLIENTE.search(t)) + valor))
         return (1, -valor)
     return sorted(sorted(filas, key=lambda r: r[3] or "", reverse=True), key=clave)  # estable: fecha desc dentro
 
