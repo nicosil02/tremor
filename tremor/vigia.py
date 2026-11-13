@@ -88,11 +88,9 @@ def publicar(ultimo):
 def paso(*args):
     """Un paso que falla (un medio caído, el LLM sin cupo) no tumba al vigilante: se anota y la vuelta sigue."""
     r = subprocess.run([sys.executable, "-m", *args], capture_output=True, text=True, encoding="utf-8", errors="replace")
-    ult = (r.stdout if r.returncode == 0 else r.stderr).strip().splitlines()[-1:]  # avisos imprime la clave de lo enviado
-    print(f"  {' '.join(args)}: {'ERROR ' if r.returncode else ''}{ult[0][:150] if ult else ''}", flush=True)
-    for linea in r.stdout.splitlines():
-        if "aviso enviado" in linea:
-            print(linea, flush=True)
+    enviados = [x for x in r.stdout.splitlines() if "aviso enviado" in x]  # avisos imprime la clave de cada envío
+    ult = [x for x in (r.stdout if r.returncode == 0 else r.stderr).strip().splitlines() if x not in enviados][-1:]
+    print(f"  {' '.join(args)}: {'ERROR ' if r.returncode else ''}{ult[0][:150] if ult else ''}", *enviados, sep="\n", flush=True)
 
 
 def vigilar(minutos, cada=120, reenviar=False):
@@ -105,7 +103,9 @@ def vigilar(minutos, cada=120, reenviar=False):
             print(f"vuelta {n} {datetime.now(timezone.utc):%H:%M:%S}", flush=True)
             paso("tremor.sutran")
             paso("tremor.prensa", "recolectar", *([] if n % 8 == 0 else ["--rapido"]))  # Google News entero cada 8 vueltas
-            paso("tremor.prensa", "codificar", "--max-solicitudes", "40")
+            # ponytail: 3 lotes por vuelta (~45 notas). Con 40, una tanda de 500 notas nuevas dejó la vuelta en 8 min y
+            # los avisos esperando detrás; si el atraso crece, leer primero las notas de la zona del cliente
+            paso("tremor.prensa", "codificar", "--max-solicitudes", "3")
             paso("tremor.prensa", "agrupar")
             paso("tremor.web")
             paso("tremor.avisos", *(["--reenviar"] if reenviar and n == 0 else []))
