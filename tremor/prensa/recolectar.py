@@ -196,15 +196,23 @@ def _guardar(con, notas, consulta, dep):
     return nuevas
 
 
-def lugares_cliente(con):
-    """Nombres de los distritos y provincias de cada unidad y de cada tramo de la ruta de los clientes, en grupos de 8
-    para buscarlos en Google News: una protesta chica en Callalli u Oyón no sale en la búsqueda por departamento.
-    Sin los departamentos (ya se buscan) ni nombres de 3 letras o menos."""
+# Las demás operaciones grandes del país (como figuran en `operacion`): se recolecta de sus zonas aunque no sean clientes
+GRANDES = ("antapaccay", "cerro verde", "quellaveco", "hudbay", "chinalco", "marcobre", "shougang hierro", "volcan compania",
+           "nexa resources", "minsur", "compania minera ares", "gold fields", "barrick", "chungar", "el brocal", "condestable",
+           "minero horizonte", "aurifera retamas")
+
+
+def lugares_cliente(con, solo=None):
+    """Nombres de los distritos y provincias de cada unidad y de cada tramo de la ruta de los clientes y de las grandes
+    operaciones, en grupos de 8 para buscarlos en Google News: una protesta chica en Callalli u Oyón no sale en la
+    búsqueda por departamento. Sin los departamentos (ya se buscan) ni nombres de 3 letras o menos.
+    solo: una empresa de EMPRESAS (el cliente que recibe avisos); el vigilante busca sus lugares en cada vuelta."""
     from tremor.avisos import CADENA, EMPRESAS
     from tremor.lugares import nombre
-    ubs = {u for _, (emp, _a) in EMPRESAS.items() for (u,) in con.execute(
+    empresas = [EMPRESAS[solo][0]] if solo else [emp for emp, _a in EMPRESAS.values()] + list(GRANDES)
+    ubs = {u for emp in empresas for (u,) in con.execute(
         "SELECT ubigeo FROM operacion WHERE lower(empresa) LIKE ? AND unidad NOT LIKE 'Pasivos%'", (f"%{emp}%",))}
-    ubs |= {u for c in CADENA.values() if isinstance(c, dict) for t in c.get("tramos", []) for u in t["ubigeos"]}
+    ubs |= {u for k, c in CADENA.items() if isinstance(c, dict) and (not solo or k == solo) for t in c.get("tramos", []) for u in t["ubigeos"]}
     fuera = {norm(d) for d in DEPARTAMENTOS}
     nombres = sorted({n for u in ubs for n in (nombre(u), nombre(u[:4])) if n and len(n) > 3 and norm(n) not in fuera})
     return [nombres[i:i + 8] for i in range(0, len(nombres), 8)]
@@ -250,8 +258,9 @@ def recolectar(con, desde: date | None = None, hasta: date | None = None, pausa=
     dias =[(None, None)] if not desde else [(desde + timedelta(d), desde + timedelta(d + 1))
                                              for d in range(((hasta or desde) - desde).days + 1)]
     for d0, d1 in dias:
-        cliente = [(PALABRAS + " (" + " OR ".join(f'"{n}"' for n in g) + ") Perú", None) for g in lugares_cliente(con)]  # sin Perú, "Mara" trae a Mara Lezama
-        # google=False (el vigilante, cada 2 min): solo los feeds y las búsquedas de los lugares del cliente
+        from tremor.avisos import CLIENTE
+        cliente = [(PALABRAS + " (" + " OR ".join(f'"{n}"' for n in g) + ") Perú", None) for g in lugares_cliente(con, None if google else CLIENTE)]  # sin Perú, "Mara" trae a Mara Lezama
+        # google=False (el vigilante, cada 2 min): solo los feeds y las búsquedas de los lugares del cliente que recibe avisos
         for tema, dep in ([(t, None) for t in TEMAS] + [(f'{PALABRAS} "{d}" Perú', d) for d in DEPARTAMENTOS] if google else []) + cliente:
             q = f"{tema} " + (f"after:{d0} before:{d1}" if d0 else "when:1d")
             try:

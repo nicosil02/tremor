@@ -284,7 +284,7 @@ const guardado = k => { try { return localStorage.getItem(k); } catch { return n
 const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 
 // Piloto con una sola minera; en ?admin se ven todas para revisar que cada una salga bien
-const PILOTO = ["Bateas", "Raura", "Poderosa", "Las Bambas", "Buenaventura"], ADMIN = /[?&]admin\b/.test(location.search);
+const PILOTO = ["Las Bambas", "Bateas", "Raura", "Poderosa", "Buenaventura"], ADMIN = /[?&]admin\b/.test(location.search);
 // Dentro de Streamlit (streamlit_app.py) la sesión fija la empresa: un cliente ve solo la suya; el equipo, todas
 const T = window.TREMOR, LISTA = T ? (T.todas ? Object.keys(EMPRESAS) : [T.empresa]) : ADMIN ? Object.keys(EMPRESAS) : PILOTO;
 const URL_E = new URLSearchParams(location.search).get("e");  // enlace del aviso: ?e=Bateas&d=080803
