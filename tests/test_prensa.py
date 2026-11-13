@@ -568,3 +568,14 @@ def test_aviso_ya_enviado_se_reconoce(tmp_path):
     con.execute("CREATE TABLE aviso_enviado (clave TEXT, empresa TEXT, enviado TEXT, PRIMARY KEY (clave, empresa))")
     con.execute("INSERT INTO aviso_enviado VALUES ('evento:00:Paro:2026-11-16', 'Bateas', 'x')")
     assert "evento:00:Paro:2026-11-16|Bateas" in avisos.ya_enviados(con)
+
+
+def test_llm_clave_rechazada_cede_al_siguiente_modelo(monkeypatch):
+    """Un 401 (clave mal copiada en un secreto) no tumba el paso: ese modelo se salta, como uno sin cupo."""
+    import sqlite3
+    import pytest
+    from tremor import llm
+    r = type("R", (), {"status_code": 401, "text": "Unauthorized", "headers": {}})()
+    monkeypatch.setattr(llm.requests, "post", lambda *a, **k: r)
+    with pytest.raises(llm.SinCuota):
+        llm._llamar(sqlite3.connect(":memory:"), "http://x", "k", "m", "c", "s", "u")
