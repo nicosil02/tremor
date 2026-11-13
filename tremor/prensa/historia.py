@@ -166,18 +166,31 @@ def _lugares_con_operacion(con):
 CLIENTE = re.compile(r"carga pesada|transportistas de carga|camioner|paro nacional|paro de transport|miner|\bmina\b|petrol|oleoducto|\blote \d|corredor minero")
 
 
+def _del_que_recibe_avisos(con):
+    """Regex (sobre texto normalizado) de la empresa que recibe los avisos y de los distritos y provincias de su zona y
+    su ruta: sus notas se leen primero, para que una cola larga de otras zonas no retrase su aviso."""
+    from tremor import avisos
+    from tremor.prensa.recolectar import lugares_cliente
+    try:
+        nombres = [norm(n) for g in lugares_cliente(con, avisos.CLIENTE) for n in g]
+    except Exception:  # sin base o sin la tabla `operacion`: solo el nombre de la empresa
+        nombres = []
+    return re.compile("|".join([avisos.EMPRESAS[avisos.CLIENTE][1], *(rf"\b{re.escape(n)}\b" for n in nombres)]))
+
+
 def ordenar(con, filas):
     """Cola del codificador: primero lo vivo (feeds, Google News, radio), y dentro lo que le importa a un cliente
     minero (si no, con poco cupo las notas nuevas de otros temas dejan atrás un paro nacional de carga) y luego por fecha; después la historia, primero
     las notas con palabra de acción EGPP y lugar con operación, luego una de las dos, luego el resto.
     filas: (id, titular, resumen, publicado, departamento_consulta, consulta)."""
     lugar = _lugares_con_operacion(con)
+    suyo = _del_que_recibe_avisos(con)
 
     def clave(r):
         t = norm(f"{r[1]} {r[2] or ''}")
         valor = 2 * bool(EGPP.search(t)) + bool(lugar and lugar.search(t))
-        if not (r[5] or "").startswith("historia:"):  # lo vivo: primero lo que le importa a un cliente minero
-            return (0, -(3 * bool(CLIENTE.search(t)) + valor))
+        if not (r[5] or "").startswith("historia:"):  # lo vivo: primero lo del cliente que recibe avisos, luego lo minero
+            return (0, -(6 * bool(suyo.search(t)) + 3 * bool(CLIENTE.search(t)) + valor))
         return (1, -valor)
     return sorted(sorted(filas, key=lambda r: r[3] or "", reverse=True), key=clave)  # estable: fecha desc dentro
 

@@ -124,6 +124,10 @@ def test_cola_prioriza_carga(monkeypatch):
     filas = [("a", "Vecinos protestan por la tala de árboles", "", "2026-11-09", None, "rss"),
              ("b", "Transportistas de carga pesada anuncian paro nacional de 72 horas", "", "2026-11-03", None, "rss")]
     assert [r[0] for r in H.ordenar(None, filas)][0] == "b"
+    # y antes que todo, lo de la empresa que recibe los avisos, aunque sea más viejo
+    monkeypatch.setattr(H, "_del_que_recibe_avisos", lambda con: __import__("re").compile("las bambas|challhuahuacho"))
+    filas.append(("c", "Comuneros de Challhuahuacho anuncian asamblea", "", "2026-11-01", None, "rss"))
+    assert [r[0] for r in H.ordenar(None, filas)][0] == "c"
 
 
 def test_por_reglas():
