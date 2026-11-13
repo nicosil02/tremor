@@ -102,7 +102,7 @@ def _llamar(con, url, clave, modelo, k, sistema, usuario) -> dict:
                 raise SinCuota(f"saturado ({r.status_code})")
             time.sleep(10)
             continue
-        if r.status_code in (403, 404):  # modelo retirado o no habilitado para esta clave
+        if r.status_code in (401, 403, 404):  # clave rechazada, o modelo retirado o no habilitado para esta clave
             raise SinCuota(f"no disponible ({r.status_code})")
         if r.status_code in (400, 413):  # 413: lote demasiado grande; quien llama lo parte en dos
             raise RespuestaInvalida(f"{r.status_code}: {r.text[:300]}")
