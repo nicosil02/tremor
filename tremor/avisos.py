@@ -444,6 +444,12 @@ def enviar(texto, png=None):
     return False
 
 
+def ya_enviados(con):
+    """{"clave|empresa"} como textos. Antes era un set de filas de la base (sqlite3.Row), que nunca son iguales a una
+    tupla: ningún aviso se reconocía como enviado y cada corrida los mandaba todos otra vez."""
+    return {f"{c}|{e}" for c, e in con.execute("SELECT clave, empresa FROM aviso_enviado")}
+
+
 def main(dias=7, reenviar=False, muestra=False):  # 7: GitHub a veces corre el workflow pocas veces al día
     """muestra: las piezas de las 7 empresas en datos/exportes/muestra/ (imagen y texto), sin enviar nada; para revisarlas
     a ojo antes de cambiar el formato."""
@@ -451,7 +457,7 @@ def main(dias=7, reenviar=False, muestra=False):  # 7: GitHub a veces corre el w
     con.execute("CREATE TABLE IF NOT EXISTS aviso_enviado (clave TEXT, empresa TEXT, enviado TEXT, PRIMARY KEY (clave, empresa))")
     web = json.load(open(DATOS / "exportes" / "web.json", encoding="utf-8"))
     desde = (date.today() - timedelta(days=dias)).isoformat()
-    ya = set() if reenviar or muestra else set(con.execute("SELECT clave || '|' || empresa FROM aviso_enviado").fetchall())  # --reenviar: prueba
+    ya = set() if reenviar or muestra else ya_enviados(con)  # --reenviar: prueba
     for nombre, (empresa, alias) in EMPRESAS.items():
         if nombre != CLIENTE and not muestra:
             continue
@@ -461,14 +467,14 @@ def main(dias=7, reenviar=False, muestra=False):  # 7: GitHub a veces corre el w
         for t in CADENA.get(nombre, {}).get("tramos", []):  # su ruta de salida (docs/cadena.json)
             for u in t["ubigeos"]:
                 z.setdefault(u, "en su ruta, tramo " + re.sub(r", (\w+)$", r" (\1)", t["nombre"]))  # "Puerto de Matarani (zinc)"
-        nuevo = lambda xs: [x for x in xs if (f"{x['clave']}|{nombre}",) not in ya]
+        nuevo = lambda xs: [x for x in xs if f"{x['clave']}|{nombre}" not in ya]
         evs, rad, rie = nuevo([*eventos(web, z, alias, desde), *sutran(con, z, desde)]), nuevo(radio(con, alias, desde)), nuevo(riesgo(web, z))
         for e in evs:
             if r := de_radio(con, e):
                 e["emitido"], e["dicho"], extra = r
                 e.update({k: v for k, v in extra.items() if v})
         enviados = {c for (c,) in con.execute("SELECT clave FROM aviso_enviado WHERE empresa = ?", (nombre,))}
-        ruta = [x for x in [*lentas(con, nombre), *decretos(con, z), *cambios(web, z, enviados), *reputacion(con, alias)] if (f"{x[0]}|{nombre}",) not in ya]
+        ruta = [x for x in [*lentas(con, nombre), *decretos(con, z), *cambios(web, z, enviados), *reputacion(con, alias)] if f"{x[0]}|{nombre}" not in ya]
         for clave, texto, png in [*piezas(nombre, evs, rad, rie, unidad, web["vecinos"], tramos), *ruta]:
             if muestra:
                 d = DATOS / "exportes" / "muestra"; d.mkdir(parents=True, exist_ok=True)

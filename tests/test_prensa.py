@@ -559,3 +559,12 @@ def test_vigia_guardar_y_traer(tmp_path):
     assert vigia.traer(b, tmp_path / "v.db") == 2  # la nota reciente y su lectura; la vieja no viaja, el aviso ya estaba
     assert vigia.traer(b, tmp_path / "v.db") == 0
     assert b.execute("SELECT enviado FROM aviso_enviado").fetchall() == [("antes",)]
+
+
+def test_aviso_ya_enviado_se_reconoce(tmp_path):
+    from tremor import avisos
+    from tremor.db import conectar
+    con = conectar(tmp_path / "t.db")  # la conexión real: devuelve filas sqlite3.Row
+    con.execute("CREATE TABLE aviso_enviado (clave TEXT, empresa TEXT, enviado TEXT, PRIMARY KEY (clave, empresa))")
+    con.execute("INSERT INTO aviso_enviado VALUES ('evento:00:Paro:2026-11-16', 'Bateas', 'x')")
+    assert "evento:00:Paro:2026-11-16|Bateas" in avisos.ya_enviados(con)
