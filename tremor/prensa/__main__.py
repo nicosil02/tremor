@@ -27,7 +27,7 @@ def exportar(con):
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="python -m tremor.prensa")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    r = sub.add_parser("recolectar"); r.add_argument("--desde", type=date.fromisoformat); r.add_argument("--hasta", type=date.fromisoformat)
+    r = sub.add_parser("recolectar"); r.add_argument("--desde", type=date.fromisoformat); r.add_argument("--hasta", type=date.fromisoformat); r.add_argument("--rapido", action="store_true")
     c = sub.add_parser("codificar"); c.add_argument("--max-solicitudes", type=int, default=200)
     h = sub.add_parser("historia"); h.add_argument("--desde", default="2018-01"); h.add_argument("--hasta")
     h.add_argument("--medio", action="append", help="uno o varios; sin él, todos (ver historia.MEDIOS)")
@@ -41,7 +41,7 @@ def main(argv=None):
     sys.stdout.reconfigure(encoding="utf-8")
     con = conectar()
     if a.cmd in ("recolectar", "todo"):
-        nuevas, vistas = rec.recolectar(con, getattr(a, "desde", None), getattr(a, "hasta", None))
+        nuevas, vistas = rec.recolectar(con, getattr(a, "desde", None), getattr(a, "hasta", None), google=not getattr(a, "rapido", False))
         print(f"Prensa: {vistas} notas vistas, {nuevas} nuevas.")
     if a.cmd == "historia":
         from tremor.prensa import historia as hist

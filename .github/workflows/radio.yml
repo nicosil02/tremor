@@ -102,6 +102,7 @@ jobs:
           git show origin/datos:tremor.db.gz | gunzip > datos/tremor.db
           mkdir -p datos/exportes && git archive origin/datos | tar -x -C datos/exportes --wildcards "*.csv"  # conserva los CSV de los otros workflows (la alerta del modelo)
           git show origin/datos:distritos.geojson > datos/distritos.geojson || true
+          python -m tremor.vigia traer   # lo que el vigilante ya vio y leyó: no se gasta el LLM dos veces
 
       - name: Cargar, codificar y medir el ánimo
         env:
@@ -116,12 +117,8 @@ jobs:
           python -m tremor.animo
 
       - name: Publicar en la rama datos
-        env:  # sin estos secretos, los avisos solo se imprimen en el log
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           python -m tremor.web   # web.json: lo que lee la página (docs/index.html)
-          python -m tremor.avisos   # Telegram a cada empresa: protestas en su zona, menciones en radio y subidas del riesgo
           mkdir -p /tmp/datos && gzip -9 -c datos/tremor.db > /tmp/datos/tremor.db.gz && cp datos/exportes/*.csv /tmp/datos/
           cp datos/exportes/web.json /tmp/datos/
           cp datos/distritos.geojson /tmp/datos/ || true

@@ -452,7 +452,9 @@ const ADMIN = /[?&]admin\b/.test(location.search);
 if (!/[?&]web\b/.test(location.search)) location.replace("app.html" + (ADMIN ? "?admin" : ""));
 let CADENA = {}; fetch("cadena.json").then(r => r.json()).then(c => CADENA = c).catch(() => {});
 let CAMINOS = {}; fetch("caminos.json").then(r => r.json()).then(c => CAMINOS = c).catch(() => {});  // el trazo real de cada tramo (tremor.tarjeta.caminos)
-const FUENTES = ["https://raw.githubusercontent.com/nicosil02/tremor/datos/web.json", "web.json"];
+// primero lo del vigilante (rama `vivo`, cada pocos minutos); si su sello `vivo` tiene más de 45 min, está caído: la rama `datos`
+const FUENTES = ["https://raw.githubusercontent.com/nicosil02/tremor/vivo/web.json", "https://raw.githubusercontent.com/nicosil02/tremor/datos/web.json", "web.json"];
+const fresco = d => !d.vivo || Date.now() - Date.parse(d.vivo + "Z") < 45 * 60e3;
 const BASE = "https://tiles.openfreemap.org/styles/positron";
 const PERU = [[-81.4, -18.4], [-68.6, 0.1]];
 const pct = v => v == null || isNaN(v) ? "sin dato" : v > 0.95 ? ">95%" : `${Math.round(v * 100)}%`;
@@ -474,7 +476,7 @@ const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).
 const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 async function json(urls) {
-  for (const u of urls) { try { const r = await fetch(u, { cache: "no-cache" }); if (r.ok) return await r.json(); } catch (e) {} }
+  for (const u of urls) { try { const r = await fetch(u, { cache: "no-cache" }); if (r.ok) { const d = await r.json(); if (fresco(d)) return d; } } catch (e) {} }
   throw new Error("sin datos");
 }
 

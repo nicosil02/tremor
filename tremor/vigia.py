@@ -1,0 +1,125 @@
+"""Vigilante: el carril rápido. Una vuelta cada 2 minutos con lo que cambia en minutos (SUTRAN y prensa), lee solo las
+notas nuevas, reagrupa y manda los avisos de Telegram. Es el único que avisa: defensoria.yml y radio.yml (carril lento)
+publican la base en la rama `datos` y él la vuelve a bajar cuando cambia.
+
+Su memoria es la rama `vivo`: `vivo.db.gz` (notas y lecturas de los últimos días y todos los avisos enviados) y el
+`web.json` que lee la página. Con eso, si muere, el siguiente retoma sin repetir avisos, y el carril lento no vuelve a
+gastar cupo del LLM en lo que él ya leyó. Corre igual en GitHub (vigia.yml) que en cualquier Linux con git y las claves.
+
+    python -m tremor.vigia --minutos 320     # el bucle
+    python -m tremor.vigia traer             # el carril lento: sumar a la base lo que vio el vigilante
+"""
+import gzip
+import json
+import subprocess
+import sys
+import time
+from datetime import datetime, timezone
+
+from tremor.db import DATOS, conectar
+
+DIAS = "date('now', '-2 days')"
+ESTADO = {"nota": f"descargado >= {DIAS}", "codificacion": f"nota_id IN (SELECT id FROM nota WHERE descargado >= {DIAS})",
+          "llm_cache": f"creado >= {DIAS}", "aviso_enviado": "1"}
+VIVO = DATOS / "vivo.db"
+
+
+def guardar(con, ruta=VIVO):
+    ruta.unlink(missing_ok=True)
+    con.execute("ATTACH ? AS v", (str(ruta),))
+    for t, donde in ESTADO.items():
+        con.execute(f"CREATE TABLE v.{t} AS SELECT * FROM {t} WHERE {donde}")
+    con.commit(); con.execute("DETACH v")
+
+
+def traer(con, ruta=VIVO):
+    """Suma a la base lo guardado; lo que ya está, se queda como está. Devuelve las filas nuevas."""
+    con.execute("CREATE TABLE IF NOT EXISTS aviso_enviado (clave TEXT, empresa TEXT, enviado TEXT, PRIMARY KEY (clave, empresa))")
+    con.execute("ATTACH ? AS v", (str(ruta),))
+    # ponytail: SELECT * supone las mismas columnas en las dos bases; si una tabla gana una columna, falla hasta el
+    # siguiente relevo del vigilante (5,5 h como mucho)
+    n = sum(con.execute(f"INSERT OR IGNORE INTO {t} SELECT * FROM v.{t}").rowcount for t in ESTADO)
+    con.commit(); con.execute("DETACH v")
+    return n
+
+
+def git(*a, entrada=None):
+    return subprocess.run(["git", *a], input=entrada, capture_output=True, check=True).stdout
+
+
+def bajar_vivo():
+    """vivo.db de la rama `vivo`; False si la rama todavía no existe."""
+    if subprocess.run(["git", "fetch", "-q", "--depth", "1", "origin", "vivo"], capture_output=True).returncode:
+        return False
+    VIVO.write_bytes(gzip.decompress(git("show", "FETCH_HEAD:vivo.db.gz")))
+    return True
+
+
+def base():
+    """La base publicada por el carril lento más la memoria del vigilante. Devuelve el commit de `datos` que bajó."""
+    git("fetch", "-q", "--depth", "1", "origin", "datos")
+    commit = git("rev-parse", "FETCH_HEAD").decode().strip()
+    (DATOS / "exportes").mkdir(parents=True, exist_ok=True)
+    for f in git("ls-tree", "--name-only", commit).decode().split():
+        if f.endswith((".csv", ".geojson")):  # la alerta del modelo y los límites, que piden web y avisos
+            (DATOS / ("exportes" if f.endswith(".csv") else "") / f).write_bytes(git("show", f"{commit}:{f}"))
+    (DATOS / "tremor.db").write_bytes(gzip.decompress(git("show", f"{commit}:tremor.db.gz")))
+    if bajar_vivo():
+        con = conectar(); print(f"  base {commit[:7]}; del vigilante anterior: {traer(con)} filas", flush=True); con.close()
+    return commit
+
+
+def publicar(ultimo):
+    """Un solo commit sin historia en la rama `vivo`, y solo si algo cambió. Devuelve el árbol publicado."""
+    web = DATOS / "exportes" / "web.json"
+    d = json.loads(web.read_text(encoding="utf-8"))
+    d["vivo"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M")[:15] + "0:00"  # sello cada 10 min: la página sabe que sigue vivo
+    web.write_text(json.dumps(d, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    con = conectar(); guardar(con); con.close()
+    gz = DATOS / "vivo.db.gz"
+    gz.write_bytes(gzip.compress(VIVO.read_bytes(), mtime=0))
+    arbol = git("mktree", entrada=b"".join(b"100644 blob " + git("hash-object", "-w", str(p)).strip() + b"\t" + p.name.encode() + b"\n"
+                                           for p in (gz, web))).strip()
+    if arbol != ultimo:
+        git("push", "-qf", "origin", git("commit-tree", arbol, "-m", "Vivo").strip().decode() + ":refs/heads/vivo")
+    return arbol
+
+
+def paso(*args):
+    """Un paso que falla (un medio caído, el LLM sin cupo) no tumba al vigilante: se anota y la vuelta sigue."""
+    r = subprocess.run([sys.executable, "-m", *args], capture_output=True, text=True, encoding="utf-8", errors="replace")
+    ult = (r.stdout if r.returncode == 0 else r.stderr).strip().splitlines()[-1:]  # avisos imprime la clave de lo enviado
+    print(f"  {' '.join(args)}: {'ERROR ' if r.returncode else ''}{ult[0][:150] if ult else ''}", flush=True)
+    for linea in r.stdout.splitlines():
+        if "aviso enviado" in linea:
+            print(linea, flush=True)
+
+
+def vigilar(minutos, cada=120, reenviar=False):
+    fin, n, datos, arbol = time.time() + minutos * 60, 0, None, None
+    while time.time() < fin:
+        t0 = time.time()
+        try:
+            if git("ls-remote", "origin", "refs/heads/datos").decode().split()[:1] != [datos]:
+                datos = base()
+            print(f"vuelta {n} {datetime.now(timezone.utc):%H:%M:%S}", flush=True)
+            paso("tremor.sutran")
+            paso("tremor.prensa", "recolectar", *([] if n % 8 == 0 else ["--rapido"]))  # Google News entero cada 8 vueltas
+            paso("tremor.prensa", "codificar", "--max-solicitudes", "40")
+            paso("tremor.prensa", "agrupar")
+            paso("tremor.web")
+            paso("tremor.avisos", *(["--reenviar"] if reenviar and n == 0 else []))
+            arbol = publicar(arbol)
+        except (subprocess.CalledProcessError, OSError) as e:  # GitHub no responde: la siguiente vuelta lo reintenta
+            print(f"  vuelta fallida: {e}", flush=True)
+            datos = None
+        n += 1
+        time.sleep(max(0, cada - (time.time() - t0)))
+
+
+if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    if "traer" in sys.argv:
+        print(f"Del vigilante: {traer(conectar()) if bajar_vivo() else 0} filas nuevas.")
+    else:
+        vigilar(int(sys.argv[sys.argv.index("--minutos") + 1]) if "--minutos" in sys.argv else 320, reenviar="--reenviar" in sys.argv)

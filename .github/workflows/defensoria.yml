@@ -6,11 +6,6 @@ on:
   schedule:
     - cron: "*/30 * * * *"  # cada media hora: una protesta anunciada debe aparecer pronto (el LLM codifica lo que su cupo alcance)
   workflow_dispatch:
-    inputs:
-      reenviar:
-        description: "Volver a mandar al cliente los avisos vigentes (prueba)"
-        type: boolean
-        default: false
 
 permissions:
   contents: write
@@ -42,6 +37,7 @@ jobs:
           git show origin/datos:tremor.db.gz | gunzip > datos/tremor.db
           mkdir -p datos/exportes && git archive origin/datos | tar -x -C datos/exportes --wildcards "*.csv"  # conserva los CSV de los otros workflows (la alerta del modelo)
           git show origin/datos:distritos.geojson > datos/distritos.geojson || true  # límites (tremor.distritos pnud)
+          python -m tremor.vigia traer   # lo que el vigilante ya vio y leyó: no se gasta el LLM dos veces
 
       - name: Defensoría
         run: python -m tremor.defensoria todo
@@ -110,13 +106,9 @@ jobs:
           python -m tremor.clasifica
 
       - name: Publicar en la rama datos
-        if: ${{ !cancelled() }}  # si falla un paso anterior (p. ej. el LLM), los avisos de Telegram igual salen
-        env:  # sin estos secretos, los avisos solo se imprimen en el log
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        if: ${{ !cancelled() }}  # si falla un paso anterior (p. ej. el LLM), lo recolectado igual se publica; los avisos los manda vigia.yml
         run: |
           python -m tremor.web   # web.json: lo que lee la página (docs/index.html)
-          python -m tremor.avisos ${{ inputs.reenviar && '--reenviar' || '' }}   # Telegram a cada empresa: protestas en su zona, menciones en radio y subidas del riesgo
           mkdir -p /tmp/datos && gzip -9 -c datos/tremor.db > /tmp/datos/tremor.db.gz && cp datos/exportes/*.csv /tmp/datos/
           cp datos/exportes/web.json /tmp/datos/
           cp datos/distritos.geojson /tmp/datos/ || true
