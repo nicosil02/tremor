@@ -58,7 +58,8 @@ def main(argv=None):
         from tremor.prensa.historia import _del_que_recibe_avisos
         suyo = _del_que_recibe_avisos(con)
         vistas, hechas = ampliar(con, cod.VERSION, getattr(a, "limite", 200), primero=lambda t: suyo(norm(t)))
-        print(f"Ampliadas {hechas} de {vistas} protestas sin lugar (lead del medio).")
+        from tremor.prensa.ampliar import MOTIVOS
+        print(f"Ampliadas {hechas} de {vistas} protestas sin lugar (lead del medio)." + (f" Sin ampliar: {dict(MOTIVOS)}" if MOTIVOS else ""))
     if a.cmd in ("codificar", "todo"):
         s, n, falta = cod.codificar(con, getattr(a, "max_solicitudes", 200))
         print(f"Codificadas {n} notas en {s} solicitudes." + (" Quedan pendientes." if falta else ""))
