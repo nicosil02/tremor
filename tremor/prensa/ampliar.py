@@ -10,6 +10,7 @@ import html
 import json
 import re
 import time
+from collections import Counter
 from datetime import date
 from urllib.parse import quote, unquote
 
@@ -21,6 +22,9 @@ BATCH = "https://news.google.com/_/DotsSplashUi/data/batchexecute"
 
 class Limite(Exception):
     pass
+
+
+MOTIVOS = Counter()  # por qué no se amplió cada nota en esta corrida: lo imprime el CLI para verlo en el log
 
 
 def enlace_real(url: str) -> str | None:
@@ -107,13 +111,16 @@ def por_bing(titular: str) -> str | None:
 
 def ampliar(con, version: str, limite=200, pausa=1.0, primero=None) -> tuple[int, int]:
     """Protestas sin resumen que están sin lugar preciso o marcadas como anunciadas → lead del medio. Primero los
-    enlaces directos al medio (sin cupo), después los de Google News (con pausa)."""
+    enlaces directos al medio (sin cupo), después los de Google News (con pausa). Lo intentado no se repite en 3 horas
+    (tabla ampliar_intento): el vigilante corre esto en cada vuelta y las mismas 6 notas sin texto tapaban la cola."""
+    con.execute("CREATE TABLE IF NOT EXISTS ampliar_intento (nota_id TEXT PRIMARY KEY, intentado TEXT)")
     # también las anunciadas sin fecha con resumen corto: la fecha suele estar en el cuerpo ("del 16 al 18 de noviembre")
     filas = con.execute("""SELECT n.id, n.enlace, n.titular, substr(n.publicado, 1, 10),
                c.precision IS NULL OR c.precision = 'departamento' OR (c.estado = 'anunciada' AND c.fecha_evento IS NULL)
         FROM nota n JOIN codificacion c ON c.nota_id = n.id AND c.version = ?
         WHERE c.es_protesta = 1 AND n.publicado >= date('now', '-30 day')
           AND (coalesce(n.resumen, '') = '' OR (c.estado = 'anunciada' AND c.fecha_evento IS NULL AND length(n.resumen) < 400))
+          AND n.id NOT IN (SELECT nota_id FROM ampliar_intento WHERE intentado >= datetime('now', '-3 hours'))
         ORDER BY n.publicado DESC LIMIT 500""", (version,)).fetchall()
     # primero: función titular → ¿es del cliente que recibe avisos? Sus notas van antes; luego los enlaces directos
     # al medio (sin cupo) y dentro lo más nuevo
@@ -125,15 +132,24 @@ def ampliar(con, version: str, limite=200, pausa=1.0, primero=None) -> tuple[int
     for id_, url, titular, publicado, sin_lugar in filas:
         if "news.google.com" in url:
             time.sleep(2 if bing else pausa)  # sin pausa Google corta con captcha a las ~15 consultas
+        con.execute("INSERT OR REPLACE INTO ampliar_intento VALUES (?, datetime('now'))", (id_,))
+        con.commit()
         try:
-            real = por_bing(titular) if bing and "news.google.com" in url else enlace_real(url)
-            pagina = requests.get(real, headers=UA, timeout=30).text if real else ""
+            google = "news.google.com" in url
+            try:
+                real = None if bing and google else enlace_real(url)
+            except Limite as e:
+                print(f"  {e}; sigo por Bing News")  # sin saltarse el captcha: se busca el titular en otro buscador
+                bing, real = True, None
+            if not real and google:  # Google no dio el enlace (captcha, o no responde desde esta máquina): Bing News
+                real = por_bing(titular)
+            if not real:
+                MOTIVOS["sin enlace al medio"] += 1
+                continue
+            pagina = requests.get(real, headers=UA, timeout=30).text
             texto = lead(pagina)
-        except requests.RequestException:
-            continue
-        except Limite as e:
-            print(f"  {e}; sigo por Bing News")  # sin saltarse el captcha: se busca el titular en otro buscador
-            bing = True
+        except requests.RequestException as e:
+            MOTIVOS[f"red: {type(e).__name__}"] += 1
             continue
         f = fecha_pagina(pagina) or fecha_por_foto(pagina, texto)
         if f and publicado and f < publicado and (date.fromisoformat(publicado) - date.fromisoformat(f)).days > 3:
@@ -142,6 +158,8 @@ def ampliar(con, version: str, limite=200, pausa=1.0, primero=None) -> tuple[int
             con.execute("DELETE FROM codificacion WHERE nota_id = ?", (id_,))
             con.commit()
             continue
+        if not texto:
+            MOTIVOS["página sin texto"] += 1
         if texto and len(texto) > len(viejo.get(id_) or ""):
             con.execute("UPDATE nota SET resumen = ?, enlace = ? WHERE id = ?", (texto, real, id_))
             if sin_lugar:  # solo se recodifica lo que no tenía lugar; lo demás guarda el texto para leer adhesiones
