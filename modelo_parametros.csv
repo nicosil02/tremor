@@ -1,0 +1,36 @@
+objetivo,modelo,parametros
+y_fuerza,logistica,{}
+y_fuerza,lasso,{'logisticregression__C': 0.01}
+y_fuerza,arbol,{'max_depth': 3}
+y_fuerza,bosque,{'min_samples_leaf': 50}
+y_fuerza,gradient_boosting,{'histgradientboostingclassifier__learning_rate': 0.02}
+y_extractivo,logistica,{}
+y_extractivo,lasso,{'logisticregression__C': 0.05}
+y_extractivo,arbol,{'max_depth': 4}
+y_extractivo,bosque,{'min_samples_leaf': 150}
+y_extractivo,gradient_boosting,{'histgradientboostingclassifier__learning_rate': 0.02}
+y_crisis,logistica,{}
+y_crisis,lasso,{'logisticregression__C': 0.01}
+y_crisis,arbol,{'max_depth': 3}
+y_crisis,bosque,{'min_samples_leaf': 150}
+y_crisis,gradient_boosting,{'histgradientboostingclassifier__learning_rate': 0.02}
+z_fuerza,logistica,{}
+z_fuerza,lasso,{'logisticregression__C': 0.01}
+z_fuerza,arbol,{'max_depth': 3}
+z_fuerza,bosque,{'min_samples_leaf': 150}
+z_fuerza,gradient_boosting,{'histgradientboostingclassifier__learning_rate': 0.02}
+z_extractivo,logistica,{}
+z_extractivo,lasso,{'logisticregression__C': 0.01}
+z_extractivo,arbol,{'max_depth': 4}
+z_extractivo,bosque,{'min_samples_leaf': 50}
+z_extractivo,gradient_boosting,{'histgradientboostingclassifier__learning_rate': 0.05}
+z1_fuerza,logistica,{}
+z1_fuerza,lasso,{'logisticregression__C': 0.01}
+z1_fuerza,arbol,{'max_depth': 3}
+z1_fuerza,bosque,{'min_samples_leaf': 150}
+z1_fuerza,gradient_boosting,{'histgradientboostingclassifier__learning_rate': 0.02}
+z1_brote,logistica,{}
+z1_brote,lasso,{'logisticregression__C': 0.01}
+z1_brote,arbol,{'max_depth': 6}
+z1_brote,bosque,{'min_samples_leaf': 150}
+z1_brote,gradient_boosting,{'histgradientboostingclassifier__learning_rate': 0.02}

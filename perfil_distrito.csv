@@ -1,0 +1,813 @@
+ubigeo,region,provincia,distrito,eventos,eventos_2015_2025,primer_anio,ultimo_anio,socioambiental,laboral_minero,ambientales,territoriales,laborales,politicos,economicos,servicios,top_subreclamos,top_actores,pct_bloqueo,pct_heridos,pct_muertos,pct_represion,contra_empresa,operaciones,capital_por_defecto
+010101,AMAZONAS,CHACHAPOYAS,CHACHAPOYAS,40,11,1983,2024,1,0,0,3,4,24,8,1,Rechazo de mandatos (6); Ejecución de funciones (5); Destitución de autoridad electa (5),Pobladores (14); Estudiantes universidades (5); Docentes colegios (5),0.2,0.0,0.0,0.0,2,,1
+010108,AMAZONAS,CHACHAPOYAS,HUANCAS,3,0,2001,2009,0,0,0,0,0,2,0,1,Rechazo de mandatos (2); Alimentación (1),Reos (3),0.0,0.333,0.0,0.667,0,,0
+010201,AMAZONAS,BAGUA,BAGUA,22,3,1997,2021,4,0,2,1,2,14,2,1,Rechazo de normas (6); Rechazo de mandatos (4); Ejecución de funciones (3),Comunidades nativas (9); Pobladores (5); Docentes colegios (2),0.182,0.045,0.0,0.045,2,Petroperú-Oleoducto (2); Río Blanco (1); Sierra Dorada (1),1
+010202,AMAZONAS,BAGUA,ARAMANGO,15,0,2002,2012,0,0,0,0,0,12,0,3,Rechazo de normas (11); Transporte (3); Destitución de funcionario (1),Comunidades nativas (12); Pobladores (3),0.267,0.067,0.0,0.133,0,,0
+010205,AMAZONAS,BAGUA,IMAZA,24,2,2004,2024,0,0,0,0,1,20,0,3,Rechazo de normas (16); Saneamiento (2); Rechazo de mandatos (2),Comunidades nativas (19); Pobladores (3); Agricultores (1),0.125,0.042,0.0,0.0,0,,0
+010307,AMAZONAS,BONGARA,JAZAN,2,1,2009,2022,0,0,0,0,0,2,0,0,Rechazo de mandatos (1); Destitución de autoridad electa (1),Rondas campesinas (1); Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+010401,AMAZONAS,CONDORCANQUI,NIEVA,13,2,1985,2024,1,1,0,1,1,8,0,3,Rechazo de normas (5); Rechazo a resultados electorales (2); Saneamiento (2),Comunidades nativas (10); Trabajadores petroleros (1); Pobladores (1),0.385,0.077,0.0,0.077,1,Petroperú-Oleoducto (1),1
+010402,AMAZONAS,CONDORCANQUI,EL CENEPA,11,3,2005,2024,8,0,6,1,0,3,0,1,Retiro de empresa (6); Ejecución de funciones (1); Rechazo de normas (1),Comunidades nativas (8); Comunidades campesinas (1); Colectivos (1),0.091,0.0,0.0,0.182,6,Dorato Perú (4); Iamgold (1),0
+010403,AMAZONAS,CONDORCANQUI,RIO SANTIAGO,3,2,2011,2024,2,0,1,1,0,1,0,0,Ejecución de funciones (1); Defensa de territorio (1); Protección a la naturaleza (1),Comunidades nativas (1); Mineros (1); Pueblos indígenas (1),0.0,0.0,0.0,0.0,0,,0
+010504,AMAZONAS,LUYA,COLCAMAR,1,0,2002,2002,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+010518,AMAZONAS,LUYA,SAN JERONIMO,1,0,2007,2007,0,0,0,0,0,1,0,0,Rechazo a resultados electorales (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+010522,AMAZONAS,LUYA,TINGO,1,1,2022,2022,0,0,0,0,0,1,0,0,Cumplimiento de pactos (1),Frentes de defensa (1),0.0,0.0,0.0,0.0,0,,0
+010701,AMAZONAS,UTCUBAMBA,BAGUA GRANDE,32,2,1986,2023,0,0,1,1,3,24,3,0,Rechazo de normas (14); Rechazo de mandatos (5); Pago atrasados de salarios (3),Pobladores (11); Comunidades nativas (9); Rondas campesinas (6),0.688,0.0,0.031,0.062,3,,1
+010702,AMAZONAS,UTCUBAMBA,CAJARURO,1,0,1987,1987,0,0,0,0,0,0,0,1,Transporte (1),Frentes de defensa (1),0.0,0.0,0.0,0.0,0,,0
+010703,AMAZONAS,UTCUBAMBA,CUMBA,2,2,2022,2022,0,0,0,0,0,0,0,2,Transporte (2),Pobladores (2),1.0,0.0,0.0,0.0,0,,0
+010704,AMAZONAS,UTCUBAMBA,EL MILAGRO,3,0,2009,2013,0,0,0,0,0,2,1,0,Rechazo de normas (1); Rechazo de mandatos (1); Aumento de presupuesto (1),Comunidades nativas (1); Transportistas urbanos (1); Estudiantes universidades (1),0.667,0.333,0.0,0.667,0,,0
+020101,ANCASH,HUARAZ,HUARAZ,207,16,1980,2023,19,0,6,2,64,96,32,7,Aumentos salariales (48); Rechazo de mandatos (31); Rechazo de normas (14),Docentes colegios (35); Pobladores (30); Estudiantes universidades (24),0.13,0.072,0.014,0.116,17,Antamina (8); Pierina (1); Congreso (1),1
+020104,ANCASH,HUARAZ,HUANCHAY,1,0,2014,2014,0,0,0,0,0,1,0,0,Ejecución de funciones (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+020105,ANCASH,HUARAZ,INDEPENDENCIA,2,1,2004,2022,0,0,0,0,0,1,1,0,Destitución de funcionario (1); Reducción de precios (1),Padres de familia (1); Transportistas de carga (1),0.5,0.0,0.0,0.0,0,,0
+020106,ANCASH,HUARAZ,JANGAS,3,1,2006,2017,2,0,1,0,1,0,0,1,Mejores condiciones laborales (1); Saneamiento (1); Protección a la naturaleza (1),Comunidades campesinas (2); Pobladores (1),0.667,0.333,0.0,0.333,2,Barrick Mishquichilca (1),0
+020108,ANCASH,HUARAZ,OLLEROS,1,0,2010,2010,0,0,0,0,0,1,0,0,Rechazo a resultados electorales (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+020501,ANCASH,BOLOGNESI,CHIQUIAN,5,0,2001,2013,1,0,1,0,2,1,0,1,Mejores condiciones laborales (2); Rechazo de normas (1); Transporte (1),Comunidades campesinas (3); Agricultores (1); Pobladores (1),0.4,0.0,0.0,0.0,1,Antamina (1),1
+020503,ANCASH,BOLOGNESI,ANTONIO RAYMONDI,3,3,2021,2021,3,0,2,0,0,1,0,0,Reparaciones por daños (1); Cumplimiento de pactos (1); Protección a la naturaleza (1),Comunidades campesinas (3),1.0,0.0,0.0,0.0,3,Antamina (3),0
+020507,ANCASH,BOLOGNESI,COLQUIOC,1,0,2014,2014,0,0,0,0,0,1,0,0,Ejecución de funciones (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+020508,ANCASH,BOLOGNESI,HUALLANCA,20,0,1981,2013,3,12,1,0,13,4,0,2,Aumentos salariales (6); Mejores condiciones laborales (4); Cumplimiento de pactos (4),Mineros (16); Comunidades campesinas (2); Trabajadores eléctricos (1),0.15,0.1,0.05,0.1,18,Santa Luisa (10); Southern (2); Huallanca (2),0
+020513,ANCASH,BOLOGNESI,PACLLON,1,1,2017,2017,1,0,0,0,0,1,0,0,Cumplimiento de pactos (1),Comunidades campesinas (1),0.0,0.0,0.0,1.0,1,,0
+020601,ANCASH,CARHUAZ,CARHUAZ,4,0,1988,2012,1,0,0,0,2,2,0,0,Aumentos salariales (1); Pago atrasados de salarios (1); Rechazo de normas (1),Docentes colegios (1); Médicos (1); Autoridades (1),0.25,0.0,0.0,0.0,0,,1
+020606,ANCASH,CARHUAZ,MARCARA,3,0,1982,2014,0,1,0,1,1,1,0,0,Aumentos salariales (1); Defensa de territorio (1); Rechazo a resultados electorales (1),Comunidades campesinas (2); Mineros (1),0.0,0.0,0.0,0.0,1,Santa Luisa (1),0
+020610,ANCASH,CARHUAZ,TINCO,1,0,2007,2007,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+020611,ANCASH,CARHUAZ,YUNGAR,1,0,2000,2000,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Agricultores (1),0.0,0.0,0.0,0.0,0,,0
+020801,ANCASH,CASMA,CASMA,25,4,1982,2022,3,1,2,0,3,9,8,3,Reducción de precios (6); Rechazo de mandatos (5); Estabilidad laboral (2),Pobladores (9); Transportistas de carga (6); Transportistas urbanos (3),0.48,0.12,0.04,0.16,4,Antamina (2),1
+020802,ANCASH,CASMA,BUENA VISTA ALTA,1,0,2010,2010,1,0,1,0,0,0,0,0,Retiro de empresa (1),Comunidades campesinas (1),1.0,1.0,0.0,1.0,1,,0
+020803,ANCASH,CASMA,COMANDANTE NOEL,2,0,2011,2013,0,0,0,0,0,1,0,1,Ejecución de funciones (1); Proyectos de irrigación (1),Pobladores (1); Agricultores (1),0.0,0.0,0.0,0.0,0,,0
+020804,ANCASH,CASMA,YAUTAN,1,0,2009,2009,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Comunidades campesinas (1),0.0,1.0,1.0,1.0,0,,0
+021001,ANCASH,HUARI,HUARI,7,1,1988,2021,4,0,2,0,0,5,0,0,Destitución de funcionario (1); Ejecución de funciones (1); Rechazo a resultados electorales (1),Pobladores (4); Médicos (1); Autoridades (1),0.286,0.143,0.0,0.143,2,Antamina (2),1
+021004,ANCASH,HUARI,CHAVIN DE HUANTAR,3,1,1984,2021,1,1,1,0,2,0,0,0,Bonificaciones (1); Pago atrasados de salarios (1); Retiro de empresa (1),Mineros (1); Administrativos (1); Comunidades campesinas (1),0.333,0.0,0.0,0.0,2,Antamina (1),0
+021006,ANCASH,HUARI,HUACCHIS,1,0,2008,2008,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Pobladores (1),0.0,0.0,1.0,1.0,0,,0
+021014,ANCASH,HUARI,SAN MARCOS,20,5,2005,2023,12,2,5,0,3,10,0,2,Cumplimiento de pactos (4); Rechazo de mandatos (3); Protección a la naturaleza (3),Comunidades campesinas (7); Pobladores (6); Mineros (3),0.3,0.05,0.0,0.2,11,Antamina (10); Tintaya-Antapaccay (1); Yanacocha (1),0
+021101,ANCASH,HUARMEY,HUARMEY,17,2,1983,2021,5,0,3,0,7,4,3,0,Pago atrasados de salarios (5); Retiro de empresa (3); Aumentos salariales (2),Trabajadores ministerios (6); Pobladores (5); Pescadores (2),0.235,0.0,0.0,0.0,4,Antamina (4),1
+021102,ANCASH,HUARMEY,COCHAPETI,1,0,2010,2010,0,0,0,0,0,1,0,0,Ejecución de funciones (1),Comunidades campesinas (1),0.0,0.0,0.0,0.0,0,,0
+021103,ANCASH,HUARMEY,CULEBRAS,1,0,2001,2001,1,0,1,0,0,0,0,0,Reparaciones por daños (1),Comunidades campesinas (1),1.0,0.0,0.0,0.0,1,Antamina (1),0
+021201,ANCASH,HUAYLAS,CARAZ,11,1,2004,2021,8,0,8,0,1,1,1,0,Protección a la naturaleza (8); Mejor administración de recursos (1); Pago atrasados de salarios (1),Pobladores (8); Frentes de defensa (1); Docentes colegios (1),0.0,0.0,0.0,0.0,7,,1
+021204,ANCASH,HUAYLAS,HUAYLAS,3,0,1988,2004,0,0,0,0,2,1,0,0,Aumentos salariales (2); Rechazo de normas (1),Docentes colegios (3),0.0,0.0,0.0,0.0,0,,0
+021206,ANCASH,HUAYLAS,PAMPAROMAS,1,0,1982,1982,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Agricultores (1),0.0,0.0,0.0,0.0,0,,0
+021208,ANCASH,HUAYLAS,SANTA CRUZ,3,0,2004,2014,2,0,1,0,0,2,0,0,Destitución de autoridad electa (1); Protección a la naturaleza (1); Cumplimiento de pactos (1),Comunidades campesinas (2); Pobladores (1),0.667,0.0,0.0,0.0,2,Antamina (1),0
+021301,ANCASH,MARISCAL LUZURIAGA,PISCOBAMBA,1,1,2017,2017,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Docentes colegios (1),0.0,0.0,0.0,0.0,0,,1
+021401,ANCASH,OCROS,OCROS,1,0,1995,1995,0,0,0,0,0,0,0,1,Transporte (1),Autoridades (1),0.0,0.0,0.0,0.0,0,,1
+021502,ANCASH,PALLASCA,BOLOGNESI,1,0,2003,2003,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Reos (1),0.0,0.0,0.0,0.0,0,,0
+021503,ANCASH,PALLASCA,CONCHUCOS,2,0,1987,2004,0,0,0,0,1,0,0,1,Transporte (1); Mejores condiciones laborales (1),Pobladores (1); Docentes colegios (1),0.0,0.0,0.0,0.0,0,,0
+021509,ANCASH,PALLASCA,PAMPAS,7,1,1982,2022,1,5,1,0,5,0,1,0,Pago atrasados de salarios (3); Aumentos salariales (2); Protección a la naturaleza (1),Mineros (5); Comunidades campesinas (1); Transportistas de carga (1),0.286,0.143,0.0,0.143,6,Pasto Bueno (4); Chuvilca (1),0
+021511,ANCASH,PALLASCA,TAUCA,1,1,2022,2022,0,0,0,0,0,0,1,0,Reducción de precios (1),Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+021601,ANCASH,POMABAMBA,POMABAMBA,3,0,1988,2004,0,0,0,0,1,1,0,1,Aumentos salariales (1); Vivienda (1); Destitución de autoridad electa (1),Docentes colegios (1); Pobladores (1); Comunidades campesinas (1),0.0,0.0,0.0,0.0,0,,1
+021701,ANCASH,RECUAY,RECUAY,4,1,1988,2022,0,0,0,0,2,2,0,0,Aumentos salariales (1); Pago atrasados de salarios (1); Destitución de funcionario (1),Docentes colegios (1); Médicos (1); Estudiantes colegios (1),0.25,0.0,0.0,0.0,0,,1
+021702,ANCASH,RECUAY,CATAC,6,2,2001,2022,4,0,1,0,0,1,4,0,Aumento de presupuesto (3); Protección a la naturaleza (1); Ejecución de funciones (1),Pobladores (4); Rondas campesinas (1); Transportistas de carga (1),1.0,0.0,0.0,0.0,3,Antamina (3),0
+021707,ANCASH,RECUAY,PAMPAS CHICO,6,0,2010,2010,6,0,6,0,0,0,0,0,Suspensión de concesiones (6),Comunidades campesinas (4); Frentes de defensa (1); Estudiantes universidades (1),0.833,0.333,0.167,0.333,3,Chancadora Centauro (6),0
+021710,ANCASH,RECUAY,TICAPAMPA,5,0,1981,2014,2,3,0,0,3,2,0,0,Aumentos salariales (3); Cumplimiento de pactos (2),Mineros (3); Pobladores (2),0.4,0.0,0.0,0.2,5,Southern (2); Alianza (1),0
+021801,ANCASH,SANTA,CHIMBOTE,383,35,1980,2025,11,0,9,3,118,152,70,31,Aumentos salariales (59); Rechazo de mandatos (48); Protección de la producción nacional (30),Pobladores (47); Trabajadores ministerios (45); Pescadores (42),0.133,0.034,0.003,0.084,49,Conga (3),1
+021803,ANCASH,SANTA,COISHCO,3,0,1983,2012,0,0,0,0,3,0,0,0,Pago atrasados de salarios (2); Aumentos salariales (1),Pescadores (1); Trabajadores ministerios (1); Trabajadores penitenciarios (1),0.667,0.0,0.0,0.0,1,,0
+021804,ANCASH,SANTA,MACATE,2,0,1984,1984,0,0,0,0,0,2,0,0,Cumplimiento de pactos (2),Trabajadores eléctricos (2),0.0,0.0,0.0,0.0,2,,0
+021806,ANCASH,SANTA,NEPEÑA,5,0,1984,2011,0,0,0,0,5,0,0,0,Pago atrasados de salarios (3); Reposición laboral (2),Azucareros (3); Agricultores (2),0.2,0.2,0.0,0.2,5,,0
+021807,ANCASH,SANTA,SAMANCO,1,0,2000,2000,0,0,0,0,0,0,0,1,Saneamiento (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+021808,ANCASH,SANTA,SANTA,11,1,1984,2022,0,0,0,0,5,4,2,0,Mejores condiciones laborales (3); Rechazo de mandatos (2); Aumento de presupuesto (1),Estudiantes universidades (3); Agricultores (2); Pescadores (2),0.091,0.091,0.0,0.091,1,,0
+021809,ANCASH,SANTA,NUEVO CHIMBOTE,11,3,2002,2025,0,0,0,0,0,4,2,5,Rechazo de mandatos (3); Ejecución de funciones (1); Saneamiento (1),Pobladores (4); Estudiantes universidades (1); Algodoneros (1),0.364,0.0,0.0,0.091,0,,0
+021901,ANCASH,SIHUAS,SIHUAS,4,1,1982,2018,0,0,0,0,1,3,0,0,Ejecución de funciones (1); Aumentos salariales (1); Rechazo de mandatos (1),Pobladores (2); Agricultores (1); Docentes colegios (1),0.0,0.0,0.0,0.0,0,,1
+021904,ANCASH,SIHUAS,CASHAPAMPA,5,0,1981,1983,0,5,0,0,5,0,0,0,Aumentos salariales (3); Mejores condiciones laborales (2),Mineros (5),0.0,0.0,0.0,0.0,4,Aguila (2); Southern (2),0
+022001,ANCASH,YUNGAY,YUNGAY,6,2,1988,2023,0,0,1,0,2,2,1,0,Aumentos salariales (1); Rechazo de mandatos (1); Pago atrasados de salarios (1),Docentes colegios (1); Agricultores (1); Médicos (1),0.167,0.0,0.0,0.167,0,,1
+022003,ANCASH,YUNGAY,MANCOS,3,2,2008,2023,1,0,0,0,0,3,0,0,Destitución de autoridad electa (2); Cumplimiento de pactos (1),Pobladores (2); Agricultores (1),0.667,0.0,0.0,0.0,1,Nueva California (1),0
+022005,ANCASH,YUNGAY,QUILLO,2,0,2004,2005,0,0,0,0,0,2,0,0,Ejecución de funciones (2),Comunidades campesinas (1); Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+022006,ANCASH,YUNGAY,RANRAHIRCA,1,0,1980,1980,0,1,0,0,1,0,0,0,Aumentos salariales (1),Mineros (1),0.0,0.0,0.0,0.0,1,Alianza (1),0
+030101,APURIMAC,ABANCAY,ABANCAY,110,30,1980,2024,5,2,3,0,35,47,24,1,Aumentos salariales (23); Aumento de presupuesto (14); Rechazo de mandatos (10),Docentes colegios (31); Pobladores (30); Médicos (7),0.2,0.036,0.036,0.073,3,Las Bambas (2); Tía María (2),1
+030102,APURIMAC,ABANCAY,CHACOCHE,1,1,2018,2018,0,0,0,0,0,0,1,0,Reducción de precios (1),Agricultores (1),1.0,0.0,0.0,0.0,0,,0
+030103,APURIMAC,ABANCAY,CIRCA,1,1,2022,2022,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+030104,APURIMAC,ABANCAY,CURAHUASI,6,5,2013,2023,1,0,1,0,0,2,3,0,Reducción de precios (3); Protección a la naturaleza (1); Destitución de funcionario (1),Transportistas de carga (3); Comunidades campesinas (1); Estudiantes universidades (1),0.833,0.0,0.0,0.167,1,,0
+030107,APURIMAC,ABANCAY,PICHIRHUA,1,0,2001,2001,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+030109,APURIMAC,ABANCAY,TAMBURCO,1,1,2016,2016,0,0,0,0,0,1,0,0,Destitución de funcionario (1),Estudiantes universidades (1),1.0,0.0,0.0,0.0,0,,0
+030201,APURIMAC,ANDAHUAYLAS,ANDAHUAYLAS,96,37,1980,2023,9,0,9,1,11,43,25,7,Destitución de autoridad electa (13); Rechazo de mandatos (10); Aumentos salariales (9),Pobladores (32); Agricultores (27); Docentes colegios (10),0.448,0.094,0.01,0.125,2,,1
+030204,APURIMAC,ANDAHUAYLAS,HUANCARAMA,2,1,2009,2022,0,0,0,0,0,2,0,0,Rechazo de mandatos (1); Destitución de autoridad electa (1),Agricultores (1); Pobladores (1),0.5,0.0,0.0,0.0,0,,0
+030207,APURIMAC,ANDAHUAYLAS,KISHUARA,1,1,2021,2021,0,0,0,0,0,0,1,0,Reducción de impuestos (1),Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+030209,APURIMAC,ANDAHUAYLAS,PACUCHA,1,1,2022,2022,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+030213,APURIMAC,ANDAHUAYLAS,SAN JERONIMO,1,0,2007,2007,0,0,0,0,0,0,1,0,Protección de la producción nacional (1),Comunidades campesinas (1),1.0,1.0,1.0,1.0,0,,0
+030215,APURIMAC,ANDAHUAYLAS,SANTA MARIA DE CHICMO,2,2,2022,2023,0,0,0,0,0,1,1,0,Reducción de precios (1); Destitución de autoridad electa (1),Transportistas de carga (1); Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+030216,APURIMAC,ANDAHUAYLAS,TALAVERA,5,5,2017,2023,0,0,0,0,1,2,2,0,Reducción de precios (2); Aumentos salariales (1); Ejecución de funciones (1),Transportistas de carga (2); Docentes colegios (1); Agricultores (1),0.8,0.0,0.0,0.0,0,,0
+030301,APURIMAC,ANTABAMBA,ANTABAMBA,1,1,2016,2016,0,0,0,0,0,0,0,1,Transporte (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,1
+030401,APURIMAC,AYMARAES,CHALHUANCA,4,4,2016,2023,0,0,0,0,0,2,1,1,Destitución de autoridad electa (2); Transporte (1); Reducción de impuestos (1),Pobladores (3); Transportistas de carga (1),0.75,0.0,0.0,0.0,0,,1
+030406,APURIMAC,AYMARAES,COTARUSE,2,1,2011,2023,1,0,1,0,0,1,0,0,Retiro de empresa (1); Destitución de autoridad electa (1),Pobladores (1); Comunidades campesinas (1),0.5,0.5,0.5,0.5,0,Suyamarca Estan (1),0
+030414,APURIMAC,AYMARAES,TAPAIRIHUA,2,1,2010,2022,2,0,1,0,0,1,0,0,Suspensión de concesiones (1); Cumplimiento de pactos (1),Comunidades campesinas (1); Pobladores (1),0.5,0.0,0.0,0.0,1,Southern (2),0
+030501,APURIMAC,COTABAMBAS,TAMBOBAMBA,22,16,2004,2021,17,0,10,0,0,10,2,0,Ejecución de funciones (6); Reparaciones por daños (6); Rechazo de mandatos (4),Comunidades campesinas (10); Pobladores (10); Frentes de defensa (2),0.636,0.136,0.045,0.136,6,Las Bambas (15),1
+030502,APURIMAC,COTABAMBAS,COTABAMBAS,8,8,2015,2021,7,0,3,0,0,4,1,0,Ejecución de funciones (3); Suspensión de concesiones (1); Protección a la naturaleza (1),Comunidades campesinas (4); Pobladores (2); Frentes de defensa (1),0.625,0.125,0.0,0.125,2,Las Bambas (6),0
+030503,APURIMAC,COTABAMBAS,COYLLURQUI,4,4,2016,2022,4,0,0,1,0,3,0,0,Cumplimiento de pactos (2); Nueva zonificación (1); Ejecución de funciones (1),Comunidades campesinas (2); Pobladores (1); Frentes de defensa (1),0.25,0.5,0.0,0.25,2,Las Bambas (4),0
+030504,APURIMAC,COTABAMBAS,HAQUIRA,4,4,2017,2021,4,0,3,0,0,1,0,0,Protección a la naturaleza (2); Retiro de empresa (1); Ejecución de funciones (1),Comunidades campesinas (2); Pobladores (1); Frentes de defensa (1),0.25,0.0,0.0,0.0,3,Las Bambas (2); Anabi SAC (1); Utunsa (1),0
+030505,APURIMAC,COTABAMBAS,MARA,9,9,2017,2022,8,0,2,0,0,7,0,0,Cumplimiento de pactos (4); Ejecución de funciones (3); Reparaciones por daños (2),Comunidades campesinas (5); Frentes de defensa (3); Pobladores (1),1.0,0.111,0.0,0.0,2,Las Bambas (8),0
+030506,APURIMAC,COTABAMBAS,CHALLHUAHUACHO,80,75,2011,2023,75,2,22,8,7,37,2,4,Cumplimiento de pactos (25); Reparaciones por daños (13); Adjudicación de tierras (7),Comunidades campesinas (61); Pobladores (10); Frentes de defensa (6),0.462,0.1,0.012,0.125,44,Las Bambas (69),0
+030601,APURIMAC,CHINCHEROS,CHINCHEROS,15,12,2008,2023,2,0,2,0,0,8,4,1,Destitución de autoridad electa (7); Reducción de precios (3); Retiro de empresa (2),Pobladores (13); Agricultores (1); Transportistas de carga (1),0.733,0.067,0.067,0.133,3,,1
+030602,APURIMAC,CHINCHEROS,ANCO-HUALLO,2,2,2022,2023,0,0,0,0,0,2,0,0,Destitución de autoridad electa (2),Pobladores (1); Comunidades campesinas (1),0.0,0.0,0.5,0.5,0,,0
+030604,APURIMAC,CHINCHEROS,HUACCANA,1,0,2005,2005,0,0,0,0,0,0,1,0,Aumento del precio de productos (1),Agricultores (1),1.0,1.0,0.0,1.0,0,,0
+030609,APURIMAC,CHINCHEROS,ROCCHACC,1,1,2018,2018,0,0,0,0,0,1,0,0,Rechazo a resultados electorales (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+030612,APURIMAC,CHINCHEROS,AHUAYRO,1,1,2022,2022,0,0,0,0,0,0,1,0,Reducción de precios (1),Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+030701,APURIMAC,GRAU,CHUQUIBAMBILLA,1,1,2015,2015,1,0,1,0,0,0,0,0,Suspensión de concesiones (1),Pobladores (1),0.0,0.0,0.0,0.0,0,Las Bambas (1),1
+030708,APURIMAC,GRAU,PROGRESO,4,4,2021,2021,4,0,1,0,0,3,0,0,Ejecución de funciones (2); Cumplimiento de pactos (1); Reparaciones por daños (1),Comunidades campesinas (2); Frentes de defensa (2),1.0,0.0,0.0,0.0,3,Las Bambas (4),0
+030711,APURIMAC,GRAU,TURPAY,1,0,2002,2002,1,0,0,0,1,0,0,0,Pago atrasados de salarios (1),Agricultores (1),0.0,0.0,0.0,0.0,1,,0
+040101,AREQUIPA,AREQUIPA,AREQUIPA,776,173,1980,2025,29,9,14,5,236,350,129,42,Aumentos salariales (162); Rechazo de mandatos (134); Reducción de precios (72),Pobladores (120); Docentes colegios (75); Estudiantes universidades (71),0.124,0.031,0.001,0.076,65,Tía María (19); Cerro Verde (4); Centromin (2),1
+040102,AREQUIPA,AREQUIPA,ALTO SELVA ALEGRE,2,0,2007,2009,0,0,0,0,0,2,0,0,Rechazo de mandatos (1); Rechazo de normas (1),Pobladores (1); Transportistas urbanos (1),0.5,0.0,0.0,0.0,0,,0
+040103,AREQUIPA,AREQUIPA,CAYMA,1,0,1982,1982,0,0,0,0,0,0,0,1,Vivienda (1),Pobladores AAHH (1),0.0,0.0,0.0,0.0,0,,0
+040104,AREQUIPA,AREQUIPA,CERRO COLORADO,19,12,2002,2025,1,0,1,0,2,14,2,0,Destitución de autoridad electa (6); Rechazo de mandatos (4); Aumentos salariales (2),Pobladores (8); Estudiantes universidades (3); Docentes colegios (2),0.421,0.105,0.105,0.316,3,Tía María (2),0
+040107,AREQUIPA,AREQUIPA,JACOBO HUNTER,1,1,2023,2023,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Comunidades campesinas (1),0.0,0.0,0.0,0.0,0,,0
+040108,AREQUIPA,AREQUIPA,LA JOYA,24,20,2005,2023,2,0,2,0,1,12,6,3,Destitución de autoridad electa (9); Reducción de precios (6); Saneamiento (2),Pobladores (14); Transportistas de carga (6); Comerciantes (1),0.875,0.125,0.0,0.25,1,Tía María (2),0
+040109,AREQUIPA,AREQUIPA,MARIANO MELGAR,3,0,2000,2013,0,0,0,0,1,0,1,1,Reducción de precios (1); Transporte (1); Pago atrasados de salarios (1),Pobladores AAHH (1); Comunidades campesinas (1); Construcción civil (1),0.333,0.0,0.0,0.0,1,,0
+040112,AREQUIPA,AREQUIPA,PAUCARPATA,1,1,2023,2023,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Comerciantes (1),0.0,0.0,0.0,0.0,0,,0
+040114,AREQUIPA,AREQUIPA,POLOBAYA,1,0,2007,2007,0,1,0,0,1,0,0,0,Mejores condiciones laborales (1),Mineros (1),0.0,0.0,0.0,0.0,0,,0
+040115,AREQUIPA,AREQUIPA,QUEQUEÑA,5,1,2010,2022,0,0,0,0,0,5,0,0,Rechazo a resultados electorales (4); Cumplimiento de pactos (1),Pobladores (4); CGTP (1),0.0,0.0,0.0,0.0,0,,0
+040118,AREQUIPA,AREQUIPA,SAN JUAN DE SIGUAS,3,3,2022,2023,0,0,0,0,0,3,0,0,Destitución de autoridad electa (3),Pobladores (3),1.0,0.0,0.0,0.0,0,,0
+040120,AREQUIPA,AREQUIPA,SANTA ISABEL DE SIGUAS,1,1,2022,2022,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+040121,AREQUIPA,AREQUIPA,SANTA RITA DE SIGUAS,3,2,2009,2022,0,0,0,0,0,3,0,0,Destitución de autoridad electa (2); Promulgación de normas (1),Pobladores (2); Agricultores (1),1.0,0.0,0.0,0.0,0,,0
+040122,AREQUIPA,AREQUIPA,SOCABAYA,21,0,1983,2008,0,0,0,0,0,17,0,4,Ejecución de funciones (6); Rechazo de mandatos (5); Rechazo de normas (3),Reos (19); Familiares reos (2),0.0,0.048,0.0,0.381,0,,0
+040124,AREQUIPA,AREQUIPA,UCHUMAYO,28,2,1984,2023,5,11,1,0,13,9,4,1,Aumentos salariales (9); Rechazo de mandatos (3); Mejores condiciones laborales (3),Mineros (12); Pobladores (8); Transportistas urbanos (2),0.393,0.071,0.0,0.143,15,Cerro Verde (14); Centromin (1),0
+040125,AREQUIPA,AREQUIPA,VITOR,3,2,2006,2022,0,0,0,0,0,2,0,1,Destitución de autoridad electa (2); Saneamiento (1),Pobladores (3),1.0,0.0,0.0,0.0,0,,0
+040126,AREQUIPA,AREQUIPA,YANAHUARA,1,1,2022,2022,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+040128,AREQUIPA,AREQUIPA,YURA,6,3,2009,2023,0,0,0,0,1,2,3,0,Rechazo de mandatos (1); Protección de la producción nacional (1); Aumentos salariales (1),Transportistas de carga (2); Coordinadoras (1); Transportistas urbanos (1),1.0,0.167,0.0,0.333,0,,0
+040129,AREQUIPA,AREQUIPA,JOSE LUIS BUSTAMANTE Y RIVERO,1,1,2023,2023,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Comerciantes (1),0.0,0.0,0.0,0.0,0,,0
+040201,AREQUIPA,CAMANA,CAMANA,35,7,1983,2023,0,2,1,0,4,20,10,0,Rechazo de mandatos (6); Destitución de autoridad electa (6); Protección de la producción nacional (4),Pobladores (11); Agricultores (7); Arroceros (4),0.571,0.0,0.0,0.0,1,,1
+040202,AREQUIPA,CAMANA,JOSE MARIA QUIMPER,1,1,2023,2023,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+040203,AREQUIPA,CAMANA,MARIANO NICOLAS VALCARCEL,1,1,2023,2023,1,0,0,1,0,0,0,0,Defensa de territorio (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+040204,AREQUIPA,CAMANA,MARISCAL CACERES,2,2,2016,2023,1,0,0,0,0,2,0,0,Rechazo de mandatos (1); Destitución de autoridad electa (1),Pobladores (2),1.0,0.0,0.0,0.0,1,Tía María (1),0
+040206,AREQUIPA,CAMANA,OCOÑA,22,15,1981,2025,0,6,0,0,6,15,0,1,Rechazo de normas (9); Aumentos salariales (5); Promulgación de normas (3),Mineros (19); Pobladores (2); Pescadores (1),0.773,0.045,0.045,0.045,6,Ocoña (1),0
+040301,AREQUIPA,CARAVELI,CARAVELI,4,1,1982,2023,2,1,1,0,2,1,0,0,Aumentos salariales (1); Retiro de empresa (1); Estabilidad laboral (1),Pobladores (3); Mineros (1),0.5,0.0,0.0,0.25,1,Buenaventura (1),1
+040302,AREQUIPA,CARAVELI,ACARI,32,0,1982,1985,0,32,0,0,32,0,0,0,Puestos de trabajo (12); Pago atrasados de salarios (9); Mejores condiciones laborales (9),Mineros (32),0.0,0.0,0.031,0.031,12,Cata-Acari (8); Centromin (1); Último (1),0
+040303,AREQUIPA,CARAVELI,ATICO,11,4,1984,2024,0,2,0,0,4,6,0,1,Rechazo de normas (4); Aumentos salariales (2); Estabilidad laboral (2),Mineros (6); Pescadores (2); Trabajadores portuarios (1),0.636,0.091,0.0,0.091,3,,0
+040305,AREQUIPA,CARAVELI,BELLA UNION,1,0,1982,1982,0,1,0,0,1,0,0,0,Pago atrasados de salarios (1),Mineros (1),0.0,0.0,0.0,0.0,1,Cata-Acari (1),0
+040307,AREQUIPA,CARAVELI,CHALA,30,19,2006,2025,0,6,0,0,6,23,0,1,Rechazo de normas (10); Destitución de autoridad electa (6); Promulgación de normas (4),Mineros (23); Pobladores (7),0.933,0.133,0.133,0.167,2,,0
+040313,AREQUIPA,CARAVELI,YAUCA,2,2,2024,2024,0,0,0,0,0,2,0,0,Promulgación de normas (1); Rechazo de normas (1),Mineros (2),1.0,0.0,0.0,0.0,0,,0
+040401,AREQUIPA,CASTILLA,APLAO,2,0,1981,1981,0,0,0,0,0,0,0,2,Saneamiento (2),Comités (2),0.5,0.0,0.0,0.0,0,,1
+040407,AREQUIPA,CASTILLA,HUANCARQUI,1,1,2019,2019,1,0,0,0,0,1,0,0,Rechazo de mandatos (1),Pobladores (1),0.0,0.0,0.0,0.0,1,Zafrabak (1),0
+040409,AREQUIPA,CASTILLA,ORCOPAMPA,10,1,1981,2019,1,9,0,0,9,1,0,0,Mejores condiciones laborales (3); Aumentos salariales (3); Pago atrasados de salarios (2),Mineros (9); Comunidades campesinas (1),0.0,0.0,0.0,0.0,10,Buenaventura (7); Southern (1),0
+040501,AREQUIPA,CAYLLOMA,CHIVAY,10,2,1984,2017,2,0,0,0,0,4,3,3,Transporte (3); Ejecución de reformas (3); Reducción de precios (2),Pobladores (7); Transportistas urbanos (2); Comunidades campesinas (1),0.6,0.0,0.0,0.1,0,,1
+040505,AREQUIPA,CAYLLOMA,CAYLLOMA,3,3,2022,2024,0,0,0,0,0,3,0,0,Rechazo de mandatos (1); Destitución de autoridad electa (1); Rechazo de normas (1),Pobladores (3),0.0,0.0,0.0,0.0,0,,0
+040507,AREQUIPA,CAYLLOMA,HUAMBO,2,0,2011,2011,0,0,0,0,0,2,0,0,Ejecución de funciones (1); Rechazo de mandatos (1),Pobladores (2),0.0,0.0,0.0,0.0,2,,0
+040509,AREQUIPA,CAYLLOMA,ICHUPAMPA,1,1,2018,2018,1,0,1,0,0,0,0,0,Protección a la naturaleza (1),Pobladores (1),1.0,0.0,0.0,0.0,1,Buenaventura (1),0
+040511,AREQUIPA,CAYLLOMA,LLUTA,1,1,2019,2019,1,0,0,0,0,1,0,0,Rechazo de mandatos (1),Pobladores (1),0.0,0.0,0.0,0.0,1,Zafrabak (1),0
+040512,AREQUIPA,CAYLLOMA,MACA,1,0,2013,2013,0,0,0,0,0,0,0,1,Vivienda (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+040513,AREQUIPA,CAYLLOMA,MADRIGAL,3,0,1984,1984,0,3,0,0,3,0,0,0,Aumentos salariales (3),Mineros (3),0.0,0.0,0.0,0.0,3,Madrigal (3),0
+040514,AREQUIPA,CAYLLOMA,SAN ANTONIO DE CHUCA,4,1,2004,2023,1,0,0,0,0,4,0,0,Rechazo de normas (1); Rechazo de mandatos (1); Ejecución de reformas (1),Ganaderos (2); Comunidades campesinas (1); Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+040520,AREQUIPA,CAYLLOMA,MAJES,22,13,1983,2025,5,0,3,1,2,13,3,0,Rechazo de mandatos (4); Destitución de autoridad electa (4); Promulgación de normas (3),Pobladores (9); Agricultores (7); Ganaderos (2),0.818,0.045,0.091,0.227,2,Tía María (3); Incendían (1),0
+040601,AREQUIPA,CONDESUYOS,CHUQUIBAMBA,1,0,1988,1988,0,0,0,0,0,0,0,1,Proyectos de irrigación (1),Pescadores (1),1.0,0.0,0.0,0.0,0,,1
+040603,AREQUIPA,CONDESUYOS,CAYARANI,4,0,2009,2011,1,2,1,1,2,0,0,0,Pago atrasados de salarios (2); Modificar límites territoriales (1); Retiro de empresa (1),Mineros (2); Pobladores (2),0.5,0.25,0.0,0.5,2,Ares Enfrentamiento (1),0
+040606,AREQUIPA,CONDESUYOS,RIO GRANDE,2,0,2010,2010,0,2,0,0,2,0,0,0,Pago atrasados de salarios (2),Mineros (2),0.0,0.0,0.0,0.0,2,,0
+040608,AREQUIPA,CONDESUYOS,YANAQUIHUA,2,1,2001,2017,0,1,0,0,1,1,0,0,Ejecución de funciones (1); Pago atrasados de salarios (1),Mineros (2),0.0,0.0,0.0,0.0,1,Mineros (1),0
+040701,AREQUIPA,ISLAY,MOLLENDO,36,14,1980,2019,14,0,8,0,8,17,2,1,Rechazo de mandatos (10); Retiro de empresa (8); Pago atrasados de salarios (4),Pobladores (10); Agricultores (6); Trabajadores ministerios (5),0.5,0.167,0.083,0.278,10,Tía María (13); Zafrabak (1),1
+040702,AREQUIPA,ISLAY,COCACHACRA,111,78,1986,2025,84,1,69,0,1,41,0,0,Retiro de empresa (68); Rechazo de mandatos (36); Ejecución de funciones (2),Pobladores (49); Agricultores (42); Frentes de defensa (15),0.36,0.162,0.036,0.27,39,Tía María (84),0
+040703,AREQUIPA,ISLAY,DEAN VALDIVIA,19,18,2013,2025,17,0,12,0,0,7,0,0,Retiro de empresa (10); Rechazo de mandatos (5); Suspensión de concesiones (2),Pobladores (11); Agricultores (6); Comunidades campesinas (1),0.421,0.105,0.0,0.158,10,Tía María (17),0
+040704,AREQUIPA,ISLAY,ISLAY,19,8,1980,2024,6,0,3,0,4,9,0,3,Aumentos salariales (4); Rechazo de mandatos (4); Rechazo de normas (3),Pobladores (4); Pescadores (3); Agricultores (3),0.421,0.053,0.0,0.105,6,Tía María (3); Quellaveco (1),0
+040706,AREQUIPA,ISLAY,PUNTA DE BOMBON,7,7,2015,2025,6,0,4,0,0,3,0,0,Retiro de empresa (4); Rechazo de mandatos (3),Pobladores (5); Agricultores (2),0.143,0.143,0.0,0.143,5,Tía María (6),0
+050101,AYACUCHO,HUAMANGA,AYACUCHO,268,75,1981,2024,7,1,3,1,55,155,37,17,Aumentos salariales (45); Rechazo de mandatos (43); Ejecución de funciones (31),Docentes colegios (48); Pobladores (46); Estudiantes universidades (37),0.153,0.063,0.007,0.071,8,Tía María (2); Camisea (1); Conga (1),1
+050102,AYACUCHO,HUAMANGA,ACOCRO,1,0,2013,2013,0,0,0,0,1,0,0,0,Puestos de trabajo (1),Comunidades campesinas (1),1.0,0.0,0.0,0.0,0,,0
+050104,AYACUCHO,HUAMANGA,CARMEN ALTO,1,1,2022,2022,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),0.0,0.0,0.0,1.0,0,,0
+050106,AYACUCHO,HUAMANGA,OCROS,2,2,2023,2023,0,0,0,0,0,2,0,0,Destitución de autoridad electa (2),Pobladores (2),1.0,0.0,0.0,0.0,0,,0
+050108,AYACUCHO,HUAMANGA,QUINUA,1,0,2008,2008,0,0,0,0,0,1,0,0,Rechazo de normas (1),Agricultores (1),1.0,0.0,1.0,1.0,0,,0
+050110,AYACUCHO,HUAMANGA,SAN JUAN BAUTISTA,1,1,2022,2022,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),0.0,0.0,0.0,1.0,0,,0
+050112,AYACUCHO,HUAMANGA,SOCOS,7,4,2009,2023,0,0,0,0,0,4,2,1,Reducción de precios (2); Saneamiento (1); Destitución de funcionario (1),Pobladores (2); Transportistas de carga (2); Comunidades campesinas (1),0.857,0.286,0.0,0.286,0,,0
+050113,AYACUCHO,HUAMANGA,TAMBILLO,4,3,2005,2021,0,0,0,0,1,2,1,0,Participación en procesos electorales (1); Aumentos salariales (1); Condonación de deudas (1),Partidarios políticos (1); Docentes colegios (1); Agricultores (1),0.5,0.0,0.0,0.0,0,,0
+050114,AYACUCHO,HUAMANGA,VINCHOS,10,3,1984,2023,6,0,6,0,0,4,0,0,Reparaciones por daños (5); Ejecución de funciones (2); Rechazo de mandatos (1),Agricultores (4); Pobladores (4); Comunidades campesinas (2),0.3,0.1,0.0,0.2,6,Camisea (5),0
+050116,AYACUCHO,HUAMANGA,ANDRES AVELINO CACERES DORREGARAY,5,2,1984,2022,0,0,0,0,0,3,0,2,Destitución de autoridad electa (2); Rechazo de normas (1); Salud (1),Reos (3); Pobladores (2),0.0,0.2,0.2,0.6,0,,0
+050201,AYACUCHO,CANGALLO,CANGALLO,3,2,2004,2023,0,0,0,0,0,2,1,0,Destitución de autoridad electa (2); Reducción de precios (1),Pobladores (3),0.667,0.0,0.0,0.0,0,,1
+050203,AYACUCHO,CANGALLO,LOS MOROCHUCOS,1,1,2024,2024,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Víctimas violencia (1),0.0,0.0,0.0,1.0,0,,0
+050301,AYACUCHO,HUANCA SANCOS,SANCOS,1,0,2005,2005,0,0,0,0,0,1,0,0,Destitución de funcionario (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,1
+050401,AYACUCHO,HUANTA,HUANTA,20,9,1986,2024,5,0,5,0,5,9,1,0,Retiro de empresa (4); Ejecución de funciones (3); Rechazo de mandatos (3),Pobladores (5); Docentes colegios (3); Periodistas (2),0.2,0.1,0.0,0.1,2,,1
+050405,AYACUCHO,HUANTA,LURICOCHA,1,1,2022,2022,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Pobladores (1),0.0,0.0,1.0,1.0,0,,0
+050407,AYACUCHO,HUANTA,SIVIA,1,0,2009,2009,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Pobladores (1),0.0,1.0,0.0,1.0,0,,0
+050501,AYACUCHO,LA MAR,SAN MIGUEL,2,1,2002,2015,0,0,0,0,1,1,0,0,Rechazo al programa de erradicación de la hoja de coca (1); Aumentos salariales (1),Cocaleros (1); Docentes colegios (1),0.0,0.0,0.0,0.0,0,,1
+050502,AYACUCHO,LA MAR,ANCO,1,0,2010,2010,1,0,1,0,0,0,0,0,Reparaciones por daños (1),Comunidades campesinas (1),0.0,0.0,0.0,0.0,1,Camisea (1),0
+050503,AYACUCHO,LA MAR,AYNA,5,1,2005,2016,0,0,0,0,0,5,0,0,Rechazo de mandatos (2); Rechazo al programa de erradicación de la hoja de coca (2); Ejecución de funciones (1),Cocaleros (2); Víctimas violencia (1); Agricultores (1),0.6,0.0,0.0,0.0,0,,0
+050508,AYACUCHO,LA MAR,TAMBO,1,1,2021,2021,0,0,0,0,0,1,0,0,Ejecución de funciones (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+050509,AYACUCHO,LA MAR,SAMUGARI,2,0,1995,2007,0,0,0,0,0,1,1,0,Créditos (1); Rechazo de normas (1),Cocaleros (1); Agricultores (1),0.0,0.0,0.0,0.0,0,,0
+050601,AYACUCHO,LUCANAS,PUQUIO,5,5,2015,2023,2,0,2,0,0,3,0,0,Destitución de autoridad electa (3); Suspensión de concesiones (2),Pobladores (3); Comunidades campesinas (2),0.4,0.2,0.2,0.2,2,,1
+050605,AYACUCHO,LUCANAS,CHAVIÑA,3,2,1990,2021,2,1,2,0,1,0,0,0,Retiro de empresa (2); Aumentos salariales (1),Mineros (1); Frentes de defensa (1); Comunidades campesinas (1),0.333,0.333,0.0,0.333,3,Las Bambas (2); San Juan (1),0
+050609,AYACUCHO,LUCANAS,LEONCIO PRADO,1,0,1983,1983,0,1,0,0,1,0,0,0,Mejores condiciones laborales (1),Mineros (1),0.0,0.0,0.0,0.0,0,,0
+050619,AYACUCHO,LUCANAS,SANCOS,1,1,2021,2021,1,0,1,0,0,0,0,0,Retiro de empresa (1),Comunidades campesinas (1),1.0,0.0,0.0,0.0,1,Las Bambas (1),0
+050701,AYACUCHO,PARINACOCHAS,CORACORA,4,2,2006,2021,4,0,2,0,0,1,0,1,Retiro de empresa (2); Saneamiento (1); Ejecución de funciones (1),Pobladores (2); Comunidades campesinas (2),0.5,0.0,0.0,0.0,1,Suyamarca Inicia (1); Las Bambas (1),1
+050702,AYACUCHO,PARINACOCHAS,CHUMPI,2,2,2021,2021,2,0,2,0,0,0,0,0,Retiro de empresa (2),Pobladores (1); Frentes de defensa (1),0.5,0.0,0.0,0.5,2,Las Bambas (1),0
+050703,AYACUCHO,PARINACOCHAS,CORONEL CASTAÑEDA,3,1,2009,2021,2,1,2,0,1,0,0,0,Mejores condiciones laborales (1); Retiro de empresa (1); Protección a la naturaleza (1),Mineros (1); Pobladores (1); Comunidades campesinas (1),0.333,0.0,0.0,0.333,2,Suyamerca (1); Suyamarca Se (1); Ares (1),0
+050705,AYACUCHO,PARINACOCHAS,PULLO,1,0,2013,2013,0,1,0,0,1,0,0,0,Puestos de trabajo (1),Mineros (1),0.0,1.0,0.0,1.0,0,Calaverí (1),0
+050706,AYACUCHO,PARINACOCHAS,PUYUSCA,1,1,2021,2021,1,0,1,0,0,0,0,0,Retiro de empresa (1),Comunidades campesinas (1),1.0,0.0,0.0,0.0,1,Las Bambas (1),0
+050707,AYACUCHO,PARINACOCHAS,SAN FRANCISCO DE RAVACAYCO,3,2,2014,2022,2,0,0,0,0,3,0,0,Rechazo al programa de erradicación de la hoja de coca (1); Cumplimiento de pactos (1); Rechazo de mandatos (1),Comunidades campesinas (2); Cocaleros (1),0.667,0.0,0.0,0.0,2,Inmaculada Empresas (1),0
+050801,AYACUCHO,PAUCAR DEL SARA SARA,PAUSA,1,1,2018,2018,0,0,0,0,0,0,0,1,Salud (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,1
+050806,AYACUCHO,PAUCAR DEL SARA SARA,OYOLO,3,3,2021,2022,3,0,2,1,0,0,0,0,Retiro de empresa (2); Defensa de territorio (1),Comunidades campesinas (2); Pobladores (1),0.667,0.0,0.0,0.0,3,Las Bambas (1),0
+050906,AYACUCHO,SUCRE,MORCOLLA,2,0,2001,2006,0,0,0,1,0,1,0,0,Defensa de territorio (1); Ejecución de funciones (1),Pobladores (2),0.5,0.0,0.0,0.0,1,,0
+051005,AYACUCHO,VICTOR FAJARDO,CANARIA,22,0,1980,2012,4,18,3,0,18,1,0,0,Puestos de trabajo (10); Aumentos salariales (5); Retiro de empresa (3),Mineros (18); Pobladores (4),0.045,0.0,0.0,0.0,14,Canaria (3); Canaria Ltda (2); Empresas (2),0
+051107,AYACUCHO,VILCAS HUAMAN,SAURAMA,1,1,2022,2022,0,0,0,0,0,1,0,0,Ejecución de funciones (1),Agricultores (1),1.0,0.0,0.0,0.0,0,,0
+060101,CAJAMARCA,CAJAMARCA,CAJAMARCA,227,43,1980,2024,75,5,70,2,37,85,31,2,Retiro de empresa (63); Rechazo de mandatos (30); Aumentos salariales (18),Pobladores (53); Docentes colegios (33); Estudiantes universidades (27),0.123,0.035,0.0,0.048,30,Conga (53); Yanacocha (20); Centromin (1),1
+060103,CAJAMARCA,CAJAMARCA,CHETILLA,1,1,2024,2024,1,0,1,0,0,0,0,0,Retiro de empresa (1),Comunidades campesinas (1),0.0,0.0,0.0,0.0,1,Colpayoc (1),0
+060105,CAJAMARCA,CAJAMARCA,ENCAÑADA,11,1,2004,2023,6,1,4,0,3,4,0,0,Cumplimiento de pactos (3); Retiro de empresa (2); Puestos de trabajo (2),Pobladores (5); Estudiantes universidades (1); Comunidades campesinas (1),0.818,0.0,0.0,0.091,6,Yanacocha (7); Empresas (1),0
+060106,CAJAMARCA,CAJAMARCA,JESUS,5,0,2007,2008,4,0,4,0,0,1,0,0,Retiro de empresa (4); Rechazo de mandatos (1),Pobladores (4); Estudiantes universidades (1),0.0,0.0,0.0,0.0,4,,0
+060108,CAJAMARCA,CAJAMARCA,LOS BAÑOS DEL INCA,15,2,2000,2016,8,0,7,0,0,3,3,2,Retiro de empresa (6); Rechazo de mandatos (2); Reducción de precios (2),Estudiantes universidades (10); Pobladores (3); Usuarios (1),0.267,0.067,0.0,0.067,6,Yanacocha (4); Conga (3); Tía María (1),0
+060109,CAJAMARCA,CAJAMARCA,MAGDALENA,1,1,2018,2018,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Docentes colegios (1),0.0,0.0,0.0,0.0,0,,0
+060201,CAJAMARCA,CAJABAMBA,CAJABAMBA,6,0,2004,2014,2,0,2,0,0,0,0,4,Saneamiento (4); Retiro de empresa (2),Pobladores (4); Agricultores (1); Comunidades campesinas (1),0.5,0.0,0.0,0.0,1,Yanacocha (1),1
+060202,CAJAMARCA,CAJABAMBA,CACHACHI,3,0,1981,1987,0,3,0,0,3,0,0,0,Aumentos salariales (2); Mejores condiciones laborales (1),Mineros (3),0.0,0.0,0.0,0.0,2,Algamarca (1),0
+060203,CAJAMARCA,CAJABAMBA,CONDEBAMBA,1,1,2023,2023,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+060301,CAJAMARCA,CELENDIN,CELENDIN,18,0,2008,2014,15,2,15,0,2,1,0,0,Retiro de empresa (15); Reposición laboral (2); Rechazo de mandatos (1),Pobladores (12); Estudiantes colegios (2); Mineros (2),0.111,0.167,0.111,0.222,3,Conga (15),1
+060304,CAJAMARCA,CELENDIN,HUASMIN,2,0,2011,2012,2,0,2,0,0,0,0,0,Retiro de empresa (2),Pobladores (2),0.0,0.5,0.0,0.5,0,Conga (2),0
+060306,CAJAMARCA,CELENDIN,JOSE GALVEZ,1,0,2012,2012,1,0,1,0,0,0,0,0,Retiro de empresa (1),Pobladores (1),0.0,0.0,0.0,0.0,0,Conga (1),0
+060309,CAJAMARCA,CELENDIN,SOROCHUCO,10,1,2011,2016,8,0,9,0,0,1,0,0,Retiro de empresa (6); Protección a la naturaleza (3); Ejecución de funciones (1),Pobladores (4); Rondas campesinas (2); Frentes de defensa (2),0.1,0.0,0.0,0.0,5,Conga (6); Yanacocha (2),0
+060401,CAJAMARCA,CHOTA,CHOTA,22,9,1981,2024,2,0,2,0,1,16,0,3,Ejecución de funciones (6); Destitución de autoridad electa (5); Rechazo de mandatos (3),Pobladores (11); Rondas campesinas (6); Autoridades (1),0.318,0.0,0.0,0.045,3,Conga (1),1
+060406,CAJAMARCA,CHOTA,CHOROPAMPA,2,0,2004,2008,2,0,2,0,0,0,0,0,Retiro de empresa (1); Reparaciones por daños (1),Comunidades campesinas (1); Agricultores (1),0.5,0.0,0.0,0.0,1,Yanacocha (2),0
+060409,CAJAMARCA,CHOTA,HUAMBOS,1,1,2023,2023,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+060411,CAJAMARCA,CHOTA,LLAMA,5,1,2008,2023,3,0,3,0,0,1,0,1,Reparaciones por daños (3); Transporte (1); Destitución de autoridad electa (1),Pobladores (4); Rondas campesinas (1),1.0,0.0,0.0,0.0,3,Yanacocha (3),0
+060417,CAJAMARCA,CHOTA,TACABAMBA,1,1,2021,2021,0,0,0,0,0,1,0,0,Ejecución de funciones (1),Partidarios políticos (1),0.0,0.0,0.0,0.0,0,,0
+060501,CAJAMARCA,CONTUMAZA,CONTUMAZA,1,0,2001,2001,1,0,1,0,0,0,0,0,Reparaciones por daños (1),Pobladores (1),1.0,0.0,0.0,0.0,1,,1
+060502,CAJAMARCA,CONTUMAZA,CHILETE,1,1,2023,2023,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+060508,CAJAMARCA,CONTUMAZA,YONAN,3,0,1991,2008,0,0,0,1,0,1,0,1,Modificar límites territoriales (1); Destitución de autoridad electa (1); Transporte (1),Pobladores (3),0.667,0.0,0.0,0.0,0,,0
+060601,CAJAMARCA,CUTERVO,CUTERVO,5,1,1997,2023,1,0,1,0,0,4,0,0,Destitución de funcionario (2); Rechazo de mandatos (1); Retiro de empresa (1),Rondas campesinas (2); Estudiantes técnicos (1); Trabajadores ministerios (1),0.2,0.0,0.0,0.0,0,Barrick Misquichilca (1),1
+060602,CAJAMARCA,CUTERVO,CALLAYUC,3,3,2023,2025,1,0,0,0,0,1,0,2,Destitución de autoridad electa (1); Proyectos desarrollo (1); Seguridad (1),Rondas campesinas (3),1.0,0.0,0.0,0.0,0,,0
+060603,CAJAMARCA,CUTERVO,CHOROS,1,0,2007,2007,0,0,0,0,0,1,0,0,Rechazo a resultados electorales (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+060605,CAJAMARCA,CUTERVO,LA RAMADA,1,0,2008,2008,1,0,1,0,0,0,0,0,Protección a la naturaleza (1),Agricultores (1),1.0,0.0,0.0,0.0,0,Yanacocha (1),0
+060701,CAJAMARCA,HUALGAYOC,BAMBAMARCA,21,2,2006,2016,17,0,18,0,0,2,1,0,Retiro de empresa (14); Suspensión de concesiones (2); Pago de deudas (1),Pobladores (8); Comunidades campesinas (4); Rondas campesinas (4),0.19,0.0,0.0,0.095,7,Conga (12); Tanta Huatay (2); Yanacocha (1),1
+060703,CAJAMARCA,HUALGAYOC,HUALGAYOC,9,1,2001,2016,9,0,5,0,1,1,0,2,Saneamiento (2); Suspensión de concesiones (2); Protección a la naturaleza (1),Rondas campesinas (3); Pobladores (2); Agricultores (2),0.222,0.0,0.111,0.333,6,Gold Fields (3); Yanacocha (1); Conga (1),0
+060801,CAJAMARCA,JAEN,JAEN,37,7,1988,2025,4,0,3,1,6,18,7,2,Rechazo de mandatos (7); Ejecución de funciones (4); Pago atrasados de salarios (3),Pobladores (6); Rondas campesinas (5); Docentes colegios (4),0.351,0.027,0.0,0.081,3,Río Blanco (1); Conga (1); Sulliden Shahuindo (1),1
+060802,CAJAMARCA,JAEN,BELLAVISTA,1,0,2005,2005,1,0,1,0,0,0,0,0,Retiro de empresa (1),Rondas campesinas (1),0.0,1.0,0.0,1.0,1,Río Blanco (1),0
+060807,CAJAMARCA,JAEN,POMAHUACA,1,0,2013,2013,1,0,1,0,0,0,0,0,Suspensión de concesiones (1),Rondas campesinas (1),0.0,0.0,0.0,0.0,1,,0
+060810,CAJAMARCA,JAEN,SAN FELIPE,1,0,1980,1980,0,0,0,1,0,0,0,0,Definir límites (1),Agricultores (1),0.0,1.0,1.0,0.0,0,,0
+060811,CAJAMARCA,JAEN,SAN JOSE DEL ALTO,1,0,1995,1995,0,0,1,0,0,0,0,0,Protección a la naturaleza (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+060901,CAJAMARCA,SAN IGNACIO,SAN IGNACIO,9,2,1982,2022,0,0,0,2,1,4,1,1,Defensa de territorio (2); Rechazo de normas (2); Salud (1),Pobladores (3); Comunidades campesinas (2); Agricultores (1),0.222,0.0,0.333,0.111,0,,1
+060903,CAJAMARCA,SAN IGNACIO,HUARANGO,4,0,2012,2013,4,0,4,0,0,0,0,0,Retiro de empresa (4),Comunidades nativas (2); Comunidades campesinas (2),0.0,0.0,0.0,0.25,2,Conga (4),0
+060905,CAJAMARCA,SAN IGNACIO,NAMBALLE,2,0,1997,2005,0,0,0,1,0,1,0,0,Defensa de territorio (1); Rechazo de mandatos (1),Pobladores (1); Agricultores (1),0.5,0.0,0.0,0.0,0,,0
+060906,CAJAMARCA,SAN IGNACIO,SAN JOSE DE LOURDES,3,0,2002,2002,0,0,0,0,0,0,0,3,Vivienda (3),Comunidades nativas (2); Pobladores (1),0.333,0.0,0.667,0.0,0,,0
+061101,CAJAMARCA,SAN MIGUEL,SAN MIGUEL,1,0,2013,2013,1,0,1,0,0,0,0,0,Retiro de empresa (1),Comunidades campesinas (1),0.0,0.0,0.0,0.0,1,,1
+061301,CAJAMARCA,SANTA CRUZ,SANTA CRUZ,1,1,2015,2015,0,0,0,0,1,0,0,0,Aumentos salariales (1),Docentes colegios (1),0.0,0.0,0.0,0.0,0,,1
+061303,CAJAMARCA,SANTA CRUZ,CATACHE,1,0,2007,2007,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+061307,CAJAMARCA,SANTA CRUZ,PULAN,8,0,2004,2013,8,0,8,0,0,0,0,0,Retiro de empresa (8),Comunidades campesinas (6); Rondas campesinas (1); Autoridades (1),0.0,0.0,0.125,0.375,2,Buenaventura (7),0
+070101,CALLAO,CALLAO,CALLAO,546,49,1980,2025,8,0,9,5,319,149,32,32,Aumentos salariales (186); Rechazo de mandatos (48); Mejores condiciones laborales (35),Trabajadores portuarios (82); Transportistas urbanos (71); Administrativos (54),0.04,0.026,0.009,0.046,199,Carmín (1); Petroperú-Oleoducto (1),1
+070102,CALLAO,CALLAO,BELLAVISTA,22,4,1980,2021,0,0,0,1,8,8,1,4,Cumplimiento de pactos (4); Aumentos salariales (3); Puestos de trabajo (2),Médicos (14); Pobladores (2); Frentes de defensa (1),0.0,0.0,0.0,0.0,0,,0
+070103,CALLAO,CALLAO,CARMEN DE LA LEGUA REYNOSO,7,2,1999,2021,0,0,0,0,2,3,1,1,Ejecución de funciones (2); Pago atrasados de salarios (2); Saneamiento (1),Pobladores (3); Serenazgo (2); Víctimas violencia (1),0.429,0.0,0.0,0.0,1,Petroperú-Oleoducto (1),0
+070104,CALLAO,CALLAO,LA PERLA,9,0,1988,2014,0,0,4,1,1,3,0,0,Protección a la naturaleza (3); Rechazo a resultados electorales (2); Mejores condiciones laborales (1),Pobladores (8); Trabajadores ministerios (1),0.111,0.0,0.0,0.0,0,,0
+070105,CALLAO,CALLAO,LA PUNTA,26,1,1982,2024,0,0,0,0,3,11,0,12,Rechazo de mandatos (11); Alimentación (6); Salud (4),Reos (22); Pobladores (1); Familiares reos (1),0.0,0.077,0.077,0.5,0,,0
+070106,CALLAO,CALLAO,VENTANILLA,92,24,1980,2025,13,22,13,1,28,23,6,21,Aumentos salariales (18); Reparaciones por daños (10); Rechazo de mandatos (8),Pobladores (23); Mineros (14); Trabajadores petroleros (10),0.217,0.022,0.022,0.109,40,Repsol (11); Petroperú-Oleoducto (6); Centromin (3),0
+070107,CALLAO,CALLAO,MI PERU,1,1,2024,2024,0,0,0,0,0,0,0,1,Saneamiento (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+080101,CUSCO,CUSCO,CUSCO,579,148,1980,2025,20,0,6,5,146,292,92,38,Aumentos salariales (111); Rechazo de mandatos (89); Rechazo de normas (48),Pobladores (101); Estudiantes universidades (82); Docentes colegios (66),0.135,0.036,0.003,0.069,30,Camisea (7); Tía María (4); Tintaya-Antapaccay (1),1
+080102,CUSCO,CUSCO,CCORCA,2,2,2022,2022,2,0,2,0,0,0,0,0,Protección a la naturaleza (1); Reparaciones por daños (1),Comunidades campesinas (1); Pobladores (1),1.0,0.0,0.0,0.0,2,Tintaya-Antapaccay (1),0
+080103,CUSCO,CUSCO,POROY,5,3,2007,2023,0,0,0,0,0,3,2,0,Rechazo de mandatos (1); Promulgación de normas (1); Reducción de impuestos (1),Pobladores (2); Transportistas de carga (2); Transportistas urbanos (1),0.8,0.0,0.0,0.0,0,,0
+080104,CUSCO,CUSCO,SAN JERONIMO,18,4,1980,2023,1,0,0,0,6,9,1,2,Ejecución de funciones (7); Aumentos salariales (5); Alimentación (2),Trabajadores penitenciarios (6); Reos (5); Familiares reos (3),0.167,0.056,0.0,0.167,0,,0
+080105,CUSCO,CUSCO,SAN SEBASTIAN,6,3,1987,2025,0,0,0,0,0,6,0,0,Ejecución de funciones (2); Destitución de autoridad electa (2); Rechazo de mandatos (1),Pobladores (3); Comités (1); Docentes colegios (1),0.0,0.0,0.0,0.5,1,,0
+080106,CUSCO,CUSCO,SANTIAGO,9,4,1983,2025,0,0,0,0,1,7,0,1,Cumplimiento de pactos (3); Rechazo de mandatos (2); Ejecución de funciones (2),Trabajadores eléctricos (4); Pobladores (2); Estudiantes universidades (1),0.222,0.222,0.0,0.0,4,,0
+080107,CUSCO,CUSCO,SAYLLA,4,3,2009,2022,0,0,0,0,0,1,3,0,Reducción de precios (2); Rechazo de mandatos (1); Reducción de impuestos (1),Transportistas de carga (3); Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+080108,CUSCO,CUSCO,WANCHAQ,24,12,1983,2023,1,0,0,0,8,12,3,1,Aumentos salariales (7); Rechazo de normas (4); Rechazo de mandatos (3),Docentes colegios (8); Pobladores (7); Estudiantes universidades (2),0.417,0.083,0.0,0.417,3,,0
+080201,CUSCO,ACOMAYO,ACOMAYO,1,0,1982,1982,0,0,0,0,0,0,1,0,Aumento del precio de productos (1),Agricultores (1),0.0,0.0,0.0,1.0,0,,1
+080206,CUSCO,ACOMAYO,RONDOCAN,1,1,2021,2021,0,0,0,0,0,0,1,0,Reducción de precios (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+080301,CUSCO,ANTA,ANTA,15,9,1985,2023,2,0,1,0,0,9,4,1,Destitución de autoridad electa (5); Rechazo de normas (2); Reducción de precios (2),Pobladores (6); Agricultores (5); Comunidades campesinas (2),0.8,0.0,0.133,0.133,0,,1
+080302,CUSCO,ANTA,ANCAHUASI,1,1,2025,2025,0,0,0,0,0,1,0,0,Ejecución de funciones (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+080303,CUSCO,ANTA,CACHIMAYO,1,1,2022,2022,0,0,0,0,0,0,1,0,Reducción de precios (1),Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+080304,CUSCO,ANTA,CHINCHAYPUJIO,1,1,2023,2023,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+080306,CUSCO,ANTA,LIMATAMBO,2,1,1986,2022,0,1,0,0,1,0,1,0,Aumentos salariales (1); Reducción de precios (1),Mineros (1); Transportistas de carga (1),0.5,0.0,0.0,0.0,1,,0
+080401,CUSCO,CALCA,CALCA,10,4,2008,2023,0,0,0,0,0,9,1,0,Rechazo de mandatos (6); Destitución de autoridad electa (2); Rechazo de normas (1),Pobladores (9); Cocaleros (1),0.5,0.2,0.1,0.2,0,,1
+080403,CUSCO,CALCA,LAMAY,1,1,2023,2023,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+080405,CUSCO,CALCA,PISAC,1,1,2022,2022,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+080406,CUSCO,CALCA,SAN SALVADOR,1,1,2023,2023,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+080408,CUSCO,CALCA,YANATILE,1,0,2007,2007,0,0,0,1,0,0,0,0,Defensa de territorio (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+080501,CUSCO,CANAS,YANAOCA,3,1,2001,2022,0,0,0,0,0,2,0,1,Transporte (1); Rechazo de normas (1); Destitución de autoridad electa (1),Pobladores (2); Agricultores (1),0.333,0.0,0.0,0.0,0,,1
+080601,CUSCO,CANCHIS,SICUANI,55,13,1980,2023,11,0,1,1,5,40,5,3,Rechazo de mandatos (12); Rechazo de normas (12); Destitución de autoridad electa (12),Pobladores (23); Frentes de defensa (16); Agricultores (4),0.691,0.036,0.018,0.055,0,Camisea (2); Majes-Siguas Alrededor (1),1
+080602,CUSCO,CANCHIS,CHECACUPE,3,3,2021,2023,0,0,0,0,0,3,0,0,Destitución de autoridad electa (2); Ejecución de reformas (1),Pobladores (2); Frentes de defensa (1),1.0,0.0,0.0,0.0,0,,0
+080603,CUSCO,CANCHIS,COMBAPATA,15,7,2008,2023,5,0,1,0,2,11,0,1,Rechazo de mandatos (6); Destitución de autoridad electa (4); Aumentos salariales (2),Pobladores (9); Frentes de defensa (3); Docentes colegios (2),0.867,0.0,0.0,0.0,0,Camisea (2),0
+080604,CUSCO,CANCHIS,MARANGANI,7,3,2004,2023,2,0,2,0,0,5,0,0,Destitución de autoridad electa (4); Ejecución de funciones (1); Suspensión de concesiones (1),Pobladores (5); Comunidades campesinas (2),0.571,0.0,0.0,0.0,1,,0
+080607,CUSCO,CANCHIS,SAN PEDRO,2,2,2021,2023,0,0,0,0,0,2,0,0,Ejecución de reformas (1); Destitución de autoridad electa (1),Frentes de defensa (1); Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+080608,CUSCO,CANCHIS,TINTA,5,5,2021,2023,0,0,0,0,0,5,0,0,Destitución de autoridad electa (4); Ejecución de reformas (1),Pobladores (4); Frentes de defensa (1),1.0,0.0,0.0,0.0,0,,0
+080701,CUSCO,CHUMBIVILCAS,SANTO TOMAS,20,10,2002,2023,6,0,4,0,1,14,0,1,Rechazo de normas (7); Reparaciones por daños (4); Destitución de autoridad electa (3),Pobladores (13); Comunidades campesinas (5); Agricultores (1),0.5,0.1,0.0,0.1,5,Las Bambas (5),1
+080702,CUSCO,CHUMBIVILCAS,CAPACMARCA,33,33,2019,2025,27,0,3,0,2,27,0,1,Rechazo de normas (13); Cumplimiento de pactos (8); Rechazo de mandatos (4),Comunidades campesinas (23); Pobladores (5); Mineros (5),0.97,0.0,0.0,0.0,16,Las Bambas (25),0
+080703,CUSCO,CHUMBIVILCAS,CHAMACA,8,8,2016,2025,4,0,1,0,0,6,0,1,Rechazo de normas (3); Cumplimiento de pactos (2); Educación (1),Pobladores (3); Mineros (3); Comunidades campesinas (2),0.5,0.0,0.0,0.0,4,Las Bambas (2); Constancia (1),0
+080704,CUSCO,CHUMBIVILCAS,COLQUEMARCA,18,18,2018,2025,16,0,8,0,3,7,0,0,Reparaciones por daños (8); Rechazo de normas (3); Puestos de trabajo (3),Comunidades campesinas (15); Mineros (2); Pobladores (1),1.0,0.0,0.0,0.0,13,Las Bambas (16),0
+080705,CUSCO,CHUMBIVILCAS,LIVITACA,9,9,2021,2023,6,0,2,0,1,5,0,1,Cumplimiento de pactos (2); Destitución de autoridad electa (2); Protección a la naturaleza (1),Comunidades campesinas (5); Pobladores (4),0.778,0.111,0.111,0.0,4,Las Bambas (4); Constancia (1),0
+080706,CUSCO,CHUMBIVILCAS,LLUSCO,9,0,2004,2012,8,0,1,0,3,1,0,4,Transporte (4); Puestos de trabajo (3); Cumplimiento de pactos (1),Pobladores (8); Mineros (1),0.0,0.0,0.0,0.0,8,Empresas (3); Ares (1),0
+080707,CUSCO,CHUMBIVILCAS,QUIÑOTA,4,4,2016,2023,3,0,3,0,0,1,0,0,Retiro de empresa (2); Protección a la naturaleza (1); Destitución de autoridad electa (1),Pobladores (3); Comunidades campesinas (1),0.25,0.0,0.0,0.0,3,Constancia (1); Anabi (1),0
+080708,CUSCO,CHUMBIVILCAS,VELILLE,29,29,2018,2024,27,1,9,0,2,14,1,3,Cumplimiento de pactos (8); Reparaciones por daños (6); Rechazo de normas (3),Comunidades campesinas (24); Pobladores (3); Frentes de defensa (1),0.931,0.0,0.0,0.0,27,Las Bambas (26); Constancia (1),0
+080801,CUSCO,ESPINAR,ESPINAR,77,20,1984,2023,32,12,23,0,16,30,5,3,Protección a la naturaleza (16); Rechazo de mandatos (11); Mejores condiciones laborales (7),Pobladores (40); Mineros (14); Comunidades campesinas (6),0.312,0.091,0.026,0.13,24,Tintaya-Antapaccay (16); Las Bambas (4); Centromin (3),1
+080802,CUSCO,ESPINAR,CONDOROMA,5,1,1981,2023,2,2,2,0,2,1,0,0,Aumentos salariales (2); Protección a la naturaleza (2); Destitución de autoridad electa (1),Pobladores (3); Mineros (2),0.4,0.2,0.0,0.0,2,Southern (2),0
+080803,CUSCO,ESPINAR,COPORAQUE,17,15,2009,2022,16,0,5,0,1,9,1,1,Cumplimiento de pactos (5); Reparaciones por daños (3); Protección a la naturaleza (2),Comunidades campesinas (9); Pobladores (8),0.647,0.118,0.0,0.118,11,Las Bambas (8); Tintaya-Antapaccay (5),0
+080804,CUSCO,ESPINAR,OCORURO,1,1,2022,2022,0,0,0,0,0,0,0,1,Transporte (1),Comunidades campesinas (1),1.0,0.0,0.0,0.0,0,,0
+080805,CUSCO,ESPINAR,PALLPATA,7,2,2005,2025,3,0,4,0,0,3,0,0,Protección a la naturaleza (4); Rechazo de mandatos (2); Destitución de autoridad electa (1),Pobladores (6); Frentes de defensa (1),0.857,0.286,0.0,0.286,0,Tintaya-Antapaccay (2),0
+080901,CUSCO,LA CONVENCION,SANTA ANA,67,10,1980,2023,27,0,8,0,5,39,5,10,Rechazo de mandatos (19); Ejecución de funciones (8); Saneamiento (6),Pobladores (32); Agricultores (9); Comunidades nativas (7),0.373,0.015,0.015,0.06,10,Camisea (22),1
+080902,CUSCO,LA CONVENCION,ECHARATE,21,0,2005,2010,7,0,4,0,0,17,0,0,Rechazo de normas (13); Rechazo de mandatos (4); Reparaciones por daños (2),Comunidades nativas (14); Pobladores (6); Comités (1),0.476,0.048,0.0,0.048,4,Camisea (8),0
+080903,CUSCO,LA CONVENCION,HUAYOPATA,4,0,2004,2014,1,0,0,0,2,0,0,2,Mejores condiciones laborales (2); Transporte (1); Saneamiento (1),Cocaleros (2); Autoridades (1); Pobladores (1),0.25,0.0,0.25,0.25,2,,0
+080904,CUSCO,LA CONVENCION,MARANURA,3,0,2008,2014,1,0,0,0,0,1,1,1,Aumento del precio de productos (1); Saneamiento (1); Rechazo a resultados electorales (1),Pobladores (2); Cocaleros (1),0.333,0.0,0.333,0.333,0,Camisea (1),0
+080907,CUSCO,LA CONVENCION,QUIMBIRI,12,10,2009,2024,0,0,0,0,1,8,1,2,Rechazo al programa de erradicación de la hoja de coca (5); Rechazo de normas (1); Ejecución de funciones (1),Cocaleros (6); Pobladores (3); Comunidades nativas (1),0.25,0.0,0.0,0.0,0,,0
+080908,CUSCO,LA CONVENCION,SANTA TERESA,6,0,2010,2014,4,0,0,0,0,5,0,1,Rechazo de mandatos (4); Seguridad (1); Ejecución de funciones (1),Pobladores (4); Comités (1); Estudiantes universidades (1),0.167,0.167,0.167,0.333,0,Camisea (2),0
+080909,CUSCO,LA CONVENCION,VILCABAMBA,4,3,2014,2025,1,0,0,0,1,2,0,1,Saneamiento (1); Aumentos salariales (1); Rechazo a la privatización (1),Pobladores (3); Docentes colegios (1),0.5,0.25,0.0,0.25,1,,0
+080910,CUSCO,LA CONVENCION,PICHARI,4,4,2018,2022,0,0,0,0,0,4,0,0,Rechazo al programa de erradicación de la hoja de coca (4),Agricultores (2); Pobladores (1); Cocaleros (1),0.5,0.0,0.25,0.5,0,,0
+080914,CUSCO,LA CONVENCION,MEGANTONI,5,2,2009,2019,2,0,2,0,0,3,0,0,Rechazo de normas (3); Reparaciones por daños (2),Comunidades nativas (5),0.2,0.0,0.0,0.0,0,,0
+080915,CUSCO,LA CONVENCION,KUMPIRUSHIATO,4,4,2022,2022,3,0,0,0,0,4,0,0,Destitución de autoridad electa (2); Rechazo de mandatos (2),Pobladores (4),0.0,0.25,0.0,0.25,0,,0
+081001,CUSCO,PARURO,PARURO,5,5,2019,2023,2,0,0,0,0,4,0,1,Destitución de autoridad electa (3); Transporte (1); Ejecución de reformas (1),Pobladores (4); Comunidades campesinas (1),1.0,0.2,0.0,0.2,2,Las Bambas (2),1
+081003,CUSCO,PARURO,CCAPI,1,1,2022,2022,1,0,0,0,0,1,0,0,Cumplimiento de pactos (1),Comunidades campesinas (1),1.0,0.0,0.0,0.0,1,Las Bambas (1),0
+081009,CUSCO,PARURO,YAURISQUE,1,1,2022,2022,1,0,1,0,0,0,0,0,Reparaciones por daños (1),Comunidades campesinas (1),1.0,0.0,0.0,0.0,1,Las Bambas (1),0
+081101,CUSCO,PAUCARTAMBO,PAUCARTAMBO,2,2,2015,2022,0,0,0,0,0,1,1,0,Aumento del precio de productos (1); Rechazo de mandatos (1),Agricultores (1); Pobladores (1),0.5,0.0,0.0,0.0,0,,1
+081106,CUSCO,PAUCARTAMBO,KOSÑIPATA,11,0,2004,2005,0,0,0,0,9,2,0,0,Mejores condiciones laborales (9); Rechazo al programa de erradicación de la hoja de coca (1); Promulgación de normas (1),Cocaleros (11),0.091,0.0,0.0,0.0,9,,0
+081201,CUSCO,QUISPICANCHI,URCOS,9,6,2008,2023,1,0,0,0,0,5,3,1,Reducción de precios (2); Destitución de autoridad electa (2); Rechazo de normas (1),Pobladores (4); Agricultores (2); Transportistas urbanos (2),0.778,0.0,0.0,0.0,0,,1
+081203,CUSCO,QUISPICANCHI,CAMANTI,2,0,2009,2013,1,1,1,0,1,0,0,0,Retiro de empresa (1); Mejores condiciones laborales (1),Pobladores (1); Mineros (1),0.5,0.0,0.0,0.0,1,Ares (1),0
+081204,CUSCO,QUISPICANCHI,CCARHUAYO,1,1,2021,2021,0,0,0,0,0,0,1,0,Reducción de precios (1),Transportistas urbanos (1),0.0,0.0,0.0,0.0,0,,0
+081206,CUSCO,QUISPICANCHI,CUSIPATA,2,2,2022,2024,0,0,0,1,0,1,0,0,Destitución de autoridad electa (1); Defensa de territorio (1),Pobladores (1); Comunidades campesinas (1),0.5,0.5,0.5,0.5,0,,0
+081207,CUSCO,QUISPICANCHI,HUARO,1,1,2023,2023,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+081208,CUSCO,QUISPICANCHI,LUCRE,3,2,2010,2023,0,0,0,0,0,2,0,1,Destitución de autoridad electa (2); Vivienda (1),Pobladores (2); Pobladores AAHH (1),1.0,0.0,0.0,0.0,0,,0
+081209,CUSCO,QUISPICANCHI,MARCAPATA,2,1,2005,2022,0,0,0,0,0,0,1,1,Transporte (1); Reducción de precios (1),Pobladores (1); Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+081210,CUSCO,QUISPICANCHI,OCONGATE,3,1,2007,2021,2,0,2,0,0,0,1,0,Suspensión de concesiones (1); Retiro de empresa (1); Reducción de impuestos (1),Pobladores (1); Comunidades campesinas (1); Transportistas de carga (1),0.333,0.333,0.0,0.0,0,,0
+081211,CUSCO,QUISPICANCHI,OROPESA,2,1,1980,2017,0,0,0,1,0,0,0,1,Adjudicación de tierras (1); Salud (1),Agricultores (1); Pobladores (1),0.5,0.0,0.0,0.0,0,,0
+081301,CUSCO,URUBAMBA,URUBAMBA,16,9,1987,2023,2,0,0,0,1,6,5,4,Reducción de precios (4); Destitución de autoridad electa (3); Transporte (2),Pobladores (8); Transportistas ferroviarios (1); Autoridades (1),0.812,0.062,0.0,0.062,3,,1
+081302,CUSCO,URUBAMBA,CHINCHERO,6,1,2005,2022,0,0,0,0,0,1,5,0,Protección de la producción nacional (3); Aumento del precio de productos (2); Cumplimiento de pactos (1),Agricultores (5); Comunidades nativas (1),1.0,0.333,0.0,0.333,1,,0
+081304,CUSCO,URUBAMBA,MACHUPICCHU,43,26,1983,2025,12,0,0,2,3,27,7,4,Rechazo de mandatos (8); Rechazo de normas (7); Ejecución de funciones (6),Pobladores (21); Frentes de defensa (6); Turistas (5),0.419,0.07,0.0,0.163,16,Camisea (1),0
+081305,CUSCO,URUBAMBA,MARAS,1,1,2023,2023,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+081306,CUSCO,URUBAMBA,OLLANTAYTAMBO,16,12,2007,2024,1,0,1,0,6,6,3,0,Aumentos salariales (5); Destitución de autoridad electa (4); Reducción de precios (3),Docentes colegios (7); Pobladores (7); Comunidades campesinas (2),0.75,0.062,0.0,0.125,1,Las Bambas (1),0
+090101,HUANCAVELICA,HUANCAVELICA,HUANCAVELICA,139,28,1980,2024,7,0,3,1,41,74,16,4,Aumentos salariales (31); Rechazo de mandatos (17); Destitución de autoridad electa (16),Docentes colegios (28); Estudiantes universidades (24); Pobladores (19),0.129,0.05,0.014,0.079,9,Tía María (2); Centromin (1); Tambo-Caracocha (1),1
+090103,HUANCAVELICA,HUANCAVELICA,ACORIA,4,0,1980,2007,0,0,0,1,0,3,0,0,Rechazo a resultados electorales (2); Defensa de territorio (1); Rechazo de mandatos (1),Pobladores (3); Comunidades campesinas (1),0.75,0.0,0.25,0.25,0,,0
+090106,HUANCAVELICA,HUANCAVELICA,HUACHOCOLPA,15,0,1981,2012,0,13,0,0,13,2,0,0,Aumentos salariales (5); Nombramiento (4); Mejores condiciones laborales (3),Mineros (15),0.0,0.0,0.0,0.0,13,Caudalosa (5); Buenaventura (2); Southern (2),0
+090116,HUANCAVELICA,HUANCAVELICA,VILCA,1,0,2008,2008,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+090117,HUANCAVELICA,HUANCAVELICA,YAULI,1,0,2006,2006,0,0,0,0,0,0,0,1,Transporte (1),Docentes colegios (1),0.0,0.0,0.0,0.0,0,,0
+090119,HUANCAVELICA,HUANCAVELICA,HUANDO,1,0,2014,2014,0,0,0,0,0,0,0,1,Salud (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+090201,HUANCAVELICA,ACOBAMBA,ACOBAMBA,2,0,1990,2006,0,1,0,0,1,1,0,0,Mejores condiciones laborales (1); Rechazo a resultados electorales (1),Mineros (1); Pobladores (1),0.0,0.5,0.0,0.5,1,Centromin (1),1
+090206,HUANCAVELICA,ACOBAMBA,PAUCARA,3,2,1986,2022,0,0,0,0,0,1,1,1,Rechazo de mandatos (1); Salud (1); Reducción de precios (1),Comunidades campesinas (1); Pobladores (1); Transportistas de carga (1),0.333,0.333,0.0,0.0,0,,0
+090208,HUANCAVELICA,ACOBAMBA,ROSARIO,1,0,2006,2006,0,0,0,0,0,1,0,0,Rechazo a resultados electorales (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+090301,HUANCAVELICA,ANGARAES,LIRCAY,7,4,1981,2023,2,1,2,0,2,3,0,0,Destitución de autoridad electa (3); Mejores condiciones laborales (1); Protección a la naturaleza (1),Pobladores (4); Mineros (1); Asociaciones civiles (1),0.0,0.0,0.0,0.143,2,Cambalache (1); Caudalosa Chica (1),1
+090302,HUANCAVELICA,ANGARAES,ANCHONGA,1,1,2023,2023,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Comunidades campesinas (1),1.0,0.0,0.0,0.0,0,,0
+090304,HUANCAVELICA,ANGARAES,CCOCHACCASA,12,1,1980,2023,1,9,0,0,9,3,0,0,Aumentos salariales (5); Mejores condiciones laborales (3); Cumplimiento de pactos (2),Mineros (11); Pobladores (1),0.0,0.0,0.0,0.0,12,Buenaventura (11); Southern (1),0
+090305,HUANCAVELICA,ANGARAES,CHINCHO,1,0,2009,2009,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+090312,HUANCAVELICA,ANGARAES,SECCLLA,6,0,2005,2011,6,0,4,0,0,2,0,0,Retiro de empresa (3); Rechazo de mandatos (2); Protección a la naturaleza (1),Comunidades campesinas (4); Frentes de defensa (2),0.167,0.167,0.167,0.167,4,Pampamali (4); Pampali (1),0
+090401,HUANCAVELICA,CASTROVIRREYNA,CASTROVIRREYNA,7,0,1980,2010,0,4,0,0,4,2,1,0,Aumentos salariales (3); Reducción de precios (1); Ejecución de funciones (1),Mineros (6); Docentes colegios (1),0.0,0.143,0.0,0.143,6,Castrovirreyna (2); Buenaventura (1),1
+090402,HUANCAVELICA,CASTROVIRREYNA,ARMA,1,0,1981,1981,0,1,0,0,1,0,0,0,Mejores condiciones laborales (1),Mineros (1),0.0,0.0,0.0,0.0,1,,0
+090404,HUANCAVELICA,CASTROVIRREYNA,CAPILLAS,2,0,2004,2004,0,0,0,2,0,0,0,0,Adjudicación de tierras (1); Definir límites (1),Comunidades campesinas (2),0.0,0.0,0.0,0.0,0,,0
+090501,HUANCAVELICA,CHURCAMPA,CHURCAMPA,2,0,1998,2010,0,0,0,0,0,2,0,0,Rechazo a resultados electorales (1); Rechazo de normas (1),Pobladores (1); Docentes colegios (1),0.0,0.0,0.0,0.0,0,,1
+090507,HUANCAVELICA,CHURCAMPA,PAUCARBAMBA,2,1,1981,2021,0,0,0,1,0,1,0,0,Defensa de territorio (1); Ejecución de funciones (1),Agricultores (1); Partidarios políticos (1),0.0,0.5,0.0,0.0,1,,0
+090509,HUANCAVELICA,CHURCAMPA,SAN PEDRO DE CORIS,5,2,2005,2022,3,2,1,0,2,1,1,0,Reparaciones por daños (1); Pago atrasados de salarios (1); Bonificaciones (1),Pobladores (3); Mineros (2),0.2,0.0,0.0,0.0,5,La Oroya (3),0
+090601,HUANCAVELICA,HUAYTARA,HUAYTARA,1,0,2008,2008,1,0,0,0,1,0,0,0,Puestos de trabajo (1),Agricultores (1),0.0,0.0,0.0,0.0,1,Camisea (1),1
+090603,HUANCAVELICA,HUAYTARA,CORDOVA,3,0,2007,2014,2,0,0,0,0,3,0,0,Ejecución de funciones (3),Comunidades campesinas (2); Pobladores (1),0.333,0.0,0.0,0.0,2,Minsur Según (1); Minsur Ayer (1),0
+090607,HUANCAVELICA,HUAYTARA,PILPICHACA,1,0,1983,1983,0,0,0,1,0,0,0,0,Defensa de territorio (1),Comunidades campesinas (1),0.0,1.0,0.0,0.0,0,,0
+090701,HUANCAVELICA,TAYACAJA,PAMPAS,10,4,2007,2025,0,0,0,0,0,5,0,5,Educación (5); Ejecución de funciones (3); Rechazo de mandatos (2),Pobladores (7); Docentes colegios (1); Agricultores (1),0.6,0.1,0.0,0.1,0,,1
+090702,HUANCAVELICA,TAYACAJA,ACOSTAMBO,1,1,2022,2022,0,0,0,0,0,0,1,0,Reducción de precios (1),Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+090704,HUANCAVELICA,TAYACAJA,AHUAYCHA,1,1,2022,2022,0,0,0,0,0,0,1,0,Reducción de precios (1),Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+090705,HUANCAVELICA,TAYACAJA,COLCABAMBA,51,3,1980,2022,1,0,0,0,31,14,2,4,Aumentos salariales (25); Cumplimiento de pactos (12); Mejores condiciones laborales (4),Trabajadores eléctricos (43); Pobladores (3); Estudiantes colegios (2),0.02,0.118,0.02,0.059,42,,0
+090710,HUANCAVELICA,TAYACAJA,ÑAHUIMPUQUIO,2,2,2022,2025,0,0,0,0,0,1,1,0,Reducción de precios (1); Ejecución de funciones (1),Transportistas de carga (1); Estudiantes universidades (1),1.0,0.0,0.0,0.0,0,,0
+090717,HUANCAVELICA,TAYACAJA,SURCUBAMBA,2,0,2010,2011,0,0,0,0,0,1,0,1,Rechazo de mandatos (1); Educación (1),Pobladores (2),0.5,0.0,0.0,0.0,0,,0
+090718,HUANCAVELICA,TAYACAJA,TINTAY PUNCU,1,0,2014,2014,0,0,0,0,0,1,0,0,Ejecución de funciones (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+090719,HUANCAVELICA,TAYACAJA,QUICHUAS,1,1,2023,2023,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Comunidades campesinas (1),1.0,0.0,0.0,0.0,0,,0
+090721,HUANCAVELICA,TAYACAJA,ROBLE,1,1,2020,2020,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Asociaciones civiles (1),0.0,0.0,0.0,0.0,0,,0
+100101,HUANUCO,HUANUCO,HUANUCO,132,24,1980,2024,3,2,1,6,27,65,21,12,Aumentos salariales (20); Rechazo de mandatos (14); Ejecución de funciones (12),Pobladores (33); Frentes de defensa (12); Docentes colegios (11),0.197,0.03,0.0,0.098,6,Centromin (1); Raura (1),1
+100102,HUANUCO,HUANUCO,AMARILIS,4,1,1992,2021,0,0,0,0,0,4,0,0,Rechazo de mandatos (1); Promulgación de normas (1); Ejecución de funciones (1),Estudiantes técnicos (2); Pobladores (1); Médicos (1),0.0,0.0,0.0,0.0,1,,0
+100103,HUANUCO,HUANUCO,CHINCHAO,1,1,2022,2022,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),1.0,0.0,0.0,1.0,0,,0
+100109,HUANUCO,HUANUCO,SANTA MARIA DEL VALLE,1,1,2021,2021,0,0,0,0,0,0,1,0,Reducción de impuestos (1),Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+100111,HUANUCO,HUANUCO,PILLCO MARCA,6,0,1985,2011,0,0,1,0,1,4,0,0,Ejecución de funciones (3); Mejores condiciones laborales (1); Destitución de funcionario (1),Estudiantes universidades (3); Pobladores (2); Trabajadores universidades (1),0.167,0.0,0.0,0.167,0,,0
+100201,HUANUCO,AMBO,AMBO,3,0,1987,2013,0,0,0,1,0,1,0,1,Modificar límites territoriales (1); Rechazo de normas (1); Transporte (1),Pobladores (1); Docentes colegios (1); Transportistas urbanos (1),0.667,0.0,0.0,0.333,0,,1
+100204,HUANUCO,AMBO,CONCHAMARCA,3,0,1982,1982,2,0,0,2,0,1,0,0,Adjudicación de tierras (2); Rechazo de mandatos (1),Agricultores (3),0.0,0.667,0.0,0.333,3,,0
+100207,HUANUCO,AMBO,SAN RAFAEL,1,0,1987,1987,0,0,0,1,0,0,0,0,Modificar límites territoriales (1),Frentes de defensa (1),1.0,0.0,0.0,0.0,0,,0
+100301,HUANUCO,DOS DE MAYO,LA UNION,1,0,1987,1987,0,0,0,1,0,0,0,0,Modificar límites territoriales (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,1
+100401,HUANUCO,HUACAYBAMBA,HUACAYBAMBA,1,0,2004,2004,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Comunidades campesinas (1),0.0,0.0,0.0,0.0,0,,1
+100404,HUANUCO,HUACAYBAMBA,PINRA,1,0,2014,2014,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+100501,HUANUCO,HUAMALIES,LLATA,1,1,2023,2023,1,0,0,0,0,1,0,0,Cumplimiento de pactos (1),Pobladores (1),0.0,0.0,0.0,0.0,1,Antamina (1),1
+100504,HUANUCO,HUAMALIES,JACAS GRANDE,2,1,2004,2015,0,0,0,0,0,1,0,1,Transporte (1); Ejecución de funciones (1),Comunidades campesinas (1); Víctimas violencia (1),0.0,0.0,0.0,0.0,0,,0
+100507,HUANUCO,HUAMALIES,MONZON,12,0,1981,2007,0,0,0,0,0,12,0,0,Rechazo de mandatos (5); Rechazo al programa de erradicación de la hoja de coca (4); Destitución de funcionario (1),Cocaleros (12),0.083,0.0,0.0,0.0,0,,0
+100601,HUANUCO,LEONCIO PRADO,RUPA-RUPA,100,7,1980,2022,2,0,2,2,6,77,10,3,Rechazo al programa de erradicación de la hoja de coca (43); Ejecución de funciones (11); Rechazo de mandatos (10),Cocaleros (58); Agricultores (11); Pobladores (7),0.3,0.06,0.0,0.13,0,,1
+100604,HUANUCO,LEONCIO PRADO,JOSE CRESPO Y CASTILLO,23,0,1981,2010,0,0,0,0,0,22,0,1,Rechazo al programa de erradicación de la hoja de coca (17); Rechazo de mandatos (3); Promulgación de normas (1),Cocaleros (20); Pobladores (1); Periodistas (1),0.435,0.087,0.0,0.087,0,,0
+100701,HUANUCO,MARAÑON,HUACRACHUCO,1,0,1996,1996,0,0,0,0,1,0,0,0,Aumentos salariales (1),Médicos (1),0.0,0.0,0.0,0.0,0,,1
+100702,HUANUCO,MARAÑON,CHOLON,1,0,2008,2008,0,0,0,0,0,0,1,0,Protección de la producción nacional (1),Cocaleros (1),0.0,0.0,0.0,0.0,0,,0
+100801,HUANUCO,PACHITEA,PANAO,1,1,2018,2018,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Agricultores (1),1.0,0.0,0.0,0.0,0,,1
+100901,HUANUCO,PUERTO INCA,PUERTO INCA,1,0,2010,2010,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,1
+101007,HUANUCO,LAURICOCHA,SAN MIGUEL DE CAURI,13,0,1981,2009,1,12,1,0,12,0,0,0,Aumentos salariales (10); Mejores condiciones laborales (2); Reparaciones por daños (1),Mineros (12); Pobladores (1),0.308,0.0,0.0,0.0,13,Raura (12),0
+101101,HUANUCO,YAROWILCA,CHAVINILLO,1,1,2017,2017,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Docentes colegios (1),1.0,0.0,0.0,0.0,0,,1
+110101,ICA,ICA,ICA,212,32,1980,2025,2,7,0,3,81,86,23,19,Aumentos salariales (53); Rechazo de mandatos (29); Rechazo de normas (13),Estudiantes universidades (32); Docentes colegios (25); Pobladores (23),0.132,0.014,0.009,0.071,12,Shougang (7),1
+110104,ICA,ICA,OCUCAJE,3,2,2002,2022,0,0,0,0,0,1,2,0,Reducción de impuestos (2); Destitución de autoridad electa (1),Algodoneros (1); Transportistas de carga (1); Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+110105,ICA,ICA,PACHACUTEC,1,0,2004,2004,0,0,0,0,0,1,0,0,Ejecución de funciones (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+110107,ICA,ICA,PUEBLO NUEVO,5,4,2014,2023,0,0,0,0,0,5,0,0,Destitución de autoridad electa (4); Rechazo a resultados electorales (1),Pobladores (5),1.0,0.0,0.0,0.0,0,,0
+110108,ICA,ICA,SALAS,48,33,1982,2023,0,0,0,0,1,34,13,0,Destitución de autoridad electa (17); Reducción de precios (10); Rechazo de normas (8),Pobladores (19); Agricultores (15); Algodoneros (6),0.917,0.146,0.083,0.208,3,,0
+110109,ICA,ICA,SAN JOSE DE LOS MOLINOS,1,0,2014,2014,0,0,0,0,0,1,0,0,Rechazo a resultados electorales (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+110111,ICA,ICA,SANTIAGO,4,3,2009,2023,0,0,0,0,0,4,0,0,Destitución de autoridad electa (3); Promulgación de normas (1),Pobladores (3); Agricultores (1),1.0,0.0,0.0,0.0,0,,0
+110201,ICA,CHINCHA,CHINCHA ALTA,39,2,1980,2022,0,0,0,3,5,15,9,7,Reducción de precios (6); Rechazo de mandatos (5); Ejecución de funciones (4),Pobladores (8); Algodoneros (7); Pescadores (3),0.359,0.051,0.0,0.077,2,,1
+110202,ICA,CHINCHA,ALTO LARAN,6,0,1983,2009,0,0,0,0,1,2,1,2,Pago atrasados de salarios (1); Rechazo a la privatización (1); Rechazo de mandatos (1),Agricultores (2); Trabajadores ministerios (1); Bancarios (1),1.0,0.0,0.0,0.167,0,,0
+110203,ICA,CHINCHA,CHAVIN,2,2,2021,2021,2,0,0,0,0,0,1,1,Mejor administración de recursos (1); Beneficios sociales (1),Pobladores (2),1.0,0.0,0.0,0.0,2,Cerro Lindo (2),0
+110204,ICA,CHINCHA,CHINCHA BAJA,5,0,2005,2010,0,0,0,0,1,1,1,2,Protección de la producción nacional (1); Rechazo de mandatos (1); Aumentos salariales (1),Algodoneros (2); Agricultores (1); Damnificados (1),0.8,0.0,0.0,0.2,1,,0
+110207,ICA,CHINCHA,PUEBLO NUEVO,1,1,2017,2017,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Reos (1),0.0,1.0,0.0,1.0,0,,0
+110209,ICA,CHINCHA,SAN PEDRO DE HUACARPANA,1,0,2014,2014,0,0,0,0,0,1,0,0,Rechazo a resultados electorales (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+110211,ICA,CHINCHA,TAMBO DE MORA,1,0,1988,1988,0,0,0,0,1,0,0,0,Aumentos salariales (1),Trabajadores ministerios (1),0.0,0.0,0.0,0.0,1,,0
+110301,ICA,NAZCA,NAZCA,32,16,1982,2025,2,1,3,1,2,15,8,3,Rechazo de normas (6); Rechazo de mandatos (4); Reducción de precios (3),Mineros (11); Pobladores (6); Transportistas de carga (5),0.812,0.062,0.062,0.062,6,Shougang (2),1
+110302,ICA,NAZCA,CHANGUILLO,4,2,2009,2024,0,0,0,0,0,3,0,1,Rechazo de normas (3); Saneamiento (1),Mineros (2); Pobladores (2),1.0,0.0,0.0,0.0,0,,0
+110303,ICA,NAZCA,EL INGENIO,3,1,2010,2024,1,0,1,0,0,2,0,0,Rechazo de mandatos (1); Protección a la naturaleza (1); Rechazo de normas (1),Pobladores (2); Mineros (1),1.0,0.333,0.0,0.333,0,,0
+110304,ICA,NAZCA,MARCONA,115,7,1980,2025,5,87,1,0,102,12,0,0,Aumentos salariales (61); Mejores condiciones laborales (16); Reposición laboral (9),Mineros (97); Trabajadores siderúrgicos (5); Trabajadores ministerios (5),0.113,0.061,0.017,0.07,86,Shougang (48); Casapalca (3); Cata (2),0
+110305,ICA,NAZCA,VISTA ALEGRE,7,1,2001,2025,1,1,0,1,1,4,0,1,Rechazo de normas (2); Ejecución de funciones (1); Defensa de territorio (1),Mineros (3); Administrativos (1); Frentes de defensa (1),0.286,0.0,0.0,0.0,1,,0
+110401,ICA,PALPA,PALPA,4,1,1984,2022,0,0,0,1,0,3,0,0,Rechazo a la privatización (2); Definir límites (1); Promulgación de normas (1),Azucareros (2); Estudiantes universidades (1); Mineros (1),0.5,0.5,0.0,0.25,0,,1
+110501,ICA,PISCO,PISCO,50,0,1981,2012,2,1,0,1,21,17,7,4,Pago atrasados de salarios (6); Mejores condiciones laborales (6); Rechazo de mandatos (6),Pobladores (10); Pescadores (6); Trabajadores ministerios (5),0.26,0.04,0.02,0.02,10,Camisea (2); Pluspetrol (1),1
+110503,ICA,PISCO,HUMAY,5,1,2000,2023,0,0,0,0,0,3,1,1,Protección de la producción nacional (1); Rechazo al programa de erradicación de la hoja de coca (1); Rechazo de mandatos (1),Agricultores (2); Pobladores (2); Cocaleros (1),0.6,0.0,0.0,0.4,0,,0
+110505,ICA,PISCO,PARACAS,18,2,1982,2019,2,0,0,0,3,10,3,2,Rechazo a la privatización (6); Reducción de precios (3); Rechazo de mandatos (2),Trabajadores portuarios (10); Guías turísticos (3); Pobladores (2),0.056,0.0,0.056,0.0,5,,0
+110506,ICA,PISCO,SAN ANDRES,18,1,2002,2021,2,0,1,0,5,5,6,1,Aumento del precio de productos (4); Estabilidad laboral (3); Cumplimiento de pactos (3),Algodoneros (15); Pescadores (2); Pobladores (1),0.667,0.111,0.056,0.056,3,Pluspetrol (1),0
+110507,ICA,PISCO,SAN CLEMENTE,10,1,1982,2023,0,0,0,0,0,6,1,3,Cumplimiento de pactos (2); Rechazo de mandatos (2); Aumento del precio de productos (1),Algodoneros (4); Estudiantes colegios (2); Partidarios políticos (1),0.8,0.3,0.0,0.3,0,,0
+110508,ICA,PISCO,TUPAC AMARU INCA,3,0,1982,2009,0,0,0,0,0,1,2,0,Aumento del precio de productos (1); Reducción de impuestos (1); Rechazo de mandatos (1),Algodoneros (2); Comerciantes (1),0.667,0.0,0.0,0.333,0,,0
+120101,JUNIN,HUANCAYO,HUANCAYO,352,68,1980,2025,9,9,8,1,114,154,54,21,Aumentos salariales (84); Rechazo de mandatos (53); Ejecución de funciones (29),Docentes colegios (66); Pobladores (52); Estudiantes universidades (26),0.134,0.054,0.014,0.134,25,Centromin (4); IRL Gobierno (1); Andaychegua Congreso (1),1
+120107,JUNIN,HUANCAYO,CHILCA,3,0,2004,2008,0,0,0,0,2,0,1,0,Pago atrasados de salarios (2); Pago de deudas (1),Docentes colegios (2); Usuarios (1),0.0,0.0,0.0,0.667,0,,0
+120108,JUNIN,HUANCAYO,CHONGOS ALTO,1,0,2014,2014,0,0,0,0,0,1,0,0,Ejecución de funciones (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+120112,JUNIN,HUANCAYO,COLCA,2,0,1981,1988,0,0,0,1,0,1,0,0,Defensa de territorio (1); Ejecución de funciones (1),Comunidades campesinas (2),0.0,0.5,0.0,0.0,0,,0
+120113,JUNIN,HUANCAYO,CULLHUAS,2,2,2022,2022,0,0,0,0,0,2,0,0,Destitución de autoridad electa (2),Pobladores (2),1.0,0.0,0.0,0.0,0,,0
+120114,JUNIN,HUANCAYO,EL TAMBO,42,1,1980,2015,0,0,0,0,6,21,5,10,Destitución de funcionario (8); Reducción de precios (5); Rechazo de mandatos (5),Estudiantes universidades (27); Pobladores (3); Docentes colegios (3),0.262,0.214,0.071,0.214,5,,0
+120116,JUNIN,HUANCAYO,HUACRAPUQUIO,1,1,2022,2022,0,0,0,0,0,0,1,0,Reducción de precios (1),Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+120119,JUNIN,HUANCAYO,HUANCAN,2,1,2005,2021,0,0,0,0,0,0,2,0,Reducción de precios (2),Transportistas urbanos (2),1.0,0.0,0.0,0.0,0,,0
+120124,JUNIN,HUANCAYO,PARIAHUANCA,1,0,2000,2000,0,0,0,0,0,0,1,0,Mejor administración de recursos (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+120125,JUNIN,HUANCAYO,PILCOMAYO,4,3,2002,2022,0,0,0,0,1,1,2,0,Reducción de precios (2); Promulgación de normas (1); Aumentos salariales (1),Transportistas de carga (2); Comerciantes (1); Trabajadores judiciales (1),0.75,0.0,0.0,0.0,0,,0
+120126,JUNIN,HUANCAYO,PUCARA,3,2,2006,2022,0,0,0,0,0,1,2,0,Rechazo de mandatos (1); Reducción de impuestos (1); Reducción de precios (1),Transportistas de carga (2); Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+120127,JUNIN,HUANCAYO,QUICHUAY,6,0,2008,2014,0,0,0,0,0,6,0,0,Rechazo de mandatos (5); Rechazo a resultados electorales (1),Pobladores (6),0.333,0.167,0.167,0.0,0,,0
+120130,JUNIN,HUANCAYO,SAN JERONIMO DE TUNAN,4,2,1980,2024,0,0,0,0,0,2,1,1,Destitución de autoridad electa (1); Rechazo de mandatos (1); Reducción de precios (1),Pobladores (3); Transportistas de carga (1),0.75,0.0,0.0,0.0,0,,0
+120133,JUNIN,HUANCAYO,SAPALLANGA,3,2,2004,2022,0,0,0,1,0,1,1,0,Adjudicación de tierras (1); Ejecución de funciones (1); Reducción de precios (1),Comunidades campesinas (1); Asociaciones civiles (1); Transportistas de carga (1),0.333,0.333,0.0,0.0,1,,0
+120134,JUNIN,HUANCAYO,SICAYA,2,1,2009,2018,0,0,0,0,0,1,1,0,Rechazo de mandatos (1); Condonación de deudas (1),Pobladores (1); Agricultores (1),0.5,0.0,0.0,0.0,0,,0
+120201,JUNIN,CONCEPCION,CONCEPCION,3,2,2007,2022,0,0,0,0,0,1,2,0,Rechazo de normas (1); Reducción de impuestos (1); Reducción de precios (1),Transportistas de carga (2); Docentes colegios (1),1.0,0.0,0.0,0.333,0,,1
+120204,JUNIN,CONCEPCION,CHAMBARA,1,1,2022,2022,0,0,0,0,0,0,1,0,Reducción de precios (1),Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+120205,JUNIN,CONCEPCION,COCHAS,2,1,2012,2022,0,1,0,1,1,0,0,0,Puestos de trabajo (1); Definir límites (1),Mineros (1); Comunidades campesinas (1),0.0,0.0,0.0,0.5,0,La Oroya (1),0
+120210,JUNIN,CONCEPCION,MATAHUASI,1,1,2022,2022,0,0,0,0,0,0,1,0,Reducción de precios (1),Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+120213,JUNIN,CONCEPCION,ORCOTUNA,1,1,2022,2022,0,0,0,0,0,0,1,0,Reducción de impuestos (1),Transportistas de carga (1),1.0,0.0,1.0,0.0,0,,0
+120214,JUNIN,CONCEPCION,SAN JOSE DE QUERO,1,0,2012,2012,1,0,1,0,0,0,0,0,Retiro de empresa (1),Pobladores (1),0.0,0.0,0.0,0.0,0,Azulcocha (1),0
+120301,JUNIN,CHANCHAMAYO,CHANCHAMAYO,14,3,1982,2024,0,0,0,0,2,5,5,2,Pago atrasados de salarios (2); Rechazo de mandatos (2); Reducción de precios (2),Comunidades nativas (2); Trabajadores ministerios (1); Construcción civil (1),0.286,0.143,0.0,0.0,1,,1
+120302,JUNIN,CHANCHAMAYO,PERENE,3,3,2021,2023,0,0,0,0,0,2,1,0,Reducción de impuestos (1); Ejecución de funciones (1); Destitución de autoridad electa (1),Transportistas de carga (1); Agricultores (1); Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+120303,JUNIN,CHANCHAMAYO,PICHANAQUI,20,10,1987,2023,6,0,6,0,1,10,1,2,Suspensión de concesiones (4); Destitución de autoridad electa (3); Rechazo de normas (3),Pobladores (14); Cafetaleros (2); Agricultores (1),0.65,0.25,0.15,0.25,7,Pluspetrol (3),0
+120305,JUNIN,CHANCHAMAYO,SAN RAMON,11,3,1985,2021,0,0,0,0,1,6,3,1,Ejecución de funciones (3); Rechazo de normas (2); Condonación de deudas (2),Comunidades nativas (4); Cafetaleros (2); Partidarios políticos (1),0.545,0.091,0.0,0.0,0,,0
+120306,JUNIN,CHANCHAMAYO,VITOC,4,0,1981,1987,0,3,0,0,4,0,0,0,Aumentos salariales (3); Reposición laboral (1),Mineros (3); Padres de familia (1),0.0,0.25,0.0,0.0,3,San Vicente (3),0
+120401,JUNIN,JAUJA,JAUJA,15,8,1980,2024,0,0,0,0,3,4,7,1,Reducción de precios (6); Aumentos salariales (3); Rechazo de mandatos (2),Transportistas de carga (4); Pobladores (3); Agricultores (2),0.6,0.133,0.0,0.2,0,,1
+120402,JUNIN,JAUJA,ACOLLA,5,4,2011,2022,0,0,0,0,0,2,3,0,Reducción de precios (3); Destitución de funcionario (1); Ejecución de funciones (1),Transportistas de carga (3); Transportistas urbanos (1); Pobladores (1),0.8,0.0,0.0,0.0,0,,0
+120404,JUNIN,JAUJA,ATAURA,1,1,2022,2022,0,0,0,0,0,0,1,0,Reducción de precios (1),Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+120407,JUNIN,JAUJA,EL MANTARO,1,0,2010,2010,0,0,0,0,0,1,0,0,Rechazo a resultados electorales (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+120409,JUNIN,JAUJA,HUARIPAMPA,4,3,2000,2022,0,0,0,0,0,0,4,0,Reducción de precios (2); Aumento del precio de productos (1); Reducción de impuestos (1),Transportistas de carga (3); Agricultores (1),0.75,0.0,0.0,0.0,0,,0
+120416,JUNIN,JAUJA,MASMA,1,1,2021,2021,0,0,0,1,0,0,0,0,Modificar límites territoriales (1),Pobladores (1),0.0,1.0,1.0,0.0,0,,0
+120421,JUNIN,JAUJA,MUQUIYAUYO,1,1,2022,2022,0,0,0,0,0,0,1,0,Reducción de precios (1),Comunidades campesinas (1),1.0,0.0,0.0,0.0,0,,0
+120423,JUNIN,JAUJA,PACCHA,1,1,2022,2022,0,0,0,0,0,0,1,0,Reducción de impuestos (1),Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+120428,JUNIN,JAUJA,SAN LORENZO,1,1,2022,2022,0,0,0,0,0,0,1,0,Reducción de precios (1),Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+120431,JUNIN,JAUJA,SINCOS,2,1,2005,2022,0,0,0,0,0,1,1,0,Rechazo de mandatos (1); Reducción de precios (1),Pobladores (1); Transportistas de carga (1),0.5,0.0,0.0,0.0,0,,0
+120432,JUNIN,JAUJA,TUNAN MARCA,2,0,2009,2009,0,0,0,0,0,2,0,0,Rechazo de mandatos (1); Ejecución de funciones (1),Pobladores (2),0.0,0.0,0.0,0.5,0,,0
+120433,JUNIN,JAUJA,YAULI,1,1,2024,2024,0,0,0,0,0,0,0,1,Seguridad (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+120501,JUNIN,JUNIN,JUNIN,9,9,2022,2024,0,0,0,0,0,3,4,2,Reducción de precios (4); Seguridad (2); Ejecución de funciones (1),Transportistas de carga (3); Pobladores (2); Transportistas urbanos (2),0.556,0.0,0.0,0.0,0,,1
+120502,JUNIN,JUNIN,CARHUAMAYO,1,1,2021,2021,0,0,0,0,0,0,1,0,Reducción de impuestos (1),Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+120503,JUNIN,JUNIN,ONDORES,4,0,2003,2008,3,0,3,1,0,0,0,0,Reparaciones por daños (2); Protección a la naturaleza (1); Definir límites (1),Pobladores (3); Comunidades campesinas (1),0.25,0.0,0.0,0.0,0,,0
+120504,JUNIN,JUNIN,ULCUMAYO,5,0,2009,2010,0,0,0,0,0,5,0,0,Destitución de autoridad electa (5),Comunidades campesinas (3); Pobladores (2),0.0,0.2,0.0,0.2,0,,0
+120601,JUNIN,SATIPO,SATIPO,18,5,1995,2022,0,0,0,2,3,9,3,1,Rechazo de normas (3); Rechazo de mandatos (2); Definir límites (2),Agricultores (4); Comunidades nativas (3); Transportistas de carga (2),0.333,0.056,0.056,0.0,0,,1
+120604,JUNIN,SATIPO,MAZAMARI,2,1,2013,2019,0,0,0,0,1,1,0,0,Mejores condiciones laborales (1); Rechazo de mandatos (1),Agricultores (1); Cocaleros (1),0.5,0.5,0.0,0.5,0,,0
+120605,JUNIN,SATIPO,PAMPA HERMOSA,2,2,2017,2019,0,0,0,1,0,1,0,0,Defensa de territorio (1); Rechazo de mandatos (1),Comunidades campesinas (1); Cocaleros (1),0.0,1.0,0.0,1.0,0,,0
+120606,JUNIN,SATIPO,PANGOA,5,0,2005,2014,0,0,0,4,0,1,0,0,Defensa de territorio (3); Nueva zonificación (1); Rechazo a resultados electorales (1),Pobladores (3); Comunidades nativas (2),0.0,0.2,0.2,0.2,0,,0
+120607,JUNIN,SATIPO,RIO NEGRO,2,2,2021,2022,0,0,0,0,0,0,0,2,Proyectos desarrollo (1); Seguridad (1),Comunidades nativas (1); Pobladores (1),0.5,0.0,0.0,0.5,0,,0
+120608,JUNIN,SATIPO,RIO TAMBO,2,1,2007,2023,1,0,1,0,0,1,0,0,Retiro de empresa (1); Ejecución de funciones (1),Comunidades nativas (2),0.0,0.0,0.0,0.0,1,,0
+120701,JUNIN,TARMA,TARMA,23,6,1981,2024,0,0,0,0,7,9,5,2,Aumentos salariales (5); Rechazo de mandatos (4); Reducción de precios (3),Docentes colegios (4); Pobladores (3); Agricultores (3),0.304,0.13,0.0,0.217,1,,1
+120704,JUNIN,TARMA,HUASAHUASI,1,1,2022,2022,0,0,0,0,0,0,1,0,Reducción de precios (1),Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+120707,JUNIN,TARMA,PALCAMAYO,4,4,2022,2022,0,0,0,0,0,1,3,0,Reducción de precios (2); Reducción de impuestos (1); Rechazo de normas (1),Transportistas de carga (3); Estudiantes universidades (1),0.75,0.0,0.0,0.0,0,,0
+120708,JUNIN,TARMA,SAN PEDRO DE CAJAS,9,1,2009,2018,0,1,0,0,2,7,0,0,Rechazo de normas (5); Aumentos salariales (1); Mejores condiciones laborales (1),Comunidades nativas (4); Agricultores (2); CGTP (1),0.889,0.0,0.0,0.0,0,,0
+120801,JUNIN,YAULI,LA OROYA,180,22,1980,2023,10,72,2,1,118,46,10,3,Aumentos salariales (60); Puestos de trabajo (23); Cumplimiento de pactos (19),Mineros (94); Transportistas ferroviarios (26); Pobladores (21),0.261,0.033,0.011,0.078,95,Centromin (45); La Oroya (20); Volcan (1),1
+120803,JUNIN,YAULI,HUAY-HUAY,4,2,2009,2024,0,2,0,0,2,2,0,0,Aumentos salariales (2); Cumplimiento de pactos (1); Ejecución de funciones (1),Mineros (4),0.0,0.0,0.0,0.0,4,Volcan (2),0
+120804,JUNIN,YAULI,MARCAPOMACOCHA,3,0,1981,1984,0,3,0,0,3,0,0,0,Estabilidad laboral (1); Pago atrasados de salarios (1); Mejores condiciones laborales (1),Mineros (3),0.0,0.0,0.0,0.0,3,Rio Pallanga (3),0
+120805,JUNIN,YAULI,MOROCOCHA,31,8,1980,2023,2,16,0,0,17,13,1,0,Aumentos salariales (8); Cumplimiento de pactos (7); Mejores condiciones laborales (6),Mineros (24); Pobladores (4); Federaciones departamentales (1),0.194,0.065,0.032,0.097,25,San Ignacio (4); Centromin (3); Argentun (2),0
+120806,JUNIN,YAULI,PACCHA,1,0,2013,2013,0,0,0,0,0,1,0,0,Promulgación de normas (1),Cafetaleros (1),1.0,1.0,0.0,1.0,0,,0
+120807,JUNIN,YAULI,SANTA BARBARA DE CARHUACAYAN,3,0,1984,1985,0,3,0,0,3,0,0,0,Pago atrasados de salarios (3),Mineros (3),0.0,0.0,0.0,0.0,3,Rio Pallanga (1); Pallanga (1); Río Pallanga (1),0
+120808,JUNIN,YAULI,SANTA ROSA DE SACCO,3,1,1982,2022,0,0,0,0,2,0,1,0,Recategorización (2); Reducción de precios (1),Médicos (2); Transportistas de carga (1),0.333,0.0,0.0,0.0,0,,0
+120810,JUNIN,YAULI,YAULI,1,0,1981,1981,0,1,0,0,1,0,0,0,Mejores condiciones laborales (1),Mineros (1),0.0,0.0,0.0,0.0,1,Centromin (1),0
+120901,JUNIN,CHUPACA,CHUPACA,3,2,2009,2021,0,0,0,0,1,1,1,0,Promulgación de normas (1); Aumentos salariales (1); Reducción de impuestos (1),Agricultores (1); Docentes colegios (1); Transportistas de carga (1),0.333,0.0,0.0,0.0,0,,1
+120902,JUNIN,CHUPACA,AHUAC,1,0,1987,1987,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Autoridades (1),0.0,0.0,0.0,0.0,0,,0
+120905,JUNIN,CHUPACA,HUAMANCACA CHICO,6,1,1988,2020,0,0,0,0,1,4,0,1,Rechazo de mandatos (2); Bonificaciones (1); Destitución de funcionario (1),Reos (6),0.0,0.167,0.0,0.667,0,,0
+130101,LA LIBERTAD,TRUJILLO,TRUJILLO,350,92,1980,2025,2,1,4,2,104,172,44,24,Aumentos salariales (71); Rechazo de mandatos (63); Rechazo de normas (30),Pobladores (54); Docentes colegios (42); Estudiantes universidades (33),0.097,0.017,0.003,0.043,18,Conga (1),1
+130102,LA LIBERTAD,TRUJILLO,EL PORVENIR,2,2,2025,2025,0,0,0,0,0,2,0,0,Ejecución de funciones (2),Pobladores (2),0.0,0.0,0.0,0.5,0,,0
+130103,LA LIBERTAD,TRUJILLO,FLORENCIA DE MORA,1,0,2000,2000,0,0,0,0,0,0,1,0,Condonación de deudas (1),Pobladores (1),0.0,0.0,0.0,0.0,1,,0
+130104,LA LIBERTAD,TRUJILLO,HUANCHACO,6,2,2009,2016,0,0,1,0,2,3,0,0,Aumentos salariales (2); Rechazo de mandatos (2); Ejecución de funciones (1),Docentes universidades (1); Estudiantes colegios (1); Trabajadores penitenciarios (1),0.167,0.0,0.0,0.0,0,,0
+130105,LA LIBERTAD,TRUJILLO,LA ESPERANZA,14,1,1982,2020,0,0,0,0,0,8,0,6,Alimentación (3); Rechazo de mandatos (3); Ejecución de funciones (3),Reos (11); Pobladores (2); Docentes colegios (1),0.071,0.071,0.143,0.5,0,,0
+130106,LA LIBERTAD,TRUJILLO,LAREDO,8,4,1980,2025,0,0,0,0,2,4,1,1,Aumentos salariales (2); Destitución de autoridad electa (2); Rechazo a resultados electorales (1),Pobladores (4); Azucareros (2); Transportistas de carga (1),0.5,0.0,0.0,0.0,2,,0
+130107,LA LIBERTAD,TRUJILLO,MOCHE,15,2,2003,2022,0,0,0,0,3,6,5,1,Reducción de precios (5); Rechazo de normas (4); Aumentos salariales (3),Transportistas de carga (4); Transportistas urbanos (3); Pobladores (2),0.467,0.067,0.067,0.2,0,,0
+130108,LA LIBERTAD,TRUJILLO,POROTO,2,2,2021,2022,1,0,0,0,0,0,2,0,Reducción de precios (2),Rondas campesinas (1); Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+130109,LA LIBERTAD,TRUJILLO,SALAVERRY,24,3,1980,2021,0,0,1,0,6,15,2,0,Rechazo a la privatización (7); Aumentos salariales (5); Rechazo de mandatos (3),Trabajadores portuarios (15); Pobladores (3); Pescadores (2),0.167,0.0,0.0,0.083,8,,0
+130110,LA LIBERTAD,TRUJILLO,SIMBAL,2,2,2021,2022,1,0,0,0,0,1,1,0,Reducción de precios (1); Destitución de autoridad electa (1),Rondas campesinas (1); Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+130111,LA LIBERTAD,TRUJILLO,VICTOR LARCO HERRERA,7,3,2007,2025,0,0,0,0,4,3,0,0,Ejecución de funciones (3); Aumentos salariales (2); Pago atrasados de salarios (1),Médicos (4); Padres de familia (2); Víctimas violencia (1),0.0,0.0,0.0,0.0,0,,0
+130112,LA LIBERTAD,TRUJILLO,ALTO TRUJILLO,1,1,2025,2025,0,0,0,0,0,0,0,1,Seguridad (1),Transportistas urbanos (1),0.0,0.0,0.0,0.0,0,,0
+130201,LA LIBERTAD,ASCOPE,ASCOPE,2,1,2010,2024,0,0,0,0,1,0,0,1,Estabilidad laboral (1); Seguridad (1),Transportistas urbanos (2),0.0,0.0,0.0,0.0,0,,1
+130202,LA LIBERTAD,ASCOPE,CHICAMA,13,1,1983,2019,1,0,0,0,12,0,1,0,Pago atrasados de salarios (10); Mejores condiciones laborales (1); Aumentos salariales (1),Trabajadores ministerios (10); Pescadores (1); Policías (1),0.077,0.077,0.0,0.077,1,,0
+130203,LA LIBERTAD,ASCOPE,CHOCOPE,1,0,2004,2004,0,0,0,0,1,0,0,0,Estabilidad laboral (1),Azucareros (1),1.0,0.0,0.0,0.0,1,,0
+130205,LA LIBERTAD,ASCOPE,PAIJAN,1,1,2021,2021,0,0,0,0,0,0,1,0,Aumento del precio de productos (1),Ganaderos (1),0.0,0.0,0.0,0.0,1,,0
+130206,LA LIBERTAD,ASCOPE,RAZURI,2,0,2000,2000,0,0,0,0,0,2,0,0,Ejecución de funciones (2),Pobladores (2),0.0,0.0,0.0,0.0,0,,0
+130207,LA LIBERTAD,ASCOPE,SANTIAGO DE CAO,1,0,2009,2009,0,0,0,0,1,0,0,0,Aumentos salariales (1),Azucareros (1),0.0,1.0,0.0,0.0,1,,0
+130208,LA LIBERTAD,ASCOPE,CASA GRANDE,24,2,1980,2016,0,0,0,0,16,6,2,0,Aumentos salariales (13); Rechazo de mandatos (2); Aumento del precio de productos (2),Azucareros (20); Agricultores (3); Autoridades (1),0.25,0.125,0.0,0.167,18,,0
+130401,LA LIBERTAD,CHEPEN,CHEPEN,8,1,1981,2024,0,0,0,1,0,5,0,2,Rechazo de mandatos (2); Seguridad (2); Defensa de territorio (1),Pobladores (3); Azucareros (1); Docentes colegios (1),0.125,0.0,0.0,0.125,0,,1
+130402,LA LIBERTAD,CHEPEN,PACANGA,1,1,2021,2021,0,0,0,0,0,0,1,0,Reducción de impuestos (1),Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+130601,LA LIBERTAD,OTUZCO,OTUZCO,12,5,2000,2025,4,3,1,0,4,3,3,1,Estabilidad laboral (3); Reducción de precios (2); Aumento del precio de productos (1),Mineros (4); Rondas campesinas (3); Pobladores (2),0.5,0.083,0.0,0.083,0,Perú Mineral (1); Eposuyay (1),1
+130701,LA LIBERTAD,PACASMAYO,SAN PEDRO DE LLOC,3,0,2005,2012,1,0,1,0,1,1,0,0,Rechazo de mandatos (1); Estabilidad laboral (1); Retiro de empresa (1),Pobladores (2); Transportistas urbanos (1),0.0,0.0,0.0,0.0,1,,1
+130702,LA LIBERTAD,PACASMAYO,GUADALUPE,6,1,1984,2021,0,0,0,2,1,1,1,1,Defensa de territorio (2); Rechazo de mandatos (1); Transporte (1),Pobladores (3); Estudiantes universidades (1); Agricultores (1),0.667,0.167,0.0,0.167,0,,0
+130703,LA LIBERTAD,PACASMAYO,JEQUETEPEQUE,2,0,1986,1987,0,0,0,0,2,0,0,0,Mejores condiciones laborales (2),Azucareros (2),0.0,0.0,0.0,0.0,1,,0
+130704,LA LIBERTAD,PACASMAYO,PACASMAYO,18,4,1980,2024,1,0,0,0,5,3,6,4,Aumentos salariales (4); Reducción de precios (4); Ejecución de funciones (2),Pobladores (5); Transportistas de carga (4); Trabajadores ministerios (1),0.333,0.056,0.0,0.056,3,,0
+130705,LA LIBERTAD,PACASMAYO,SAN JOSE,2,0,2000,2009,0,0,0,0,0,2,0,0,Destitución de autoridad electa (1); Promulgación de normas (1),Pobladores (1); Agricultores (1),0.5,0.0,0.0,0.0,0,,0
+130801,LA LIBERTAD,PATAZ,TAYABAMBA,4,0,2009,2009,0,0,0,0,0,4,0,0,Destitución de autoridad electa (2); Rechazo de mandatos (1); Ejecución de funciones (1),Docentes colegios (2); Pobladores (1); Rondas campesinas (1),0.0,0.0,0.0,0.0,0,,1
+130808,LA LIBERTAD,PATAZ,PARCOY,12,2,2008,2024,2,7,1,1,7,2,1,0,Estabilidad laboral (4); Mejores condiciones laborales (2); Pago atrasados de salarios (1),Mineros (11); Comunidades campesinas (1),0.583,0.25,0.25,0.167,2,Consorcio Minero (1),0
+130809,LA LIBERTAD,PATAZ,PATAZ,25,10,2009,2025,5,3,0,5,3,11,5,1,Ejecución de funciones (5); Aumento de presupuesto (5); Defensa de territorio (5),Mineros (17); Rondas campesinas (7); Autoridades (1),0.48,0.12,0.12,0.04,8,,0
+130813,LA LIBERTAD,PATAZ,URPAY,1,0,1985,1985,0,0,0,0,0,0,0,1,Transporte (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+130901,LA LIBERTAD,SANCHEZ CARRION,HUAMACHUCO,15,4,2006,2024,2,0,0,2,0,6,7,0,Aumento de presupuesto (5); Rechazo de mandatos (3); Reducción de precios (2),Rondas campesinas (10); Mineros (3); Transportistas de carga (1),0.333,0.0,0.0,0.067,1,Summa Golds (1),1
+130902,LA LIBERTAD,SANCHEZ CARRION,CHUGAY,1,1,2024,2024,1,0,0,1,0,0,0,0,Defensa de territorio (1),Mineros (1),0.0,0.0,0.0,0.0,1,Poderosa (1),0
+131001,LA LIBERTAD,SANTIAGO DE CHUCO,SANTIAGO DE CHUCO,11,2,1989,2025,2,0,1,0,0,6,4,0,Ejecución de funciones (4); Aumento del precio de productos (2); Reducción de precios (2),Rondas campesinas (4); Comunidades campesinas (3); Pobladores (2),0.909,0.0,0.091,0.0,1,,1
+131002,LA LIBERTAD,SANTIAGO DE CHUCO,ANGASMARCA,2,0,2008,2010,0,0,0,0,0,1,0,1,Ejecución de funciones (1); Saneamiento (1),Pobladores (2),0.5,0.0,0.5,0.5,1,,0
+131006,LA LIBERTAD,SANTIAGO DE CHUCO,QUIRUVILCA,31,9,1982,2025,9,11,3,0,13,13,1,1,Aumentos salariales (9); Rechazo de normas (6); Cumplimiento de pactos (4),Mineros (18); Pobladores (7); Comunidades campesinas (2),0.484,0.065,0.065,0.065,18,Nor Perú (4); Barrick (4); Chuvilca (2),0
+131101,LA LIBERTAD,GRAN CHIMU,CASCAS,2,1,1982,2021,2,0,1,0,0,0,1,0,Protección a la naturaleza (1); Reducción de precios (1),Pobladores (1); Rondas campesinas (1),0.5,0.0,0.0,0.0,1,,1
+131201,LA LIBERTAD,VIRU,VIRU,16,11,2002,2024,0,0,0,0,1,10,2,3,Destitución de autoridad electa (5); Rechazo de normas (4); Seguridad (2),Pobladores (5); Agricultores (4); Transportistas urbanos (2),0.75,0.188,0.188,0.375,0,,1
+131202,LA LIBERTAD,VIRU,CHAO,21,14,2004,2024,0,0,2,0,5,12,0,2,Destitución de autoridad electa (6); Rechazo de mandatos (3); Aumentos salariales (3),Pobladores (11); Agricultores (8); Comerciantes (1),0.571,0.143,0.286,0.286,4,,0
+131203,LA LIBERTAD,VIRU,GUADALUPITO,3,2,2014,2020,0,0,0,1,0,2,0,0,Adjudicación de tierras (1); Rechazo a resultados electorales (1); Rechazo de normas (1),Víctimas violencia (1); Partidarios políticos (1); Agricultores (1),0.333,0.333,0.667,0.333,0,,0
+140101,LAMBAYEQUE,CHICLAYO,CHICLAYO,382,79,1980,2025,4,0,3,3,121,173,61,21,Aumentos salariales (70); Rechazo de mandatos (50); Rechazo de normas (36),Docentes colegios (56); Pobladores (46); Médicos (43),0.073,0.008,0.005,0.037,14,Buenaventura (1),1
+140102,LAMBAYEQUE,CHICLAYO,CHONGOYAPE,7,1,1986,2021,2,0,2,0,2,0,3,0,Aumento del precio de productos (2); Suspensión de concesiones (2); Estabilidad laboral (1),Azucareros (4); Pobladores (2); Transportistas urbanos (1),0.857,0.286,0.0,0.286,4,,0
+140104,LAMBAYEQUE,CHICLAYO,ETEN PUERTO,1,0,2001,2001,0,0,0,0,0,1,0,0,Ejecución de funciones (1),Asociaciones civiles (1),0.0,0.0,0.0,0.0,0,,0
+140105,LAMBAYEQUE,CHICLAYO,JOSE LEONARDO ORTIZ,1,1,2021,2021,0,0,0,0,0,0,1,0,Reducción de precios (1),Transportistas urbanos (1),1.0,0.0,0.0,0.0,0,,0
+140106,LAMBAYEQUE,CHICLAYO,LA VICTORIA,1,1,2021,2021,0,0,0,0,0,0,1,0,Reducción de precios (1),Transportistas urbanos (1),1.0,0.0,0.0,0.0,0,,0
+140107,LAMBAYEQUE,CHICLAYO,LAGUNAS,3,0,1982,2011,1,0,0,0,1,1,1,0,Rechazo de mandatos (1); Protección de la producción nacional (1); Mejores condiciones laborales (1),Comunidades campesinas (2); Azucareros (1),0.333,0.0,0.0,0.0,0,,0
+140111,LAMBAYEQUE,CHICLAYO,PICSI,19,1,1981,2015,0,0,0,0,8,8,0,3,Aumentos salariales (8); Rechazo de mandatos (4); Rechazo de normas (3),Reos (9); Trabajadores penitenciarios (8); Pobladores (1),0.105,0.053,0.0,0.105,0,,0
+140112,LAMBAYEQUE,CHICLAYO,PIMENTEL,7,3,2004,2021,0,0,0,0,3,3,1,0,Rechazo de normas (3); Puestos de trabajo (2); Aumentos salariales (1),Pescadores (4); Transportistas urbanos (2); Docentes colegios (1),0.429,0.0,0.0,0.286,0,,0
+140113,LAMBAYEQUE,CHICLAYO,REQUE,6,1,2005,2023,1,0,1,0,1,4,0,0,Promulgación de normas (2); Rechazo de normas (2); Mejores condiciones laborales (1),Pobladores (2); Azucareros (2); Trabajadores portuarios (1),0.667,0.0,0.0,0.333,1,Rio Tinto (1),0
+140114,LAMBAYEQUE,CHICLAYO,SANTA ROSA,3,0,1980,2004,0,0,0,0,0,1,2,0,Reducción de precios (2); Rechazo de normas (1),Pescadores (3),1.0,0.0,0.0,0.333,0,,0
+140115,LAMBAYEQUE,CHICLAYO,SAÑA,3,0,2001,2001,0,0,0,0,0,0,0,3,Saneamiento (3),Pobladores (3),0.667,0.0,0.0,0.0,0,,0
+140117,LAMBAYEQUE,CHICLAYO,PATAPO,3,0,2010,2014,0,0,0,0,1,2,0,0,Rechazo a resultados electorales (1); Ejecución de funciones (1); Pago atrasados de salarios (1),Azucareros (2); Pobladores (1),0.667,0.0,0.0,0.0,0,,0
+140118,LAMBAYEQUE,CHICLAYO,POMALCA,26,5,1987,2021,0,0,0,0,13,10,2,1,Promulgación de normas (5); Pago atrasados de salarios (4); Aumentos salariales (3),Azucareros (23); Transportistas urbanos (2); Frentes de defensa (1),0.385,0.192,0.0,0.308,14,,0
+140119,LAMBAYEQUE,CHICLAYO,PUCALA,31,4,1980,2019,0,0,0,0,14,15,2,0,Rechazo de mandatos (11); Pago atrasados de salarios (7); Ejecución de funciones (4),Azucareros (29); Agricultores (2),0.161,0.323,0.097,0.258,16,,0
+140120,LAMBAYEQUE,CHICLAYO,TUMAN,26,21,1997,2021,0,0,0,0,2,22,1,1,Rechazo de mandatos (15); Ejecución de funciones (4); Rechazo de normas (1),Azucareros (25); Transportistas urbanos (1),0.077,0.346,0.038,0.385,12,,0
+140201,LAMBAYEQUE,FERREÑAFE,FERREÑAFE,2,1,1997,2022,0,0,0,0,0,1,1,0,Ejecución de funciones (1); Reducción de impuestos (1),Pobladores (1); Transportistas de carga (1),0.5,0.0,0.0,0.0,0,,1
+140202,LAMBAYEQUE,FERREÑAFE,CAÑARIS,17,1,2012,2015,15,0,15,0,0,2,0,0,Suspensión de concesiones (11); Retiro de empresa (3); Protección a la naturaleza (1),Pobladores (10); Comunidades campesinas (6); Rondas campesinas (1),0.294,0.176,0.0,0.176,12,Cañariaco (2); Candente Cooper (1); Cañarraco (1),0
+140203,LAMBAYEQUE,FERREÑAFE,INCAHUASI,1,0,2013,2013,1,0,1,0,0,0,0,0,Suspensión de concesiones (1),Pobladores (1),1.0,0.0,0.0,0.0,0,Candente Cooper (1),0
+140205,LAMBAYEQUE,FERREÑAFE,PITIPO,1,0,2011,2011,0,0,0,0,0,0,0,1,Vivienda (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+140301,LAMBAYEQUE,LAMBAYEQUE,LAMBAYEQUE,33,9,1982,2022,0,0,0,0,10,11,8,4,Aumentos salariales (7); Rechazo de normas (4); Rechazo de mandatos (3),Docentes colegios (6); Pobladores (5); Estudiantes universidades (3),0.212,0.0,0.0,0.03,0,,1
+140304,LAMBAYEQUE,LAMBAYEQUE,JAYANCA,1,1,2024,2024,0,0,0,0,0,0,0,1,Seguridad (1),Transportistas urbanos (1),1.0,0.0,0.0,0.0,0,,0
+140306,LAMBAYEQUE,LAMBAYEQUE,MORROPE,2,2,2021,2021,0,0,0,0,0,1,1,0,Reducción de precios (1); Cumplimiento de pactos (1),Transportistas urbanos (2),1.0,0.0,0.0,0.0,0,,0
+140308,LAMBAYEQUE,LAMBAYEQUE,OLMOS,7,4,1982,2022,0,0,0,1,0,3,2,1,Rechazo de mandatos (3); Reducción de precios (2); Adjudicación de tierras (1),Pobladores (3); Comunidades campesinas (1); Docentes colegios (1),0.429,0.0,0.0,0.286,0,,0
+140309,LAMBAYEQUE,LAMBAYEQUE,PACORA,1,0,2007,2007,0,0,0,0,0,0,0,1,Saneamiento (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+140312,LAMBAYEQUE,LAMBAYEQUE,TUCUME,2,1,2010,2023,0,0,0,0,0,1,0,1,Rechazo a resultados electorales (1); Transporte (1),Partidarios políticos (1); Transportistas de carga (1),0.5,0.0,0.0,0.5,0,,0
+150101,LIMA,LIMA,LIMA,6551,1127,1980,2025,42,102,43,46,3073,2573,493,323,Aumentos salariales (1766); Rechazo de mandatos (749); Ejecución de funciones (630),Estudiantes universidades (488); Docentes colegios (407); Trabajadores ministerios (406),0.041,0.026,0.003,0.088,677,Shougang (10); Machaynilloc (9); Southern (6),1
+150102,LIMA,LIMA,ANCON,26,14,1982,2025,3,0,3,1,5,7,1,9,Seguridad (5); Rechazo de mandatos (3); Ejecución de funciones (3),Pescadores (6); Pobladores (5); Transportistas urbanos (5),0.115,0.038,0.0,0.231,6,Repsol (4),0
+150103,LIMA,LIMA,ATE,109,34,1980,2025,0,2,0,5,26,45,6,27,Rechazo de mandatos (25); Saneamiento (11); Aumentos salariales (10),Pobladores (32); Transportistas urbanos (12); Partidarios políticos (10),0.239,0.11,0.009,0.119,16,Centromin (2),0
+150104,LIMA,LIMA,BARRANCO,48,19,1983,2025,8,0,4,0,7,28,1,8,Rechazo de mandatos (16); Transporte (4); Rechazo de normas (3),Pobladores (28); Administrativos (4); Docentes colegios (3),0.104,0.042,0.0,0.042,3,,0
+150105,LIMA,LIMA,BREÑA,81,11,1980,2024,0,0,0,0,50,21,5,5,Pago atrasados de salarios (17); Aumentos salariales (14); Reposición laboral (8),Administrativos (15); Médicos (10); Trabajadores ministerios (7),0.025,0.025,0.0,0.037,10,,0
+150106,LIMA,LIMA,CARABAYLLO,27,9,1981,2025,0,0,0,0,9,5,5,8,Aumentos salariales (6); Seguridad (4); Reposición laboral (3),Transportistas urbanos (6); Pobladores (6); Trabajadores ministerios (4),0.333,0.037,0.037,0.185,3,Petroperú-Oleoducto (1),0
+150107,LIMA,LIMA,CHACLACAYO,20,5,1983,2023,1,0,1,0,12,5,1,1,Aumentos salariales (8); Rechazo de mandatos (4); Pago atrasados de salarios (2),Trabajadores industriales (9); Pobladores (5); Administrativos (2),0.15,0.0,0.0,0.05,10,,0
+150108,LIMA,LIMA,CHORRILLOS,94,11,1980,2025,8,2,6,8,11,53,1,15,Rechazo de mandatos (17); Rechazo de normas (12); Destitución de funcionario (9),Reos (28); Pobladores (17); Pobladores AAHH (8),0.021,0.043,0.0,0.128,13,Pallanga (1),0
+150109,LIMA,LIMA,CIENEGUILLA,11,1,1983,2022,0,0,0,0,0,3,2,6,Transporte (3); Destitución de autoridad electa (2); Vivienda (2),Pobladores (4); Pobladores AAHH (2); Administrativos (1),0.182,0.091,0.091,0.182,0,,0
+150110,LIMA,LIMA,COMAS,112,26,1980,2025,0,0,3,3,22,42,10,32,Seguridad (12); Saneamiento (11); Rechazo de mandatos (11),Pobladores (31); Administrativos (13); Transportistas urbanos (13),0.089,0.054,0.009,0.089,11,,0
+150111,LIMA,LIMA,EL AGUSTINO,84,12,1980,2025,5,0,5,4,46,14,4,11,Aumentos salariales (26); Rechazo de mandatos (8); Mejores condiciones laborales (7),Trabajadores saneamiento (30); Pobladores (14); Transportistas urbanos (5),0.06,0.048,0.0,0.06,36,,0
+150112,LIMA,LIMA,INDEPENDENCIA,56,13,1982,2025,3,0,0,4,20,19,5,8,Aumentos salariales (16); Rechazo de mandatos (11); Reducción de precios (4),Pobladores (10); Trabajadores universidades (8); Transportistas urbanos (8),0.25,0.054,0.0,0.089,14,,0
+150113,LIMA,LIMA,JESUS MARIA,1656,146,1980,2025,7,21,5,1,1142,374,76,58,Aumentos salariales (703); Recategorización (104); Mejores condiciones laborales (103),Médicos (667); Trabajadores ministerios (275); Enfermeras (132),0.015,0.014,0.001,0.045,43,Centromin (2); Canaria (1); Médicos (1),0
+150114,LIMA,LIMA,LA MOLINA,119,14,1980,2025,0,0,2,3,57,42,14,1,Aumentos salariales (42); Rechazo de mandatos (13); Promulgación de normas (11),Trabajadores ministerios (58); Pobladores (16); Trabajadores universidades (6),0.059,0.008,0.0,0.017,10,,0
+150115,LIMA,LIMA,LA VICTORIA,173,30,1980,2025,0,5,2,2,76,63,9,21,Rechazo de mandatos (32); Pago atrasados de salarios (20); Ejecución de funciones (18),Comerciantes (52); Ambulantes (16); Administrativos (15),0.064,0.035,0.012,0.081,23,Cata-Acari (1); PERLA (1); Buenaventura (1),0
+150116,LIMA,LIMA,LINCE,49,9,1980,2025,1,1,1,0,15,25,7,1,Ejecución de funciones (7); Reducción de precios (5); Aumentos salariales (5),Administrativos (8); Estudiantes universidades (7); Pobladores (7),0.0,0.061,0.0,0.102,4,La Oroya (1),0
+150117,LIMA,LIMA,LOS OLIVOS,41,14,1981,2025,0,0,0,2,5,12,6,16,Vivienda (8); Seguridad (6); Reducción de precios (5),Pobladores AAHH (11); Pobladores (8); Padres de familia (7),0.293,0.049,0.0,0.122,3,,0
+150118,LIMA,LIMA,LURIGANCHO,101,21,1981,2025,3,7,2,2,26,43,16,12,Aumentos salariales (18); Rechazo de mandatos (10); Ejecución de funciones (10),Estudiantes universidades (22); Pobladores (11); Transportistas ferroviarios (10),0.119,0.04,0.0,0.079,28,Centromin (5); Ocoña (1),0
+150119,LIMA,LIMA,LURIN,21,6,1980,2025,2,0,2,4,2,9,1,3,Defensa de territorio (3); Rechazo de mandatos (3); Rechazo a la privatización (2),Pobladores (11); Trabajadores ministerios (2); Mecánicos (1),0.238,0.0,0.048,0.095,4,,0
+150120,LIMA,LIMA,MAGDALENA DEL MAR,58,14,1981,2024,1,0,6,5,26,16,4,1,Aumentos salariales (17); Ejecución de funciones (7); Protección a la naturaleza (6),Pobladores (12); Trabajadores saneamiento (7); Administrativos (6),0.017,0.0,0.0,0.034,18,,0
+150121,LIMA,LIMA,PUEBLO LIBRE,56,7,1980,2024,1,2,1,0,21,25,4,5,Aumentos salariales (12); Rechazo de mandatos (9); Ejecución de funciones (6),Trabajadores ministerios (8); Médicos (7); Pobladores (6),0.0,0.0,0.0,0.018,8,Canaria Otras (1); Canaria Hoy (1); Camisea (1),0
+150122,LIMA,LIMA,MIRAFLORES,251,68,1980,2025,8,1,9,11,73,128,11,19,Rechazo de mandatos (47); Ejecución de funciones (24); Aumentos salariales (21),Pobladores (59); Estudiantes universidades (19); Colectivos (19),0.036,0.008,0.0,0.044,36,Yanacocha (2); Centromin (1); Pacococha (1),0
+150123,LIMA,LIMA,PACHACAMAC,18,12,1987,2025,0,0,0,2,2,4,2,8,Transporte (3); Ejecución de funciones (3); Mejores condiciones laborales (2),Pobladores (11); Transportistas urbanos (4); Pobladores AAHH (1),0.5,0.167,0.0,0.278,3,,0
+150124,LIMA,LIMA,PUCUSANA,11,3,1983,2025,0,0,0,0,3,5,2,1,Rechazo a resultados electorales (3); Bonificaciones (1); Aumentos salariales (1),Pobladores (3); Transportistas urbanos (2); Pescadores (2),0.727,0.0,0.0,0.0,0,,0
+150125,LIMA,LIMA,PUENTE PIEDRA,84,41,1982,2025,5,0,3,1,7,33,12,28,Rechazo de mandatos (14); Seguridad (14); Reducción de precios (10),Pobladores (32); Transportistas urbanos (20); Padres de familia (7),0.381,0.048,0.024,0.202,11,,0
+150126,LIMA,LIMA,PUNTA HERMOSA,3,1,1998,2025,1,0,0,1,0,2,0,0,Rechazo a resultados electorales (1); Defensa de territorio (1); Rechazo de normas (1),Pobladores (2); Ganaderos (1),0.0,0.0,0.0,0.0,1,Mejía Eran (1),0
+150127,LIMA,LIMA,PUNTA NEGRA,1,0,2000,2000,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Pobladores AAHH (1),1.0,0.0,0.0,0.0,0,,0
+150128,LIMA,LIMA,RIMAC,122,19,1980,2025,0,0,3,2,30,63,7,17,Rechazo de mandatos (28); Aumentos salariales (15); Ejecución de funciones (13),Estudiantes universidades (34); Pobladores (19); Trabajadores universidades (10),0.205,0.041,0.008,0.09,12,Vía Parque (3),0
+150130,LIMA,LIMA,SAN BORJA,146,60,1983,2025,12,12,6,1,56,67,8,8,Aumentos salariales (25); Ejecución de funciones (19); Rechazo de mandatos (17),Docentes colegios (28); Pobladores (18); Trabajadores ministerios (14),0.021,0.021,0.0,0.027,9,La Oroya (4); Tía María (3); Centromin (1),0
+150131,LIMA,LIMA,SAN ISIDRO,390,97,1980,2025,9,15,10,5,147,183,16,29,Ejecución de funciones (68); Rechazo de mandatos (61); Aumentos salariales (48),Pobladores (48); Trabajadores ministerios (33); Construcción civil (22),0.036,0.018,0.003,0.038,96,Petroperú-Oleoducto (6); Repsol (5); Centromin (3),0
+150132,LIMA,LIMA,SAN JUAN DE LURIGANCHO,287,57,1980,2025,1,4,2,8,35,157,6,79,Rechazo de mandatos (58); Ejecución de funciones (57); Seguridad (27),Reos (108); Pobladores (52); Transportistas urbanos (26),0.073,0.073,0.052,0.202,26,,0
+150133,LIMA,LIMA,SAN JUAN DE MIRAFLORES,160,11,1980,2025,0,2,0,3,89,37,17,14,Aumentos salariales (34); Pago atrasados de salarios (28); Mejores condiciones laborales (10),Trabajadores ministerios (42); Pescadores (37); Trabajadores eléctricos (15),0.088,0.05,0.006,0.075,54,Cata-Acari (1); Centromin (1),0
+150134,LIMA,LIMA,SAN LUIS,36,5,1980,2024,1,1,0,1,12,18,4,1,Ejecución de funciones (13); Rechazo de mandatos (4); Estabilidad laboral (3),Refugiados (12); Pobladores (5); Administrativos (3),0.028,0.028,0.0,0.0,7,,0
+150135,LIMA,LIMA,SAN MARTIN DE PORRES,131,19,1980,2025,2,1,2,7,51,43,6,22,Rechazo de mandatos (24); Aumentos salariales (17); Pago atrasados de salarios (15),Administrativos (27); Pobladores (24); Trabajadores industriales (13),0.115,0.015,0.0,0.099,20,Raura (1),0
+150136,LIMA,LIMA,SAN MIGUEL,89,23,1980,2025,6,0,6,0,24,43,9,7,Rechazo de mandatos (28); Aumentos salariales (11); Ejecución de funciones (9),Estudiantes universidades (31); Reos (12); Pobladores (11),0.067,0.079,0.0,0.157,10,,0
+150137,LIMA,LIMA,SANTA ANITA,124,18,1981,2024,0,0,0,3,68,38,11,4,Estabilidad laboral (29); Aumentos salariales (25); Rechazo de mandatos (12),Comerciantes (44); Arroceros (21); Estudiantes universidades (15),0.105,0.008,0.0,0.073,41,Centromin (1),0
+150138,LIMA,LIMA,SANTA MARIA DEL MAR,1,0,1983,1983,0,0,0,0,0,0,1,0,Aumento de presupuesto (1),Administrativos (1),0.0,0.0,0.0,0.0,0,,0
+150139,LIMA,LIMA,SANTA ROSA,2,1,1983,2022,1,0,1,0,0,0,1,0,Aumento de presupuesto (1); Reparaciones por daños (1),Administrativos (1); Comerciantes (1),0.0,0.0,0.0,0.0,1,Repsol (1),0
+150140,LIMA,LIMA,SANTIAGO DE SURCO,111,30,1980,2025,3,2,3,3,33,59,6,7,Rechazo de mandatos (29); Aumentos salariales (19); Ejecución de funciones (13),Pobladores (26); Estudiantes universidades (15); Trabajadores super mercados (14),0.018,0.0,0.009,0.036,26,Southern (1); Tintaya-Antapaccay (1),0
+150141,LIMA,LIMA,SURQUILLO,31,6,1980,2025,0,2,0,0,17,9,2,3,Reposición laboral (5); Aumentos salariales (2); Bonificaciones (2),Médicos (5); Trabajadores industriales (4); Pobladores (4),0.032,0.0,0.0,0.032,8,,0
+150142,LIMA,LIMA,VILLA EL SALVADOR,88,23,1980,2025,5,0,1,6,8,31,7,35,Vivienda (18); Rechazo de mandatos (15); Ejecución de funciones (9),Pobladores (36); Pobladores AAHH (13); Estudiantes universidades (4),0.205,0.068,0.011,0.102,9,Luren (2),0
+150143,LIMA,LIMA,VILLA MARIA DEL TRIUNFO,35,6,1981,2025,0,0,0,0,5,15,8,7,Rechazo de mandatos (7); Pago de deudas (6); Vivienda (4),Pobladores (10); Trabajadores industriales (6); Transportistas urbanos (4),0.029,0.0,0.0,0.114,7,,0
+150201,LIMA,BARRANCA,BARRANCA,19,3,1982,2022,1,0,0,3,4,9,3,0,Rechazo de mandatos (4); Reducción de precios (2); Aumentos salariales (2),Agricultores (4); Pobladores (3); Trabajadores ministerios (2),0.421,0.158,0.053,0.158,1,,1
+150202,LIMA,BARRANCA,PARAMONGA,18,1,1980,2023,0,0,0,1,11,2,4,0,Aumentos salariales (9); Aumento del precio de productos (3); Pago atrasados de salarios (2),Arroceros (10); Azucareros (5); Médicos (1),0.167,0.167,0.0,0.167,11,,0
+150203,LIMA,BARRANCA,PATIVILCA,6,0,1981,2011,0,2,0,0,2,1,1,2,Aumentos salariales (2); Cumplimiento de pactos (1); Educación (1),Mineros (3); Frentes de defensa (1); Agricultores (1),0.5,0.0,0.0,0.0,3,Southern (2); Santa Luisa (1),0
+150204,LIMA,BARRANCA,SUPE,18,1,1982,2021,0,0,2,0,12,3,1,0,Pago atrasados de salarios (7); Aumentos salariales (3); Rechazo a la privatización (2),Trabajadores ministerios (7); Pescadores (3); Autoridades (2),0.278,0.0,0.0,0.0,3,,0
+150304,LIMA,CAJATAMBO,HUANCAPON,1,0,1989,1989,0,1,0,0,1,0,0,0,Aumentos salariales (1),Mineros (1),0.0,0.0,0.0,0.0,1,Centromin (1),0
+150401,LIMA,CANTA,CANTA,7,3,1991,2022,3,0,3,0,0,0,3,1,Protección de la producción nacional (3); Reparaciones por daños (3); Transporte (1),Agricultores (3); Pobladores (3); Comunidades campesinas (1),0.857,0.0,0.0,0.0,0,Volcan (1),1
+150407,LIMA,CANTA,SANTA ROSA DE QUIVES,1,1,2015,2015,0,0,0,0,0,0,0,1,Transporte (1),Pobladores (1),1.0,0.0,0.0,1.0,0,,0
+150501,LIMA,CAÑETE,SAN VICENTE DE CAÑETE,45,3,1982,2024,0,0,0,4,7,26,5,3,Rechazo de mandatos (12); Rechazo de normas (4); Ejecución de funciones (4),Pobladores (14); Docentes colegios (5); Agricultores (4),0.311,0.067,0.022,0.067,1,,1
+150502,LIMA,CAÑETE,ASIA,6,0,2005,2012,0,0,0,1,1,1,0,3,Beneficios sociales (2); Aumentos salariales (1); Defensa de territorio (1),Partidarios políticos (2); Pobladores (2); Construcción civil (1),0.5,0.167,0.0,0.167,1,,0
+150504,LIMA,CAÑETE,CERRO AZUL,3,1,2009,2017,1,0,0,0,1,0,0,2,Transporte (2); Aumentos salariales (1),Pobladores (2); Docentes colegios (1),1.0,0.0,0.0,0.0,1,,0
+150505,LIMA,CAÑETE,CHILCA,14,1,1982,2018,1,3,1,0,4,7,1,1,Pago atrasados de salarios (3); Rechazo de mandatos (3); Ejecución de funciones (2),Pobladores (6); Mineros (3); Algodoneros (1),0.357,0.143,0.0,0.214,1,Cata-Acari (1),0
+150509,LIMA,CAÑETE,MALA,15,1,1980,2024,1,8,1,0,12,1,0,1,Aumentos salariales (7); Puestos de trabajo (3); Mejores condiciones laborales (2),Mineros (8); Pobladores (3); Trabajadores ministerios (2),0.0,0.0,0.0,0.067,9,Condestable (5); Pativilca (1); Raúl (1),0
+150510,LIMA,CAÑETE,NUEVO IMPERIAL,2,0,2005,2008,0,0,0,0,0,2,0,0,Ejecución de funciones (1); Rechazo de mandatos (1),Reos (2),0.0,0.0,0.0,0.5,0,,0
+150513,LIMA,CAÑETE,SAN ANTONIO,1,0,2010,2010,0,0,0,0,0,0,0,1,Vivienda (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+150514,LIMA,CAÑETE,SAN LUIS,3,1,2000,2023,0,0,1,0,0,1,1,0,Protección de la producción nacional (1); Protección a la naturaleza (1); Destitución de autoridad electa (1),Agricultores (1); Asociaciones civiles (1); Pobladores (1),0.333,0.0,0.0,0.0,0,,0
+150515,LIMA,CAÑETE,SANTA CRUZ DE FLORES,1,1,2024,2024,0,0,0,0,0,0,0,1,Transporte (1),Usuarios (1),0.0,0.0,0.0,0.0,0,,0
+150516,LIMA,CAÑETE,ZUÑIGA,1,0,1980,1980,0,0,0,1,0,0,0,0,Defensa de territorio (1),Comunidades campesinas (1),0.0,1.0,0.0,0.0,0,,0
+150601,LIMA,HUARAL,HUARAL,7,1,1982,2022,0,0,0,0,1,6,0,0,Rechazo de normas (3); Rechazo de mandatos (2); Estabilidad laboral (1),Agricultores (3); Docentes colegios (2); Comunidades campesinas (1),0.286,0.0,0.0,0.0,1,,1
+150603,LIMA,HUARAL,ATAVILLOS BAJO,3,0,1982,1983,0,0,0,1,0,1,0,1,Ejecución de funciones (1); Vivienda (1); Defensa de territorio (1),Comunidades campesinas (3),0.0,0.333,0.0,0.0,0,,0
+150604,LIMA,HUARAL,AUCALLAMA,1,1,2022,2022,0,0,0,0,0,0,1,0,Reducción de precios (1),Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+150605,LIMA,HUARAL,CHANCAY,19,6,1982,2024,4,0,3,0,9,4,1,2,Pago atrasados de salarios (4); Reparaciones por daños (3); Puestos de trabajo (2),Pobladores (6); Trabajadores ministerios (5); Pescadores (3),0.211,0.0,0.0,0.053,5,Repsol (2),0
+150606,LIMA,HUARAL,IHUARI,1,0,1983,1983,0,0,0,1,0,0,0,0,Defensa de territorio (1),Comunidades campesinas (1),0.0,1.0,1.0,0.0,0,,0
+150610,LIMA,HUARAL,SANTA CRUZ DE ANDAMARCA,11,0,1981,1990,0,7,0,0,7,4,0,0,Cumplimiento de pactos (4); Aumentos salariales (3); Pago atrasados de salarios (3),Mineros (11),0.0,0.0,0.0,0.0,11,,0
+150701,LIMA,HUAROCHIRI,MATUCANA,5,1,1983,2015,1,0,0,0,0,4,0,1,Ejecución de funciones (1); Rechazo de mandatos (1); Destitución de autoridad electa (1),Pobladores (3); Mineros (1); Comunidades campesinas (1),0.4,0.0,0.2,0.2,0,,1
+150704,LIMA,HUAROCHIRI,CARAMPOMA,16,0,1981,1983,0,16,0,0,16,0,0,0,Mejores condiciones laborales (10); Pago atrasados de salarios (3); Aumentos salariales (2),Mineros (16),0.0,0.0,0.0,0.062,13,Caridad (11); Southern (2),0
+150705,LIMA,HUAROCHIRI,CHICLA,35,1,1986,2023,1,32,0,0,32,2,1,0,Reposición laboral (12); Aumentos salariales (10); Mejores condiciones laborales (3),Mineros (32); Pobladores (2); Ganaderos (1),0.4,0.114,0.114,0.229,32,Casapalca (17); Ayer (7); Centromin (2),0
+150708,LIMA,HUAROCHIRI,HUANZA,6,0,1981,2006,0,5,0,0,5,1,0,0,Mejores condiciones laborales (4); Aumentos salariales (1); Rechazo a resultados electorales (1),Mineros (5); Pobladores (1),0.0,0.0,0.167,0.0,5,Huanpar (1),0
+150709,LIMA,HUAROCHIRI,HUAROCHIRI,3,2,2002,2019,0,0,0,1,0,1,0,1,Destitución de autoridad electa (1); Saneamiento (1); Definir límites (1),Pobladores (2); Transportistas urbanos (1),0.667,0.0,0.0,0.333,1,,0
+150714,LIMA,HUAROCHIRI,RICARDO PALMA,2,0,2012,2014,0,0,0,0,0,1,0,1,Transporte (1); Ejecución de funciones (1),Pobladores (2),0.5,0.0,0.0,0.0,0,,0
+150716,LIMA,HUAROCHIRI,SAN ANTONIO,5,1,2001,2024,2,0,0,2,0,0,0,3,Vivienda (2); Adjudicación de tierras (1); Defensa de territorio (1),Pobladores (4); Transportistas urbanos (1),0.0,0.2,0.0,0.2,2,,0
+150721,LIMA,HUAROCHIRI,SAN LORENZO DE QUINTI,1,1,2021,2021,1,0,1,0,0,0,0,0,Protección a la naturaleza (1),Pobladores (1),0.0,1.0,0.0,1.0,1,AF SAC (1),0
+150722,LIMA,HUAROCHIRI,SAN MATEO,11,0,1982,2013,3,6,2,1,6,1,0,1,Pago atrasados de salarios (4); Aumentos salariales (1); Mejores condiciones laborales (1),Mineros (6); Usuarios (1); Pobladores AAHH (1),0.636,0.0,0.0,0.0,9,Millotingo (2); Casapalca (2); Lizandro Proaño (1),0
+150727,LIMA,HUAROCHIRI,SANTA CRUZ DE COCACHACRA,1,0,1988,1988,0,0,0,0,0,1,0,0,Cumplimiento de pactos (1),Mineros (1),1.0,0.0,0.0,0.0,1,Centromin (1),0
+150801,LIMA,HUAURA,HUACHO,60,11,1980,2024,0,2,0,0,11,36,10,3,Rechazo de mandatos (22); Reducción de impuestos (5); Aumentos salariales (4),Estudiantes universidades (9); Pobladores (8); Azucareros (8),0.267,0.05,0.033,0.1,10,Buenaventura (2),1
+150806,LIMA,HUAURA,HUAURA,3,3,2022,2024,0,0,0,0,0,2,0,1,Destitución de autoridad electa (2); Seguridad (1),Agricultores (1); Pobladores (1); Transportistas urbanos (1),0.667,0.0,0.0,0.0,0,,0
+150811,LIMA,HUAURA,SAYAN,8,0,1980,2010,2,1,0,2,2,3,0,1,Adjudicación de tierras (2); Rechazo de mandatos (2); Puestos de trabajo (1),Azucareros (4); Pobladores (3); Mineros (1),0.25,0.125,0.0,0.25,5,,0
+150812,LIMA,HUAURA,VEGUETA,1,1,2018,2018,0,0,0,0,0,0,0,1,Transporte (1),Pobladores (1),1.0,0.0,0.0,0.0,1,,0
+150901,LIMA,OYON,OYON,29,4,1982,2022,4,19,1,0,20,7,0,1,Mejores condiciones laborales (9); Reposición laboral (6); Rechazo de mandatos (3),Mineros (21); Pobladores (7); Comunidades campesinas (1),0.138,0.034,0.034,0.034,20,Buenaventura (9); Uchucchacua (2); Raura (2),1
+151001,LIMA,YAUYOS,YAUYOS,1,0,2006,2006,0,0,0,0,1,0,0,0,Estabilidad laboral (1),Docentes colegios (1),0.0,0.0,0.0,0.0,0,,1
+151002,LIMA,YAUYOS,ALIS,3,1,1988,2024,1,1,1,0,1,1,0,0,Aumentos salariales (1); Reparaciones por daños (1); Ejecución de funciones (1),Mineros (2); Pobladores (1),0.333,0.0,0.0,0.0,3,Centromin (1),0
+151008,LIMA,YAUYOS,CATAHUASI,1,0,2008,2008,1,0,0,0,0,1,0,0,Rechazo de mandatos (1),Agricultores (1),1.0,1.0,0.0,1.0,1,,0
+151015,LIMA,YAUYOS,HUANGASCAR,1,0,2014,2014,0,0,0,0,0,1,0,0,Ejecución de funciones (1),Pobladores (1),0.0,0.0,0.0,1.0,0,,0
+160101,LORETO,MAYNAS,IQUITOS,329,51,1980,2025,31,4,14,15,89,163,37,11,Rechazo de mandatos (55); Aumentos salariales (48); Rechazo de normas (29),Pobladores (57); Docentes colegios (47); Frentes de defensa (43),0.091,0.033,0.015,0.076,18,Lote 192 (10); Conga (1); Petroperú-Oleoducto (1),1
+160102,LORETO,MAYNAS,ALTO NANAY,1,1,2025,2025,1,0,1,0,0,0,0,0,Protección a la naturaleza (1),Rondas campesinas (1),1.0,0.0,0.0,0.0,0,,0
+160106,LORETO,MAYNAS,MAZAN,1,0,2014,2014,0,0,0,0,0,1,0,0,Rechazo a resultados electorales (1),Pobladores (1),0.0,1.0,1.0,1.0,0,,0
+160107,LORETO,MAYNAS,NAPO,17,1,2009,2021,1,0,1,0,0,16,0,0,Rechazo de normas (15); Rechazo de mandatos (1); Protección a la naturaleza (1),Comunidades nativas (16); Fuerzas castrenses (1),0.824,0.059,0.0,0.059,0,,0
+160108,LORETO,MAYNAS,PUNCHANA,1,1,2024,2024,0,0,0,0,0,1,0,0,Cumplimiento de pactos (1),Pobladores AAHH (1),1.0,0.0,0.0,0.0,0,,0
+160112,LORETO,MAYNAS,BELEN,4,3,2014,2025,1,0,0,0,0,1,1,2,Ejecución de funciones (1); Vivienda (1); Reducción de impuestos (1),Comunidades campesinas (1); Estudiantes universidades (1); Transportistas de carga (1),0.5,0.0,0.0,0.0,0,Pluspetrol (1),0
+160113,LORETO,MAYNAS,SAN JUAN BAUTISTA,1,1,2018,2018,0,0,0,0,0,0,0,1,Transporte (1),Estudiantes universidades (1),0.0,0.0,0.0,0.0,0,,0
+160201,LORETO,ALTO AMAZONAS,YURIMAGUAS,97,12,1981,2024,6,0,1,1,11,49,21,14,Rechazo de normas (28); Aumento de presupuesto (15); Rechazo de mandatos (13),Pobladores (35); Comunidades nativas (17); Frentes de defensa (13),0.34,0.01,0.0,0.052,2,Lote 192 (3); Petroperú-Oleoducto (1),1
+160301,LORETO,LORETO,NAUTA,23,8,2001,2024,4,0,3,0,2,10,3,5,Rechazo de mandatos (6); Aumento de presupuesto (2); Alimentación (2),Pobladores (10); CGTP (4); Comités (2),0.261,0.043,0.043,0.087,5,Pluspetrol (3); Lote 192 (1); Petroperú-Oleoducto (1),1
+160302,LORETO,LORETO,PARINARI,1,1,2018,2018,0,0,0,0,0,1,0,0,Cumplimiento de pactos (1),Comunidades nativas (1),1.0,0.0,0.0,0.0,0,,0
+160303,LORETO,LORETO,TIGRE,26,15,2008,2025,20,0,16,0,0,6,0,4,Reparaciones por daños (14); Saneamiento (3); Rechazo de normas (3),Comunidades nativas (15); Comunidades campesinas (9); Pobladores (1),0.346,0.0,0.0,0.038,17,Pluspetrol (7),0
+160304,LORETO,LORETO,TROMPETEROS,21,14,2006,2024,15,0,14,0,0,5,0,2,Reparaciones por daños (11); Cumplimiento de pactos (4); Suspensión de concesiones (2),Comunidades nativas (12); Comunidades campesinas (7); Pobladores (1),0.429,0.048,0.0,0.048,11,Pluspetrol (3); Petroperú-Oleoducto (2); Lote 8 (1),0
+160305,LORETO,LORETO,URARINAS,29,28,2014,2022,25,0,24,0,0,4,0,1,Reparaciones por daños (22); Cumplimiento de pactos (3); Protección a la naturaleza (2),Comunidades nativas (24); Comunidades campesinas (3); Frentes de defensa (2),0.621,0.069,0.0,0.069,19,Petroperú-Oleoducto (19); Pluspetrol (1); Lote 192 (1),0
+1604,LORETO,MARISCAL RAMON CASTILLA,,1,1,2025,2025,0,0,0,0,0,1,0,0,Rechazo a postura política (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+160401,LORETO,MARISCAL RAMON CASTILLA,RAMON CASTILLA,7,3,1984,2024,1,0,0,0,1,4,2,0,Rechazo de mandatos (3); Aumento de presupuesto (2); Destitución de autoridad electa (1),Docentes colegios (3); Pobladores (2); CGTP (2),0.0,0.0,0.143,0.143,0,Lote 192 (1),1
+160402,LORETO,MARISCAL RAMON CASTILLA,PEBAS,2,0,1999,2007,0,0,0,0,0,2,0,0,Destitución de autoridad electa (1); Rechazo de mandatos (1),Pobladores (1); Artistas (1),0.0,0.0,0.0,0.0,0,,0
+160501,LORETO,REQUENA,REQUENA,11,5,1987,2024,2,0,0,0,2,6,1,2,Rechazo de mandatos (5); Salud (2); Pago atrasados de salarios (1),CGTP (3); Pobladores (2); Docentes colegios (2),0.0,0.182,0.273,0.273,1,Lote 192 (1); Lote 95 (1),1
+160503,LORETO,REQUENA,CAPELO,1,0,1987,1987,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+160506,LORETO,REQUENA,PUINAHUA,6,6,2019,2023,5,0,2,0,0,2,0,2,Saneamiento (2); Rechazo de mandatos (2); Reparaciones por daños (1),Comunidades nativas (5); Pobladores (1),0.0,0.167,0.0,0.0,5,Lote 95 (1),0
+160510,LORETO,REQUENA,JENARO HERRERA,1,1,2021,2021,0,0,0,0,0,0,0,1,Saneamiento (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+160511,LORETO,REQUENA,YAQUERANA,1,1,2023,2023,0,0,0,0,0,1,0,0,Ejecución de funciones (1),Comunidades nativas (1),0.0,0.0,0.0,0.0,0,,0
+160601,LORETO,UCAYALI,CONTAMANA,23,4,1980,2024,6,0,4,5,2,10,2,0,Defensa de territorio (4); Protección a la naturaleza (4); Destitución de autoridad electa (3),Pobladores (11); Comunidades nativas (4); Docentes colegios (3),0.13,0.043,0.0,0.087,4,Lote 192 (2),1
+160701,LORETO,DATEM DEL MARAÑON,BARRANCA,8,4,1991,2024,2,0,1,0,2,3,1,1,Rechazo de mandatos (2); Puestos de trabajo (2); Protección a la naturaleza (1),Pobladores (4); CGTP (2); Comunidades nativas (1),0.125,0.0,0.0,0.0,0,Lote 192 (2),1
+160702,LORETO,DATEM DEL MARAÑON,CAHUAPANAS,2,0,2012,2014,1,0,1,0,0,1,0,0,Protección a la naturaleza (1); Rechazo a resultados electorales (1),Comunidades nativas (2),0.0,0.0,0.0,0.0,1,Repsol (1),0
+160703,LORETO,DATEM DEL MARAÑON,MANSERICHE,41,22,1984,2024,19,2,17,0,3,20,0,1,Rechazo de normas (15); Reparaciones por daños (10); Protección a la naturaleza (7),Comunidades nativas (32); Pobladores (6); Trabajadores petroleros (2),0.049,0.049,0.024,0.073,8,Petroperú-Oleoducto (9); Pluspetrol (1),0
+160704,LORETO,DATEM DEL MARAÑON,MORONA,10,6,2009,2021,6,0,6,0,0,2,0,2,Retiro de empresa (4); Reparaciones por daños (2); Saneamiento (1),Comunidades nativas (7); Pobladores (2); Comunidades campesinas (1),0.3,0.0,0.0,0.0,5,Petroperú-Oleoducto (4); Talisman (1),0
+160705,LORETO,DATEM DEL MARAÑON,PASTAZA,10,8,2013,2019,9,0,4,0,0,3,2,1,Reparaciones por daños (3); Cumplimiento de pactos (2); Aumento de presupuesto (2),Comunidades nativas (10),0.4,0.0,0.0,0.0,1,Lote 192 (1); Petroperú-Oleoducto (1),0
+160706,LORETO,DATEM DEL MARAÑON,ANDOAS,53,37,2002,2024,39,3,22,1,4,21,0,5,Protección a la naturaleza (11); Cumplimiento de pactos (9); Ejecución de funciones (9),Comunidades nativas (42); Comunidades campesinas (7); Trabajadores petroleros (3),0.151,0.019,0.038,0.057,23,Lote 192 (13); Pluspetrol (11); Lote 8 (1),0
+160801,LORETO,PUTUMAYO,PUTUMAYO,6,4,2004,2024,2,0,1,0,2,2,1,0,Rechazo de mandatos (1); Rechazo de normas (1); Puestos de trabajo (1),Pobladores (2); Comunidades nativas (2); Docentes colegios (2),0.0,0.0,0.0,0.0,0,Lote 192 (1),1
+170101,MADRE DE DIOS,TAMBOPATA,TAMBOPATA,107,27,1981,2024,12,4,3,1,18,73,5,7,Rechazo de normas (24); Destitución de autoridad electa (13); Rechazo de mandatos (11),Pobladores (27); Docentes colegios (14); Mineros (14),0.159,0.084,0.009,0.103,2,,1
+170102,MADRE DE DIOS,TAMBOPATA,INAMBARI,33,14,2011,2023,0,5,0,0,5,28,0,0,Rechazo de normas (11); Destitución de autoridad electa (8); Rechazo de mandatos (5),Mineros (23); Pobladores (6); Cocaleros (3),0.97,0.242,0.091,0.242,3,,0
+170103,MADRE DE DIOS,TAMBOPATA,LAS PIEDRAS,3,3,2023,2023,0,0,0,0,0,3,0,0,Destitución de autoridad electa (3),Pobladores (2); Agricultores (1),1.0,0.0,0.0,0.0,0,,0
+170104,MADRE DE DIOS,TAMBOPATA,LABERINTO,24,9,2010,2023,2,0,0,0,0,24,0,0,Rechazo de normas (19); Destitución de autoridad electa (3); Rechazo de mandatos (2),Mineros (14); Pobladores (4); Madereros (3),0.417,0.042,0.0,0.083,0,,0
+170201,MADRE DE DIOS,MANU,MANU,5,2,2003,2024,2,0,0,1,0,2,1,1,Aumento de presupuesto (1); Saneamiento (1); Destitución de funcionario (1),Pobladores (2); Mineros (2); Comunidades nativas (1),0.0,0.0,0.0,0.0,0,,1
+170204,MADRE DE DIOS,MANU,HUEPETUHE,2,2,2021,2021,0,0,0,0,0,2,0,0,Rechazo al programa de erradicación de la hoja de coca (2),Cocaleros (2),1.0,0.0,0.0,0.0,0,,0
+170302,MADRE DE DIOS,TAHUAMANU,IBERIA,2,2,2023,2023,0,0,0,0,0,2,0,0,Destitución de autoridad electa (2),Federaciones departamentales (1); Agricultores (1),1.0,0.0,0.0,0.0,0,,0
+170303,MADRE DE DIOS,TAHUAMANU,TAHUAMANU,2,1,1988,2023,0,0,0,0,0,1,1,0,Aumento de presupuesto (1); Destitución de autoridad electa (1),Frentes de defensa (1); Pobladores (1),0.5,0.0,0.0,0.0,0,,0
+180101,MOQUEGUA,MARISCAL NIETO,MOQUEGUA,115,30,1980,2024,33,3,12,3,17,43,29,11,Aumento de presupuesto (22); Rechazo de mandatos (12); Aumentos salariales (10),Pobladores (40); Frentes de defensa (13); Docentes colegios (10),0.33,0.035,0.0,0.061,14,Southern (9); Cuajone (3); Quellaveco (3),1
+180102,MOQUEGUA,MARISCAL NIETO,CARUMAS,3,1,2004,2023,0,1,0,0,1,2,0,0,Rechazo de normas (1); Mejores condiciones laborales (1); Destitución de autoridad electa (1),Administrativos (1); Mineros (1); Pobladores (1),1.0,0.0,0.0,0.0,1,Toquepala (1),0
+180104,MOQUEGUA,MARISCAL NIETO,SAMEGUA,1,1,2019,2019,1,0,1,0,0,0,0,0,Retiro de empresa (1),Agricultores (1),1.0,0.0,0.0,0.0,1,Quellaveco (1),0
+180105,MOQUEGUA,MARISCAL NIETO,SAN CRISTOBAL,1,0,2014,2014,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Comunidades campesinas (1),0.0,0.0,0.0,0.0,0,,0
+180106,MOQUEGUA,MARISCAL NIETO,TORATA,84,11,1980,2022,11,66,9,0,67,8,0,0,Aumentos salariales (48); Mejores condiciones laborales (13); Retiro de empresa (6),Mineros (71); Agricultores (7); Comunidades campesinas (4),0.083,0.0,0.0,0.024,74,Southern (52); Quellaveco (6); Cuajone (4),0
+180201,MOQUEGUA,GENERAL SANCHEZ CERRO,OMATE,3,0,2008,2010,1,0,0,0,0,2,1,0,Rechazo a resultados electorales (2); Aumento de presupuesto (1),Pobladores (3),0.333,0.0,0.0,0.0,0,,1
+180205,MOQUEGUA,GENERAL SANCHEZ CERRO,LA CAPILLA,1,0,1984,1984,0,1,0,0,1,0,0,0,Mejores condiciones laborales (1),Mineros (1),0.0,0.0,0.0,0.0,1,,0
+180301,MOQUEGUA,ILO,ILO,56,4,1982,2023,5,0,3,0,13,27,11,2,Rechazo de normas (9); Rechazo a la privatización (7); Pago atrasados de salarios (6),Pescadores (11); Trabajadores portuarios (11); Trabajadores ministerios (6),0.071,0.0,0.0,0.0,16,Southern (4); Cuajone (1),1
+180303,MOQUEGUA,ILO,PACOCHA,94,0,1980,2012,2,92,1,0,92,0,1,0,Aumentos salariales (64); Mejores condiciones laborales (14); Bonificaciones (12),Mineros (91); Pobladores (2); Trabajadores petroleros (1),0.021,0.0,0.0,0.011,86,Southern (66); Centromin (11); Toquepala (2),0
+190101,PASCO,PASCO,CHAUPIMARCA,91,4,1980,2021,9,6,4,1,28,34,21,3,Aumentos salariales (19); Rechazo de normas (10); Aumento de presupuesto (10),Docentes colegios (22); Pobladores (12); Frentes de defensa (9),0.11,0.055,0.011,0.077,9,Centromin (8); Shougang (1),1
+190102,PASCO,PASCO,HUACHON,2,0,2002,2007,0,0,0,1,0,0,1,0,Defensa de territorio (1); Protección de la producción nacional (1),Comunidades campesinas (1); Pobladores (1),0.0,0.5,0.0,0.5,0,,0
+190103,PASCO,PASCO,HUARIACA,1,1,2022,2022,1,0,1,0,0,0,0,0,Reparaciones por daños (1),Comunidades campesinas (1),0.0,0.0,0.0,0.0,1,,0
+190105,PASCO,PASCO,NINACACA,2,0,2003,2013,1,0,1,0,1,0,0,0,Protección a la naturaleza (1); Mejores condiciones laborales (1),Pobladores (1); CGTP (1),0.5,0.0,0.0,0.0,0,,0
+190106,PASCO,PASCO,PALLANCHACRA,6,0,1990,2009,0,4,0,1,4,1,0,0,Mejores condiciones laborales (2); Aumentos salariales (2); Modificar límites territoriales (1),Mineros (5); Pobladores (1),0.167,0.0,0.0,0.0,3,Volcan (2); Vinchos Empresas (1),0
+190107,PASCO,PASCO,PAUCARTAMBO,8,0,1987,2009,2,0,0,0,0,3,4,1,Protección de la producción nacional (4); Cumplimiento de pactos (2); Saneamiento (1),Pobladores (4); Comunidades campesinas (3); Agricultores (1),0.125,0.0,0.0,0.0,4,,0
+190108,PASCO,PASCO,SAN FRANCISCO DE ASIS DE YARUSYACAN,22,1,1981,2022,4,13,3,0,14,3,2,0,Mejores condiciones laborales (7); Aumentos salariales (3); Aumento de presupuesto (2),Mineros (17); Comunidades campesinas (2); Trabajadores ministerios (1),0.136,0.091,0.045,0.091,15,Atacocha (5); Volcán (2); Tintaya-Antapaccay (1),0
+190109,PASCO,PASCO,SIMON BOLIVAR,22,3,1982,2022,5,13,2,0,16,3,0,1,Aumentos salariales (15); Cumplimiento de pactos (2); Destitución de funcionario (1),Mineros (15); Trabajadores industriales (2); Pobladores (2),0.091,0.045,0.045,0.091,17,Centromin (14); Volcán Hubo (1),0
+190113,PASCO,PASCO,YANACANCHA,22,1,1982,2018,0,3,0,0,9,10,2,1,Destitución de funcionario (4); Ejecución de funciones (3); Pago atrasados de salarios (3),Estudiantes universidades (9); Médicos (5); Mineros (4),0.045,0.136,0.045,0.091,4,Atacocha (2); Chirin (1),0
+190201,PASCO,DANIEL ALCIDES CARRION,YANAHUANCA,1,1,2022,2022,0,0,0,0,0,0,1,0,Reducción de precios (1),Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,1
+190203,PASCO,DANIEL ALCIDES CARRION,GOYLLARISQUIZGA,1,0,1990,1990,0,1,0,0,1,0,0,0,Reposición laboral (1),Mineros (1),0.0,0.0,0.0,0.0,1,Centromin (1),0
+190206,PASCO,DANIEL ALCIDES CARRION,SANTA ANA DE TUSI,1,0,2007,2007,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+190301,PASCO,OXAPAMPA,OXAPAMPA,9,1,1987,2017,0,0,0,1,1,4,1,2,Rechazo de normas (2); Aumentos salariales (1); Ejecución de funciones (1),Comunidades nativas (2); Pobladores (2); Administrativos (1),0.556,0.0,0.0,0.0,0,,1
+190306,PASCO,OXAPAMPA,PUERTO BERMUDEZ,4,2,2009,2017,0,0,0,1,1,2,0,0,Puestos de trabajo (1); Ejecución de funciones (1); Cumplimiento de pactos (1),Comunidades nativas (4),0.5,0.0,0.0,0.0,0,,0
+190307,PASCO,OXAPAMPA,VILLA RICA,1,1,2021,2021,0,0,0,0,0,0,1,0,Reducción de impuestos (1),Transportistas de carga (1),1.0,0.0,0.0,0.0,0,,0
+190308,PASCO,OXAPAMPA,CONSTITUCION,4,2,2009,2015,0,0,0,0,0,4,0,0,Rechazo de mandatos (2); Rechazo al programa de erradicación de la hoja de coca (2),Cocaleros (2); Pobladores (1); Agricultores (1),0.0,0.5,0.25,0.75,0,,0
+200101,PIURA,PIURA,PIURA,335,72,1980,2025,7,0,5,4,93,166,45,22,Aumentos salariales (55); Rechazo de mandatos (51); Rechazo de normas (27),Docentes colegios (48); Pobladores (45); Médicos (27),0.087,0.021,0.006,0.039,14,Petroperú-Oleoducto (2); Río Blanco (1),1
+200104,PIURA,PIURA,CASTILLA,23,8,1981,2025,0,0,0,0,4,8,3,8,Destitución de funcionario (3); Salud (3); Aumento de presupuesto (2),Reos (6); Trabajadores ministerios (3); Damnificados (3),0.174,0.043,0.0,0.087,0,,0
+200105,PIURA,PIURA,CATACAOS,12,6,1981,2024,0,0,0,0,0,4,3,5,Rechazo de mandatos (2); Aumento del precio de productos (2); Proyectos de irrigación (2),Pobladores (4); Algodoneros (3); CGTP (1),0.417,0.0,0.0,0.083,0,,0
+200108,PIURA,PIURA,EL TALLAN,3,3,2022,2023,0,0,0,0,0,0,2,1,Reducción de precios (2); Saneamiento (1),Transportistas de carga (1); Agricultores (1); Damnificados (1),1.0,0.0,0.0,0.0,0,,0
+200110,PIURA,PIURA,LA UNION,1,1,2023,2023,0,0,0,0,0,0,0,1,Saneamiento (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+200111,PIURA,PIURA,LAS LOMAS,3,2,2014,2022,0,1,0,0,1,0,2,0,Reducción de precios (2); Estabilidad laboral (1),Transportistas de carga (2); Mineros (1),1.0,0.0,0.0,0.0,0,,0
+200114,PIURA,PIURA,TAMBO GRANDE,13,1,1990,2022,8,0,7,0,0,4,1,1,Retiro de empresa (6); Ejecución de funciones (3); Suspensión de concesiones (1),Pobladores (7); Agricultores (3); Frentes de defensa (1),0.154,0.077,0.0,0.154,2,Manhatan (2); Durante (1); Manhattan (1),0
+200115,PIURA,PIURA,VEINTISEIS DE OCTUBRE,6,6,2018,2025,0,0,0,0,0,1,2,3,Reducción de precios (2); Rechazo de mandatos (1); Saneamiento (1),Pobladores (2); Reos (1); Transportistas de carga (1),0.5,0.167,0.0,0.167,0,,0
+200201,PIURA,AYABACA,AYABACA,8,2,2007,2023,4,0,3,0,0,5,0,0,Rechazo a resultados electorales (3); Suspensión de concesiones (1); Cumplimiento de pactos (1),Rondas campesinas (5); Autoridades (1); Comunidades campesinas (1),0.125,0.125,0.0,0.25,0,Mataz (1); Realizan (1); Río Blanco (1),1
+200206,PIURA,AYABACA,PACAIPAMPA,9,0,2005,2011,8,0,7,0,0,2,0,0,Retiro de empresa (5); Suspensión de concesiones (1); Protección a la naturaleza (1),Comunidades campesinas (3); Pobladores (3); Rondas campesinas (1),0.111,0.0,0.0,0.111,6,Río Blanco (8),0
+200207,PIURA,AYABACA,PAIMAS,2,0,2007,2010,1,0,1,0,0,1,0,0,Protección a la naturaleza (1); Rechazo a resultados electorales (1),Agricultores (1); Pobladores (1),0.0,0.0,0.0,0.0,1,,0
+200210,PIURA,AYABACA,SUYO,1,0,2004,2004,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+200301,PIURA,HUANCABAMBA,HUANCABAMBA,17,2,1992,2023,7,0,7,0,0,8,2,0,Retiro de empresa (5); Destitución de autoridad electa (4); Rechazo de mandatos (3),Pobladores (11); Comunidades campesinas (1); Ganaderos (1),0.294,0.176,0.059,0.235,5,Río Blanco (6),1
+200303,PIURA,HUANCABAMBA,EL CARMEN DE LA FRONTERA,13,1,1990,2018,10,2,7,0,3,2,1,0,Retiro de empresa (7); Mejores condiciones laborales (2); Rechazo de normas (1),Pobladores (4); Rondas campesinas (3); Mineros (2),0.231,0.077,0.0,0.077,9,Río Blanco (8); Centromin (1),0
+200306,PIURA,HUANCABAMBA,SAN MIGUEL DE EL FAIQUE,1,1,2021,2021,0,0,1,0,0,0,0,0,Reparaciones por daños (1),Agricultores (1),0.0,0.0,0.0,0.0,0,,0
+200308,PIURA,HUANCABAMBA,SONDORILLO,1,1,2016,2016,0,0,0,0,0,0,1,0,Aumento de presupuesto (1),Comunidades campesinas (1),0.0,0.0,0.0,0.0,0,,0
+200401,PIURA,MORROPON,CHULUCANAS,9,3,1982,2024,1,0,1,0,1,4,1,2,Proyectos de irrigación (1); Puestos de trabajo (1); Rechazo de mandatos (1),Agricultores (3); Pobladores (3); Usuarios (1),0.333,0.0,0.0,0.0,2,,1
+200402,PIURA,MORROPON,BUENOS AIRES,1,1,2021,2021,0,0,0,0,1,0,0,0,Aumentos salariales (1),Trabajadores industriales (1),0.0,0.0,0.0,0.0,1,,0
+200403,PIURA,MORROPON,CHALACO,2,0,2000,2001,2,0,1,0,0,1,0,0,Retiro de empresa (1); Rechazo de normas (1),Pobladores (2),0.0,0.0,0.0,0.0,0,,0
+200404,PIURA,MORROPON,LA MATANZA,2,2,2015,2015,0,0,0,0,2,0,0,0,Aumentos salariales (2),Agricultores (2),1.0,0.0,0.5,0.5,2,,0
+200405,PIURA,MORROPON,MORROPON,1,0,2011,2011,1,0,1,0,0,0,0,0,Protección a la naturaleza (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+200410,PIURA,MORROPON,YAMANGO,1,0,2014,2014,0,0,0,0,0,1,0,0,Rechazo a resultados electorales (1),Pobladores (1),0.0,0.0,1.0,0.0,0,,0
+200501,PIURA,PAITA,PAITA,48,6,1980,2025,1,0,2,3,14,21,7,1,Ejecución de funciones (8); Aumentos salariales (5); Mejores condiciones laborales (5),Pescadores (19); Trabajadores portuarios (11); Algodoneros (3),0.354,0.062,0.021,0.083,11,,1
+200507,PIURA,PAITA,VICHAYAL,4,0,1980,2012,1,2,0,0,4,0,0,0,Aumentos salariales (3); Mejores condiciones laborales (1),Trabajadores petroleros (2); Pobladores (2),0.0,0.0,0.0,0.25,2,,0
+200601,PIURA,SULLANA,SULLANA,43,8,1981,2024,2,0,2,2,6,15,13,5,Aumento del precio de productos (6); Ejecución de funciones (5); Rechazo de mandatos (4),Arroceros (12); Pobladores (8); Transportistas de carga (4),0.302,0.023,0.0,0.047,5,,1
+200603,PIURA,SULLANA,IGNACIO ESCUDERO,3,0,2007,2009,0,0,0,0,0,1,2,0,Aumento del precio de productos (2); Promulgación de normas (1),Algodoneros (2); Agricultores (1),0.667,0.333,0.0,0.333,0,,0
+200604,PIURA,SULLANA,LANCONES,2,1,2010,2015,0,0,0,0,0,0,0,2,Saneamiento (2),Pobladores (2),1.0,0.0,0.0,0.0,1,,0
+200605,PIURA,SULLANA,MARCAVELICA,7,1,1991,2022,0,0,0,0,2,2,2,1,Pago atrasados de salarios (2); Pago de deudas (1); Rechazo de mandatos (1),Reos (2); Construcción civil (2); Pobladores (1),0.429,0.143,0.0,0.286,2,,0
+200606,PIURA,SULLANA,MIGUEL CHECA,1,0,2010,2010,0,0,0,0,0,1,0,0,Rechazo a resultados electorales (1),Partidarios políticos (1),0.0,0.0,0.0,0.0,0,,0
+200701,PIURA,TALARA,PARIÑAS,83,9,1980,2024,2,39,0,1,47,25,4,6,Aumentos salariales (15); Mejores condiciones laborales (11); Reposición laboral (10),Trabajadores petroleros (50); Pobladores (9); Trabajadores saneamiento (4),0.12,0.036,0.012,0.084,43,Petroperú-Oleoducto (17); Centromin (2); La Oroya (1),1
+200702,PIURA,TALARA,EL ALTO,2,1,1996,2019,1,1,0,0,2,0,0,0,Estabilidad laboral (1); Aumentos salariales (1),Trabajadores petroleros (1); Pobladores (1),0.5,0.0,0.0,1.0,2,Petroperú-Oleoducto (1),0
+200704,PIURA,TALARA,LOBITOS,16,3,1980,2025,3,6,3,0,9,3,1,0,Aumentos salariales (7); Reparaciones por daños (3); Reposición laboral (1),Trabajadores petroleros (6); Trabajadores ministerios (4); Pescadores (4),0.0,0.0,0.0,0.0,8,Petroperú-Oleoducto (5),0
+200705,PIURA,TALARA,LOS ORGANOS,16,0,1982,2008,0,15,0,0,15,0,0,1,Contra reducción de salarios (15); Saneamiento (1),Trabajadores petroleros (15); Pobladores (1),0.0,0.0,0.0,0.062,15,Petroperú-Oleoducto (15),0
+200706,PIURA,TALARA,MANCORA,3,2,2010,2018,0,0,1,0,0,1,0,1,Seguridad (1); Rechazo de mandatos (1); Protección a la naturaleza (1),Pobladores (3),0.0,0.0,0.0,0.0,0,,0
+200801,PIURA,SECHURA,SECHURA,20,4,1986,2024,3,2,4,0,5,7,3,1,Rechazo de normas (4); Puestos de trabajo (2); Suspensión de concesiones (2),Pescadores (10); Agricultores (2); Trabajadores petroleros (2),0.4,0.0,0.0,0.1,4,Petroperú-Oleoducto (2); Punta Lagunas (1),1
+210101,PUNO,PUNO,PUNO,386,95,1980,2025,16,3,8,5,79,195,69,30,Rechazo de mandatos (79); Aumentos salariales (53); Aumento de presupuesto (29),Pobladores (83); Docentes colegios (59); Estudiantes universidades (36),0.194,0.031,0.008,0.07,19,Tía María (3); Camisea (1); Conga (1),1
+210102,PUNO,PUNO,ACORA,7,4,1983,2023,0,0,0,2,0,5,0,0,Destitución de autoridad electa (4); Modificar límites territoriales (2); Ejecución de funciones (1),Pobladores (5); Comunidades campesinas (2),0.714,0.0,0.0,0.0,0,,0
+210103,PUNO,PUNO,AMANTANI,1,0,2000,2000,0,0,0,0,0,1,0,0,Ejecución de funciones (1),Comunidades campesinas (1),0.0,0.0,0.0,0.0,0,,0
+210105,PUNO,PUNO,CAPACHICA,2,2,2022,2022,0,0,0,0,0,0,2,0,Reducción de precios (2),Transportistas de carga (1); Agricultores (1),1.0,0.0,0.0,0.0,0,,0
+210106,PUNO,PUNO,CHUCUITO,1,1,2024,2024,1,0,1,0,0,0,0,0,Protección a la naturaleza (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+210107,PUNO,PUNO,COATA,2,1,2011,2022,0,0,0,0,0,2,0,0,Ejecución de funciones (1); Destitución de autoridad electa (1),Pobladores (2),0.0,0.0,0.0,0.0,0,,0
+210108,PUNO,PUNO,HUATA,1,1,2019,2019,1,0,1,0,0,0,0,0,Reparaciones por daños (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+210110,PUNO,PUNO,PAUCARCOLLA,4,2,2004,2023,0,0,0,0,0,4,0,0,Destitución de autoridad electa (2); Rechazo de mandatos (2),Pobladores (2); Comunidades campesinas (1); Docentes universidades (1),0.5,0.0,0.0,0.0,0,,0
+210111,PUNO,PUNO,PICHACANI,5,4,2009,2023,0,0,0,1,0,4,0,0,Destitución de autoridad electa (2); Rechazo de mandatos (2); Modificar límites territoriales (1),Comunidades campesinas (3); Pobladores (2),1.0,0.0,0.0,0.0,0,,0
+210112,PUNO,PUNO,PLATERIA,2,0,1983,2009,0,0,0,1,0,1,0,0,Ejecución de funciones (1); Modificar límites territoriales (1),Pobladores (2),0.5,0.0,0.0,0.0,0,,0
+210113,PUNO,PUNO,SAN ANTONIO,1,0,1995,1995,0,0,0,0,1,0,0,0,Pago atrasados de salarios (1),Obreros (1),0.0,0.0,0.0,0.0,0,,0
+210201,PUNO,AZANGARO,AZANGARO,26,10,1983,2025,2,0,1,0,0,16,8,1,Rechazo de mandatos (5); Destitución de autoridad electa (4); Mejor administración de recursos (3),Pobladores (11); Frentes de defensa (2); Docentes colegios (2),0.462,0.0,0.0,0.0,0,,1
+210202,PUNO,AZANGARO,ACHAYA,1,0,1990,1990,0,0,0,1,0,0,0,0,Adjudicación de tierras (1),Frentes de defensa (1),1.0,0.0,0.0,1.0,0,,0
+210203,PUNO,AZANGARO,ARAPA,1,0,2006,2006,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+210204,PUNO,AZANGARO,ASILLO,12,2,2004,2024,0,0,0,0,0,11,0,1,Destitución de autoridad electa (6); Ejecución de funciones (4); Saneamiento (1),Pobladores (11); Comunidades campesinas (1),0.417,0.0,0.0,0.0,0,,0
+210207,PUNO,AZANGARO,JOSE DOMINGO CHOQUEHUANCA,1,0,2006,2006,0,0,0,0,0,1,0,0,Ejecución de funciones (1),Comunidades campesinas (1),0.0,0.0,0.0,0.0,0,,0
+210208,PUNO,AZANGARO,MUÑANI,2,2,2022,2025,0,0,0,0,0,1,1,0,Reducción de precios (1); Rechazo de mandatos (1),Transportistas de carga (1); Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+210301,PUNO,CARABAYA,MACUSANI,20,9,2001,2024,1,0,0,0,0,16,2,2,Rechazo de mandatos (9); Destitución de autoridad electa (5); Saneamiento (1),Pobladores (7); Comités (6); Docentes colegios (2),0.75,0.05,0.1,0.05,1,,1
+210303,PUNO,CARABAYA,AYAPATA,6,5,2009,2023,0,0,0,0,0,6,0,0,Destitución de autoridad electa (3); Rechazo al programa de erradicación de la hoja de coca (2); Rechazo de mandatos (1),Pobladores (3); Cocaleros (2); Mineros (1),1.0,0.167,0.0,0.0,0,,0
+210306,PUNO,CARABAYA,CRUCERO,1,1,2023,2023,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+210308,PUNO,CARABAYA,OLLACHEA,1,1,2023,2023,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+210309,PUNO,CARABAYA,SAN GABAN,23,8,1984,2021,2,0,1,0,1,21,0,0,Rechazo al programa de erradicación de la hoja de coca (13); Cumplimiento de pactos (4); Rechazo de mandatos (3),Cocaleros (12); Trabajadores eléctricos (4); Pobladores (3),0.348,0.043,0.087,0.217,4,Hidroeléctrico (1),0
+210310,PUNO,CARABAYA,USICAYOS,2,0,2010,2010,0,0,0,0,0,2,0,0,Rechazo a resultados electorales (2),Pobladores (2),0.0,0.0,0.5,0.5,0,,0
+210401,PUNO,CHUCUITO,JULI,16,10,1983,2023,2,0,2,0,0,14,0,0,Destitución de autoridad electa (11); Rechazo de normas (2); Suspensión de concesiones (2),Pobladores (9); Comunidades campesinas (5); Docentes colegios (1),0.5,0.062,0.0,0.062,0,,1
+210402,PUNO,CHUCUITO,DESAGUADERO,69,22,1983,2023,38,0,37,0,3,23,4,2,Suspensión de concesiones (37); Destitución de autoridad electa (13); Rechazo de mandatos (5),Frentes de defensa (40); Pobladores (18); Docentes colegios (3),0.884,0.043,0.029,0.087,1,Santa Ana (5); Camisea (1),0
+210403,PUNO,CHUCUITO,HUACULLANI,2,1,2011,2023,1,0,1,0,0,1,0,0,Suspensión de concesiones (1); Destitución de autoridad electa (1),Frentes de defensa (1); Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+210404,PUNO,CHUCUITO,KELLUYO,3,1,2008,2023,1,0,0,0,0,3,0,0,Rechazo a la privatización (1); Rechazo a resultados electorales (1); Destitución de autoridad electa (1),Pobladores (3),0.667,0.0,0.0,0.0,0,,0
+210405,PUNO,CHUCUITO,PISACOMA,1,1,2023,2023,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Comunidades campesinas (1),0.0,1.0,0.0,1.0,0,,0
+210406,PUNO,CHUCUITO,POMATA,4,3,2009,2023,0,0,0,0,0,4,0,0,Destitución de autoridad electa (4),Pobladores (4),0.75,0.0,0.0,0.0,0,,0
+210407,PUNO,CHUCUITO,ZEPITA,7,6,2011,2023,1,0,1,0,0,6,0,0,Destitución de autoridad electa (6); Suspensión de concesiones (1),Pobladores (6); Frentes de defensa (1),0.857,0.0,0.0,0.143,0,,0
+210501,PUNO,EL COLLAO,ILAVE,66,35,1983,2024,3,0,2,0,2,55,2,5,Destitución de autoridad electa (36); Ejecución de funciones (7); Rechazo a resultados electorales (4),Pobladores (33); Comunidades campesinas (23); Agricultores (2),0.53,0.061,0.045,0.076,1,Aruntani (1),1
+210502,PUNO,EL COLLAO,CAPAZO,1,0,2002,2002,0,0,0,0,0,1,0,0,Ejecución de funciones (1),Reos (1),0.0,0.0,0.0,0.0,0,,0
+210503,PUNO,EL COLLAO,PILCUYO,5,0,2013,2014,0,0,0,0,0,5,0,0,Destitución de autoridad electa (3); Ejecución de funciones (2),Pobladores (3); Comunidades campesinas (1); Comunidades nativas (1),0.4,0.0,0.0,0.0,0,,0
+210504,PUNO,EL COLLAO,SANTA ROSA,5,3,2009,2023,0,0,0,1,0,3,0,1,Destitución de autoridad electa (3); Modificar límites territoriales (1); Transporte (1),Pobladores (5),0.8,0.0,0.0,0.0,0,,0
+210505,PUNO,EL COLLAO,CONDURIRI,1,0,2000,2000,0,0,0,0,0,0,1,0,Aumento de presupuesto (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+210601,PUNO,HUANCANE,HUANCANE,20,5,1983,2023,0,0,0,1,1,16,1,1,Destitución de autoridad electa (7); Rechazo de mandatos (5); Cumplimiento de pactos (2),Pobladores (13); Autoridades (2); CGTP (1),0.35,0.0,0.0,0.0,0,,1
+210607,PUNO,HUANCANE,TARACO,3,2,2000,2024,0,0,0,0,0,1,0,2,Saneamiento (1); Destitución de autoridad electa (1); Educación (1),Autoridades (1); Pobladores (1); Padres de familia (1),0.333,0.0,0.0,0.0,0,,0
+210701,PUNO,LAMPA,LAMPA,11,3,1983,2023,3,0,0,0,0,8,2,1,Ejecución de funciones (4); Aumento de presupuesto (2); Destitución de autoridad electa (2),Pobladores (6); Frentes de defensa (2); Reos (1),0.455,0.0,0.0,0.0,0,,1
+210703,PUNO,LAMPA,CALAPUJA,1,1,2023,2023,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+210704,PUNO,LAMPA,NICASIO,1,1,2023,2023,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+210705,PUNO,LAMPA,OCUVIRI,6,3,2009,2018,5,1,1,0,3,2,0,0,Puestos de trabajo (2); Aumentos salariales (1); Rechazo de mandatos (1),Pobladores (3); Comunidades campesinas (2); Mineros (1),0.667,0.167,0.167,0.167,5,Ares (2); Aruntani (1),0
+210707,PUNO,LAMPA,PARATIA,2,0,2012,2012,2,0,1,0,0,1,0,0,Retiro de empresa (1); Rechazo de mandatos (1),Pobladores (2),0.5,0.0,0.0,0.0,1,,0
+210708,PUNO,LAMPA,PUCARA,5,3,2005,2023,0,0,0,0,0,5,0,0,Destitución de autoridad electa (3); Ejecución de funciones (1); Rechazo de mandatos (1),Pobladores (5),0.6,0.0,0.0,0.0,0,,0
+210709,PUNO,LAMPA,SANTA LUCIA,2,2,2023,2023,0,0,0,0,0,2,0,0,Destitución de autoridad electa (2),Pobladores (2),1.0,0.0,0.0,0.0,0,,0
+210801,PUNO,MELGAR,AYAVIRI,25,9,1983,2023,4,0,3,0,1,15,2,4,Ejecución de funciones (5); Rechazo de mandatos (4); Destitución de autoridad electa (4),Pobladores (15); Comunidades campesinas (3); Docentes colegios (2),0.56,0.08,0.0,0.08,1,Arasi Empresas (1),1
+210806,PUNO,MELGAR,NUÑOA,1,0,2009,2009,0,0,0,0,0,0,0,1,Transporte (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+210807,PUNO,MELGAR,ORURILLO,2,2,2016,2016,2,0,2,0,0,0,0,0,Retiro de empresa (2),Pobladores (1); Comunidades campesinas (1),0.5,0.5,0.0,0.5,2,Solex Perú (1),0
+210808,PUNO,MELGAR,SANTA ROSA,17,4,1987,2023,4,0,4,0,0,12,1,0,Rechazo de mandatos (7); Suspensión de concesiones (3); Destitución de autoridad electa (3),Pobladores (5); Comités (5); Frentes de defensa (3),0.882,0.0,0.0,0.0,1,Santa Ana (2); Aruntani (1),0
+210901,PUNO,MOHO,MOHO,3,3,2023,2023,0,0,0,0,0,3,0,0,Destitución de autoridad electa (3),Pobladores (3),0.333,0.0,0.0,0.0,0,,1
+210904,PUNO,MOHO,TILALI,3,0,2004,2009,0,0,0,0,0,3,0,0,Destitución de autoridad electa (2); Rechazo de normas (1),Comunidades campesinas (1); Pobladores (1); Docentes colegios (1),0.667,0.0,0.0,0.0,0,,0
+211001,PUNO,SAN ANTONIO DE PUTINA,PUTINA,2,1,2007,2023,0,0,0,0,0,2,0,0,Rechazo de mandatos (1); Destitución de autoridad electa (1),Docentes colegios (1); Pobladores (1),0.5,0.0,0.0,0.5,0,,1
+211002,PUNO,SAN ANTONIO DE PUTINA,ANANEA,9,1,2009,2025,3,2,0,0,2,2,0,5,Transporte (4); Ejecución de funciones (1); Cumplimiento de pactos (1),Mineros (6); Comunidades campesinas (2); Pobladores (1),0.333,0.111,0.0,0.111,3,Empresas (1),0
+211004,PUNO,SAN ANTONIO DE PUTINA,QUILCAPUNCU,1,1,2022,2022,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+211101,PUNO,SAN ROMAN,JULIACA,188,79,1981,2025,11,9,10,1,32,109,28,8,Destitución de autoridad electa (33); Rechazo de mandatos (28); Ejecución de funciones (19),Pobladores (60); Docentes colegios (24); Mineros (13),0.447,0.069,0.021,0.112,6,Tía María (1),1
+211104,PUNO,SAN ROMAN,CARACOTO,2,2,2017,2023,0,0,0,0,1,1,0,0,Aumentos salariales (1); Destitución de autoridad electa (1),Docentes colegios (1); Pobladores (1),0.5,0.0,0.0,0.5,0,,0
+211201,PUNO,SANDIA,SANDIA,7,2,1983,2023,0,0,0,0,0,3,4,0,Mejor administración de recursos (3); Destitución de autoridad electa (2); Aumento de presupuesto (1),Pobladores (5); Estudiantes universidades (1); Cocaleros (1),0.286,0.0,0.0,0.0,0,,1
+211203,PUNO,SANDIA,LIMBANI,2,2,2021,2023,1,0,0,2,0,0,0,0,Definir límites (1); Defensa de territorio (1),Pobladores (1); Mineros (1),0.0,0.5,0.5,0.0,1,,0
+211206,PUNO,SANDIA,QUIACA,7,0,2008,2008,7,0,1,0,6,0,0,0,Puestos de trabajo (6); Retiro de empresa (1),Pobladores (7),0.143,0.286,0.0,0.286,7,Cartagena (6); Untuca (1),0
+211207,PUNO,SANDIA,SAN JUAN DEL ORO,5,0,2007,2009,1,0,0,0,0,4,0,1,Destitución de autoridad electa (3); Rechazo de mandatos (1); Transporte (1),Pobladores (5),0.0,0.0,0.0,0.0,0,,0
+211209,PUNO,SANDIA,ALTO INAMBARI,2,0,2005,2009,0,0,0,0,0,1,0,1,Rechazo al programa de erradicación de la hoja de coca (1); Transporte (1),Cocaleros (1); Pobladores (1),0.0,0.0,0.0,0.0,0,,0
+211301,PUNO,YUNGUYO,YUNGUYO,13,5,2005,2023,0,0,0,0,0,9,0,4,Destitución de autoridad electa (5); Transporte (4); Rechazo de mandatos (3),Pobladores (8); Comunidades campesinas (3); Frentes de defensa (1),0.462,0.0,0.077,0.0,0,,1
+211303,PUNO,YUNGUYO,COPANI,2,0,2008,2010,0,0,0,0,0,2,0,0,Rechazo de mandatos (1); Rechazo a resultados electorales (1),Pobladores (1); Partidarios políticos (1),0.0,0.0,0.0,0.0,0,,0
+220101,SAN MARTIN,MOYOBAMBA,MOYOBAMBA,36,10,1981,2024,0,0,1,1,3,16,10,5,Ejecución de funciones (5); Rechazo de mandatos (4); Rechazo de normas (3),Pobladores (7); Transportistas de carga (5); Frentes de defensa (4),0.278,0.028,0.028,0.056,1,,1
+220104,SAN MARTIN,MOYOBAMBA,JEPELACIO,1,0,1984,1984,0,0,0,0,0,0,1,0,Aumento del precio de productos (1),Agricultores (1),1.0,0.0,0.0,0.0,0,,0
+220105,SAN MARTIN,MOYOBAMBA,SORITOR,2,1,1987,2022,0,0,0,0,1,0,1,0,Pago atrasados de salarios (1); Reducción de precios (1),Arroceros (1); Transportistas urbanos (1),1.0,0.0,0.0,0.0,1,,0
+220201,SAN MARTIN,BELLAVISTA,BELLAVISTA,2,2,2019,2019,0,0,0,0,0,0,2,0,Protección de la producción nacional (1); Aumento de presupuesto (1),Arroceros (2),1.0,0.0,0.0,0.0,0,,1
+220301,SAN MARTIN,EL DORADO,SAN JOSE DE SISA,1,0,1985,1985,0,0,0,0,0,1,0,0,Rechazo de mandatos (1),Pobladores (1),0.0,0.0,0.0,0.0,0,,1
+220401,SAN MARTIN,HUALLAGA,SAPOSOA,1,0,1987,1987,0,0,0,1,0,0,0,0,Defensa de territorio (1),Frentes de defensa (1),0.0,0.0,0.0,0.0,0,,1
+220501,SAN MARTIN,LAMAS,LAMAS,3,0,1987,2009,0,0,0,1,0,1,0,1,Saneamiento (1); Defensa de territorio (1); Rechazo de normas (1),Pobladores (1); Frentes de defensa (1); Comunidades nativas (1),0.0,0.0,0.0,0.0,0,,1
+220504,SAN MARTIN,LAMAS,CAYNARACHI,1,0,2013,2013,0,0,0,0,0,0,0,1,Saneamiento (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+220510,SAN MARTIN,LAMAS,TABALOSOS,8,0,1982,2000,0,0,0,0,0,6,2,0,Destitución de funcionario (3); Rechazo de normas (2); Aumento del precio de productos (2),Agricultores (6); Pobladores (2),0.875,0.0,0.125,0.125,2,,0
+220601,SAN MARTIN,MARISCAL CACERES,JUANJUI,20,1,1987,2015,0,0,0,1,0,13,0,6,Rechazo de mandatos (7); Salud (4); Saneamiento (2),Pobladores (17); Frentes de defensa (1); Docentes colegios (1),0.3,0.2,0.0,0.2,0,,1
+220602,SAN MARTIN,MARISCAL CACERES,CAMPANILLA,3,2,2009,2016,2,0,0,0,0,1,0,2,Transporte (2); Destitución de autoridad electa (1),Pobladores (2); Rondas campesinas (1),0.667,0.0,0.0,0.0,0,,0
+220604,SAN MARTIN,MARISCAL CACERES,PACHIZA,2,0,1987,1997,0,0,0,0,0,1,0,1,Saneamiento (1); Ejecución de funciones (1),Pobladores (1); Reos (1),0.5,0.0,0.0,0.0,1,,0
+220701,SAN MARTIN,PICOTA,PICOTA,2,1,1987,2024,0,0,0,1,0,1,0,0,Defensa de territorio (1); Promulgación de normas (1),Frentes de defensa (1); Comunidad LGTB (1),0.0,0.0,0.0,0.0,0,,1
+220801,SAN MARTIN,RIOJA,RIOJA,9,0,1982,2001,0,0,0,1,2,2,3,1,Aumento del precio de productos (2); Pago atrasados de salarios (2); Saneamiento (1),Agricultores (3); Arroceros (3); Transportistas urbanos (1),0.556,0.0,0.0,0.0,3,,1
+220804,SAN MARTIN,RIOJA,NUEVA CAJAMARCA,5,0,1984,2009,0,0,0,0,0,2,2,1,Aumento del precio de productos (2); Rechazo de mandatos (1); Vivienda (1),Pobladores (2); Arroceros (1); Agricultores (1),0.6,0.2,0.0,0.2,0,,0
+220805,SAN MARTIN,RIOJA,PARDO MIGUEL,3,1,2009,2016,0,0,0,0,0,2,0,1,Ejecución de funciones (2); Vivienda (1),Rondas campesinas (3),0.0,0.333,0.0,0.0,0,,0
+220901,SAN MARTIN,SAN MARTIN,TARAPOTO,138,23,1981,2024,2,0,0,3,15,62,43,15,Aumento del precio de productos (22); Rechazo de normas (17); Rechazo de mandatos (14),Agricultores (23); Frentes de defensa (23); Pobladores (22),0.362,0.029,0.007,0.065,9,Petroperú-Oleoducto (2),1
+220903,SAN MARTIN,SAN MARTIN,CACATACHI,3,0,1984,1984,0,0,0,0,0,0,3,0,Aumento del precio de productos (3),Agricultores (3),1.0,0.0,0.0,0.0,0,,0
+220908,SAN MARTIN,SAN MARTIN,JUAN GUERRA,1,0,1982,1982,0,0,0,0,0,0,1,0,Aumento del precio de productos (1),Pobladores (1),1.0,0.0,1.0,1.0,1,,0
+220913,SAN MARTIN,SAN MARTIN,SAUCE,4,0,1981,2006,0,0,0,0,0,4,0,0,Rechazo de mandatos (3); Rechazo al programa de erradicación de la hoja de coca (1),Trabajadores ministerios (2); Pobladores (1); Cocaleros (1),0.0,0.25,0.0,0.0,0,,0
+221001,SAN MARTIN,TOCACHE,TOCACHE,18,0,1981,2013,0,0,1,0,1,15,0,1,Rechazo al programa de erradicación de la hoja de coca (5); Rechazo de normas (5); Rechazo de mandatos (3),Cocaleros (10); Agricultores (4); Frentes de defensa (2),0.444,0.222,0.0,0.222,3,,1
+221002,SAN MARTIN,TOCACHE,NUEVO PROGRESO,1,0,1981,1981,0,0,0,0,0,1,0,0,Rechazo al programa de erradicación de la hoja de coca (1),Cocaleros (1),0.0,0.0,0.0,0.0,0,,0
+221005,SAN MARTIN,TOCACHE,UCHIZA,4,0,1981,2005,0,0,0,0,1,3,0,0,Rechazo al programa de erradicación de la hoja de coca (3); Mejores condiciones laborales (1),Cocaleros (2); Agricultores (1); Frentes de defensa (1),0.25,0.25,0.0,0.25,0,,0
+230101,TACNA,TACNA,TACNA,289,77,1980,2025,19,0,8,1,64,155,49,12,Rechazo de mandatos (44); Aumentos salariales (43); Ejecución de funciones (27),Pobladores (65); Docentes colegios (39); Estudiantes universidades (27),0.135,0.01,0.003,0.059,12,Tía María (3); Camisea (2); Empresas (1),1
+230102,TACNA,TACNA,ALTO DE LA ALIANZA,1,0,2008,2008,1,0,0,0,0,0,1,0,Aumento de presupuesto (1),Frentes de defensa (1),1.0,0.0,0.0,0.0,0,,0
+230104,TACNA,TACNA,CIUDAD NUEVA,2,0,1998,2008,1,0,0,1,0,0,1,0,Nueva zonificación (1); Aumento de presupuesto (1),Pobladores (1); Frentes de defensa (1),0.0,0.0,0.0,0.5,0,,0
+230107,TACNA,TACNA,PALCA,3,1,2007,2023,1,1,0,0,1,2,0,0,Mejores condiciones laborales (1); Rechazo de mandatos (1); Destitución de autoridad electa (1),Mineros (1); Comunidades campesinas (1); Pobladores (1),0.667,0.333,0.0,0.333,1,,0
+230108,TACNA,TACNA,POCOLLAY,7,0,1983,2013,0,0,0,0,1,4,0,2,Rechazo de normas (2); Ejecución de funciones (2); Alimentación (1),Reos (6); Trabajadores penitenciarios (1),0.143,0.0,0.0,0.143,0,,0
+230109,TACNA,TACNA,SAMA,14,0,1983,2009,0,0,0,2,2,5,5,0,Protección de la producción nacional (3); Rechazo de normas (2); Promulgación de normas (2),Agricultores (13); Pobladores (1),0.571,0.0,0.0,0.143,0,,0
+230110,TACNA,TACNA,CORONEL GREGORIO ALBARRACIN LANCHIP,5,3,2004,2023,0,0,0,0,1,3,0,1,Saneamiento (1); Puestos de trabajo (1); Rechazo de mandatos (1),Pobladores (4); Construcción civil (1),0.0,0.2,0.0,0.0,1,,0
+230111,TACNA,TACNA,LA YARADA LOS PALOS,14,5,1985,2025,0,0,0,1,1,10,2,0,Rechazo de normas (5); Ejecución de funciones (3); Aumento del precio de productos (1),Pescadores (4); Turistas (3); Comerciantes (2),0.571,0.143,0.0,0.143,0,,0
+230201,TACNA,CANDARAVE,CANDARAVE,5,1,1996,2019,2,0,0,0,0,2,3,0,Rechazo de mandatos (2); Aumento de presupuesto (2); Reducción de impuestos (1),Pobladores (3); Frentes de defensa (2),0.2,0.0,0.0,0.0,0,,1
+230301,TACNA,JORGE BASADRE,LOCUMBA,7,1,1996,2023,4,0,0,0,0,3,4,0,Aumento de presupuesto (3); Rechazo de mandatos (3); Reducción de impuestos (1),Pobladores (4); Frentes de defensa (2); Autoridades (1),0.286,0.0,0.143,0.143,0,Sothern Perú (2),1
+230302,TACNA,JORGE BASADRE,ILABAYA,82,0,1980,2012,0,78,0,0,79,3,0,0,Aumentos salariales (49); Mejores condiciones laborales (17); Bonificaciones (10),Mineros (80); Estudiantes universidades (1); Pensionistas (1),0.0,0.0,0.0,0.0,74,Southern (66); Toquepala (4); Canaria (1),0
+230303,TACNA,JORGE BASADRE,ITE,2,0,2007,2008,1,1,0,0,1,0,1,0,Mejores condiciones laborales (1); Aumento de presupuesto (1),Mineros (1); Frentes de defensa (1),0.5,0.0,0.0,0.0,1,Toquepala (1),0
+230401,TACNA,TARATA,TARATA,5,1,1996,2018,1,0,0,0,0,3,2,0,Ejecución de funciones (2); Reducción de impuestos (1); Rechazo a resultados electorales (1),Pobladores (3); Frentes de defensa (1); Reos (1),0.2,0.2,0.2,0.4,0,,1
+230408,TACNA,TARATA,TICACO,2,0,2011,2011,2,0,2,0,0,0,0,0,Protección a la naturaleza (2),Pobladores (2),0.0,0.0,0.0,0.0,0,,0
+240101,TUMBES,TUMBES,TUMBES,138,16,1980,2025,4,0,3,2,45,59,17,12,Rechazo de mandatos (26); Aumentos salariales (23); Pago atrasados de salarios (11),Docentes colegios (20); Pobladores (13); Médicos (12),0.152,0.007,0.007,0.058,9,Conga (1),1
+240102,TUMBES,TUMBES,CORRALES,12,0,1991,2010,0,0,0,0,1,2,9,0,Protección de la producción nacional (3); Rechazo a resultados electorales (2); Reducción de precios (2),Arroceros (3); Pobladores (3); Agricultores (3),0.75,0.083,0.0,0.167,0,,0
+240103,TUMBES,TUMBES,LA CRUZ,25,1,2000,2015,4,0,4,1,3,13,3,1,Destitución de autoridad electa (4); Rechazo de mandatos (4); Aumento del precio de productos (3),Agricultores (12); Pobladores (6); Pescadores (4),0.6,0.0,0.0,0.04,5,,0
+240105,TUMBES,TUMBES,SAN JACINTO,3,1,2014,2021,0,0,1,0,0,2,0,0,Ejecución de funciones (2); Reparaciones por daños (1),Pobladores (2); Partidarios políticos (1),0.0,0.0,0.333,0.333,0,,0
+240201,TUMBES,CONTRALMIRANTE VILLAR,ZORRITOS,17,2,1985,2015,2,0,3,0,1,10,1,2,Rechazo de mandatos (6); Rechazo de normas (2); Protección a la naturaleza (2),Pescadores (15); Pobladores (2),0.706,0.0,0.0,0.0,5,,1
+240203,TUMBES,CONTRALMIRANTE VILLAR,CANOAS DE PUNTA SAL,2,0,2013,2013,2,0,2,0,0,0,0,0,Suspensión de concesiones (2),Pescadores (2),1.0,0.0,0.0,0.0,2,,0
+240301,TUMBES,ZARUMILLA,ZARUMILLA,12,3,1983,2023,0,0,1,0,0,3,3,5,Reducción de precios (3); Saneamiento (2); Transporte (2),Pobladores (6); Transportistas de carga (2); Asociaciones civiles (1),0.5,0.0,0.0,0.0,0,,1
+240302,TUMBES,ZARUMILLA,AGUAS VERDES,13,1,1988,2023,0,0,0,0,2,7,3,1,Promulgación de normas (3); Rechazo de mandatos (3); Protección de la producción nacional (2),Pobladores (4); Comerciantes (4); Docentes colegios (2),0.769,0.0,0.0,0.0,1,,0
+240304,TUMBES,ZARUMILLA,PAPAYAL,1,0,2011,2011,0,0,0,0,0,0,0,1,Saneamiento (1),Pobladores (1),0.0,0.0,0.0,0.0,1,,0
+250101,UCAYALI,CORONEL PORTILLO,CALLERIA,157,28,1980,2024,11,0,2,19,28,77,25,6,Rechazo de normas (21); Rechazo de mandatos (20); Aumentos salariales (13),Pobladores (50); Docentes colegios (18); Frentes de defensa (14),0.197,0.025,0.0,0.064,10,Petroperú-Oleoducto (1); Lote 192 (1),1
+250102,UCAYALI,CORONEL PORTILLO,CAMPOVERDE,4,4,2021,2022,2,0,0,2,0,1,1,0,Adjudicación de tierras (1); Defensa de territorio (1); Reducción de precios (1),Comunidades campesinas (2); Agricultores (1); Transportistas de carga (1),1.0,0.5,0.0,0.5,2,,0
+250103,UCAYALI,CORONEL PORTILLO,IPARIA,2,0,2009,2009,0,0,0,0,0,2,0,0,Rechazo de normas (2),Comunidades nativas (2),1.0,0.0,0.0,0.0,0,,0
+250104,UCAYALI,CORONEL PORTILLO,MASISEA,6,0,2008,2009,0,0,0,0,0,6,0,0,Rechazo de normas (6),Comunidades nativas (5); Pobladores (1),1.0,0.0,0.0,0.167,0,,0
+250105,UCAYALI,CORONEL PORTILLO,YARINACOCHA,2,1,2009,2016,0,0,0,0,0,2,0,0,Rechazo de normas (1); Destitución de funcionario (1),Comunidades nativas (1); Estudiantes universidades (1),0.0,0.0,0.0,0.0,0,,0
+250201,UCAYALI,ATALAYA,RAYMONDI,19,4,2001,2023,3,0,3,1,0,13,0,2,Rechazo de normas (9); Ejecución de funciones (3); Protección a la naturaleza (2),Comunidades nativas (12); Pobladores (5); Madereros (1),0.316,0.0,0.0,0.0,3,Camisea (3),1
+250202,UCAYALI,ATALAYA,SEPAHUA,2,0,1982,1982,0,0,0,0,0,0,2,0,Aumento de presupuesto (2),Reos (2),0.0,0.0,0.0,0.0,0,,0
+250301,UCAYALI,PADRE ABAD,PADRE ABAD,40,1,1981,2022,1,0,0,0,1,38,1,0,Rechazo al programa de erradicación de la hoja de coca (27); Cumplimiento de pactos (4); Rechazo de normas (3),Cocaleros (35); Pobladores (2); Agricultores (1),0.65,0.05,0.075,0.2,0,,1
+250302,UCAYALI,PADRE ABAD,IRAZOLA,1,1,2022,2022,0,0,0,0,0,1,0,0,Destitución de autoridad electa (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+250303,UCAYALI,PADRE ABAD,CURIMANA,4,3,2014,2016,0,0,0,0,0,4,0,0,Destitución de funcionario (2); Destitución de autoridad electa (1); Rechazo a resultados electorales (1),Pobladores (4),0.25,0.25,0.25,0.25,0,,0
+250304,UCAYALI,PADRE ABAD,NESHUYA,1,0,2010,2010,0,0,0,0,0,1,0,0,Rechazo a resultados electorales (1),Pobladores (1),1.0,0.0,0.0,0.0,0,,0
+250401,UCAYALI,PURUS,PURUS,2,0,2001,2014,0,0,0,1,0,1,0,0,Definir límites (1); Rechazo a resultados electorales (1),Comunidades nativas (1); Pobladores (1),0.0,0.0,0.5,0.0,0,,1
