@@ -134,6 +134,27 @@ def publicar(ultimo):
     return arbol
 
 
+def salud(con):
+    """Una línea con las fuentes que no están entrando: feeds que fallaron en su último intento y radios del catálogo
+    sin ningún fragmento en 48 horas.
+    ponytail: fuente_fallo no viaja en la rama vivo; tras recargar la base se rehace en la primera vuelta completa."""
+    import csv
+    from tremor.prensa.recolectar import FEEDS, RPP_REGION
+    from tremor.radio import CATALOGO
+    try:
+        caidos = [m for m, in con.execute("SELECT medio FROM fuente_fallo ORDER BY medio")]
+    except Exception:  # sqlite3.OperationalError: todavía no hubo ninguna recolección
+        caidos = []
+    with open(CATALOGO, encoding="utf-8") as f:
+        radios = {r["medio"] for r in csv.DictReader(f) if "youtube.com" not in r["stream"]}
+    con_audio = {m for m, in con.execute("SELECT DISTINCT medio FROM nota WHERE consulta = 'radio' AND descargado >= datetime('now', '-2 days')")}
+    mudas = sorted(radios - con_audio)
+    total = len(FEEDS) + len(RPP_REGION)
+    lista = lambda xs: ", ".join(xs[:8]) + (f" y {len(xs) - 8} más" if len(xs) > 8 else "")
+    return (f"Fuentes: {total - len(caidos)} de {total} medios escritos responden" + (f" (sin respuesta: {lista(caidos)})" if caidos else "")
+            + f"; {len(radios) - len(mudas)} de {len(radios)} radios con audio en 48 horas" + (f" (mudas: {lista(mudas)})" if mudas else "") + ".")
+
+
 def latido(con, enviar, ahora_=None):
     """Una vez al día, desde las 8:00 de Lima: un mensaje de que sigue vigilando, con lo hecho en 24 horas. Si un día no
     llega, el vigilante está caído. Queda en aviso_enviado (clave latido:fecha) para que el relevo no lo repita."""
@@ -150,7 +171,7 @@ def latido(con, enviar, ahora_=None):
         AND NOT EXISTS (SELECT 1 FROM codificacion c WHERE c.nota_id = n.id AND c.version = ?)""", ayer, VERSION)
     avisos = uno("SELECT count(*) FROM aviso_enviado WHERE enviado >= ? AND clave NOT LIKE 'latido:%'", ayer)
     texto = (f"🟢 *Tremor sigue vigilando* · {CLIENTE}\n\nÚltimas 24 horas: {notas} notas recogidas, {cola} en cola de lectura, "
-             f"{avisos} avisos enviados.")
+             f"{avisos} avisos enviados.\n\n{salud(con)}")
     if enviar(texto):
         con.execute("INSERT OR IGNORE INTO aviso_enviado VALUES (?, ?, ?)", (clave, CLIENTE, datetime.now().isoformat(timespec="seconds")))
         con.commit()
