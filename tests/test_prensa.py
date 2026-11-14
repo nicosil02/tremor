@@ -540,6 +540,25 @@ def test_fecha_del_evento_a_mas_de_seis_meses_es_del_anio_pasado():
     assert fecha_creible(None, "2026-11-11") is None
 
 
+def test_vigia_textos_de_la_pc(tmp_path):
+    """Lo que la PC publica (solo las notas que cambió, las demás tablas vacías) entra con traer()."""
+    import sqlite3
+    from tremor import vigia
+    esquema = """CREATE TABLE nota (id TEXT PRIMARY KEY, descargado TEXT, resumen TEXT, enlace TEXT, publicado TEXT, filtro TEXT);
+        CREATE TABLE codificacion (nota_id TEXT, version TEXT, PRIMARY KEY (nota_id, version));
+        CREATE TABLE llm_cache (clave TEXT PRIMARY KEY, creado TEXT);
+        CREATE TABLE aviso_enviado (clave TEXT, empresa TEXT, enviado TEXT, PRIMARY KEY (clave, empresa));
+        INSERT INTO nota VALUES ('a', 'x', NULL, 'g', '2026-11-13', NULL), ('b', 'x', NULL, 'g', '2026-11-13', NULL);
+        INSERT INTO codificacion VALUES ('a', 'v'), ('b', 'v');"""
+    pc, vig = sqlite3.connect(tmp_path / "pc.db"), sqlite3.connect(tmp_path / "vig.db")
+    pc.executescript(esquema); vig.executescript(esquema)
+    pc.execute("UPDATE nota SET resumen = 'texto', enlace = 'http://medio' WHERE id = 'a'")
+    vigia.guardar(pc, tmp_path / "t.db", {**dict.fromkeys(vigia.ESTADO, "0"), "nota": "id IN ('a')"})
+    assert vigia.traer(vig, tmp_path / "t.db") == 1
+    assert vig.execute("SELECT id, resumen FROM nota ORDER BY id").fetchall() == [("a", "texto"), ("b", None)]
+    assert vig.execute("SELECT nota_id FROM codificacion").fetchall() == [("b",)]  # la ampliada se vuelve a leer
+
+
 def test_vigia_guardar_y_traer(tmp_path):
     """La memoria del vigilante pasa a otra base sin duplicar ni pisar lo que ya estaba."""
     import sqlite3
