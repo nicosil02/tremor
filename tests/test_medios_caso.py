@@ -51,3 +51,13 @@ def test_mencion_de_radio_alrededor_del_proyecto():
     r = alrededor(t, ALIAS["Las Bambas (MMG)"], ancho=40)
     assert "Las Bambas contamina" in r and r.startswith("…") and r.endswith("…") and len(r) < 140
     assert alrededor("sin la empresa", ALIAS["Las Bambas (MMG)"]) is None
+
+
+def test_nota_vieja_sin_fecha_por_la_foto():
+    """Sin fecha declarada: la carpeta de la foto principal, solo si el texto no nombra un año posterior."""
+    from tremor.prensa.ampliar import fecha_por_foto
+    foto = '<meta property="og:image" content="https://tvperu.gob.pe/files/noticias/imagen/2024-04-11/a.jpg">'
+    assert fecha_por_foto(foto, "piden el aporte para los años 2022 y 2023") == "2024-04-11"
+    assert fecha_por_foto(foto, "el paro de este 13 de noviembre de 2026") is None  # foto de archivo en una nota de hoy
+    assert fecha_por_foto(foto, "comuneros bloquean la vía") is None                # sin años no hay segunda señal
+    assert fecha_por_foto("<p>sin foto</p>", "aportes de 2023") is None

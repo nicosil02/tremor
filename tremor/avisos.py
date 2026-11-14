@@ -70,7 +70,8 @@ def eventos(web, z, alias, desde):
             continue
         transporte = "ransportista" in actor and "urbano" not in actor.lower() and not e.get("urbano")
         sin_bloqueo = re.search(SECTOR, actor, re.I) and not re.search(r"bloque|toma", acc, re.I)
-        nombra = re.search(alias, f"{e.get('empresa') or ''} {e.get('operacion') or ''}", re.I)
+        # también por el titular: el LLM dejó sin empresa "bloquean el corredor minero en protesta contra Las Bambas"
+        nombra = re.search(alias, f"{e.get('empresa') or ''} {e.get('operacion') or ''} {e.get('titular') or ''}", re.I)
         en_zona = ub in z and not (sin_bloqueo and z[ub].startswith("en su ruta")) and (
             e.get("tipo_conflicto") not in (None, "otro") or re.search(LUCHA.replace("|marcha", ""), acc, re.I))
         if nombra or (ub == "00" and transporte) or en_zona:
