@@ -29,6 +29,7 @@ def test_no_castellano_detecta_voz_sin_texto():
 
 def test_lengua_por_provincia():
     assert lengua({"provincia": "El Collao", "departamento": "Puno"}) == "ayr"
+    assert lengua({"provincia": "Huancane", "departamento": "Puno"}) == "ayr"
     assert lengua({"provincia": "Espinar", "departamento": "Cusco"}) == "quz"
     assert lengua({"provincia": "Huanta", "departamento": "Ayacucho"}) == "quy"
 

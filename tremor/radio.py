@@ -37,7 +37,7 @@ TROZO = 1200  # caracteres por nota: un noticiero trae muchas noticias y el codi
 VENTANA = 60  # segundos: unidad de la detección de lengua
 MAX_INDIGENA = 15 * 60  # segundos de quechua/aimara por radio y franja: tope de CPU (MMS ~3x tiempo real en 4 hilos)
 # ponytail: la variante sale de la provincia de la radio, no del audio; mms-lid-512 (quz/quy/ayr) si mezcla mucho
-AIMARA = {"CHUCUITO", "EL COLLAO", "YUNGUYO", "CANDARAVE", "TARATA"}
+AIMARA = {"CHUCUITO", "EL COLLAO", "YUNGUYO", "HUANCANE", "CANDARAVE", "TARATA"}
 QUECHUA_SUR = {"CUSCO", "PUNO", "AREQUIPA", "MOQUEGUA", "TACNA"}  # quechua Cusco-Collao (quz); el resto, chanka (quy)
 
 
