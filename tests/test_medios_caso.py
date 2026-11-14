@@ -67,3 +67,14 @@ def test_motivo_de_pagina_sin_texto():
     from tremor.prensa.ampliar import sin_texto
     assert sin_texto("https://www.diario.pe/nota/1", 403, "<title>Just a moment...</title>") == "diario.pe: 403 con verificación anti-robots"
     assert sin_texto("https://tvperu.gob.pe/n/2", 200, "<html></html>") == "tvperu.gob.pe: 200, 13 caracteres"
+
+
+def test_la_misma_nota_en_varios_medios_es_una_historia():
+    from tremor.animo import historias
+    cable = "Comuneros de Challhuahuacho anuncian paro de 48 horas contra Las Bambas por incumplimiento de acuerdos del convenio marco"
+    h = historias([("a", "P", "2026-11-10", cable), ("b", "P", "2026-11-11", cable + " - Diario Sur"),
+                   ("c", "P", "2026-11-11", "Las Bambas entrega dos salones multiuso a más de 150 pobladores de la comunidad de Chila"),
+                   ("d", "P", "2026-11-20", cable), ("e", "Q", "2026-11-10", cable), ("f", "P", "2026-11-11", "Paro en Las Bambas")])
+    assert h[("b", "P")] == "a"                       # la copia apunta a la primera
+    assert h[("c", "P")] == "c" and h[("f", "P")] == "f"  # otra nota, y un titular corto no se compara
+    assert h[("d", "P")] == "d" and h[("e", "Q")] == "e"  # diez días después u otro proyecto: historia aparte

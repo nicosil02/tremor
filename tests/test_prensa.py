@@ -240,10 +240,13 @@ def test_avisos_de_animo():
     from tremor.animo import avisos
     r = pd.DataFrame({"proyecto": ["Tía María"] * 5 + ["Conga"],
                       "fecha": ["2026-11-01"] * 3 + ["2026-11-03", "2026-11-05", "2026-11-02"],
-                      "tono": [-1, -1, -1, -1, -1, 1]})
+                      "tono": [-1, -1, -1, -1, -1, 1], "historia": list("abcdef"), "medio": ["m1", "m2", "m3", "m1", "m1", "m1"]})
     a = avisos(r, r.iloc[:0])
     assert "pico negativo el 2026-11-01" in a["Tía María"] and "racha" in a["Tía María"]
     assert "Conga" not in a
+    # el mismo cable copiado por tres medios es una historia, y tres notas de un solo medio no bastan: no hay pico
+    assert "pico" not in avisos(r.assign(historia="a"), r.iloc[:0])["Tía María"]
+    assert "pico" not in avisos(r.assign(medio="m1"), r.iloc[:0])["Tía María"]
 
 
 def test_historial_empresa():
