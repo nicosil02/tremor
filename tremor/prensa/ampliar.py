@@ -69,6 +69,19 @@ def fecha_pagina(pagina: str) -> str | None:
     return m[1] if m else None
 
 
+def fecha_por_foto(pagina: str, texto: str) -> str | None:
+    """Para la página que no declara fecha: la de la carpeta de su foto principal (og:image, ".../2024-04-11/x.jpg"),
+    solo si además el texto no nombra ningún año posterior ("los aportes de 2022 y 2023"). TVPerú volvió a publicar el
+    13 nov 2026 un bloqueo del corredor minero de abril de 2024 y Google News lo dio como de hoy.
+    ponytail: una nota de hoy con foto de archivo que solo nombre años pasados se tomaría por vieja; si pasa, pedir
+    también que el medio la liste con otra fecha."""
+    m = re.search(r'og:image"?\s+content="[^"]*?/(20\d{2})[-/](\d{2})[-/](\d{2})/', pagina)
+    anios = [int(a) for a in re.findall(r"\b(20[0-3]\d)\b", texto or "")]
+    if not m or not anios or max(anios) > int(m[1]):
+        return None
+    return f"{m[1]}-{m[2]}-{m[3]}"
+
+
 def _palabras(s):
     return set(re.findall(r"\w{4,}", html.unescape(s).lower()))
 
@@ -92,7 +105,7 @@ def por_bing(titular: str) -> str | None:
     return elegir_bing(r.text, titular) if r.ok else None
 
 
-def ampliar(con, version: str, limite=200, pausa=1.0) -> tuple[int, int]:
+def ampliar(con, version: str, limite=200, pausa=1.0, primero=None) -> tuple[int, int]:
     """Protestas sin resumen que están sin lugar preciso o marcadas como anunciadas → lead del medio. Primero los
     enlaces directos al medio (sin cupo), después los de Google News (con pausa)."""
     # también las anunciadas sin fecha con resumen corto: la fecha suele estar en el cuerpo ("del 16 al 18 de noviembre")
@@ -101,7 +114,10 @@ def ampliar(con, version: str, limite=200, pausa=1.0) -> tuple[int, int]:
         FROM nota n JOIN codificacion c ON c.nota_id = n.id AND c.version = ?
         WHERE c.es_protesta = 1 AND n.publicado >= date('now', '-30 day')
           AND (coalesce(n.resumen, '') = '' OR (c.estado = 'anunciada' AND c.fecha_evento IS NULL AND length(n.resumen) < 400))
-        ORDER BY n.enlace LIKE '%news.google.com%' LIMIT ?""", (version, limite)).fetchall()
+        ORDER BY n.publicado DESC LIMIT 500""", (version,)).fetchall()
+    # primero: función titular → ¿es del cliente que recibe avisos? Sus notas van antes; luego los enlaces directos
+    # al medio (sin cupo) y dentro lo más nuevo
+    filas = sorted(filas, key=lambda f: (not (primero and primero(f[2])), "news.google.com" in f[1]))[:limite]
     if not filas:
         return 0, 0
     hechas, bing = 0, False
@@ -119,7 +135,7 @@ def ampliar(con, version: str, limite=200, pausa=1.0) -> tuple[int, int]:
             print(f"  {e}; sigo por Bing News")  # sin saltarse el captcha: se busca el titular en otro buscador
             bing = True
             continue
-        f = fecha_pagina(pagina)
+        f = fecha_pagina(pagina) or fecha_por_foto(pagina, texto)
         if f and publicado and f < publicado and (date.fromisoformat(publicado) - date.fromisoformat(f)).days > 3:
             # nota vieja que Google reindexó con fecha de hoy: no es una protesta de ahora, sale de la cola y de los eventos
             con.execute("UPDATE nota SET publicado = ?, filtro = 'vieja' WHERE id = ?", (f, id_))

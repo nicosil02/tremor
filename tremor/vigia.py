@@ -127,6 +127,9 @@ def vigilar(minutos, cada=120, reenviar=False):
             print(f"vuelta {n} {datetime.now(timezone.utc):%H:%M:%S}", flush=True)
             paso("tremor.sutran")
             paso("tremor.prensa", "recolectar", *([] if n % 8 == 0 else ["--rapido"]))  # Google News entero cada 8 vueltas
+            # el texto del medio para las protestas que llegaron solo con titular (sin él no se avisa ni se sabe si la
+            # nota es vieja); lo que se amplía se vuelve a leer en esta misma vuelta
+            paso("tremor.prensa", "ampliar", "--limite", "6")
             # ponytail: 3 lotes por vuelta (~45 notas). Con 40, una tanda de 500 notas nuevas dejó la vuelta en 8 min y
             # los avisos esperando detrás; si el atraso crece, leer primero las notas de la zona del cliente
             paso("tremor.prensa", "codificar", "--max-solicitudes", "3")

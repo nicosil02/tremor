@@ -32,7 +32,7 @@ def main(argv=None):
     h = sub.add_parser("historia"); h.add_argument("--desde", default="2018-01"); h.add_argument("--hasta")
     h.add_argument("--medio", action="append", help="uno o varios; sin él, todos (ver historia.MEDIOS)")
     sub.add_parser("historia_resumen")
-    sub.add_parser("ampliar")
+    am = sub.add_parser("ampliar"); am.add_argument("--limite", type=int, default=200)
     sub.add_parser("agrupar")
     v = sub.add_parser("validar"); v.add_argument("--mes", required=True)
     sub.add_parser("exportar")
@@ -54,7 +54,10 @@ def main(argv=None):
             print(*fila, sep="	")
     if a.cmd in ("ampliar", "todo"):
         from tremor.prensa.ampliar import ampliar
-        vistas, hechas = ampliar(con, cod.VERSION)
+        from tremor.lugares import norm
+        from tremor.prensa.historia import _del_que_recibe_avisos
+        suyo = _del_que_recibe_avisos(con)
+        vistas, hechas = ampliar(con, cod.VERSION, getattr(a, "limite", 200), primero=lambda t: suyo(norm(t)))
         print(f"Ampliadas {hechas} de {vistas} protestas sin lugar (lead del medio).")
     if a.cmd in ("codificar", "todo"):
         s, n, falta = cod.codificar(con, getattr(a, "max_solicitudes", 200))
