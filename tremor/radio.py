@@ -36,7 +36,7 @@ SR = 16_000
 TROZO = 1200  # caracteres por nota: un noticiero trae muchas noticias y el codificador espera una por nota
 VENTANA = 60  # segundos: unidad de la detección de lengua
 MAX_INDIGENA = 15 * 60  # segundos de quechua/aimara por radio y franja: tope de CPU (MMS ~3x tiempo real en 4 hilos)
-# ponytail: la variante sale de la provincia de la radio, no del audio; mms-lid-512 (quz/quy/ayr) si mezcla mucho
+# La lengua se identifica del audio (`identificar`, mms-lid-512); la provincia es solo el respaldo si eso falla
 AIMARA = {"CHUCUITO", "EL COLLAO", "YUNGUYO", "CANDARAVE", "TARATA"}
 QUECHUA_SUR = {"CUSCO", "PUNO", "AREQUIPA", "MOQUEGUA", "TACNA"}  # quechua Cusco-Collao (quz); el resto, chanka (quy)
 
@@ -98,7 +98,8 @@ def trozos(texto, n=TROZO):
 
 
 def lengua(radio) -> str:
-    """Adaptador MMS de la radio: aimara, quechua del sur (Cusco-Collao) o chanka."""
+    """Adaptador MMS por la provincia de la radio: aimara, quechua del sur (Cusco-Collao) o chanka. Es el respaldo
+    de `identificar`: una provincia no habla una sola lengua (en Huancané y Puno conviven aimara y quechua)."""
     if norm(radio["provincia"]).upper() in AIMARA:
         return "ayr"
     return "quz" if norm(radio["departamento"]).upper() in QUECHUA_SUR else "quy"
@@ -122,7 +123,34 @@ def no_castellano(segs, voz, duracion, ventana=VENTANA, min_voz=20, cps=4):
     return tramos
 
 
-_MMS, _NLLB = {}, {}
+_MMS, _NLLB, _LID = {}, {}, {}
+
+
+def elegir(puntajes, respaldo):
+    """De {lengua: puntaje} del identificador, la más probable entre las tres que MMS sabe transcribir aquí."""
+    tres = {k: v for k, v in puntajes.items() if k in NOMBRE}
+    return max(tres, key=tres.get) if tres else respaldo
+
+
+def identificar(audio, respaldo):
+    """Lengua de un tramo que no es castellano, oída en sus primeros 30 s con MMS-LID-512 (int8). Si el modelo no
+    carga o falla, la de la provincia.
+    ponytail: una sola escucha por radio y franja; si una radio alterna quechua y aimara, identificar cada tramo."""
+    try:
+        import torch
+        from transformers import AutoFeatureExtractor, Wav2Vec2ForSequenceClassification
+        if not _LID:
+            M = "facebook/mms-lid-512"
+            m = Wav2Vec2ForSequenceClassification.from_pretrained(M)
+            _LID["p"], _LID["id"] = AutoFeatureExtractor.from_pretrained(M), m.config.id2label
+            _LID["q"] = torch.quantization.quantize_dynamic(m, {torch.nn.Linear}, dtype=torch.qint8)
+        with torch.inference_mode():
+            x = _LID["p"](audio[:SR * 30], sampling_rate=SR, return_tensors="pt")
+            logits = _LID["q"](**x).logits[0]
+        return elegir({_LID["id"][i]: float(v) for i, v in enumerate(logits)}, respaldo)
+    except Exception as e:  # sin memoria, sin red para bajar el modelo: se sigue con la provincia
+        print(f"  [aviso] lengua no identificada ({e.__class__.__name__}): se usa la de la provincia", flush=True)
+        return respaldo
 
 
 def mms(audio, lang):
@@ -163,7 +191,8 @@ def traducir(texto, lang):
 
 
 def transcribir(modelo, ruta, lang=None):
-    """Texto en castellano y, con `lang`, el de los tramos en quechua/aimara (MMS)."""
+    """Texto en castellano y, con `lang` (la lengua de respaldo), el de los tramos en quechua/aimara (MMS) y la
+    lengua que se identificó en ellos."""
     import numpy as np
     with wave.open(ruta) as w:
         audio = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768
@@ -175,14 +204,20 @@ def transcribir(modelo, ruta, lang=None):
             from faster_whisper.vad import get_speech_timestamps
             voz = [(x["start"] / SR, x["end"] / SR) for x in get_speech_timestamps(audio)]
             resto, partes = MAX_INDIGENA, []
-            for a, b in no_castellano(segs, voz, len(audio) / SR):
+            tramos = no_castellano(segs, voz, len(audio) / SR)
+            if tramos:
+                a, b = max(tramos, key=lambda t: t[1] - t[0])  # el tramo más largo es el más claro
+                oida = identificar(audio[int(a * SR):int(b * SR)], lang)
+                print(f"    lengua: {NOMBRE[oida]} ({oida}), por provincia {lang}", flush=True)
+                lang = oida
+            for a, b in tramos:
                 b = min(b, a + resto); resto -= b - a
                 if b > a:
                     partes.append(mms(audio[int(a * SR):int(b * SR)], lang))
             indigena = " ".join(partes)
         except ImportError:  # sin transformers/torch: solo castellano
             print("  [aviso] sin transformers: no se escucha quechua ni aimara", flush=True)
-    return texto, indigena
+    return texto, indigena, lang
 
 
 # Filtro de la radio, más estricto que el de la prensa: un noticiero mezcla música, avisos y prédicas, y cada
@@ -263,7 +298,7 @@ def escuchar(minutos, grupo=None, grupos=1, salida=None, indigena=False):
         for radio, ruta, bien in zip(lista, rutas, ok):
             lang = lengua(radio) if indigena else None
             t0 = time.time()
-            nuevas = notas(radio, inicio, *transcribir(modelo, ruta, lang), lang) if bien else []
+            nuevas = notas(radio, inicio, *transcribir(modelo, ruta, lang)) if bien else []
             seg += time.time() - t0
             filas += nuevas
             pasan = sum(f["filtro"] is None for f in nuevas)
