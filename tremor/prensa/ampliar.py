@@ -66,6 +66,13 @@ def lead(pagina: str, n=1500) -> str:
     return texto[:n]
 
 
+def sin_texto(url: str, estado: int, pagina: str) -> str:
+    """Motivo legible de una página sin texto: dominio, código HTTP y si es una página de verificación anti-robots."""
+    dominio = re.sub(r"^www\.", "", re.sub(r"^https?://([^/]+).*", r"\1", url))
+    verifica = re.search(r"cf-chl|challenge-platform|Just a moment|cf-mitigated|captcha|Attention Required", pagina, re.I)
+    return f"{dominio}: {estado}" + (" con verificación anti-robots" if verifica else f", {len(pagina)} caracteres")
+
+
 def fecha_pagina(pagina: str) -> str | None:
     """Fecha de publicación que declara el medio (meta article:published_time o datePublished de JSON-LD), AAAA-MM-DD.
     Google News a veces reindexa notas viejas con fecha de hoy: un paro de agosto aparecía como del 9 de noviembre."""
@@ -146,8 +153,11 @@ def ampliar(con, version: str, limite=200, pausa=1.0, primero=None) -> tuple[int
             if not real:
                 MOTIVOS["sin enlace al medio"] += 1
                 continue
-            pagina = requests.get(real, headers=UA, timeout=30).text
+            r = requests.get(real, headers=UA, timeout=30)
+            pagina = r.text
             texto = lead(pagina)
+            if not texto:  # qué respondió el medio: sin esto no se sabe si bloquea, pide verificación o cambió su página
+                MOTIVOS[sin_texto(real, r.status_code, pagina)] += 1
         except requests.RequestException as e:
             MOTIVOS[f"red: {type(e).__name__}"] += 1
             continue
@@ -158,8 +168,6 @@ def ampliar(con, version: str, limite=200, pausa=1.0, primero=None) -> tuple[int
             con.execute("DELETE FROM codificacion WHERE nota_id = ?", (id_,))
             con.commit()
             continue
-        if not texto:
-            MOTIVOS["página sin texto"] += 1
         if texto and len(texto) > len(viejo.get(id_) or ""):
             con.execute("UPDATE nota SET resumen = ?, enlace = ? WHERE id = ?", (texto, real, id_))
             if sin_lugar:  # solo se recodifica lo que no tenía lugar; lo demás guarda el texto para leer adhesiones
