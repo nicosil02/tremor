@@ -82,8 +82,28 @@ FEEDS = {
     "El Sol del Cusco": ("https://diarioelsolcusco.pe/feed/", "Cusco"),
     "Diario del Cusco": ("https://diariodelcusco.pe/feed/", "Cusco"),
     "Derechos Humanos Sin Fronteras": ("https://derechosinfronteras.pe/feed/", "Cusco"),  # Chumbivilcas y Espinar
-    "RPP Cusco": ("https://rpp.pe/feed/peru/cusco", "Cusco"),
-    "RPP Apurímac": ("https://rpp.pe/feed/peru/apurimac", "Apurímac"),
+    # Pregón (Abancay) es Joomla: no anuncia feed, pero cada sección lo da con ?format=feed, con el texto entero.
+    # Cotabambas y Grau son la zona de Las Bambas; cada feed trae solo 10 notas y por eso van aparte
+    "Pregón": ("https://pregon.com.pe/index.php/regionales?format=feed&type=rss", "Apurímac"),
+    "Pregón Abancay": ("https://pregon.com.pe/index.php/locales?format=feed&type=rss", "Apurímac"),
+    "Pregón Cotabambas": ("https://pregon.com.pe/index.php/regionales/cotabambas?format=feed&type=rss", "Apurímac"),
+    "Pregón Grau": ("https://pregon.com.pe/index.php/regionales/grau?format=feed&type=rss", "Apurímac"),
+    "Pregón Andahuaylas": ("https://pregon.com.pe/index.php/regionales/andahuaylas?format=feed&type=rss", "Apurímac"),
+    # Estaban solo en el archivo histórico (historia.MEDIOS), que no corre a diario: no se leían en vivo
+    "Radio Onda Azul": ("https://radioondaazul.com/feed/", "Puno"),
+    "El Tiempo": ("https://eltiempo.pe/feed/", "Piura"),
+    "Cutivalú": ("https://cutivalu.pe/feed/", "Piura"),
+    "Diario Voces": ("https://diariovoces.com.pe/feed/", "San Martín"),
+    "Cusco en Portada": ("https://cuscoenportada.com/feed/", "Cusco"),
+    # Regiones que no tenían medio escrito directo (14 nov 2026)
+    "N60": ("https://n60.pe/feed/", "La Libertad"),
+    "Macronorte": ("https://macronorte.pe/feed/", None),  # Trujillo, cubre todo el norte
+    "La Hora": ("https://lahora.pe/feed/", "Piura"),
+    "Walac": ("https://walac.pe/feed/", "Piura"),
+    "Gaceta Ucayalina": ("https://gacetaucayalina.com/feed/", "Ucayali"),
+    "Diario La Región": ("https://diariolaregion.com/feed/", "Loreto"),
+    "Pro y Contra": ("https://proycontra.com.pe/feed/", "Loreto"),
+    "Jornada": ("https://jornada.com.pe/feed/", "Ayacucho"),
     "ProActivo Cotabambas": ("https://proactivo.com.pe/tag/cotabambas/feed/", "Apurímac"),
     "ProActivo": ("https://proactivo.com.pe/feed/", None),
     "CooperAcción": ("https://www.cooperaccion.org.pe/feed/", None),
@@ -100,6 +120,8 @@ GOBPE_URL = "https://www.gob.pe/busquedas?contenido[]=noticias&sort_by=recent&in
 DEPARTAMENTOS = ["Amazonas", "Áncash", "Apurímac", "Arequipa", "Ayacucho", "Cajamarca", "Callao", "Cusco",
                  "Huancavelica", "Huánuco", "Ica", "Junín", "La Libertad", "Lambayeque", "Lima", "Loreto",
                  "Madre de Dios", "Moquegua", "Pasco", "Piura", "Puno", "San Martín", "Tacna", "Tumbes", "Ucayali"]
+# RPP por región: 25 pedidos al mismo servidor, así que solo en la vuelta completa (cada ~16 min) y no en cada una
+RPP_REGION = {f"RPP {d}": (f"https://rpp.pe/feed/peru/{norm(d).replace(' ', '-')}", d) for d in DEPARTAMENTOS}
 GNEWS = "https://news.google.com/rss/search?q={q}&hl=es-419&gl=PE&ceid=PE:es-419"
 PALABRAS = "(paro OR bloqueo OR huelga OR marcha OR protesta OR toma OR plantón OR enfrentamiento OR movilización)"
 # Búsquedas temáticas en todo el país: sin "Perú" Google mezcla Argentina, México y España.
@@ -240,9 +262,10 @@ def recolectar(con, desde: date | None = None, hasta: date | None = None, pausa=
                 return r
             except requests.RequestException as e:
                 return e
-        with ThreadPoolExecutor(16) as pool:  # cada medio es otro servidor: en fila, uno lento frena a los 59
-            bajados = list(pool.map(bajar, [url for url, _ in FEEDS.values()]))
-        for (medio, (url, dep)), r in zip(FEEDS.items(), bajados):
+        feeds = {**FEEDS, **(RPP_REGION if google else {})}
+        with ThreadPoolExecutor(16) as pool:  # cada medio es otro servidor: en fila, uno lento frena a los demás
+            bajados = list(pool.map(bajar, [url for url, _ in feeds.values()]))
+        for (medio, (url, dep)), r in zip(feeds.items(), bajados):
             if isinstance(r, Exception):
                 print(f"  {medio}: {r.__class__.__name__}")
                 continue
