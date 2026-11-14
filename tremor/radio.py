@@ -26,7 +26,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 from tremor.db import RAIZ, ahora, conectar
-from tremor.lugares import norm
+from tremor.lugares import norm, originaria
 import re
 
 from tremor.prensa.recolectar import LIMA, NO_ES, id_nota
@@ -106,14 +106,15 @@ def lengua(radio) -> str:
 
 def no_castellano(segs, voz, duracion, ventana=VENTANA, min_voz=20, cps=4):
     """Tramos (ini, fin) en segundos con voz pero casi sin texto de Whisper en castellano. Ante el quechua Whisper
-    calla (3 frases en 5 min de Ñuqanchik); el castellano hablado da ~14 caracteres por segundo de voz.
+    calla (3 frases en 5 min de Ñuqanchik); el castellano hablado da ~14 caracteres por segundo de voz. Y cuando no
+    calla, lo escribe de oído (`originaria`): ese tramo también cuenta.
     segs: [(ini, fin, texto)] de Whisper; voz: [(ini, fin)] del VAD."""
     tramos = []
     for a in range(0, int(duracion), ventana):
         b = min(a + ventana, duracion)
         v = sum(max(0, min(f, b) - max(i, a)) for i, f in voz)
         c = sum(len(t) for i, f, t in segs if a <= i < b)
-        if v >= min_voz and c / v < cps:
+        if v >= min_voz and (c / v < cps or originaria(" ".join(t for i, f, t in segs if a <= i < b))):
             if tramos and tramos[-1][1] == a:
                 tramos[-1] = (tramos[-1][0], b)
             else:
@@ -168,7 +169,7 @@ def transcribir(modelo, ruta, lang=None):
         audio = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768
     segmentos, _ = modelo.transcribe(audio, language="es", vad_filter=True, beam_size=1)  # sin av: choque de versiones
     segs = [(s.start, s.end, s.text.strip()) for s in segmentos]
-    texto, indigena = " ".join(t for _, _, t in segs), ""
+    texto, indigena = " ".join(t for _, _, t in segs if not originaria(t)), ""  # el quechua de oído no es texto
     if lang:
         try:
             from faster_whisper.vad import get_speech_timestamps

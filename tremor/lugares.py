@@ -14,6 +14,15 @@ ALIAS = {  # nombres comunes en prensa que no son el nombre oficial
 }
 
 
+def originaria(texto, minimo=0.15, palabras=8):
+    """¿El texto parece quechua o aimara escrito de oído? Whisper, forzado al castellano, a veces no calla ante el
+    quechua: lo escribe como suena ("tukawase, anchis, kunataka"). Se nota en la k y la w, casi ausentes del castellano.
+    Medido el 14 nov en 239 menciones: el quechua da 22% o más de palabras con k o w y el castellano 7% o menos.
+    ponytail: también da positivo el inglés de las canciones, que tampoco es una mención; un detector de lengua si falla."""
+    p = re.findall(r"[a-záéíóúñ]+", texto.lower())
+    return len(p) >= palabras and sum("k" in w or "w" in w for w in p) / len(p) >= minimo
+
+
 def norm(s) -> str:
     s = unicodedata.normalize("NFKD", str(s or "")).encode("ascii", "ignore").decode().lower()
     s = re.sub(r"^(?:region|departamento|provincia|distrito|dpto\.?|prov\.?)\s+(?:de\s+)?", "", s.strip())

@@ -10,6 +10,15 @@ QUECHUA = ("ñawpaqninpi sayariykunku paykunan huk ordenanzata mana uyachkankuch
            "purinankupaq permesota mana hunchu kinsa pachak moto taxistakunan kanku jerente municipalñataqmi")
 
 
+def test_quechua_escrito_de_oido():
+    """Whisper escribió el quechua como suena: el tramo va a MMS y la mención no cuenta."""
+    from tremor.animo import menciones
+    q = "tukawase anchis hina waikei chei kapasitasyon kunataka juwan anchis puny aliin kapasitaska kakaruapahkuna las bambas mineria wiiñari nanchispah"
+    es = "los comuneros de la zona dicen que en las bambas no se cumple el acuerdo con la comunidad y que van a reclamar"
+    assert no_castellano([(0, 50, q)], [(0, 50)], 60) == [(0, 60)] and no_castellano([(0, 50, es * 8)], [(0, 50)], 60) == []
+    assert menciones(q) == [] and [n for n, _ in menciones(es)] == ["Las Bambas (MMG)"]
+
+
 def test_no_castellano_detecta_voz_sin_texto():
     voz = [(0, 180)]  # tres minutos de habla
     segs = [(i, i + 5, "x" * 70) for i in range(0, 60, 5)]  # castellano: 14 caracteres por segundo
