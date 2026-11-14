@@ -292,12 +292,25 @@ def test_lugar_comun_necesita_contexto(monkeypatch):
     assert all(f(norm(t)) for t in si) and not any(f(norm(t)) for t in no)
 
 
+def test_salud_de_fuentes():
+    """El latido nombra los feeds que fallaron y las radios del catálogo sin audio en dos días."""
+    import sqlite3
+    from tremor import vigia
+    con = sqlite3.connect(":memory:")
+    con.executescript("""CREATE TABLE nota (medio TEXT, consulta TEXT, descargado TEXT);
+        CREATE TABLE fuente_fallo (medio TEXT PRIMARY KEY, motivo TEXT, visto TEXT);
+        INSERT INTO fuente_fallo VALUES ('Medio Caído', 'ConnectTimeout', 'x');
+        INSERT INTO nota VALUES ('Radio Titanka', 'radio', datetime('now'));""")
+    s = vigia.salud(con)
+    assert "sin respuesta: Medio Caído" in s and "1 de " in s and "Radio Titanka" not in s.split("mudas:")[1]
+
+
 def test_latido_una_vez_al_dia():
     import sqlite3
     from datetime import datetime, timezone
     from tremor import vigia
     con = sqlite3.connect(":memory:")
-    con.executescript("""CREATE TABLE nota (id TEXT, filtro TEXT, descargado TEXT); CREATE TABLE codificacion (nota_id TEXT, version TEXT);
+    con.executescript("""CREATE TABLE nota (id TEXT, filtro TEXT, descargado TEXT, medio TEXT, consulta TEXT); CREATE TABLE codificacion (nota_id TEXT, version TEXT);
         CREATE TABLE aviso_enviado (clave TEXT, empresa TEXT, enviado TEXT, PRIMARY KEY (clave, empresa));""")
     enviados = []
     enviar = lambda t: enviados.append(t) or True

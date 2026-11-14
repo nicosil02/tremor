@@ -265,12 +265,18 @@ def recolectar(con, desde: date | None = None, hasta: date | None = None, pausa=
         feeds = {**FEEDS, **(RPP_REGION if google else {})}
         with ThreadPoolExecutor(16) as pool:  # cada medio es otro servidor: en fila, uno lento frena a los demás
             bajados = list(pool.map(bajar, [url for url, _ in feeds.values()]))
+        # salud de fuentes: sin esto, "no hay protestas en la región" y "el medio de la región está caído" se ven igual
+        con.execute("CREATE TABLE IF NOT EXISTS fuente_fallo (medio TEXT PRIMARY KEY, motivo TEXT, visto TEXT)")
         for (medio, (url, dep)), r in zip(feeds.items(), bajados):
-            if isinstance(r, Exception):
-                print(f"  {medio}: {r.__class__.__name__}")
+            crudas = [] if isinstance(r, Exception) else list(parsear(r.text, medio))
+            if not crudas:  # no respondió, o respondió algo que no es un feed con notas
+                motivo = r.__class__.__name__ if isinstance(r, Exception) else "feed sin notas"
+                con.execute("INSERT OR REPLACE INTO fuente_fallo VALUES (?, ?, ?)", (medio, motivo, ahora()))
+                print(f"  {medio}: {motivo}")
                 continue
+            con.execute("DELETE FROM fuente_fallo WHERE medio = ?", (medio,))
             limite = (date.today() - timedelta(30)).isoformat()  # feeds abandonados o con años de archivo
-            notas = [n for n in parsear(r.text, medio) if (n["publicado"] or "") >= limite]; vistas += len(notas)
+            notas = [n for n in crudas if (n["publicado"] or "") >= limite]; vistas += len(notas)
             nuevas += _guardar(con, notas, f"feed:{medio}", dep)
         for medio, slug in GOBPE.items():
             try:
