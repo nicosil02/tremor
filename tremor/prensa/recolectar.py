@@ -77,6 +77,15 @@ FEEDS = {
     "CGTP": ("https://www.cgtp.org.pe/feed/", None),
     "FENAMAD": ("https://fenamad.com.pe/feed/", "Madre de Dios"),
     "ORPIO": ("https://www.orpio.org.pe/feed/", "Loreto"),
+    # Apurímac y Cusco no tenían ni un medio escrito directo (14 nov 2026: 0 eventos en Apurímac, 4 en Cusco). Probados
+    # ese día desde Lima. Apurímac sigue sin diario local con feed: Pregón no lo tiene y Expresión está tomado por spam
+    "El Sol del Cusco": ("https://diarioelsolcusco.pe/feed/", "Cusco"),
+    "Diario del Cusco": ("https://diariodelcusco.pe/feed/", "Cusco"),
+    "Derechos Humanos Sin Fronteras": ("https://derechosinfronteras.pe/feed/", "Cusco"),  # Chumbivilcas y Espinar
+    "RPP Cusco": ("https://rpp.pe/feed/peru/cusco", "Cusco"),
+    "RPP Apurímac": ("https://rpp.pe/feed/peru/apurimac", "Apurímac"),
+    "ProActivo Cotabambas": ("https://proactivo.com.pe/tag/cotabambas/feed/", "Apurímac"),
+    "ProActivo": ("https://proactivo.com.pe/feed/", None),
     "CooperAcción": ("https://www.cooperaccion.org.pe/feed/", None),
     "CNDDHH": ("https://derechoshumanos.pe/feed/", None),
     "Grufides": ("https://www.grufides.org/feed/", "Cajamarca"),
