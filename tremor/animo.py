@@ -138,6 +138,34 @@ def menciones(texto):
     return salida
 
 
+def _trigramas(texto, n=70):
+    p = re.findall(r"\w+", norm(texto))[:n]
+    return {tuple(p[i:i + 3]) for i in range(len(p) - 2)}
+
+
+def historias(filas, dias=3, umbral=0.85):
+    """[(nota_id, proyecto, fecha, texto)] → {(nota_id, proyecto): nota_id de la primera vez que salió esa historia}.
+    Dos notas del mismo proyecto son la misma historia si, a lo más con `dias` de diferencia, los tríos de palabras
+    seguidas de la más corta (titular y comienzo del texto) están en la otra en un 85%: el cable de agencia o el
+    comunicado que diez medios copian tal cual. Sin esto, diez copias contaban como diez menciones.
+    ponytail: compara cada nota con las historias abiertas del proyecto, O(n²) por proyecto; con miles por proyecto,
+    un índice invertido de tríos."""
+    salida, abiertas = {}, {}
+    for nota_id, proyecto, fecha, texto in sorted(filas, key=lambda f: (f[2], f[0])):
+        t = _trigramas(texto)
+        dia = date.fromisoformat(fecha)
+        cual = None
+        if len(t) >= 6:  # un titular de menos de 8 palabras coincide por casualidad
+            for cabeza, (t0, d0) in abiertas.setdefault(proyecto, {}).items():
+                if (dia - d0).days <= dias and len(t & t0) / min(len(t), len(t0)) >= umbral:
+                    cual = cabeza
+                    break
+            if cual is None:
+                abiertas[proyecto][nota_id] = (t, dia)
+        salida[(nota_id, proyecto)] = cual or nota_id
+    return salida
+
+
 def provincias():
     """proyecto → ubigeos de provincia (4 dígitos), resueltos por nombre en el catálogo del INEI."""
     u = pd.read_csv(RAIZ / "tremor" / "ubigeo.csv", dtype=str)
@@ -157,13 +185,24 @@ def actualizar(con, hoy=None):
             filas.append((r.id, nombre, r.fecha, r.medio, "radio" if r.consulta == "radio" else "web", neg, pos, t))
     m = pd.DataFrame(filas, columns=["nota_id", "proyecto", "fecha", "medio", "origen", "negativos", "positivos", "tono"])
     tabla_dicho(con)  # el tono que dio el LLM al leer la mención manda sobre el del léxico
-    m = m.merge(pd.read_sql("SELECT nota_id, proyecto, tono AS t_llm FROM mencion_dicho WHERE tono IS NOT NULL", con), "left", on=["nota_id", "proyecto"])
+    m = m.merge(pd.read_sql("SELECT nota_id, proyecto, tono AS t_llm, voz FROM mencion_dicho WHERE tono IS NOT NULL", con), "left", on=["nota_id", "proyecto"])
     m["tono"] = m.pop("t_llm").fillna(m.tono)
+    # la misma nota en varios medios es una historia; la radio no se compara (cada transcripción sale distinta)
+    texto = {r.id: f"{r.titular}. {r.resumen or ''}".replace(r.medio or "\0", "") for r in notas.itertuples()}
+    h = historias([(r.nota_id, r.proyecto, r.fecha, texto[r.nota_id]) for r in m[m.origen == "web"].itertuples()])
+    m["historia"] = [h.get((r.nota_id, r.proyecto), r.nota_id) for r in m.itertuples()]
+    # nota de la empresa: habla ella (voz que dio el LLM), o es una nota favorable que tres medios o más copiaron
+    # igual, que es como circula un comunicado. Se marca, no se borra: la app decide si la muestra aparte
+    copiada = m.groupby(["proyecto", "historia"]).medio.transform("nunique") >= 3
+    m["corporativa"] = ((m.pop("voz") == "empresa") | (copiada & (m.tono > 0))).astype(int)
     m.to_sql("mencion", con, if_exists="replace", index=False)
     hoy = hoy or date.today()
     m["dias"] = (pd.Timestamp(hoy) - pd.to_datetime(m.fecha)).dt.days
     reciente, previo = m[m.dias.between(0, 6)], m[m.dias.between(7, 7 + 56 - 1)]
-    a = pd.DataFrame({"menciones_7d": reciente.groupby("proyecto").size(),
+    a = pd.DataFrame({"historias_7d": reciente.groupby("proyecto").historia.nunique(),
+                      "medios_7d": reciente.groupby("proyecto").medio.nunique(),
+                      "corporativas_7d": reciente.groupby("proyecto").corporativa.sum(),
+                      "menciones_7d": reciente.groupby("proyecto").size(),
                       "negativas_7d": reciente[reciente.tono < 0].groupby("proyecto").size(),
                       "tono_7d": reciente.groupby("proyecto").tono.mean(),
                       "base_7d": previo.groupby("proyecto").size() / 8}).reindex(list(PROYECTOS)).fillna(0)
@@ -193,14 +232,17 @@ def historia(con, m, a, mes):
 
 
 def avisos(reciente, previo):
-    """Proyecto → aviso de ánimo negativo: un pico (un día con ≥3 menciones negativas y ≥3× su día normal) o una
-    racha (menciones negativas en ≥3 de los últimos 7 días). ponytail: umbrales a ojo, calibrar con los eventos."""
-    neg = reciente[reciente.tono < 0].groupby(["proyecto", "fecha"]).size()
-    normal = previo[previo.tono < 0].groupby("proyecto").size() / 56
+    """Proyecto → aviso de ánimo negativo: un pico (un día con ≥3 historias negativas, ≥3× su día normal y en dos
+    medios o más) o una racha (menciones negativas en ≥3 de los últimos 7 días). Se cuentan historias, no notas: un
+    cable copiado por diez medios no es un pico. ponytail: umbrales a ojo, calibrar con los eventos."""
+    unicas = lambda d: d[d.tono < 0].drop_duplicates(["proyecto", "fecha", "historia"])
+    neg = unicas(reciente).groupby(["proyecto", "fecha"]).size()
+    medios = reciente[reciente.tono < 0].groupby(["proyecto", "fecha"]).medio.nunique()
+    normal = unicas(previo).groupby("proyecto").size() / 56
     salida = {}
     for proyecto, dias in neg.groupby(level=0):
         dias = dias.droplevel(0)
-        pico = dias[(dias >= 3) & (dias >= 3 * normal.get(proyecto, 0))]
+        pico = dias[(dias >= 3) & (dias >= 3 * normal.get(proyecto, 0)) & (medios[proyecto].reindex(dias.index) >= 2)]
         texto = [f"pico negativo el {d} ({n} menciones)" for d, n in pico.items()]
         if len(dias) >= 3:
             texto.append(f"racha negativa: {len(dias)} de los últimos 7 días")
