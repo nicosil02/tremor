@@ -22,10 +22,10 @@ from tremor.lugares import norm
 PROYECTOS = {
     "Las Bambas (MMG)": (r"las bambas|\bmmg\b", "Apurímac", ["Cotabambas", "Grau"]),
     "Corredor Minero del Sur": (r"corredor minero", "Cusco", ["Chumbivilcas", "Espinar"]),
-    "Tía María (Southern)": (r"t[ií]a mar[ií]a|lindero", "Arequipa", ["Islay"]),
+    "Tía María (Southern)": (r"t[ií]a mar[ií]a", "Arequipa", ["Islay"]),
     "Toquepala y Cuajone (Southern)": (r"toquepala|cuajone|southern", "Moquegua", ["Mariscal Nieto", "Ilo"]),
     "Antapaccay y Coroccohuayco (Glencore)": (r"antapaccay|tintaya|coroccohuayco|glencore", "Cusco", ["Espinar"]),
-    "Constancia (Hudbay)": (r"constancia|hudbay", "Cusco", ["Chumbivilcas"]),
+    "Constancia (Hudbay)": (r"hudbay|(?:mina|minera|proyecto|unidad minera|operaci[oó]n) constancia", "Cusco", ["Chumbivilcas"]),
     "Conga y Yanacocha (Newmont)": (r"\bconga\b|yanacocha|newmont", "Cajamarca", ["Cajamarca", "Celendín", "Hualgayoc"]),
     "Michiquillay": (r"michiquillay", "Cajamarca", ["Cajamarca"]),
     "Quellaveco (Anglo American)": (r"quellaveco|anglo american", "Moquegua", ["Mariscal Nieto"]),
@@ -33,12 +33,12 @@ PROYECTOS = {
     "Cerro Verde": (r"cerro verde", "Arequipa", ["Arequipa"]),
     "Zafranal": (r"zafranal", "Arequipa", ["Castilla"]),
     "Río Blanco": (r"r[ií]o blanco copper|proyecto r[ií]o blanco|majaz", "Piura", ["Huancabamba", "Ayabaca"]),
-    "Lote 192 y Lote 8": (r"lote 192|lote 1-?ab|lote 8\b", "Loreto", ["Datem del Marañón", "Loreto"]),
+    "Lote 192 y Lote 8": (r"lote 192|lote 1-?ab|(?<!, )lote 8\b", "Loreto", ["Datem del Marañón", "Loreto"]),
     "Oleoducto Norperuano (Petroperú)": (r"oleoducto|petroper[uú]", "Loreto", ["Datem del Marañón", "Loreto"]),
     "Lote 95 (Petrotal)": (r"lote 95|petrotal", "Loreto", ["Requena"]),
     "Camisea (Pluspetrol, TGP)": (r"camisea|pluspetrol|\btgp\b|lote 88|lote 56", "Cusco", ["La Convención"]),
     "Toromocho (Chinalco)": (r"toromocho|chinalco", "Junín", ["Yauli"]),
-    "Inmaculada (Hochschild)": (r"inmaculada|hochschild", "Ayacucho", ["Paucar del Sara Sara", "Parinacochas"]),
+    "Inmaculada (Hochschild)": (r"hochschild|(?:mina|minera|proyecto|unidad minera|operaci[oó]n) inmaculada", "Ayacucho", ["Paucar del Sara Sara", "Parinacochas"]),
     "Marcona (Shougang)": (r"shougang|marcona", "Ica", ["Nazca"]),
     "Lagunas Norte (Boroo)": (r"lagunas norte|barrick|boroo", "La Libertad", ["Santiago de Chuco"]),
     # "la poderosa" sola también es una radio (La Poderosa Mix) y frase de prédica: solo cuenta con contexto minero
@@ -185,7 +185,8 @@ def actualizar(con, hoy=None):
             filas.append((r.id, nombre, r.fecha, r.medio, "radio" if r.consulta == "radio" else "web", neg, pos, t))
     m = pd.DataFrame(filas, columns=["nota_id", "proyecto", "fecha", "medio", "origen", "negativos", "positivos", "tono"])
     tabla_dicho(con)  # el tono que dio el LLM al leer la mención manda sobre el del léxico
-    m = m.merge(pd.read_sql("SELECT nota_id, proyecto, tono AS t_llm, voz FROM mencion_dicho WHERE tono IS NOT NULL", con), "left", on=["nota_id", "proyecto"])
+    m = m.merge(pd.read_sql("SELECT nota_id, proyecto, tono AS t_llm, voz, dicho FROM mencion_dicho WHERE tono IS NOT NULL", con), "left", on=["nota_id", "proyecto"])
+    m = m[~m.pop("dicho").fillna("").str.lower().str.startswith("no habla")].reset_index(drop=True)  # el LLM leyó que no era del proyecto
     m["tono"] = m.pop("t_llm").fillna(m.tono)
     # la misma nota en varios medios es una historia; la radio no se compara (cada transcripción sale distinta)
     texto = {r.id: f"{r.titular}. {r.resumen or ''}".replace(r.medio or "\0", "") for r in notas.itertuples()}
@@ -295,6 +296,7 @@ DICHO = ("Lees una nota de prensa o la transcripción automática, con errores, 
          "\"Fiscalía pide prisión para comuneros por las protestas contra la mina\" → neutra, judicial\n"
          "\"Comuneros bloquean la vía y exigen que la minera cumpla el convenio\" → critica, protesta\n"
          'Responde JSON {"dicho": "<oración>", "tono": "favorable" | "critica" | "neutra", "tema": "<tema>", "voz": "<voz>"}.')
+VERSION_DICHO = "dicho4"  # al cambiar DICHO, subirla: la caché y las menciones de la semana se rehacen
 TONO_LLM = {"favorable": 1, "critica": -1, "crítica": -1}
 VOCES_LLM = {"empresa", "comunidad", "autoridad", "medio", "otro"}
 TEMAS_LLM = {"protesta", "judicial", "dialogo", "aporte", "reconocimiento", "ambiente", "seguridad", "laboral", "otro"}
@@ -302,7 +304,7 @@ TEMAS_LLM = {"protesta", "judicial", "dialogo", "aporte", "reconocimiento", "amb
 
 def tabla_dicho(con):
     con.execute("CREATE TABLE IF NOT EXISTS mencion_dicho (nota_id TEXT, proyecto TEXT, dicho TEXT, tono INTEGER, tema TEXT, voz TEXT, PRIMARY KEY (nota_id, proyecto))")
-    for col in {"tono": "INTEGER", "tema": "TEXT", "voz": "TEXT"}.items():  # bases de antes del tono, el tema y la voz
+    for col in {"tono": "INTEGER", "tema": "TEXT", "voz": "TEXT", "version": "TEXT"}.items():  # bases de antes de cada columna
         if col[0] not in [c[1] for c in con.execute("PRAGMA table_info(mencion_dicho)")]:
             con.execute(f"ALTER TABLE mencion_dicho ADD COLUMN {col[0]} {col[1]}")
 
@@ -311,21 +313,23 @@ def dicho(con, max_solicitudes=60):
     """Qué pasó o qué se dijo del proyecto en cada mención de los últimos 30 días, radio y prensa, en una oración del LLM,
     y su tono hacia la empresa (tabla mencion_dicho): es el título de la mención en la app y el color de la barra de
     reputación. El léxico y el transformer se equivocaban ("entrega camión volquete a la comunidad" salía crítica).
-    Las que quedaron sin tono se vuelven a pedir. Sin cupo, se sigue en la próxima corrida."""
+    Las que quedaron sin tono se vuelven a pedir, y también las de los últimos 7 días (las que cuentan en el índice)
+    leídas con una versión anterior de la instrucción. Sin cupo, se sigue en la próxima corrida."""
     from tremor.llm import chat_json, SinCuota, RespuestaInvalida
     tabla_dicho(con)
-    desde = (date.today() - timedelta(days=30)).isoformat()
+    desde, semana = (date.today() - timedelta(days=30)).isoformat(), (date.today() - timedelta(days=7)).isoformat()
     xs = con.execute("""SELECT m.nota_id, m.proyecto, CASE WHEN m.origen = 'radio' THEN n.resumen ELSE n.titular || '. ' || COALESCE(n.resumen, '') END
                         FROM mencion m JOIN nota n ON n.id = m.nota_id
                         WHERE m.fecha >= ? AND COALESCE(n.filtro, '') NOT IN ('religioso', 'musica_o_ruido', 'aviso', 'medio_extranjero')
-                          AND NOT EXISTS (SELECT 1 FROM mencion_dicho d WHERE d.nota_id = m.nota_id AND d.proyecto = m.proyecto AND d.voz IS NOT NULL)
-                        ORDER BY m.fecha DESC""", (desde,)).fetchall()[:max_solicitudes]
+                          AND NOT EXISTS (SELECT 1 FROM mencion_dicho d WHERE d.nota_id = m.nota_id AND d.proyecto = m.proyecto AND d.voz IS NOT NULL
+                                          AND (COALESCE(d.version, '') = ? OR m.fecha < ?))
+                        ORDER BY m.fecha DESC""", (desde, VERSION_DICHO, semana)).fetchall()[:max_solicitudes]
     hechas = 0
     for nota_id, proyecto, texto in xs:
         mm = ALIAS[proyecto].search(texto) if proyecto in ALIAS else None
         trozo = texto[max(0, mm.start() - 400):mm.end() + 400] if mm else texto[:800]
         try:
-            r = chat_json(con, DICHO, f"Proyecto: {proyecto}\n\n{trozo}", "dicho4")
+            r = chat_json(con, DICHO, f"Proyecto: {proyecto}\n\n{trozo}", VERSION_DICHO)
         except SinCuota as e:
             print(f"  dicho de menciones pendiente: {str(e)[:80]}")
             break
@@ -333,9 +337,9 @@ def dicho(con, max_solicitudes=60):
             continue
         tema = str(r.get("tema")).strip().lower().replace("á", "a")
         voz = str(r.get("voz")).strip().lower()
-        con.execute("INSERT OR REPLACE INTO mencion_dicho (nota_id, proyecto, dicho, tono, tema, voz) VALUES (?, ?, ?, ?, ?, ?)",
+        con.execute("INSERT OR REPLACE INTO mencion_dicho (nota_id, proyecto, dicho, tono, tema, voz, version) VALUES (?, ?, ?, ?, ?, ?, ?)",
                     (nota_id, proyecto, (r.get("dicho") or "").strip()[:300], TONO_LLM.get(str(r.get("tono")).strip().lower(), 0),
-                     tema if tema in TEMAS_LLM else "otro", voz if voz in VOCES_LLM else "otro"))
+                     tema if tema in TEMAS_LLM else "otro", voz if voz in VOCES_LLM else "otro", VERSION_DICHO))
         hechas += 1
     con.commit()
     return hechas

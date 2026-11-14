@@ -435,6 +435,12 @@ def test_dicho_de_menciones_de_radio(monkeypatch):
     monkeypatch.setattr(animo, "date", type("D", (), {"today": staticmethod(lambda: __import__("datetime").date(2026, 11, 11))}))
     assert animo.dicho(con) == 2
     assert dict(con.execute("SELECT nota_id, dicho FROM mencion_dicho")) == {"a": "Comuneros dicen que la minera contamina el río.", "b": "No habla del proyecto"}
+    # con otra versión de la instrucción, las de la semana se vuelven a pedir; y los alias no confunden documentos ni direcciones
+    assert animo.dicho(con) == 0
+    monkeypatch.setattr(animo, "VERSION_DICHO", "dicho99")
+    assert animo.dicho(con) == 2
+    assert [n for n, _ in animo.menciones("le dieron su constancia de posesión en la Manzana M, Lote 8. Hudbay opera la mina Constancia")] == ["Constancia (Hudbay)"]
+    assert animo.menciones("El papa coronará a la Virgen Inmaculada. Fijan los linderos del predio") == []
 
 
 def test_parsear_gobpe():
