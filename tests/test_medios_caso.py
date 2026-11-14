@@ -61,3 +61,9 @@ def test_nota_vieja_sin_fecha_por_la_foto():
     assert fecha_por_foto(foto, "el paro de este 13 de noviembre de 2026") is None  # foto de archivo en una nota de hoy
     assert fecha_por_foto(foto, "comuneros bloquean la vía") is None                # sin años no hay segunda señal
     assert fecha_por_foto("<p>sin foto</p>", "aportes de 2023") is None
+
+
+def test_motivo_de_pagina_sin_texto():
+    from tremor.prensa.ampliar import sin_texto
+    assert sin_texto("https://www.diario.pe/nota/1", 403, "<title>Just a moment...</title>") == "diario.pe: 403 con verificación anti-robots"
+    assert sin_texto("https://tvperu.gob.pe/n/2", 200, "<html></html>") == "tvperu.gob.pe: 200, 13 caracteres"
