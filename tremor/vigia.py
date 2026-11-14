@@ -38,7 +38,14 @@ def traer(con, ruta=VIVO):
     con.execute("ATTACH ? AS v", (str(ruta),))
     # ponytail: SELECT * supone las mismas columnas en las dos bases; si una tabla gana una columna, falla hasta el
     # siguiente relevo del vigilante (5,5 h como mucho)
-    n = sum(con.execute(f"INSERT OR IGNORE INTO {t} SELECT * FROM v.{t}").rowcount for t in ESTADO)
+    # la nota que el otro carril amplió (más texto) o dio por vieja gana: se lleva su texto y sus lecturas. Sin esto,
+    # lo que el vigilante bajaba del medio se perdía al recargar la base de `datos`, que traía la nota solo con titular
+    mejores = """SELECT v.id FROM v.nota v JOIN nota n ON n.id = v.id WHERE length(coalesce(v.resumen, '')) >
+                 length(coalesce(n.resumen, '')) OR (v.filtro = 'vieja' AND n.filtro IS NOT 'vieja')"""
+    con.execute(f"DELETE FROM codificacion WHERE nota_id IN ({mejores})")
+    m = con.execute(f"""UPDATE nota SET (resumen, enlace, publicado, filtro) =
+        (SELECT resumen, enlace, publicado, filtro FROM v.nota v WHERE v.id = nota.id) WHERE id IN ({mejores})""").rowcount
+    n = m + sum(con.execute(f"INSERT OR IGNORE INTO {t} SELECT * FROM v.{t}").rowcount for t in ESTADO)
     con.commit(); con.execute("DETACH v")
     return n
 

@@ -546,19 +546,31 @@ def test_vigia_guardar_y_traer(tmp_path):
     from tremor import vigia
     def nueva():
         c = sqlite3.connect(":memory:")
-        c.executescript("""CREATE TABLE nota (id TEXT PRIMARY KEY, descargado TEXT); CREATE TABLE codificacion (nota_id TEXT, version TEXT, PRIMARY KEY (nota_id, version));
+        c.executescript("""CREATE TABLE nota (id TEXT PRIMARY KEY, descargado TEXT, resumen TEXT, enlace TEXT, publicado TEXT, filtro TEXT);
+            CREATE TABLE codificacion (nota_id TEXT, version TEXT, lugar TEXT, PRIMARY KEY (nota_id, version));
             CREATE TABLE llm_cache (clave TEXT PRIMARY KEY, respuesta TEXT, creado TEXT);
             CREATE TABLE aviso_enviado (clave TEXT, empresa TEXT, enviado TEXT, PRIMARY KEY (clave, empresa));""")
         return c
     a, b = nueva(), nueva()
-    a.execute("INSERT INTO nota VALUES ('n1', datetime('now')), ('vieja', '2020-01-01')")
-    a.execute("INSERT INTO codificacion VALUES ('n1', 'v'), ('vieja', 'v')")
+    a.execute("INSERT INTO nota (id, descargado) VALUES ('n1', datetime('now')), ('vieja', '2020-01-01')")
+    a.execute("INSERT INTO codificacion (nota_id, version) VALUES ('n1', 'v'), ('vieja', 'v')")
     a.execute("INSERT INTO aviso_enviado VALUES ('evento:x', 'Bateas', '2026-11-12')")
     b.execute("INSERT INTO aviso_enviado VALUES ('evento:x', 'Bateas', 'antes')")
     vigia.guardar(a, tmp_path / "v.db")
     assert vigia.traer(b, tmp_path / "v.db") == 2  # la nota reciente y su lectura; la vieja no viaja, el aviso ya estaba
     assert vigia.traer(b, tmp_path / "v.db") == 0
     assert b.execute("SELECT enviado FROM aviso_enviado").fetchall() == [("antes",)]
+    # la nota que el vigilante amplió gana sobre la misma nota con solo el titular, y trae su lectura nueva
+    a.execute("INSERT INTO nota VALUES ('n2', datetime('now'), 'texto del medio', 'http://medio', '2026-11-13', NULL)")
+    a.execute("INSERT INTO codificacion VALUES ('n2', 'v', 'Velille')")
+    a.execute("INSERT INTO nota VALUES ('n3', datetime('now'), NULL, 'http://m', '2024-04-11', 'vieja')")
+    b.execute("INSERT INTO nota VALUES ('n2', 'x', NULL, 'http://google', '2026-11-13', NULL), ('n3', 'x', NULL, 'g', '2026-11-13', NULL)")
+    b.execute("INSERT INTO codificacion VALUES ('n2', 'v', 'Cusco'), ('n3', 'v', 'Cusco')")
+    vigia.guardar(a, tmp_path / "v.db"); vigia.traer(b, tmp_path / "v.db")
+    assert b.execute("SELECT resumen, enlace FROM nota WHERE id = 'n2'").fetchone() == ("texto del medio", "http://medio")
+    assert b.execute("SELECT nota_id, lugar FROM codificacion WHERE nota_id IN ('n2', 'n3')").fetchall() == [("n2", "Velille")]
+    assert b.execute("SELECT filtro, publicado FROM nota WHERE id = 'n3'").fetchone() == ("vieja", "2024-04-11")
+    assert vigia.traer(b, tmp_path / "v.db") == 0
 
 
 def test_aviso_ya_enviado_se_reconoce(tmp_path):
