@@ -8,6 +8,7 @@ gastar cupo del LLM en lo que él ya leyó. Corre igual en GitHub (vigia.yml) qu
 
     python -m tremor.vigia --minutos 320     # el bucle
     python -m tremor.vigia traer             # el carril lento: sumar a la base lo que vio el vigilante
+    python -m tremor.vigia textos            # en una PC en Perú: bajar los textos que los medios niegan a GitHub
 """
 import gzip
 import json
@@ -24,10 +25,10 @@ ESTADO = {"nota": f"descargado >= {DIAS}", "codificacion": f"nota_id IN (SELECT 
 VIVO = DATOS / "vivo.db"
 
 
-def guardar(con, ruta=VIVO):
+def guardar(con, ruta=VIVO, estado=ESTADO):
     ruta.unlink(missing_ok=True)
     con.execute("ATTACH ? AS v", (str(ruta),))
-    for t, donde in ESTADO.items():
+    for t, donde in estado.items():
         con.execute(f"CREATE TABLE v.{t} AS SELECT * FROM {t} WHERE {donde}")
     con.commit(); con.execute("DETACH v")
 
@@ -60,6 +61,47 @@ def bajar_vivo():
         return False
     VIVO.write_bytes(gzip.decompress(git("show", "FETCH_HEAD:vivo.db.gz")))
     return True
+
+
+def textos(limite=20):
+    """Para correr en una PC con conexión peruana corriente. TVPerú responde 403 a todo lo que sale de GitHub (hasta su
+    robots.txt; prueba del 14 nov 2026, máquina en Canadá) y desde Lima responde 200. Baja la memoria del vigilante,
+    amplía ahí las protestas sin texto y publica solo las notas que cambiaron en la rama `textos`; el vigilante las
+    suma en su siguiente vuelta con traer(). No toca datos/tremor.db.
+    ponytail: cada corrida publica solo lo suyo y no recuerda intentos; lo que el vigilante no alcance a recoger se
+    vuelve a bajar en la siguiente. Si molesta a algún medio, guardar ampliar_intento entre corridas."""
+    import sqlite3
+    from tremor.lugares import norm
+    from tremor.prensa import codificar as cod
+    from tremor.prensa.ampliar import MOTIVOS, ampliar
+    from tremor.prensa.historia import _del_que_recibe_avisos
+    if not bajar_vivo():
+        return print("Sin rama vivo: nada que ampliar.")
+    con, suyo = sqlite3.connect(VIVO), _del_que_recibe_avisos(conectar())
+    foto = lambda: dict(con.execute("SELECT id, coalesce(resumen, '') || coalesce(filtro, '') FROM nota"))
+    antes = foto()
+    vistas, hechas = ampliar(con, cod.VERSION, limite, primero=lambda t: suyo(norm(t)))
+    cambiadas = [i for i, v in foto().items() if v != antes[i]]
+    if cambiadas:
+        sal = DATOS / "textos.db"
+        guardar(con, sal, {**dict.fromkeys(ESTADO, "0"), "nota": "id IN (%s)" % ",".join(f"'{i}'" for i in cambiadas)})
+        gz = DATOS / "textos.db.gz"
+        gz.write_bytes(gzip.compress(sal.read_bytes(), mtime=0))
+        arbol = git("mktree", entrada=b"100644 blob " + git("hash-object", "-w", str(gz)).strip() + b"\ttextos.db.gz\n").strip()
+        git("push", "-qf", "origin", git("commit-tree", arbol, "-m", "Textos").strip().decode() + ":refs/heads/textos")
+    print(f"Textos: {hechas} ampliadas de {vistas}, {len(cambiadas)} notas publicadas." + (f" Sin ampliar: {dict(MOTIVOS)}" if MOTIVOS else ""))
+
+
+def traer_textos(ultimo):
+    """Lo que la PC publicó en la rama `textos` desde la última vez. Devuelve el commit visto."""
+    if subprocess.run(["git", "fetch", "-q", "--depth", "1", "origin", "textos"], capture_output=True).returncode:
+        return ultimo  # la rama no existe: nadie corre `textos`
+    commit = git("rev-parse", "FETCH_HEAD").decode().strip()
+    if commit != ultimo:
+        ruta = DATOS / "textos.db"
+        ruta.write_bytes(gzip.decompress(git("show", "FETCH_HEAD:textos.db.gz")))
+        con = conectar(); print(f"  textos de la PC: {traer(con, ruta)} notas", flush=True); con.close()
+    return commit
 
 
 def base():
@@ -125,7 +167,7 @@ def paso(*args):
 
 
 def vigilar(minutos, cada=120, reenviar=False):
-    fin, n, datos, arbol = time.time() + minutos * 60, 0, None, None
+    fin, n, datos, arbol, pc = time.time() + minutos * 60, 0, None, None, None
     while time.time() < fin:
         t0 = time.time()
         try:
@@ -136,6 +178,7 @@ def vigilar(minutos, cada=120, reenviar=False):
             paso("tremor.prensa", "recolectar", *([] if n % 8 == 0 else ["--rapido"]))  # Google News entero cada 8 vueltas
             # el texto del medio para las protestas que llegaron solo con titular (sin él no se avisa ni se sabe si la
             # nota es vieja); lo que se amplía se vuelve a leer en esta misma vuelta
+            pc = traer_textos(pc)
             paso("tremor.prensa", "ampliar", "--limite", "6")
             # ponytail: 3 lotes por vuelta (~45 notas). Con 40, una tanda de 500 notas nuevas dejó la vuelta en 8 min y
             # los avisos esperando detrás; si el atraso crece, leer primero las notas de la zona del cliente
@@ -155,7 +198,9 @@ def vigilar(minutos, cada=120, reenviar=False):
 
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
-    if "traer" in sys.argv:
+    if "textos" in sys.argv:
+        textos()
+    elif "traer" in sys.argv:
         print(f"Del vigilante: {traer(conectar()) if bajar_vivo() else 0} filas nuevas.")
     else:
         vigilar(int(sys.argv[sys.argv.index("--minutos") + 1]) if "--minutos" in sys.argv else 320, reenviar="--reenviar" in sys.argv)
