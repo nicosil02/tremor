@@ -250,7 +250,9 @@ def guardar(con, filas):
 
 def escuchar(minutos, grupo=None, grupos=1, salida=None, indigena=False):
     from faster_whisper import WhisperModel
-    lista, inicio, filas = radios(grupo, grupos), datetime.now(LIMA), []
+    import time
+    from collections import Counter
+    lista, inicio, filas, seg = radios(grupo, grupos), datetime.now(LIMA), [], 0.0
     print(f"Escuchando {len(lista)} radios {minutos} min", flush=True)
     with tempfile.TemporaryDirectory() as d:
         rutas = [os.path.join(d, f"{i}.wav") for i in range(len(lista))]
@@ -259,11 +261,19 @@ def escuchar(minutos, grupo=None, grupos=1, salida=None, indigena=False):
         modelo = WhisperModel("small", device="cpu", compute_type="int8")
         for radio, ruta, bien in zip(lista, rutas, ok):
             lang = lengua(radio) if indigena else None
+            t0 = time.time()
             nuevas = notas(radio, inicio, *transcribir(modelo, ruta, lang), lang) if bien else []
+            seg += time.time() - t0
             filas += nuevas
             pasan = sum(f["filtro"] is None for f in nuevas)
             print(f"  {radio['medio']} ({radio['provincia']}): "
                   + (f"{len(nuevas)} fragmentos, {pasan} al codificador" if bien else "sin audio"), flush=True)
+    # medición (14 nov 2026): ¿cuánto de lo transcrito es música? Si es mucho, conviene detectarla en el audio antes
+    letras = Counter()
+    for f in filas:
+        letras[f["filtro"] or "pasa"] += len(f["resumen"])
+    print(f"Medición: {seg / 60:.0f} min transcribiendo {len(lista) * minutos:.0f} min de audio; texto por destino: "
+          + ", ".join(f"{k} {100 * v // max(1, sum(letras.values()))}%" for k, v in letras.most_common()), flush=True)
     if salida:
         with open(salida, "w", encoding="utf-8") as f:
             f.writelines(json.dumps(x, ensure_ascii=False) + "\n" for x in filas)
