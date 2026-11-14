@@ -1,6 +1,6 @@
 import csv
 
-from tremor.radio import CATALOGO, filtro_radio, lengua, no_castellano, trozos
+from tremor.radio import CATALOGO, elegir, filtro_radio, lengua, no_castellano, trozos
 
 # Ñuqanchik (TV Perú), 20/09/2022, transcrito con MMS quz: mototaxistas de Huancavelica contra una ordenanza
 QUECHUA = ("ñawpaqninpi sayariykunku paykunan huk ordenanzata mana uyachkankuchu chaymi kamachikun llaqtapa "
@@ -17,6 +17,12 @@ def test_quechua_escrito_de_oido():
     es = "los comuneros de la zona dicen que en las bambas no se cumple el acuerdo con la comunidad y que van a reclamar"
     assert no_castellano([(0, 50, q)], [(0, 50)], 60) == [(0, 60)] and no_castellano([(0, 50, es * 8)], [(0, 50)], 60) == []
     assert menciones(q) == [] and [n for n, _ in menciones(es)] == ["Las Bambas (MMG)"]
+
+
+def test_lengua_se_elige_entre_las_que_mms_transcribe():
+    """Aunque el identificador prefiera otra lengua, se elige entre quechua chanka, del sur y aimara."""
+    assert elegir({"spa": 9.0, "quy": 1.0, "ayr": 3.0, "quz": 2.0}, "quz") == "ayr"
+    assert elegir({"spa": 9.0}, "quz") == "quz"
 
 
 def test_no_castellano_detecta_voz_sin_texto():
