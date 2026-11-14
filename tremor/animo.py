@@ -16,7 +16,7 @@ from pathlib import Path
 import pandas as pd
 
 from tremor.db import DATOS, RAIZ, ahora, conectar
-from tremor.lugares import norm
+from tremor.lugares import norm, originaria
 
 # nombre: (alias, departamento, provincias de la zona de influencia)
 PROYECTOS = {
@@ -34,7 +34,8 @@ PROYECTOS = {
     "Zafranal": (r"zafranal", "Arequipa", ["Castilla"]),
     "Río Blanco": (r"r[ií]o blanco copper|proyecto r[ií]o blanco|majaz", "Piura", ["Huancabamba", "Ayabaca"]),
     "Lote 192 y Lote 8": (r"lote 192|lote 1-?ab|(?<!, )lote 8\b", "Loreto", ["Datem del Marañón", "Loreto"]),
-    "Oleoducto Norperuano (Petroperú)": (r"oleoducto|petroper[uú]", "Loreto", ["Datem del Marañón", "Loreto"]),
+    # toda la empresa, no solo el ducto: con "Oleoducto Norperuano (Petroperú)" el autor entendió lo contrario al marcar
+    "Petroperú (Oleoducto Norperuano)": (r"oleoducto|petroper[uú]", "Loreto", ["Datem del Marañón", "Loreto"]),
     "Lote 95 (Petrotal)": (r"lote 95|petrotal", "Loreto", ["Requena"]),
     "Camisea (Pluspetrol, TGP)": (r"camisea|pluspetrol|\btgp\b|lote 88|lote 56", "Cusco", ["La Convención"]),
     "Toromocho (Chinalco)": (r"toromocho|chinalco", "Junín", ["Yauli"]),
@@ -132,7 +133,8 @@ def menciones(texto):
     salida = []
     for nombre, rx in ALIAS.items():
         idx = [i for i, f in enumerate(frases) if rx.search(f)]
-        if idx:
+        m = rx.search(texto)
+        if idx and not originaria(texto[max(0, m.start() - 300):m.end() + 300]):  # quechua escrito de oído: no se sabe qué dice
             ventana = sorted({j for i in idx for j in (i - 1, i, i + 1) if 0 <= j < len(frases)})
             salida.append((nombre, " ".join(frases[j] for j in ventana)))
     return salida
@@ -307,6 +309,11 @@ def tabla_dicho(con):
     for col in {"tono": "INTEGER", "tema": "TEXT", "voz": "TEXT", "version": "TEXT"}.items():  # bases de antes de cada columna
         if col[0] not in [c[1] for c in con.execute("PRAGMA table_info(mencion_dicho)")]:
             con.execute(f"ALTER TABLE mencion_dicho ADD COLUMN {col[0]} {col[1]}")
+    for tabla in ("mencion_dicho", "animo_mes"):  # el proyecto cambió de nombre el 14 nov: lo ya leído se conserva
+        try:
+            con.execute(f"UPDATE OR REPLACE {tabla} SET proyecto = 'Petroperú (Oleoducto Norperuano)' WHERE proyecto = 'Oleoducto Norperuano (Petroperú)'")
+        except sqlite3.OperationalError:  # animo_mes todavía no existe
+            pass
 
 
 def dicho(con, max_solicitudes=60):
