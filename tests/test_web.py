@@ -47,6 +47,12 @@ def test_oefa_unidades_por_nombre_normalizado():
     assert (o["m"], o["mi"], o["f"], o["s"], o["v"], o["u"]) == (1, 1, 2, 1000, 0, "2024-05-01")
 
 
+def test_dejar_la_carretera_no_es_retirarse_del_paro():
+    from tremor.web import leer
+    assert leer("Tras el bloqueo, los transportistas de Casma se retiraron de la carretera.")["retiran"] == []
+    assert leer("Los transportistas de Casma no acatan el paro.")["retiran"] != []
+
+
 def test_senal_tiempo_de_viaje():
     from tremor.tiempos import senal
     assert senal(3600, 3500, 100000, 100000, False) is None

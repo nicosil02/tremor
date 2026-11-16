@@ -16,7 +16,7 @@ from pathlib import Path
 import pandas as pd
 
 from tremor.db import DATOS, RAIZ, conectar
-from tremor.prensa.codificar import VERSION, suspende
+from tremor.prensa.codificar import SE_RETIRA, VERSION, suspende
 
 DOCS = RAIZ / "docs"
 ALERTA = ["ubigeo", "lugar", "prob", "prob_extractivo", "prob_crisis", "prob_zona", "prob_zona_extractivo", "prob_1m",
@@ -206,7 +206,7 @@ def _lugares():
 
 
 SUMA = re.compile(r"se suma|sumar[aá]n|sumarse|acatar|respald|adhie|adhes|plegar|participar|bases? de|gremios? de")
-NO = re.compile(r"no (se )?(suma|acata|participa|pleg)|deslig|se retira|desist|no acatar|no se plegar")
+NO = SE_RETIRA  # la misma regla que los gremios: retirarse de la medida, no de la carretera
 POSTERGA = re.compile(r"\b(?:posterg|aplaz|reprogram)(?:an|aron|[oó]|a|ad[oa]s?)\s+(?:el |la |su |del )?(?:paro|huelga|bloqueo|medida|paralizaci)")
 CARGA = re.compile(r"carga pesada|transporte de carga|transportistas de carga")  # "carga pesada y mototaxistas" sigue siendo carga
 CORTA = re.compile(r"bloque|quema de llantas|cortaron|cerraron|tomaron|piquete")

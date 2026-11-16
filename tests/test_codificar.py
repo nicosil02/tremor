@@ -24,9 +24,17 @@ def test_retiros_solo_notas_con_retiro():
     con = sqlite3.connect(":memory:")
     con.execute("CREATE TABLE nota (id, titular, resumen)")
     con.execute("CREATE TABLE codificacion (nota_id, version, es_protesta)")
-    con.executemany("INSERT INTO nota VALUES (?, ?, ?)", [("a", "Mototaxistas se desligan del paro", ""), ("b", "Anuncian paro", "")])
-    con.executemany("INSERT INTO codificacion VALUES (?, ?, 1)", [("a", C.VERSION), ("b", C.VERSION)])
+    con.executemany("INSERT INTO nota VALUES (?, ?, ?)", [
+        ("a", "Mototaxistas se desligan del paro", ""), ("b", "Anuncian paro", ""),
+        # 16 nov 2026: dejar la carretera no es retirarse del paro; esta nota ya ni llega al LLM
+        ("c", "Paro de transportistas", "El bloqueo duró varias horas, pero finalmente los transportistas se retiraron.")])
+    con.executemany("INSERT INTO codificacion VALUES (?, ?, 1)", [("a", C.VERSION), ("b", C.VERSION), ("c", C.VERSION)])
     pedidos = []
-    C.chat_json = lambda con, p, t, k: pedidos.append(t) or {"retiran": ["mototaxistas de Islay"], "todos": False}
-    assert C.retiros(con) == 1 and len(pedidos) == 1      # la nota sin retiro no gasta cuota
-    assert json.loads(con.execute("SELECT gremios FROM retiro_nota").fetchone()[0]) == ["mototaxistas de Islay"]
+    C.chat_json = lambda con, p, t, k: pedidos.append(t) or {"retiran": [
+        {"gremio": "mototaxistas de Islay", "cita": "Mototaxistas se desligan del paro"},
+        {"gremio": "gremio inventado", "cita": "frase que la nota no dice sobre el paro"},
+        {"gremio": "convocantes", "cita": "Mototaxistas"}], "todos": False}
+    assert C.retiros(con) == 1 and len(pedidos) == 1      # ni la nota sin retiro ni la del bloqueo gastan cuota
+    assert json.loads(con.execute("SELECT gremios FROM retiro_nota").fetchone()[0]) == ["mototaxistas de Islay"]  # solo el de cita comprobada
+    assert C.retiro_valido([{"gremio": "Coordinadora", "cita": "finalmente los transportistas se retiraron"}],
+                           "pero finalmente los transportistas se retiraron de la vía") == []

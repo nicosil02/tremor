@@ -103,6 +103,11 @@ def cambios(web, z, enviados):
         elif "cae:" + orig in enviados and e.get("estado") == "anunciada" and f >= hoy():
             yield ("sigue:" + orig, f"⚠️ *LA PROTESTA SIGUE EN PIE*\n_{e.get('titular') or que}_\n\n"
                    f"{que}: corrige el aviso anterior de suspensión. Según la prensa, la medida se mantiene.{fuente}", None)
+        # Se avisó que un gremio o lugar se retiraba y la prensa ya no lo dice (el 16 nov se leyó "se retiraron de la
+        # carretera" como retiro del paro): se rectifica una vez
+        elif not (ret or gre) and (falsos := sorted(c for c in enviados if c.startswith(f"retira:{orig}:") and "corrige:" + c not in enviados)):
+            yield ("corrige:" + falsos[0], f"⚠️ *CORRECCIÓN: NADIE SE RETIRÓ DE LA PROTESTA*\n_{e.get('titular') or que}_\n\n"
+                   f"{que}: corrige el aviso anterior de retiro, que leyó mal una nota. Según la prensa, la medida sigue con sus convocantes.{fuente}", None)
         elif ret or gre:
             quienes = ", ".join([*gre, *(mayus(lugar(u)) for u in ret)])
             yield (f"retira:{orig}:{'-'.join(ret + gre)}", f"↩️ *SE RETIRAN DE LA PROTESTA*\n_{e.get('titular') or que}_\n\n"
