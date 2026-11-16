@@ -8,7 +8,7 @@ sudo apt-get update -q && sudo apt-get install -y -q ffmpeg git python3-venv pyt
 cd ~ && { [ -d tremor ] && git -C tremor pull -q || git clone -q https://github.com/nicosil02/tremor; }
 cd ~/tremor && python3 -m venv .venv && . .venv/bin/activate
 pip install -q --upgrade pip && pip install -q -r requirements.txt faster-whisper
-mkdir -p datos && [ -f datos/tremor.db ] || { git fetch -q origin datos && git show origin/datos:tremor.db.gz | gunzip > datos/tremor.db; }
+mkdir -p datos && [ -f datos/tremor.db ] || { git fetch -q origin datos && git ls-tree --name-only origin/datos | grep '^tremor[.]db[.]gz' | sort | while read p; do git show origin/datos:$p; done | gunzip > datos/tremor.db; }
 [ -f .env ] || cp .env.example .env   # pegar aquí LLM_API_KEY, GEMINI_API_KEY, TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID
 sudo tee /etc/systemd/system/tremor-vivo.service >/dev/null <<UNIT
 [Unit]

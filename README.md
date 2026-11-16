@@ -178,7 +178,7 @@ Tres workflows de GitHub Actions mantienen todo al día y publican la base en la
 git clone https://github.com/nicosil02/tremor && cd tremor
 pip install -r requirements.txt
 cp .env.example .env                      # LLM_API_KEY de Groq, opcional para ver la demo
-git fetch origin datos && git show origin/datos:tremor.db.gz > tremor.db.gz
+git fetch origin datos && for p in $(git ls-tree --name-only origin/datos | grep '^tremor[.]db[.]gz' | sort); do git show origin/datos:$p; done > tremor.db.gz   # la base va en trozos
 python -c "import gzip,shutil;shutil.copyfileobj(gzip.open('tremor.db.gz'),open('datos/tremor.db','wb'))"
 python -m tremor.web && cp datos/exportes/web.json docs/web.json
 python -m http.server -d docs 8000        # abrir http://localhost:8000

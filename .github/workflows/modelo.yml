@@ -35,7 +35,7 @@ jobs:
         run: |
           mkdir -p datos
           git fetch --depth 1 origin datos
-          git show origin/datos:tremor.db.gz | gunzip > datos/tremor.db
+          git ls-tree --name-only origin/datos | grep '^tremor[.]db[.]gz' | sort | while read p; do git show origin/datos:$p; done | gunzip > datos/tremor.db   # en trozos: GitHub no admite archivos de más de 100 MB
           mkdir -p datos/exportes && git archive origin/datos | tar -x -C datos/exportes --wildcards "*.csv"  # conserva los CSV de los otros workflows (la alerta del modelo)
           git show origin/datos:distritos.geojson > datos/distritos.geojson
 
@@ -65,7 +65,7 @@ jobs:
         run: |
           rm -rf datos/crudos/acled
           python -m tremor.web   # web.json: lo que lee la página (docs/index.html)
-          mkdir -p /tmp/datos && gzip -9 -c datos/tremor.db > /tmp/datos/tremor.db.gz && cp datos/exportes/*.csv /tmp/datos/
+          mkdir -p /tmp/datos && gzip -9 -c datos/tremor.db | split -b 90m - /tmp/datos/tremor.db.gz. && cp datos/exportes/*.csv /tmp/datos/
           cp datos/exportes/web.json /tmp/datos/
           cp datos/distritos.geojson /tmp/datos/
           git config user.name "tremor-bot"
@@ -73,6 +73,6 @@ jobs:
           git checkout --orphan datos-nueva
           git rm -rq --cached . && git clean -fdq -e datos
           cp /tmp/datos/* .
-          git add tremor.db.gz *.csv *.geojson web.json
+          git add tremor.db.gz.* *.csv *.geojson web.json
           git commit -qm "Modelo al $(date -u +'%F %H:%M') UTC"
           git push -f origin datos-nueva:datos

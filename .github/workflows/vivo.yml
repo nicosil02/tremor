@@ -37,7 +37,7 @@ jobs:
       - run: |
           pip install -r requirements.txt faster-whisper
           sudo apt-get install -y -qq ffmpeg
-          mkdir -p datos && git fetch --depth 1 origin datos && git show origin/datos:tremor.db.gz | gunzip > datos/tremor.db
+          mkdir -p datos && git fetch --depth 1 origin datos && git ls-tree --name-only origin/datos | grep '^tremor[.]db[.]gz' | sort | while read p; do git show origin/datos:$p; done | gunzip > datos/tremor.db   # en trozos: GitHub no admite archivos de más de 100 MB
 
       - name: Escuchar en vivo
         env:
