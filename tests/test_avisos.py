@@ -305,6 +305,17 @@ def test_salud_de_fuentes():
     assert "sin respuesta: Medio Caído" in s and "1 de " in s and "Radio Titanka" not in s.split("mudas:")[1]
 
 
+def test_retiro_falso_se_corrige_una_vez():
+    """Se avisó que un gremio se retiraba y la prensa ya no lo dice: una corrección, y no se repite."""
+    from tremor import avisos
+    e = {"ubigeo": "00", "accion": "Paro", "fecha_evento": "2026-11-16", "estado": "ocurrida", "titular": "Paro", "gremios_retiran": []}
+    orig = "evento:00:Paro:2026-11-16"
+    enviados = {orig, f"retira:{orig}:Coordinadora"}
+    r = [x[0] for x in avisos.cambios({"eventos": [e]}, {}, enviados)]
+    assert r == [f"corrige:retira:{orig}:Coordinadora"]
+    assert [x[0] for x in avisos.cambios({"eventos": [e]}, {}, enviados | set(r))] == []
+
+
 def test_latido_una_vez_al_dia():
     import sqlite3
     from datetime import datetime, timezone

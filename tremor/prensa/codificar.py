@@ -162,14 +162,34 @@ RETIROS = """Lees una nota peruana sobre una protesta. Di qué gremios, sindicat
 grupos anuncian que se retiran, se desligan, se bajan o no se suman a la medida. Solo los que la nota dice que se
 retiran, no los que se suman. Nómbralos por su rol u organización (p. ej. "transportistas de carga de Arequipa",
 "Federación de mototaxistas de Islay"), nunca con nombres de personas. Si la medida entera se levanta, "todos": true.
-Responde solo JSON: {"retiran": ["..."], "todos": true|false}"""
-SE_RETIRA = re.compile(r"deslig|se retir|desist|se baj(a|an|aron) del|no (se )?(sumar|suma|acata|participa|pleg)", re.I)
+Retirarse de la MEDIDA no es retirarse de un lugar: quien deja la carretera, levanta un bloqueo por unas horas o sale de
+una reunión sigue en la protesta y no va en la lista. Quien convoca o acata la medida tampoco.
+De cada uno copia la "cita": la frase literal de la nota, sin cambiarla, donde dice que no participa en la medida.
+Responde solo JSON: {"retiran": [{"gremio": "...", "cita": "..."}], "todos": true|false}"""
+# Retiro de la medida, no de un sitio: "se retiraron" a secas es dejar la carretera (16 nov 2026: se avisó al cliente que
+# el gremio convocante se retiraba del paro el día que lo empezó). Filtra las notas que van al LLM y valida su cita
+_MEDIDA = r"(?:paro|huelga|medida|protesta|movilizaci[oó]n|convocatoria|marcha|plant[oó]n|plataforma|jornada)"
+SE_RETIRA = re.compile(r"deslig|desist\w+ (?:del?|de la) " + _MEDIDA + r"|se (?:retir|baj|apart)\w* (?:del?|de la) " + _MEDIDA
+                       + r"|no (?:se )?(?:sumar|suma|acatar|acata|participar|participa|pleg)", re.I)
+VERSION_RETIRO = "retiro2"
+
+
+def retiro_valido(lista, texto):
+    """Gremios que el LLM dio por retirados y cuya cita está de verdad en la nota y habla de no participar en la
+    medida. Sin cita comprobable no hay retiro: es un dato que se le manda al cliente."""
+    plano = lambda s: re.sub(r"\W+", " ", (s or "").lower()).strip()
+    nota = plano(texto)
+    return [g["gremio"].strip() for g in lista or [] if isinstance(g, dict) and isinstance(g.get("gremio"), str) and g["gremio"].strip()
+            and len(plano(g.get("cita"))) >= 12 and plano(g.get("cita")) in nota and SE_RETIRA.search(g["cita"])]
 
 
 def retiros(con, max_solicitudes=30):
     """Gremios que se retiran de una protesta, leídos por el LLM solo en las notas de protesta donde una regla ve
     retiro (SE_RETIRA): pocas notas, poca cuota. Queda en retiro_nota (gremios en JSON); la página los junta por evento."""
     con.execute("CREATE TABLE IF NOT EXISTS retiro_nota (nota_id TEXT PRIMARY KEY, gremios TEXT, todos INTEGER)")
+    if "version" not in [c[1] for c in con.execute("PRAGMA table_info(retiro_nota)")]:
+        con.execute("ALTER TABLE retiro_nota ADD COLUMN version TEXT")
+    con.execute("DELETE FROM retiro_nota WHERE COALESCE(version, '') != ?", (VERSION_RETIRO,))  # lo leído con la regla anterior se relee
     xs = [(n, t) for n, t in con.execute(
         "SELECT n.id, n.titular || '. ' || coalesce(n.resumen, '') FROM nota n JOIN codificacion c ON c.nota_id = n.id "
         "AND c.version = ? WHERE c.es_protesta = 1 AND n.id NOT IN (SELECT nota_id FROM retiro_nota)", (VERSION,))
@@ -177,12 +197,12 @@ def retiros(con, max_solicitudes=30):
     hechas = 0
     for n, t in xs:
         try:
-            r = chat_json(con, RETIROS, t[:1500], "retiro1")
+            r = chat_json(con, RETIROS, t[:1500], VERSION_RETIRO)
         except (SinCuota, RespuestaInvalida) as e:
             print(f"  Retiros pendientes: {e}")
             break
-        gs = [g for g in r.get("retiran") or [] if isinstance(g, str) and g.strip()]
-        con.execute("INSERT OR REPLACE INTO retiro_nota VALUES (?, ?, ?)", (n, json.dumps(gs, ensure_ascii=False), int(r.get("todos") is True)))
+        gs = retiro_valido(r.get("retiran"), t)
+        con.execute("INSERT OR REPLACE INTO retiro_nota VALUES (?, ?, ?, ?)", (n, json.dumps(gs, ensure_ascii=False), int(r.get("todos") is True), VERSION_RETIRO))
         con.commit()
         hechas += 1
     return hechas
