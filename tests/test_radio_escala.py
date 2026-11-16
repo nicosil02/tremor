@@ -21,8 +21,8 @@ def test_quechua_escrito_de_oido():
 
 def test_lengua_se_elige_entre_las_que_mms_transcribe():
     """Aunque el identificador prefiera otra lengua, se elige entre quechua chanka, del sur y aimara."""
-    assert elegir({"spa": 9.0, "quy": 1.0, "ayr": 3.0, "quz": 2.0}, "quz") == "ayr"
-    assert elegir({"spa": 9.0}, "quz") == "quz"
+    assert elegir({"spa": 1.0, "quy": 1.0, "ayr": 3.0, "quz": 2.0}, "quz") == ("ayr", "ayr")
+    assert elegir({"spa": 9.0, "ayr": 3.0}, "quz") == ("quz", "spa")  # oyó castellano (música): manda la provincia
 
 
 def test_no_castellano_detecta_voz_sin_texto():
