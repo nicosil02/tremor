@@ -63,7 +63,7 @@ def eventos(web, z, alias, desde):
     los gremios que paran sin bloquear (docentes, salud)."""
     for e in web["eventos"]:
         f, ub, actor, acc = e.get("fecha_evento") or e.get("fecha_anuncio") or "", str(e["ubigeo"]), e.get("actor") or "", e.get("accion") or ""
-        pl = e.get("plazo") if isinstance(e.get("plazo"), str) and e["plazo"] >= date.today().isoformat() else None
+        pl = e.get("plazo") if isinstance(e.get("plazo"), str) and e["plazo"] >= hoy() else None
         vieja = e["estado"] == "anunciada" and not pl and f < hoy()  # anunciada y ya pasó sin noticia de que ocurriera
         pasada = e["estado"] == "ocurrida" and not pl and f < hoy()  # lo que ya pasó no le sirve al cliente: solo lo de hoy
         if e.get("suspendido") or vieja or pasada or max(f, pl or "") < desde or e.get("leida") is False:  # sin leer la nota, no se avisa
@@ -156,6 +156,9 @@ def reputacion(con, alias, semana=None):
             r = chat_json(con, REPUTACION, f"Empresa o proyecto: {proyecto}\n{lineas}", "reputacion2")
             if not isinstance(r, dict) or not r.get("relevante") or not r.get("motivos"):  # homónimos, publicidad: no es reputación
                 continue
+            pl = lambda s: re.sub(r"\W+", " ", str(s).lower()).strip()
+            if r.get("cita") and pl(r["cita"]) not in pl(lineas):  # la cita va entre comillas: o está tal cual en las menciones o no va
+                r["cita"] = None
         except (SinCuota, RespuestaInvalida) as e:
             print(f"  reputación de {proyecto} sin motivos: {str(e)[:80]}")
             if not prensa:  # sin el LLM, la radio sola no basta: muchos alias son homónimos
@@ -239,7 +242,6 @@ def decretos(con, z, dias=7):
 def lentas(con, nombre, ahora_=None):
     """Tramos de su ruta que TomTom mide lentos o cerrados en las últimas 3 horas, con la causa (tiempos.causa). Un
     aviso por tramo y día. Sin la tabla (sin clave de TomTom) no hay nada."""
-    from datetime import datetime
     hm = lambda s: f"{s // 3600} h {s % 3600 // 60:02d} min" if s >= 3600 else f"{s // 60} min"
     desde = ((ahora_ or datetime.now()) - timedelta(hours=3)).isoformat(timespec="seconds")
     try:
@@ -254,13 +256,17 @@ def lentas(con, nombre, ahora_=None):
         if tramo in vistos:
             continue
         vistos.add(tramo)
-        png = tarjeta(f"Ruta lenta: {re.sub(r', (\w+)$', r' (\1)', tramo)}", hm(seg), [f"Lo normal: {hm(sin)}", f"Medido a las {hora[11:16]}"], [], set(),
+        if seg <= sin:  # nunca se avisa demora si el número dice lo contrario
+            continue
+        lima = datetime.fromisoformat(hora).astimezone(timezone(timedelta(hours=-5))).strftime("%H:%M")  # GitHub mide en UTC: decía "17:24" a las 12:24
+        cab = "Vía cerrada" if sen.startswith("vía cerrada") else "Desvío en su ruta" if sen.startswith("desvío") else "Ruta lenta"
+        png = tarjeta(f"{cab}: {re.sub(r', (\w+)$', r' (\1)', tramo)}", hm(seg), [f"Lo normal: {hm(sin)}", f"Medido a las {lima}"], [], set(),
                       [u for t in ruta[:1] for u in t["ubigeos"][:1]], leyenda="Tramo lento", ruta=ruta, cortes=[tramo],
                       empresa=EMPRESAS[nombre][0]) if ruta and (DATOS / "distritos.geojson").exists() else None
         out.append((f"ruta:{tramo}:{hora[:10]}",
-                    f"🐢 *RUTA LENTA · {re.sub(r', (\w+)$', r' (\1)', tramo)}*\n"
-                    f"_Su ruta de salida tarda {hm(seg)}; lo normal es {hm(sin)}_\n\n"
-                    f"🛣 *Qué pasa:* {sen[0].upper()}{sen[1:]} (medido a las {hora[11:16]})\n"
+                    f"{'⛔' if cab == 'Vía cerrada' else '🐢'} *{cab.upper()} · {re.sub(r', (\w+)$', r' (\1)', tramo)}*\n"
+                    f"_Su ruta de salida tarda {hm(seg)}; lo normal es {hm(sin)} ({hm(seg - sin)} más)_\n\n"
+                    f"🛣 *Qué pasa:* {sen[0].upper()}{sen[1:]} (medido a las {lima})\n"
                     f"🔎 *Causa:* {causa or 'causa sin confirmar'}\n\n"
                     f"✅ *Qué hacer*\nConfirmar con sus transportistas antes de despachar y ver rutas u horarios alternos.\n\n"
                     f"🔗 *Conoce más aquí:* {APP}?e={quote(nombre)}", png))
@@ -271,9 +277,10 @@ def radio(con, alias, desde):
     """Fragmentos de radio que nombran a la empresa junto a una medida de lucha."""
     for id_, medio, pub, txt in con.execute("SELECT id, medio, publicado, resumen FROM nota WHERE consulta = 'radio' AND publicado >= ?", (desde,)):
         m = re.search(alias, txt or "", re.I)
-        if m and re.search(LUCHA, txt, re.I):
-            i = max(0, m.start() - 120)
-            yield {"clave": f"radio:{id_}", "medio": medio, "hora": pub[11:16], "dia": pub[:10], "texto": " ".join(txt[i:i + 280].split())}
+        i = max(0, m.start() - 120) if m else 0
+        trozo = " ".join(txt[i:i + 280].split()) if m else ""
+        if re.search(LUCHA, trozo, re.I):  # la medida, en la misma frase que se le muestra al cliente, no en otra parte del fragmento
+            yield {"clave": f"radio:{id_}", "medio": medio, "hora": pub[11:16], "dia": pub[:10], "texto": trozo}
 
 
 def empujan(razones):

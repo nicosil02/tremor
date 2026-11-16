@@ -56,7 +56,8 @@ def test_dejar_la_carretera_no_es_retirarse_del_paro():
 def test_senal_tiempo_de_viaje():
     from tremor.tiempos import senal
     assert senal(3600, 3500, 100000, 100000, False) is None
-    assert senal(3600, 3500, 100000, 100000, True) == "vía cerrada"
+    assert senal(3600, 3500, 100000, 100000, True) is None            # cierre marcado que no demora
+    assert senal(16534, 10980, 82868, 129448, True) == "vía cerrada"  # 16 nov, Estación Pillones: 1 h 33 más que lo habitual
     assert senal(3600, 3500, 160000, 100000, False) == "desvío de 60 km"
     assert senal(7200, 3600, 100000, 100000, False) == "tarda 2.0 veces lo normal"
 

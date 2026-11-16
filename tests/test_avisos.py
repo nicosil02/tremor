@@ -187,10 +187,12 @@ def test_ruta_lenta_un_aviso_por_tramo():
     con.executemany("INSERT INTO tiempo_viaje VALUES ('Bateas', ?, ?, ?, 7200, 0, 0, ?, ?)", [
         ("Puerto de Matarani, zinc", "2026-11-10T11:00:00", 13000, "tarda 1.8 veces lo normal", "lluvia fuerte: 25 mm en 6 horas"),
         ("Puerto de Matarani, zinc", "2026-11-10T10:00:00", 12000, "tarda 1.7 veces lo normal", None),   # el mismo tramo, antes
+        ("Bajada a Arequipa", "2026-11-10T11:00:00", 7100, "vía cerrada", None),   # 16 nov: "cerrada" pero tarda menos: no avisa
         ("Lima, plomo", "2026-11-10T11:00:00", 7300, None, None)])                                       # normal: no avisa
     (clave, texto, _), = lentas(con, "Bateas", datetime(2026, 11, 10, 12))
     assert clave == "ruta:Puerto de Matarani, zinc:2026-11-10"
     assert "Puerto de Matarani (zinc)" in texto and "3 h 36 min" in texto and "lluvia fuerte" in texto
+    assert "RUTA LENTA" in texto and "1 h 36 min más" in texto
 
 
 def test_seguimiento_de_lo_avisado():

@@ -37,8 +37,9 @@ def medir(puntos, clave):
 
 
 def senal(seg, sin, metros, metros_normal, cierre):
-    """Qué dice la medición, o None si el tramo está normal. Umbrales por calibrar contra la SUTRAN."""
-    if cierre:
+    """Qué dice la medición, o None si el tramo está normal. sin: lo que el tramo suele tardar. Umbrales por calibrar
+    contra la SUTRAN. Un cierre que no demora no es señal: TomTom lo marca en la ruta que devuelve aunque se pase."""
+    if cierre and sin and seg >= 1.2 * sin:
         return "vía cerrada"
     if metros_normal and metros > 1.3 * metros_normal:
         return f"desvío de {(metros - metros_normal) / 1000:.0f} km"
@@ -108,9 +109,17 @@ def recolectar(con):
             except (requests.RequestException, KeyError, IndexError) as e:
                 print(f"  {cliente} / {t['nombre']}: {type(e).__name__}")  # solo el tipo: el texto puede traer la URL con la clave
                 continue
-            prev = [x[0] for x in con.execute("SELECT metros FROM tiempo_viaje WHERE cliente = ? AND tramo = ? AND cierre = 0",
-                                              (cliente, t["nombre"]))]
-            s = senal(seg, sin, m, statistics.median(prev) if prev else None, cierre)
+            prev = con.execute("SELECT segundos, metros FROM tiempo_viaje WHERE cliente = ? AND tramo = ? AND cierre = 0 "
+                               "AND senal IS NULL ORDER BY hora", (cliente, t["nombre"])).fetchall()
+            # Lo normal es lo que el tramo suele tardar (mediana de sus mediciones), no el "sin tráfico" de TomTom, que es
+            # el de la ruta que devolvió esa vez: con la vía cerrada devuelve otra, y el 16 nov el aviso dijo "tarda
+            # 4 h 36; lo normal es 4 h 47" cuando lo habitual eran 3 h 03
+            if len(prev) >= 3:
+                sin = round(statistics.median(x[0] for x in prev))
+            s = senal(seg, sin, m, statistics.median(x[1] for x in prev) if prev else None, cierre)
+            # sin cierre, una sola medición lenta no basta (el 13 nov TomTom dio otra ruta una vez y volvió): la confirma la anterior
+            if s and s.startswith("tarda") and not (prev and prev[-1][0] >= 1.5 * sin):
+                s = None
             try:
                 c = causa(con, t, datetime.fromisoformat(hora), _llueve(t["puntos"])) if s else None
             except Exception as e:  # sqlite.OperationalError: una tabla que aún no existe en una base nueva
