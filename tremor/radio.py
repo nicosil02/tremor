@@ -127,14 +127,16 @@ _MMS, _NLLB, _LID = {}, {}, {}
 
 
 def elegir(puntajes, respaldo):
-    """De {lengua: puntaje} del identificador, la más probable entre las tres que MMS sabe transcribir aquí."""
-    tres = {k: v for k, v in puntajes.items() if k in NOMBRE}
-    return max(tres, key=tres.get) if tres else respaldo
+    """De {lengua: puntaje} del identificador: (lengua para MMS, la que oyó primera). La oída vale solo si es una de
+    las tres que MMS transcribe aquí; si oyó castellano, inglés u otra (música, ruido), manda la provincia. Obligado a
+    elegir entre las tres, el 14 nov dio aimara en Palpa y en Huánuco."""
+    primera = max(puntajes, key=puntajes.get) if puntajes else None
+    return (primera if primera in NOMBRE else respaldo), primera
 
 
 def identificar(audio, respaldo):
-    """Lengua de un tramo que no es castellano, oída en sus primeros 30 s con MMS-LID-512 (int8). Si el modelo no
-    carga o falla, la de la provincia.
+    """(lengua para MMS, lengua oída) de un tramo que no es castellano, en sus primeros 30 s con MMS-LID-512 (int8).
+    Si el modelo no carga o falla, la de la provincia.
     ponytail: una sola escucha por radio y franja; si una radio alterna quechua y aimara, identificar cada tramo."""
     try:
         import torch
@@ -150,7 +152,7 @@ def identificar(audio, respaldo):
         return elegir({_LID["id"][i]: float(v) for i, v in enumerate(logits)}, respaldo)
     except Exception as e:  # sin memoria, sin red para bajar el modelo: se sigue con la provincia
         print(f"  [aviso] lengua no identificada ({e.__class__.__name__}): se usa la de la provincia", flush=True)
-        return respaldo
+        return respaldo, None
 
 
 def mms(audio, lang):
@@ -207,9 +209,9 @@ def transcribir(modelo, ruta, lang=None):
             tramos = no_castellano(segs, voz, len(audio) / SR)
             if tramos:
                 a, b = max(tramos, key=lambda t: t[1] - t[0])  # el tramo más largo es el más claro
-                oida = identificar(audio[int(a * SR):int(b * SR)], lang)
-                print(f"    lengua: {NOMBRE[oida]} ({oida}), por provincia {lang}", flush=True)
-                lang = oida
+                usada, oida = identificar(audio[int(a * SR):int(b * SR)], lang)
+                print(f"    lengua: se usa {usada}; oída {oida}, por provincia {lang}", flush=True)
+                lang = usada
             for a, b in tramos:
                 b = min(b, a + resto); resto -= b - a
                 if b > a:
