@@ -109,10 +109,13 @@ def base():
     git("fetch", "-q", "--depth", "1", "origin", "datos")
     commit = git("rev-parse", "FETCH_HEAD").decode().strip()
     (DATOS / "exportes").mkdir(parents=True, exist_ok=True)
-    for f in git("ls-tree", "--name-only", commit).decode().split():
+    archivos = git("ls-tree", "--name-only", commit).decode().split()
+    for f in archivos:
         if f.endswith((".csv", ".geojson")):  # la alerta del modelo y los límites, que piden web y avisos
             (DATOS / ("exportes" if f.endswith(".csv") else "") / f).write_bytes(git("show", f"{commit}:{f}"))
-    (DATOS / "tremor.db").write_bytes(gzip.decompress(git("show", f"{commit}:tremor.db.gz")))
+    # la base va en trozos de 90 MB (tremor.db.gz.aa, .ab…): GitHub rechaza archivos de más de 100 MB
+    trozos = sorted(f for f in archivos if f.startswith("tremor.db.gz"))
+    (DATOS / "tremor.db").write_bytes(gzip.decompress(b"".join(git("show", f"{commit}:{f}") for f in trozos)))
     if bajar_vivo():
         con = conectar(); print(f"  base {commit[:7]}; del vigilante anterior: {traer(con)} filas", flush=True); con.close()
     return commit
