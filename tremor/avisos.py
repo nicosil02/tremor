@@ -81,6 +81,36 @@ def eventos(web, z, alias, desde):
                    "titular": e.get("titular") or "", "transporte": transporte, "punto": (e.get("puntos") or [""])[0]}
 
 
+def dias_de(texto):
+    """Días que dura la medida según el titular ("72 horas", "3 días"): 1 si no lo dice, 4 si es indefinida."""
+    m = re.search(DURA, texto or "", re.I)
+    if not m:
+        return 1
+    t = m.group(0).lower()
+    if t.startswith("indefinid"):
+        return 4
+    x = next(g for g in m.groups() if g).lower()
+    n = {"veinticuatro": 24, "cuarenta y ocho": 48, "setenta y dos": 72, "un": 1, "dos": 2, "tres": 3, "cuatro": 4, "cinco": 5}.get(x) or int(x)
+    return max(1, round(n / 24)) if "hora" in t else n
+
+
+def vias(web, z, desde):
+    """Dónde hay protesta en la vía, corroborado con la SUTRAN (lista vigente que trae web.json): primero lo que cae en
+    la zona o la ruta del cliente y después el resto del país. Sin lista (la SUTRAN no respondió) no se dice nada."""
+    todas = web.get("sutran") or []
+    if not todas:
+        return ""
+    xs = sorted((s for s in todas if s.get("motivo") == "humano" and (s.get("fecha_evento") or "") >= desde
+                 and re.search(r"protest|manifest|bloque|\bparo\b|huelga", s.get("titulo") or "", re.I)),  # "humano" también es un bus varado
+                key=lambda s: s.get("estado_via") == "normal")
+    linea = lambda s: (f"• {(s.get('distrito') or s.get('provincia') or '').title()} ({(s.get('region') or '').title()}), {s.get('via') or ''} "
+                       f"{s.get('km') or ''}: tránsito {s.get('estado_via') or 'sin dato'}")
+    suyas = [s for s in xs if str(s.get("ubigeo") or "") in z]
+    return ("\n\n🛣 *En su zona o ruta:* " + ("\n" + "\n".join(map(linea, suyas)) if suyas else "la SUTRAN no reporta por ahora vías con protesta.")
+            + (f"\n\n📍 *Vías con protesta desde el {dia(desde)}, según la SUTRAN* (no dice si son de esta medida):\n" + "\n".join(map(linea, xs[:8])) if xs else "")
+            + "\n[alertasviales.sutran.gob.pe](https://alertasviales.sutran.gob.pe)")
+
+
 def cambios(web, z, enviados):
     """Seguimiento de lo ya avisado: la protesta se suspendió o postergó, algunos lugares o gremios se retiran, o pasó la
     fecha sin noticia de que se hiciera. Solo de protestas que el cliente ya recibió (enviados: sus claves), un aviso
@@ -119,7 +149,18 @@ def cambios(web, z, enviados):
         # llegó como ocurrido no se repite (un bloqueo del 4 nov volvió a salir el 11 como "se realizó")
         # la fuente es la nota que dice que ocurrió (hecho), no la del anuncio; sin ella no se afirma nada
         elif (e.get("estado") == "ocurrida" and f and e.get("fecha_anuncio") and e["fecha_anuncio"] < f and (h := e.get("hecho")) and h.get("enlace")
-              and (date.today() - timedelta(days=3)).isoformat() <= f <= hoy()):
+              and (date.fromisoformat(hoy()) - timedelta(days=3)).isoformat() <= f <= hoy()):
+            # Mientras dura no "se realizó": está en curso (16 nov: paro de 72 horas avisado como hecho el primer día y sin
+            # decir dónde había cortes). Un aviso por día, con las vías que corrobora la SUTRAN
+            n, d = dias_de(f"{e.get('titular') or ''} {h.get('titular') or ''}"), (date.fromisoformat(hoy()) - date.fromisoformat(f)).days + 1
+            if d <= n:
+                hasta = " y es indefinida" if n == 4 else f" y está anunciada hasta el {dia((date.fromisoformat(f) + timedelta(days=n - 1)).isoformat())}" if n > 1 else ""
+                yield (f"curso:{orig}:{hoy()}", f"🚧 *PROTESTA EN CURSO{f' · día {d} de {n}' if 1 < n < 4 else ''}*\n_{h.get('titular') or que}_\n\n"
+                       f"{que}: según {h.get('medio') or 'la prensa'}, la medida empezó{hasta}.{vias(web, z, f)}\n\n"
+                       f"📰 *Fuente:* [{h.get('medio') or 'nota'}]({h['enlace']})", None)
+                continue
+            if any(c.startswith(f"curso:{orig}:") for c in enviados):  # ya se siguió día a día
+                continue
             yield ("hubo:" + orig, f"📍 *SE REALIZÓ*\n_{h.get('titular') or que}_\n\n{que}: según {h.get('medio') or 'la prensa'}, "
                    f"la medida se llevó a cabo.\n\n📰 *Fuente:* [{h.get('medio') or 'nota'}]({h['enlace']})", None)
 

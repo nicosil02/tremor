@@ -212,6 +212,24 @@ def test_seguimiento_de_lo_avisado():
     assert "POSTERGADA" in xs["cae"] and "La Joya" in xs["retira"] and "transportistas de carga de Islay" in xs["retira"] and "Lima" not in xs["retira"]
 
 
+def test_protesta_en_curso_con_vias_de_sutran():
+    """El primer día de un paro de 72 horas no "se realizó": está en curso, y dice dónde hay protesta según la SUTRAN."""
+    from tremor.avisos import cambios, hoy
+    e = {"ubigeo": "00", "accion": "Paro", "fecha_evento": hoy(), "fecha_anuncio": "2026-01-01", "estado": "ocurrida",
+         "titular": "Ratifican paro de 72 horas", "hecho": {"medio": "Diario X", "enlace": "https://x.pe/inicia", "titular": "Inicia el paro"}}
+    s = lambda **k: {"motivo": "humano", "fecha_evento": hoy(), "region": "Junin", "provincia": "Jauja", "distrito": "Jauja", **k}
+    web = {"eventos": [e], "sutran": [s(titulo="PROTESTA KM 2", estado_via="interrumpido", ubigeo="120401", via="PE-3SA", km="KM 2"),
+                                      s(titulo="PROTESTA KM 9", estado_via="normal", ubigeo="040520", via="PE-34E", km="KM 9"),
+                                      s(titulo="OMNIBUS VARADO", estado_via="normal", ubigeo="150812", via="PE-1N", km="KM 159")]}
+    (clave, texto, _), = cambios(web, {"040520": "en su ruta, tramo Estación Pillones"}, {f"evento:00:Paro:{hoy()}"})
+    assert clave == f"curso:evento:00:Paro:{hoy()}:{hoy()}" and "EN CURSO · día 1 de 3" in texto and "SE REALIZÓ" not in texto
+    ruta, pais = texto.split("📍")
+    assert "PE-34E" in ruta and "PE-3SA" not in ruta and "PE-3SA KM 2: tránsito interrumpido" in pais and "159" not in texto
+    assert "https://x.pe/inicia" in texto
+    web["sutran"] = []                                   # la SUTRAN no respondió: no se afirma que no hay cortes
+    assert "SUTRAN" not in next(cambios(web, {}, {f"evento:00:Paro:{hoy()}"}))[1]
+
+
 def test_seguimiento_solo_con_noticia():
     """Lo avisado se sigue solo cuando hay noticia: se realizó (con fuente) o se suspendió. Sin noticia, nada."""
     from datetime import date, timedelta
