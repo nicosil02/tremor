@@ -201,12 +201,14 @@ def test_seguimiento_de_lo_avisado():
     ayer = (date.fromisoformat(hoy()) - timedelta(days=1)).isoformat()
     ev = lambda **k: {"ubigeo": "040701", "accion": "Paro", "fecha_evento": "2026-12-01", "estado": "anunciada", **k}
     web = {"eventos": [ev(suspendido=True, postergado=True), ev(accion="Marcha", retiran=["040108", "150101"], gremios_retiran=["transportistas de carga de Islay"]),
-                       ev(accion="Bloqueo", fecha_evento=ayer, fecha_anuncio="2026-11-01", estado="ocurrida", medio="RPP", enlace="https://x.pe/b"), ev(accion="Toma", suspendido=True)]}
+                       ev(accion="Bloqueo", fecha_evento=ayer, fecha_anuncio="2026-11-01", estado="ocurrida", medio="RPP", enlace="https://x.pe/anuncio",
+                          hecho={"medio": "RPP", "enlace": "https://x.pe/b", "titular": "Bloquean la vía"}, gremios_retiran=["gremio X"]), ev(accion="Toma", suspendido=True)]}
     z = {"040701": "Cailloma", "040108": "en su ruta"}
-    enviados = {"evento:040701:Paro:2026-12-01", "evento:040701:Marcha:2026-12-01", f"evento:040701:Bloqueo:{ayer}"}
+    enviados = {"evento:040701:Paro:2026-12-01", "evento:040701:Marcha:2026-12-01", f"evento:040701:Bloqueo:{ayer}",
+                f"retira:evento:040701:Bloqueo:{ayer}:gremio X"}   # el retiro ya avisado no tapa el "se realizó"
     xs = {c.split(":")[0]: t for c, t, _ in cambios(web, z, enviados)}
     assert set(xs) == {"cae", "retira", "hubo"}            # la toma no se avisó antes: su suspensión tampoco
-    assert "SE REALIZÓ" in xs["hubo"] and "https://x.pe/b" in xs["hubo"]
+    assert "SE REALIZÓ" in xs["hubo"] and "https://x.pe/b" in xs["hubo"] and "anuncio" not in xs["hubo"]  # la fuente es la nota del hecho
     assert "POSTERGADA" in xs["cae"] and "La Joya" in xs["retira"] and "transportistas de carga de Islay" in xs["retira"] and "Lima" not in xs["retira"]
 
 
@@ -217,7 +219,8 @@ def test_seguimiento_solo_con_noticia():
     ayer = (date.today() - timedelta(days=1)).isoformat()
     hace8 = (date.today() - timedelta(days=8)).isoformat()
     ev = lambda i, acc, estado, enlace="https://x.pe/n", f=ayer, anun=None: {"ubigeo": "040505", "accion": acc, "actor": "Comuneros", "fecha_evento": f,
-                                                          "fecha_anuncio": anun, "estado": estado, "medio": "Radio Uno", "enlace": enlace, "titular": f"Nota {i}"}
+                                                          "fecha_anuncio": anun, "estado": estado, "medio": "Radio Uno", "enlace": enlace, "titular": f"Nota {i}",
+                                                          "hecho": {"medio": "Radio Uno", "enlace": enlace, "titular": f"Nota {i}"} if estado == "ocurrida" else None}
     web = {"eventos": [ev(1, "Marcha", "anunciada", anun=hace8),             # la fecha pasó y nadie informó: nada
                        ev(2, "Bloqueo de vías", "ocurrida", anun=hace8),     # anunciada antes y la prensa dice que se hizo: aviso con fuente
                        ev(3, "Paro", "suspendida"),                          # se levantó: aviso con fuente

@@ -108,7 +108,8 @@ def cambios(web, z, enviados):
         elif not (ret or gre) and (falsos := sorted(c for c in enviados if c.startswith(f"retira:{orig}:") and "corrige:" + c not in enviados)):
             yield ("corrige:" + falsos[0], f"⚠️ *CORRECCIÓN: NADIE SE RETIRÓ DE LA PROTESTA*\n_{e.get('titular') or que}_\n\n"
                    f"{que}: corrige el aviso anterior de retiro, que leyó mal una nota. Según la prensa, la medida sigue con sus convocantes.{fuente}", None)
-        elif ret or gre:
+        # lo ya avisado no tapa lo siguiente: el 16 nov el retiro enviado dejó sin salir el "se realizó" del paro
+        elif (ret or gre) and f"retira:{orig}:{'-'.join(ret + gre)}" not in enviados:
             quienes = ", ".join([*gre, *(mayus(lugar(u)) for u in ret)])
             yield (f"retira:{orig}:{'-'.join(ret + gre)}", f"↩️ *SE RETIRAN DE LA PROTESTA*\n_{e.get('titular') or que}_\n\n"
                    f"{que}: anuncian que no se suman: {quienes}. El resto de la convocatoria sigue.{fuente}", None)
@@ -116,10 +117,11 @@ def cambios(web, z, enviados):
         # nada: un aviso con signo de interrogación y sin fuente resta credibilidad
         # solo de lo que se avisó como anunciado (tiene fecha de anuncio anterior) y pasó en los últimos 3 días: lo que ya
         # llegó como ocurrido no se repite (un bloqueo del 4 nov volvió a salir el 11 como "se realizó")
-        elif (e.get("estado") == "ocurrida" and f and e.get("fecha_anuncio") and e["fecha_anuncio"] < f and e.get("enlace")
+        # la fuente es la nota que dice que ocurrió (hecho), no la del anuncio; sin ella no se afirma nada
+        elif (e.get("estado") == "ocurrida" and f and e.get("fecha_anuncio") and e["fecha_anuncio"] < f and (h := e.get("hecho")) and h.get("enlace")
               and (date.today() - timedelta(days=3)).isoformat() <= f <= hoy()):
-            yield ("hubo:" + orig, f"📍 *SE REALIZÓ*\n_{e.get('titular') or que}_\n\n{que}: según {e.get('medio') or 'la prensa'}, "
-                   f"la medida se llevó a cabo.{fuente}", None)
+            yield ("hubo:" + orig, f"📍 *SE REALIZÓ*\n_{h.get('titular') or que}_\n\n{que}: según {h.get('medio') or 'la prensa'}, "
+                   f"la medida se llevó a cabo.\n\n📰 *Fuente:* [{h.get('medio') or 'nota'}]({h['enlace']})", None)
 
 
 REPUTACION = ("Lees menciones recientes de una empresa minera en prensa y radio del Perú (transcripciones con errores). "
