@@ -135,6 +135,13 @@ def datos(con):
         con_texto = {i for (i,) in con.execute("""SELECT DISTINCT en.evento_id FROM evento_nota en JOIN nota n ON n.id = en.nota_id
                                                   WHERE length(trim(coalesce(n.resumen, ''))) > 0""")}
         ev["leida"] = [i in con_texto for i in ev.id]
+        # la nota escrita que dice que ocurrió (no la del anuncio): es la fuente del aviso "se realizó"
+        hecho = {i: {"medio": m, "enlace": l, "titular": t} for i, m, l, t in con.execute(
+            """SELECT en.evento_id, n.medio, n.enlace, n.titular FROM evento_nota en JOIN nota n ON n.id = en.nota_id
+               JOIN codificacion k ON k.nota_id = n.id AND k.version IN (?, 'reglas', 'previa')
+               WHERE k.estado = 'ocurrida' AND length(trim(coalesce(n.resumen, ''))) > 0 AND n.enlace NOT LIKE '%news.google%'
+                 AND coalesce(n.consulta, '') <> 'radio' ORDER BY n.publicado DESC""", (VERSION,))}
+        ev["hecho"] = [hecho.get(i) for i in ev.id]
         for k in ("adhieren", "retiran", "suspendido", "postergado", "urbano", "carga", "puntos", "plazo"):
             ev[k] = [x[k] for x in leido]
         ev["fecha_evento"] = [dia_dicho(t, f) for t, f in zip(ev.titular, ev.fecha_evento)]
@@ -318,6 +325,7 @@ def juntar(evs):
         par["urbano"] = (bool(par.get("urbano")) or bool(e.get("urbano"))) and not (par.get("carga") or e.get("carga"))
         par["carga"] = bool(par.get("carga") or e.get("carga"))
         par["plazo"] = max([x for x in (par.get("plazo"), e.get("plazo")) if isinstance(x, str)], default=None)
+        par["hecho"] = par.get("hecho") or e.get("hecho")
         if not txt(par.get("reclamo")):
             par["reclamo"] = e.get("reclamo")
     visto = set()  # el mismo plazo citado por varias protestas del departamento: un solo aviso, en la de más notas
