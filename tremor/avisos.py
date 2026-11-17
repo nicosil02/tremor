@@ -102,13 +102,11 @@ def vias(web, z, desde, cortes=()):
     SUTRAN (lista vigente de web.json). Primero lo que cae en la zona o la ruta del cliente. Sin notas con cortes y sin
     lista de la SUTRAN no se dice nada: no se afirma que no hay cortes."""
     todas, prensa = web.get("sutran") or [], []
-    # ponytail: un corte por provincia, y el que solo dice el departamento cede al que precisa dentro de él
-    for c in sorted((c for c in cortes if c.get("ubigeo")), key=lambda c: -len(c["ubigeo"])):
-        if not any(p["ubigeo"][:4] == c["ubigeo"][:4] or p["ubigeo"].startswith(c["ubigeo"]) for p in prensa) and len(prensa) < 6:
-            prensa.append(c)
+    from tremor.web import cortes_unicos
+    prensa = cortes_unicos(cortes)
     if not (todas or prensa):
         return ""
-    nota = lambda c: (f"• {mayus(lugar(c['ubigeo']))}: «{re.sub(r" +([.,])", r"\1", LIMPIA.sub('', c['frase']))}» "
+    nota = lambda c: (f"• {mayus(lugar(c['ubigeo']))}: «{LIMPIA.sub('', c['frase'])}» "
                       f"([{c.get('medio') or 'nota'}]({c['enlace']}), {dia(c.get('hora'))} {(c.get('hora') or '')[11:16]})")
     xs = sorted((s for s in todas if s.get("motivo") == "humano" and (s.get("fecha_evento") or "") >= desde
                  and re.search(r"protest|manifest|bloque|\bparo\b|huelga", s.get("titulo") or "", re.I)),  # "humano" también es un bus varado

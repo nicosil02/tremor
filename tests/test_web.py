@@ -6,6 +6,13 @@ def test_puntos_sin_preguntas():
         "Los transportistas bloquearon la carretera Panamericana Norte en Casma."]
 
 
+def test_hasta_cuando_esta_en_curso():
+    from tremor.web import hasta
+    e = {"estado": "ocurrida", "fecha_evento": "2026-11-16", "titular": "Ratifican paro de 72 horas", "hecho": {"titular": "Inicia el paro"}}
+    assert hasta(e) == "2026-11-18" and hasta(dict(e, hecho=None)) is None and hasta(dict(e, estado="anunciada")) is None
+    assert hasta(dict(e, titular="Paro de transportistas")) == "2026-11-16"
+
+
 def test_juntar_sin_actor():
     import math
     from tremor.web import juntar

@@ -149,7 +149,7 @@ def datos(con):
                    JOIN codificacion k ON k.nota_id = n.id AND k.version IN (?, 'reglas', 'previa')
                    WHERE k.estado = 'ocurrida' AND length(trim(coalesce(n.resumen, ''))) > 0 AND coalesce(n.consulta, '') <> 'radio'
                    ORDER BY n.publicado DESC""", (VERSION,)):
-            cortes.setdefault(i, []).extend({"frase": f, "medio": m, "enlace": l, "hora": p} for f in puntos(f"{t}. {r}", 1))
+            cortes.setdefault(i, []).extend({"frase": re.sub(r" +([.,])", r"\1", f), "medio": m, "enlace": l, "hora": p} for f in puntos(f"{t}. {r}", 1))
         ev["cortes"] = [[dict(c, ubigeo=str(u)) for c in cortes.get(i, [])] for i, u in zip(ev.id, ev.ubigeo)]
         for k in ("adhieren", "retiran", "suspendido", "postergado", "urbano", "carga", "puntos", "plazo"):
             ev[k] = [x[k] for x in leido]
@@ -170,6 +170,8 @@ def datos(con):
         ev["ubigeo"] = [d[0] if len(d) == 1 else u for d, u in zip(nombrados, ev.ubigeo)]
         ev["focos"] = [d if d else f if len(f) > 1 else [u] if u != "00" else []
                        for d, f, u in zip(nombrados, ev.focos, ev.ubigeo.astype(str))]
+        ev["cortes"] = [cortes_unicos(c) for c in ev.cortes]
+        ev["hasta"] = [hasta(e) for e in ev.to_dict("records")]
     met = tabla(con, "SELECT objetivo, modelo, metrica, valor FROM modelo_metrica WHERE metrica IN ('precision_top20', "
                      "'precision_top20_li', 'precision_top20_ls', 'captura_top10pct', 'tasa_base')")
     ventana = tabla(con, "SELECT ventana, mes_base FROM alerta LIMIT 1")
@@ -228,6 +230,25 @@ CARGA = re.compile(r"carga pesada|transporte de carga|transportistas de carga") 
 CORTA = re.compile(r"bloque|quema de llantas|cortaron|cerraron|tomaron|piquete")
 DONDE = re.compile(r"carretera|v[ií]as?\b|puente|ingreso|salida|km\b|kil[oó]metro|avenida|\bav\.|[oó]valo|jir[oó]n|plaza|cruce|desv[ií]o|panamericana|interoce[aá]nica")
 DIAS = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]
+
+
+def cortes_unicos(cortes, n=6):
+    """Un corte por provincia, el más preciso; el que solo dice el departamento cede al que precisa dentro de él."""
+    out = []
+    for c in sorted((c for c in cortes or [] if c.get("ubigeo")), key=lambda c: -len(c["ubigeo"])):
+        if not any(p["ubigeo"][:4] == c["ubigeo"][:4] or p["ubigeo"].startswith(c["ubigeo"]) for p in out) and len(out) < n:
+            out.append(c)
+    return out
+
+
+def hasta(e):
+    """Último día de una medida que ya empezó (una nota dice que ocurrió) según lo que anuncia su titular ("72 horas"):
+    hasta ese día la página y el aviso la dan por "en curso"."""
+    from tremor.avisos import dias_de
+    h, f = e.get("hecho"), str(e.get("fecha_evento") or "")[:10]
+    if e.get("estado") != "ocurrida" or not isinstance(h, dict) or len(f) < 10:
+        return None
+    return (date.fromisoformat(f) + timedelta(days=dias_de(f"{txt(e.get('titular'))} {h.get('titular') or ''}") - 1)).isoformat()
 
 
 def puntos(texto, n=3):
