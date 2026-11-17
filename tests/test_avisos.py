@@ -228,6 +228,14 @@ def test_protesta_en_curso_con_vias_de_sutran():
     assert "https://x.pe/inicia" in texto
     web["sutran"] = []                                   # la SUTRAN no respondió: no se afirma que no hay cortes
     assert "SUTRAN" not in next(cambios(web, {}, {f"evento:00:Paro:{hoy()}"}))[1]
+    # los cortes que nombran las notas: frase literal con medio y hora, un lugar una vez, y aparte los de la zona del cliente
+    c = lambda u, f: {"frase": f, "medio": "Radio Y", "enlace": "https://y.pe/n", "hora": "2026-11-16T11:34-05:00", "ubigeo": u}
+    e["cortes"] = [c("020801", "Los transportistas bloquearon la Panamericana Norte en Casma."), c("0208", "Cerraron el pase en Casma."),
+                   c("0405", "Bloquean la vía en Caylloma."), c("02", "Bloqueo en Áncash.")]
+    texto = next(cambios(web, {"040520": "en su ruta"}, {f"evento:00:Paro:{hoy()}"}))[1]
+    ruta, prensa = texto.split("🗞")
+    assert "Caylloma" in ruta and "Casma" not in ruta and "«Los transportistas bloquearon la Panamericana Norte en Casma.»" in prensa
+    assert "Cerraron el pase" not in texto and "Bloqueo en Áncash" not in texto and "Radio Y" in prensa and "16 nov 11:34" in prensa and "SUTRAN" not in texto
 
 
 def test_seguimiento_solo_con_noticia():

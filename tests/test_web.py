@@ -1,5 +1,11 @@
 
 
+def test_puntos_sin_preguntas():
+    from tremor.web import puntos
+    assert puntos("Paro de carga: ¿hay bloqueo de carreteras en Áncash? Los transportistas bloquearon la carretera Panamericana Norte en Casma.") == [
+        "Los transportistas bloquearon la carretera Panamericana Norte en Casma."]
+
+
 def test_juntar_sin_actor():
     import math
     from tremor.web import juntar

@@ -142,6 +142,15 @@ def datos(con):
                WHERE k.estado = 'ocurrida' AND length(trim(coalesce(n.resumen, ''))) > 0 AND n.enlace NOT LIKE '%news.google%'
                  AND coalesce(n.consulta, '') <> 'radio' ORDER BY n.publicado DESC""", (VERSION,))}
         ev["hecho"] = [hecho.get(i) for i in ev.id]
+        # dónde se cortó el paso según las notas que dicen que ocurrió: la frase tal cual, con su medio y su hora
+        cortes = {}
+        for i, m, l, t, r, p in con.execute(
+                """SELECT en.evento_id, n.medio, n.enlace, n.titular, n.resumen, n.publicado FROM evento_nota en JOIN nota n ON n.id = en.nota_id
+                   JOIN codificacion k ON k.nota_id = n.id AND k.version IN (?, 'reglas', 'previa')
+                   WHERE k.estado = 'ocurrida' AND length(trim(coalesce(n.resumen, ''))) > 0 AND coalesce(n.consulta, '') <> 'radio'
+                   ORDER BY n.publicado DESC""", (VERSION,)):
+            cortes.setdefault(i, []).extend({"frase": f, "medio": m, "enlace": l, "hora": p} for f in puntos(f"{t}. {r}", 1))
+        ev["cortes"] = [[dict(c, ubigeo=str(u)) for c in cortes.get(i, [])] for i, u in zip(ev.id, ev.ubigeo)]
         for k in ("adhieren", "retiran", "suspendido", "postergado", "urbano", "carga", "puntos", "plazo"):
             ev[k] = [x[k] for x in leido]
         ev["fecha_evento"] = [dia_dicho(t, f) for t, f in zip(ev.titular, ev.fecha_evento)]
@@ -226,7 +235,7 @@ def puntos(texto, n=3):
     out = []
     for f in re.split(r"(?<=[.;!?])\s+|\n", texto or ""):
         f = " ".join(f.split())
-        if 25 < len(f) < 260 and CORTA.search(f.lower()) and DONDE.search(f.lower()) and not any(f[:60] == o[:60] for o in out):
+        if 25 < len(f) < 260 and "?" not in f and CORTA.search(f.lower()) and DONDE.search(f.lower()) and not any(f[:60] == o[:60] for o in out):
             out.append(f)
     return out[:n]
 
@@ -326,6 +335,7 @@ def juntar(evs):
         par["carga"] = bool(par.get("carga") or e.get("carga"))
         par["plazo"] = max([x for x in (par.get("plazo"), e.get("plazo")) if isinstance(x, str)], default=None)
         par["hecho"] = par.get("hecho") or e.get("hecho")
+        par["cortes"] = (par.get("cortes") or []) + (e.get("cortes") or [])
         if not txt(par.get("reclamo")):
             par["reclamo"] = e.get("reclamo")
     visto = set()  # el mismo plazo citado por varias protestas del departamento: un solo aviso, en la de más notas
