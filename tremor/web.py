@@ -125,11 +125,15 @@ def datos(con):
                                     WHERE n.consulta = 'radio' AND n.resumen IS NOT NULL"""))
         ev["cita"] = [cita(radio.get(i)) for i in ev.id]
         try:  # gremios que se retiran, leídos por el LLM (codificar.retiros)
-            gremios = {}
-            for i, g in con.execute("SELECT en.evento_id, r.gremios FROM evento_nota en JOIN retiro_nota r ON r.nota_id = en.nota_id"):
+            gremios, retiro_de = {}, {}
+            for i, g, m, l in con.execute("""SELECT en.evento_id, r.gremios, n.medio, n.enlace FROM evento_nota en
+                    JOIN retiro_nota r ON r.nota_id = en.nota_id JOIN nota n ON n.id = r.nota_id ORDER BY n.publicado"""):
                 gremios.setdefault(i, []).extend(json.loads(g))
+                if json.loads(g):
+                    retiro_de[i] = {"medio": m, "enlace": l}
         except sqlite3.OperationalError:
             gremios = {}
+        ev["retiro_nota"] = [retiro_de.get(i) for i in ev.id]
         ev["gremios_retiran"] = [list(dict.fromkeys(gremios.get(i, []))) for i in ev.id]
         # hay al menos una nota con texto del medio (no solo el titular): sin eso no se avisa al cliente
         con_texto = {i for (i,) in con.execute("""SELECT DISTINCT en.evento_id FROM evento_nota en JOIN nota n ON n.id = en.nota_id
@@ -140,7 +144,8 @@ def datos(con):
             """SELECT en.evento_id, n.medio, n.enlace, n.titular FROM evento_nota en JOIN nota n ON n.id = en.nota_id
                JOIN codificacion k ON k.nota_id = n.id AND k.version IN (?, 'reglas', 'previa')
                WHERE k.estado = 'ocurrida' AND length(trim(coalesce(n.resumen, ''))) > 0 AND n.enlace NOT LIKE '%news.google%'
-                 AND coalesce(n.consulta, '') <> 'radio' ORDER BY n.publicado DESC""", (VERSION,))}
+                 AND coalesce(n.consulta, '') <> 'radio' AND n.medio NOT IN ('Facebook', 'Instagram', 'YouTube', 'TikTok', 'X') AND n.enlace NOT LIKE '%facebook.com%'
+               ORDER BY n.publicado DESC""", (VERSION,))}
         ev["hecho"] = [hecho.get(i) for i in ev.id]
         # dónde se cortó el paso según las notas que dicen que ocurrió: la frase tal cual, con su medio y su hora
         cortes = {}
@@ -148,9 +153,13 @@ def datos(con):
                 """SELECT en.evento_id, n.medio, n.enlace, n.titular, n.resumen, n.publicado FROM evento_nota en JOIN nota n ON n.id = en.nota_id
                    JOIN codificacion k ON k.nota_id = n.id AND k.version IN (?, 'reglas', 'previa')
                    WHERE k.estado = 'ocurrida' AND length(trim(coalesce(n.resumen, ''))) > 0 AND coalesce(n.consulta, '') <> 'radio'
+                     AND n.medio NOT IN ('Facebook', 'Instagram', 'YouTube', 'TikTok', 'X') AND n.enlace NOT LIKE '%facebook.com%'
                    ORDER BY n.publicado DESC""", (VERSION,)):
-            cortes.setdefault(i, []).extend({"frase": re.sub(r" +([.,])", r"\1", f), "medio": m, "enlace": l, "hora": p} for f in puntos(f"{t}. {r}", 1))
-        ev["cortes"] = [[dict(c, ubigeo=str(u)) for c in cortes.get(i, [])] for i, u in zip(ev.id, ev.ubigeo)]
+            cortes.setdefault(i, []).extend({"frase": re.sub(r" +([.,])", r"\1", f), "medio": m, "enlace": l, "hora": p, "texto": f"{t}. {r}"}
+                                            for f in puntos(f"{t}. {r}", 1))
+        # el lugar lo puso el LLM: vale hasta el nivel que la nota nombra; si no nombra ninguno, el corte no se muestra
+        ev["cortes"] = [[{**{k: v for k, v in c.items() if k != "texto"}, "ubigeo": d} for c in cortes.get(i, []) if (d := donde_dice(c["texto"], str(u)))]
+                        for i, u in zip(ev.id, ev.ubigeo)]
         for k in ("adhieren", "retiran", "suspendido", "postergado", "urbano", "carga", "puntos", "plazo"):
             ev[k] = [x[k] for x in leido]
         ev["fecha_evento"] = [dia_dicho(t, f) for t, f in zip(ev.titular, ev.fecha_evento)]
@@ -232,13 +241,31 @@ DONDE = re.compile(r"carretera|v[ií]as?\b|puente|ingreso|salida|km\b|kil[oó]me
 DIAS = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]
 
 
+@functools.lru_cache
+def _nombres():
+    out = {}
+    for r in csv.DictReader(open(RAIZ / "tremor" / "ubigeo.csv", encoding="utf-8")):
+        u = r["ubigeo"]
+        out.update({u: r["distrito"], u[:4]: out.get(u[:4]) or r["provincia"], u[:2]: r["region"]})
+    return out
+
+
+def donde_dice(texto, ubigeo):
+    """El lugar más preciso de un ubigeo (distrito, provincia, región) que el texto nombra; "00" queda igual; None si
+    no nombra ninguno ("San Rafael" puesto a un titular que solo dice "bloquean carreteras")."""
+    if ubigeo == "00":
+        return "00"
+    t = _llano(texto)
+    return next((ubigeo[:k] for k in (6, 4, 2) if len(ubigeo) >= k and re.search(rf"\b{re.escape(_llano(_nombres().get(ubigeo[:k], '~')))}\b", t)), None)
+
+
 def cortes_unicos(cortes, n=6):
     """Un corte por provincia, el más preciso; el que solo dice el departamento cede al que precisa dentro de él."""
     out = []
     for c in sorted((c for c in cortes or [] if c.get("ubigeo")), key=lambda c: -len(c["ubigeo"])):
         if not any(p["ubigeo"][:4] == c["ubigeo"][:4] or p["ubigeo"].startswith(c["ubigeo"]) for p in out) and len(out) < n:
             out.append(c)
-    return out
+    return sorted(out, key=lambda c: c.get("hora") or "", reverse=True)  # lo más reciente primero
 
 
 def hasta(e):
@@ -254,9 +281,11 @@ def hasta(e):
 def puntos(texto, n=3):
     """Las frases que dicen dónde se corta o se cortó el paso (vías, puentes, ingresos), sin repetirse."""
     out = []
-    for f in re.split(r"(?<=[.;!?])\s+|\n", texto or ""):
+    # tildes rotas del medio ("kilÃ³metro"): se reparan; fuera las frases con etiquetas o reclamos del sitio ("PUEDES LEER ►")
+    texto = re.sub(r"Ã[\x80-\xbf]", lambda m: m.group(0).encode("latin-1").decode("utf-8", "replace"), texto or "")
+    for f in re.split(r"(?<=[.;!?])\s+|\n", texto):
         f = " ".join(f.split())
-        if 25 < len(f) < 260 and "?" not in f and CORTA.search(f.lower()) and DONDE.search(f.lower()) and not any(f[:60] == o[:60] for o in out):
+        if 25 < len(f) < 260 and "?" not in f and not re.search(r"[#►]|\bGuardar\b", f) and CORTA.search(f.lower()) and DONDE.search(f.lower()) and not any(f[:60] == o[:60] for o in out):
             out.append(f)
     return out[:n]
 
@@ -356,6 +385,13 @@ def juntar(evs):
         par["carga"] = bool(par.get("carga") or e.get("carga"))
         par["plazo"] = max([x for x in (par.get("plazo"), e.get("plazo")) if isinstance(x, str)], default=None)
         par["hecho"] = par.get("hecho") or e.get("hecho")
+        par["retiro_nota"] = e.get("retiro_nota") or par.get("retiro_nota")
+        if familia(e.get("accion")) == "paro" and familia(par.get("accion")) != "paro":
+            par["accion"] = e["accion"]
+        fe, fp = txt(e.get("fecha_evento")), txt(par.get("fecha_evento"))
+        if e.get("estado") == "ocurrida" and fe and fe < fp:  # empezó ese día
+            par["fecha_evento"], par["estado"] = fe, "ocurrida"
+        par["fecha_anuncio"] = min([x for x in (par.get("fecha_anuncio"), e.get("fecha_anuncio")) if isinstance(x, str)], default=None)
         par["cortes"] = (par.get("cortes") or []) + (e.get("cortes") or [])
         if not txt(par.get("reclamo")):
             par["reclamo"] = e.get("reclamo")

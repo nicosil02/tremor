@@ -212,6 +212,17 @@ def test_seguimiento_de_lo_avisado():
     assert "POSTERGADA" in xs["cae"] and "La Joya" in xs["retira"] and "transportistas de carga de Islay" in xs["retira"] and "Lima" not in xs["retira"]
 
 
+def test_retiro_con_su_fuente_y_solo_si_le_toca():
+    from tremor.avisos import cambios
+    e = {"ubigeo": "00", "accion": "Paro", "fecha_evento": "2026-12-01", "estado": "anunciada", "enlace": "https://x.pe/anuncio", "medio": "X",
+         "gremios_retiran": ["transportistas del puerto de Paita"], "retiro_nota": {"medio": "El Tiempo", "enlace": "https://t.pe/paita"}}
+    env = {"evento:00:Paro:2026-12-01"}
+    assert list(cambios({"eventos": [e]}, {"040520": "en su ruta"}, env)) == []          # Paita no está en su ruta, y tampoco se "corrige" nada
+    assert list(cambios({"eventos": [e]}, {"040520": "en su ruta"}, env | {"retira:evento:00:Paro:2026-12-01:transportistas del puerto de Paita"})) == []
+    (_, t, _), = cambios({"eventos": [e]}, {"200501": "en su ruta"}, env)
+    assert "NO PARTICIPAN" in t and "SE RETIRAN" not in t and "https://t.pe/paita" in t and "anuncio" not in t
+
+
 def test_protesta_en_curso_con_vias_de_sutran():
     """El primer día de un paro de 72 horas no "se realizó": está en curso, y dice dónde hay protesta según la SUTRAN."""
     from tremor.avisos import cambios, hoy

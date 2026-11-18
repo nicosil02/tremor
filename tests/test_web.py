@@ -1,5 +1,27 @@
 
 
+def test_paro_no_cambia_de_nombre_al_juntar():
+    """Los bloqueos del día 2 tienen más notas que el paro: el evento sigue siendo el paro del 16, con su fecha de anuncio."""
+    from tremor.web import juntar
+    b = {"ubigeo": "00", "accion": "Paro", "actor": "Transportistas de carga", "reclamo": "Económicos", "titular": "Paro de 72 horas"}
+    (e,) = juntar([dict(b, accion="Bloqueo de vías", ubigeo="100207", fecha_evento="2026-11-17", fecha_anuncio=None, estado="ocurrida", n_notas=40),
+                   dict(b, fecha_evento="2026-11-16", fecha_anuncio="2026-11-10", estado="ocurrida", n_notas=20)])
+    assert (e["accion"], e["fecha_evento"], e["fecha_anuncio"]) == ("Paro", "2026-11-16", "2026-11-10")
+
+
+def test_lugar_del_corte_verificado():
+    from tremor.web import donde_dice
+    assert donde_dice("Bloqueos en la salida norte de Casma", "020801") == "020801"
+    assert donde_dice("Transportistas bloquean la Carretera Central en Huánuco", "100207") == "10"
+    assert donde_dice("Transportistas de carga pesada bloquean carreteras", "100207") is None and donde_dice("Bloqueos en tres regiones", "00") == "00"
+
+
+def test_puntos_limpios():
+    from tremor.web import puntos
+    assert puntos("#Exitosa | Transportistas bloquean vías en Huancavelica y la carretera. Bloqueos en el kilÃ³metro 365 de la Panamericana Norte.") == [
+        "Bloqueos en el kilómetro 365 de la Panamericana Norte."]
+
+
 def test_puntos_sin_preguntas():
     from tremor.web import puntos
     assert puntos("Paro de carga: ¿hay bloqueo de carreteras en Áncash? Los transportistas bloquearon la carretera Panamericana Norte en Casma.") == [
