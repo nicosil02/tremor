@@ -9,6 +9,16 @@ def test_paro_no_cambia_de_nombre_al_juntar():
     assert (e["accion"], e["fecha_evento"], e["fecha_anuncio"]) == ("Paro", "2026-11-16", "2026-11-10")
 
 
+def test_via_km_sector_y_hora():
+    from tremor.web import hora_dicha, via
+    assert via("Bloqueos en la salida norte de Casma y en el kilómetro 365 de la Panamericana Norte dejaron varados a camiones.") == "Panamericana Norte, km 365, salida norte de Casma"
+    assert via("Huancavelica: bloquean carretera a Huancayo y otras vías durante paro.") == "Carretera a Huancayo"
+    assert via("Protesta en la carretera Jauja–Tarma, sector Letrero Claro.") == "Carretera Jauja–Tarma, sector Letrero Claro"
+    assert via("Bloquearon por unos minutos la carretera de acceso a la ciudad.") == ""
+    assert hora_dicha("Anuncian bloqueo en Yacucatina desde las 05:00 horas del martes.") == "desde las 05:00 horas"
+    assert hora_dicha("Anuncian paro. La misa será desde las 10:30 a.m. en la plaza.") is None
+
+
 def test_lugar_del_corte_verificado():
     from tremor.web import donde_dice
     assert donde_dice("Bloqueos en la salida norte de Casma", "020801") == "020801"
