@@ -335,6 +335,24 @@ function armar() {
       w: en ? "en curso" : viene ? cuando(f) : e.sin_fecha && anun ? "sin fecha" : dia(f),
       s: [pl ? "vence un plazo, amenazan con nueva medida" : "", u === "00" ? (trans ? "Puede frenar sus despachos" : "Lugar sin precisar") : !zona.has(u) && tramoDe(u, e) ? `${lugar(u)}, en su ruta${sinBloqueo(e) ? ", no suele cortar vías" : ""}` : lugar(u), e.suspendido ? "suspendida" : e.sin_fecha ? `anunciada el ${dia(f)}, todavía sin fecha` : viene ? "" : anun ? "anunciada, sin confirmar" : en ? `empezó el ${dia(f)}` : "ocurrió"].filter(Boolean).join(", ") });
   }
+  // Sus carreteras: las de su ruta de salida y las de abastecimiento (cadena.json). Un corte es suyo por el código de la
+  // SUTRAN o por el nombre que le da la nota, dentro de las regiones donde el cliente usa la vía. La misma regla de tremor/avisos.py
+  const ALIAS_VIA = { "PE-3SG": /corredor (?:minero|vial)(?: del)? sur|corredor vial apurimac/, "PE-3S": /longitudinal de la sierra sur|cusco.{1,4}abancay|abancay.{1,4}cusco/,
+    "PE-34A": /arequipa.{1,4}juliaca|juliaca.{1,4}arequipa/, "PE-1S": /panamericana sur/, "PE-1N": /panamericana norte/, "PE-22": /carretera central/ };
+  const viasCli = [...tramos.filter(r => r.via).map(r => ({ etq: `En su ruta, tramo ${r.nombre}`, via: r.via, regs: new Set(r.ubigeos.map(u => u.slice(0, 2))) })),
+    ...((CAD[empresa] || {}).vias_clave || []).map(v => ({ etq: `Vía de abastecimiento ${v.nombre}`, nombre: v.nombre, via: v.via, regs: new Set(v.regiones) }))];
+  const porVia = (u, cod, texto) => { const t = nrm(texto);
+    return viasCli.find(v => v.regs.has(String(u || "").slice(0, 2)) && (cod === v.via || (ALIAS_VIA[v.via] && ALIAS_VIA[v.via].test(t)))); };
+  const corteDe = c => { const v = porVia(c.ubigeo, "", `${c.via || ""} ${c.frase || ""}`), u = String(c.ubigeo || "");
+    if (v) return v.etq;
+    const r = u !== "00" && u.length >= 2 && tramos.find(r => r.ubigeos.some(x => x.startsWith(u)));
+    return r ? `En su ruta, tramo ${r.nombre}` : u !== "00" && unidades.some(o => String(o.ubigeo).startsWith(u)) ? `Zona de su unidad ${unidades.find(o => String(o.ubigeo).startsWith(u)).unidad}` : ""; };
+  const abasto = viasCli.filter(v => v.nombre).map(v => ({ ...v,
+    sutran: (D.sutran || []).filter(s => porVia(s.ubigeo, s.via, "") === v),
+    prensa: D.eventos.filter(curso).flatMap(e => e.cortes || []).filter(c => porVia(c.ubigeo, "", `${c.via || ""} ${c.frase || ""}`) === v) }));
+  for (const s of D.sutran || []) { const v = porVia(s.ubigeo, s.via, "");
+    if (v && v.nombre && !rutas.includes(s.via)) avisos.push({ f: String(s.fecha_evento || HOY).slice(0, 10), urge: true, tipo: "Bloqueo", sutran: s,
+      t: `Vía de abastecimiento ${v.nombre} bloqueada`, w: "ahora", s: `${titulo(s.distrito || "")}, SUTRAN` }); }
   for (const s of D.sutran || []) if (rutas.includes(s.via))
     avisos.push({ f: String(s.fecha_evento || HOY).slice(0, 10), urge: true, tipo: "Bloqueo", sutran: s, t: `Vía ${s.via} bloqueada`, w: "ahora",
       s: `${titulo(s.distrito || "")}, SUTRAN` });
@@ -362,7 +380,7 @@ function armar() {
       estado: bl ? ["mal", "Bloqueo vigente"] : prox ? ["mal", `${accion(prox.e)} ${cuando(prox.f)}`] : rec ? ["ojo", `${accion(rec.e)} ${dia(rec.f)}`] : ["ok", "Sin avisos"] }; });
   // ponytail: tramos tratados como independientes; distritos vecinos se mueven juntos, así que es un techo
   const via = cadena.length ? 1 - cadena.reduce((q, r) => q * (1 - r.p), 1) : null;
-  return { unidades, avisos, rutas, casos, cadena, via };
+  return { unidades, avisos, rutas, casos, cadena, via, abasto, corteDe, abastoFuente: (CAD[empresa] || {}).vias_clave_fuente || "" };
 }
 let X, TONO_F = null;  // tono elegido en la barra de Reputación
 
@@ -431,6 +449,9 @@ const VISTAS = {
         <p class="pie">Los porcentajes son nivel de riesgo a 3 meses, octubre a diciembre, no una fecha. Lo de hoy viene de la SUTRAN, radios y medios.</p>`
         : X.rutas.length ? `<h2>Rutas de salida</h2>${X.rutas.map(r => { const b = (D.sutran || []).filter(s => s.via === r).length;
           return `<div class="ruta"><b>${esc(r === "PE-3SG" ? "Corredor Minero del Sur" : r)}</b><span class="${b ? "mal" : "ok"}">${b ? "Bloqueada" : "Libre"}</span></div>`; }).join("")}` : "")
+      + ((X.abasto || []).length ? `<h2>Vías de abastecimiento</h2>${X.abasto.map(v => { const n = v.sutran.length + v.prensa.length;
+          return `<div class="ruta"><b>${esc(v.nombre)}</b><span class="${n ? "mal" : "ok"}">${n ? `${n} ${n > 1 ? "cortes" : "corte"}, ${v.sutran.length ? "SUTRAN" : "prensa"}` : "Libre"}</span></div>`; }).join("")}
+          ${X.abastoFuente ? `<p class="aclara">${esc(X.abastoFuente)}.</p>` : ""}` : "")
       + (op.length && otras.length ? `<details class="mas"><summary>Exploración y proyectos (${otras.length})</summary><ul>${otras.map(filaOp).join("")}</ul></details>` : "");
   },
   pais() {
@@ -637,15 +658,16 @@ function detalleAviso(k) {
   const prob = suman.size ? suman : hist, porque = suman.size ? "prensa" : hist.size ? "historia" : "";
   const idx = rs => rs.map(t => X.cadena.findIndex(r => r.nombre === t.nombre)).filter(i => i >= 0);
   const punto = suman.size ? adh[0] : hist.size ? antes[0][0] : null;
-  const en = curso(e), cs = en ? e.cortes || [] : [], nota = en && e.hecho || e;
-  ver(cs.length ? cs.map(c => c.ubigeo) : punto ? [punto] : u === "00" ? [] : [u], x.t, idx(prob.size ? ts.filter(r => prob.has(r.nombre)) : ts.filter(r => !fuera.has(r.nombre))),
+  const en = curso(e), nota = en && e.hecho || e;
+  const cs = en ? (e.cortes || []).map(c => ({ ...c, mio: !PAIS_VISTA && X.corteDe ? X.corteDe(c) : "" })).sort((a, b) => !!b.mio - !!a.mio) : [];
+  ver(cs.length ? (cs.some(c => c.mio) ? cs.filter(c => c.mio) : cs).map(c => c.ubigeo) : punto ? [punto] : u === "00" ? [] : [u], x.t, idx(prob.size ? ts.filter(r => prob.has(r.nombre)) : ts.filter(r => !fuera.has(r.nombre))),
     idx(prob.size ? ts.filter(r => !prob.has(r.nombre) && !fuera.has(r.nombre)) : []),
     suman.size ? `${lugar(punto)}, anunció que se suma` : hist.size ? `${lugar(punto)}, donde más bloquearon antes` : "");
   // Menos texto: cuándo en grande, dos datos, su ruta pintada (lo que puede cortarse en rojo) y la nota como tarjeta
   const viene = e.estado === "anunciada" && f >= HOY && !e.suspendido, toca = new Set(ts.map(r => r.nombre));
   return `<div class="cuando${viene || en ? "" : " paso"}"><b>${esc(e.suspendido ? (e.postergado ? "Postergada" : "Suspendida") : en ? "En curso" : viene ? cuando(f) : dia(f))}</b><span>${esc(e.suspendido ? "según la prensa, " + largo(f) : en ? (e.hasta > f ? `día ${1 - dias(f)} de ${dias(e.hasta) - dias(f) + 1}, anunciada hasta el ${dia(e.hasta)}` : `empezó el ${dia(f)}`) : viene ? largo(f) + (e.desde_hora ? ", " + e.desde_hora : "") : e.estado === "anunciada" ? "anunciada" : "ocurrió")}</span></div>
     <h3 class="titulo-av">${esc(x.t)}</h3>
-    ${cs.length ? `<h2>Dónde hay cortes, según la prensa</h2>${cs.map(c => `<a class="fuente" href="${esc(c.enlace)}" target="_blank" rel="noopener"><small>${esc(c.ubigeo === "00" ? "Varias zonas" : lugar(c.ubigeo))}${c.via ? " · " + esc(c.via) : ""}. ${esc(c.medio)}, ${dia(c.hora)} ${esc(String(c.hora || "").slice(11, 16))}</small>«${esc(c.frase)}»</a>`).join("")}` : ""}
+    ${cs.length ? `<h2>Dónde hay cortes, según la prensa</h2>${cs.map(c => `<a class="fuente" href="${esc(c.enlace)}" target="_blank" rel="noopener"><small>${c.mio ? `<b>${esc(c.mio)}</b>. ` : ""}${esc(c.ubigeo === "00" ? "Varias zonas" : lugar(c.ubigeo))}${c.via ? " · " + esc(c.via) : ""}. ${esc(c.medio)}, ${dia(c.hora)} ${esc(String(c.hora || "").slice(11, 16))}</small>«${esc(c.frase)}»</a>`).join("")}` : ""}
     ${(vs => en && vs.length ? `<h2>Vías con protesta, según la SUTRAN</h2><ul class="por">${vs.map(s => `<li>${esc(titulo(s.distrito || s.provincia || ""))} (${esc(titulo(s.region || ""))}), ${esc(s.via || "")} ${esc(s.km || "")}: tránsito ${esc(s.estado_via || "sin dato")}</li>`).join("")}</ul><p class="aclara">La SUTRAN no dice si son de esta medida.</p>` : "")(viasProtesta(f))}
     ${!cs.length && (e.puntos || []).length ? `<h2>Dónde cortan el paso, según la prensa</h2><ul class="por">${e.puntos.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}<dl class="datos"><dt>Dónde</dt><dd>${esc(u === "00" ? (x.trans ? "Todo el país" : "La nota no lo dice") : lugar(u))}${e.precision === "radio" ? ", aproximado: la radio no dijo el lugar y se usa la provincia que cubre" : ""}${x.cerca ? `, zona de ${esc(x.cerca.unidad)}` : ""}</dd>
       ${e.reclamo ? `<dt>Reclamo</dt><dd>${esc(e.reclamo)}</dd>` : ""}</dl>

@@ -55,9 +55,10 @@ def zona(con, empresa, vecinos):
 
 
 # cómo llama la prensa a cada carretera (sin tildes, en minúsculas): la SUTRAN da el código, las notas el nombre
+# la misma lista en docs/app.html (ALIAS_VIA)
 ALIAS_VIA = {"PE-3SG": r"corredor (?:minero|vial)(?: del)? sur|corredor vial apurimac", "PE-3S": r"longitudinal de la sierra sur|cusco.{1,4}abancay|abancay.{1,4}cusco",
              "PE-34A": r"arequipa.{1,4}juliaca|juliaca.{1,4}arequipa", "PE-1S": r"panamericana sur", "PE-1N": r"panamericana norte", "PE-22": r"carretera central"}
-IMPACTO = "en su área de impacto, con conflicto abierto ante la Defensoría"
+IMPACTO = "en su área de impacto, con conflicto activo ante la Defensoría"
 
 
 class Zona(dict):
@@ -80,8 +81,10 @@ def cliente(con, nombre, vecinos):
         ruta |= set(t["ubigeos"])
         if t.get("via"):
             vias.append((etq, t["via"], {u[:2] for u in t["ubigeos"]}))
-    try:  # ponytail: todo caso que nombra a la empresa, activo o no; filtrar por caso_mes.estado si avisa de más
-        casos = {u for u, n in con.execute("SELECT ubigeo, nombre FROM caso WHERE length(ubigeo) = 6") if re.search(alias, n or "", re.I)}
+    try:  # solo los casos activos en el último reporte de la Defensoría: un caso latente o cerrado no hace área de impacto
+        casos = {u for u, n in con.execute("""SELECT c.ubigeo, c.nombre FROM caso c JOIN caso_mes m ON m.caso_id = c.id
+                     WHERE length(c.ubigeo) = 6 AND m.estado = 'activo' AND m.reporte_num = (SELECT max(reporte_num) FROM caso_mes)""")
+                 if re.search(alias, n or "", re.I)}
     except sqlite3.OperationalError:
         casos = set()
     for u in casos:
