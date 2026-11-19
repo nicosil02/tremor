@@ -241,6 +241,12 @@
  },
  "Las Bambas": {
   "empresa": "minera las bambas",
+  "vias_clave_fuente": "Supuesto de Tremor para la prueba: falta que el cliente confirme por dónde entran sus insumos y su personal",
+  "vias_clave": [
+   {"via": "PE-3S", "nombre": "Longitudinal de la Sierra Sur (Cusco–Abancay)", "regiones": ["03", "08"]},
+   {"via": "PE-34A", "nombre": "Arequipa–Juliaca", "regiones": ["04", "21"]},
+   {"via": "PE-1S", "nombre": "Panamericana Sur", "regiones": ["04", "11"]}
+  ],
   "fuente": "MMG: camión por el Corredor Minero del Sur hasta la estación Pillones (≈490 km) y tren de PeruRail hasta el puerto de Matarani (≈295 km). El trazado del tren va por sus estaciones (Pillones, Sumbay, Yura, Arequipa, La Joya, Mollendo), aproximado",
   "tramos": [
    {
