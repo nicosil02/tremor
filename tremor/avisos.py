@@ -54,6 +54,55 @@ def zona(con, empresa, vecinos):
     return z
 
 
+# cómo llama la prensa a cada carretera (sin tildes, en minúsculas): la SUTRAN da el código, las notas el nombre
+# la misma lista en docs/app.html (ALIAS_VIA)
+ALIAS_VIA = {"PE-3SG": r"corredor (?:minero|vial)(?: del)? sur|corredor vial apurimac", "PE-3S": r"longitudinal de la sierra sur|cusco.{1,4}abancay|abancay.{1,4}cusco",
+             "PE-34A": r"arequipa.{1,4}juliaca|juliaca.{1,4}arequipa", "PE-1S": r"panamericana sur", "PE-1N": r"panamericana norte", "PE-22": r"carretera central"}
+IMPACTO = "en su área de impacto, con conflicto activo ante la Defensoría"
+
+
+class Zona(dict):
+    """{ubigeo: unidad o etiqueta} de lo que le toca al cliente. vecinos: los distritos que entran solo por colindar con
+    la unidad (cuentan para protestas, no para cortes de vía). vias: [(etiqueta, código, regiones)] de su ruta de
+    salida y de abastecimiento: un corte en esa carretera es suyo aunque el distrito no esté en su ruta."""
+    vecinos, vias = frozenset(), ()
+
+
+def cliente(con, nombre, vecinos):
+    """Lo que le toca: sus unidades y vecinos, su ruta de salida (distritos y carreteras), los distritos con un conflicto
+    de la Defensoría que nombra a la empresa y sus vías de abastecimiento (docs/cadena.json)."""
+    empresa, alias = EMPRESAS[nombre]
+    z, cad, ruta, vias = Zona(zona(con, empresa, vecinos)), CADENA.get(nombre, {}), set(), []
+    propios = {u for (u,) in con.execute("SELECT ubigeo FROM operacion WHERE lower(empresa) LIKE ? AND unidad NOT LIKE 'Pasivos%'", (f"%{empresa}%",))}
+    for t in cad.get("tramos", []):  # su ruta de salida
+        etq = "en su ruta, tramo " + re.sub(r", (\w+)$", r" (\1)", t["nombre"])  # "Puerto de Matarani (zinc)"
+        for u in t["ubigeos"]:
+            z.setdefault(u, etq)
+        ruta |= set(t["ubigeos"])
+        if t.get("via"):
+            vias.append((etq, t["via"], {u[:2] for u in t["ubigeos"]}))
+    try:  # solo los casos activos en el último reporte de la Defensoría: un caso latente o cerrado no hace área de impacto
+        casos = {u for u, n in con.execute("""SELECT c.ubigeo, c.nombre FROM caso c JOIN caso_mes m ON m.caso_id = c.id
+                     WHERE length(c.ubigeo) = 6 AND m.estado = 'activo' AND m.reporte_num = (SELECT max(reporte_num) FROM caso_mes)""")
+                 if re.search(alias, n or "", re.I)}
+    except sqlite3.OperationalError:
+        casos = set()
+    for u in casos:
+        z.setdefault(u, IMPACTO)
+    z.vecinos = frozenset(z) - propios - ruta - casos
+    z.vias = vias + [("en su vía de abastecimiento " + v["nombre"], v["via"], set(v["regiones"])) for v in cad.get("vias_clave", [])]
+    return z
+
+
+def por_via(z, ubigeo, codigo="", texto=""):
+    """La etiqueta de la carretera del cliente donde cae un corte (por el código de la SUTRAN o por el nombre que le da
+    la nota), dentro de las regiones donde el cliente la usa; None si no es una de sus vías."""
+    from tremor.web import _llano
+    t = _llano(texto)
+    return next((etq for etq, cod, regs in getattr(z, "vias", ()) if str(ubigeo)[:2] in regs and (
+        codigo == cod or re.search(rf"\b{re.escape(cod.lower())}\b", t) or (cod in ALIAS_VIA and re.search(ALIAS_VIA[cod], t)))), None)
+
+
 SECTOR = r"transportistas urbanos|docente|maestr|profesor|m[eé]dic|enfermer|obstetr|salud|judicial|estatal|municipal|universit|estudiant|administrativ|partidari|pol[ií]tic"  # la misma lista en docs/app.html (armar)
 
 
@@ -78,7 +127,8 @@ def eventos(web, z, alias, desde):
             # la clave es el contenido, no el id: los eventos se renumeran en cada corrida y el aviso se repetía
             yield {"clave": f"evento:{ub}:{acc}:{f}" + (f":plazo{pl}" if pl else ""), "actor": actor, "reclamo": e.get("reclamo") or "", "estado": "plazo" if pl else "sin_fecha" if e.get("sin_fecha") else e["estado"], "fecha": pl or f,
                    "ubigeo": ub, "accion": acc or "Protesta", "unidad": z.get(ub), "medio": e.get("medio") or "", "enlace": e.get("enlace") or "",
-                   "titular": e.get("titular") or "", "transporte": transporte, "punto": (e.get("puntos") or [""])[0]}
+                   "titular": e.get("titular") or "", "transporte": transporte, "punto": (e.get("puntos") or [""])[0],
+                   "hora": e.get("desde_hora") if e["estado"] == "anunciada" and not pl else None}
 
 
 def dias_de(texto):
@@ -98,28 +148,44 @@ LIMPIA = re.compile(r"[_*`\[\]]")  # signos que rompen el Markdown de Telegram
 
 
 def vias(web, z, desde, cortes=()):
-    """Dónde hay cortes: lo que dicen las notas (frase literal, con medio y hora; un lugar una vez) y lo que reporta la
-    SUTRAN (lista vigente de web.json). Primero lo que cae en la zona o la ruta del cliente. Sin notas con cortes y sin
-    lista de la SUTRAN no se dice nada: no se afirma que no hay cortes."""
+    """Dónde hay cortes en la zona o la ruta del cliente: lo que dicen las notas (frase literal, con medio y hora; un
+    lugar una vez) y lo que reporta la SUTRAN (lista vigente de web.json). Del resto del país solo se nombran las
+    regiones: las vías por donde no pasa su carga no le sirven. Sin notas con cortes y sin lista de la SUTRAN no se
+    dice nada: no se afirma que no hay cortes."""
     todas, prensa = web.get("sutran") or [], []
     from tremor.web import cortes_unicos
     prensa = cortes_unicos(cortes)
     if not (todas or prensa):
         return ""
-    nota = lambda c: (f"• {'Varias zonas' if c['ubigeo'] == '00' else mayus(lugar(c['ubigeo']))}: «{LIMPIA.sub('', c['frase'])}» "
+    # el lugar como lo diría un centro de monitoreo: distrito y, si la frase los nombra, vía, km y sector
+    sitio = lambda c: " · ".join(x for x in (mayus(lugar(c["ubigeo"])), LIMPIA.sub("", c.get("via") or "")) if x)
+    nota = lambda c: (f"• *{sitio(c)}*: «{LIMPIA.sub('', c['frase'])}» "
                       f"([{c.get('medio') or 'nota'}]({c['enlace']}), {dia(c.get('hora'))} {(c.get('hora') or '')[11:16]})")
     xs = sorted((s for s in todas if s.get("motivo") == "humano" and (s.get("fecha_evento") or "") >= desde
                  and re.search(r"protest|manifest|bloque|\bparo\b|huelga", s.get("titulo") or "", re.I)),  # "humano" también es un bus varado
                 key=lambda s: s.get("estado_via") == "normal")
-    linea = lambda s: (f"• {(s.get('distrito') or s.get('provincia') or '').title()} ({(s.get('region') or '').title()}), {s.get('via') or ''} "
-                       f"{s.get('km') or ''}: tránsito {s.get('estado_via') or 'sin dato'}")
-    suyas = ([nota(c) for c in prensa if len(c["ubigeo"]) >= 4 and any(k.startswith(c["ubigeo"]) for k in z)]
-             + [linea(s) for s in xs if str(s.get("ubigeo") or "") in z])
-    return ("\n\n🛣 *En su zona o ruta:* " + ("\n" + "\n".join(suyas) if suyas else "ni la prensa ni la SUTRAN reportan por ahora cortes." if todas
-                                               else "ninguno de los cortes que nombra la prensa.")
-            + ("\n\n🗞 *Cortes que nombra la prensa* (lo que dice cada nota, a su hora):\n" + "\n".join(map(nota, prensa)) if prensa else "")
-            + (f"\n\n📍 *Vías con protesta desde el {dia(desde)}, según la SUTRAN* (no dice si son de esta medida):\n" + "\n".join(map(linea, xs[:8]))
-               + "\n[alertasviales.sutran.gob.pe](https://alertasviales.sutran.gob.pe)" if xs else ""))
+    linea = lambda s: (f"• *{(s.get('distrito') or s.get('provincia') or '').title()} · {s.get('via') or ''} "
+                       f"{s.get('km') or ''}*: tránsito {s.get('estado_via') or 'sin dato'} (SUTRAN, no dice si es de esta medida)")
+    # Le toca si cae en un distrito, provincia o región de su unidad, su ruta o su área de impacto (colindar no basta
+    # para un corte de vía), o si es en una de sus carreteras; ahí se dice en cuál
+    vec = getattr(z, "vecinos", ())
+    toca = lambda u: u != "00" and len(u) >= 2 and any(k.startswith(u) for k in z if k not in vec)
+    suyas, abasto, otras = [], [], []
+    for u, etq, texto in ([(c["ubigeo"], por_via(z, c["ubigeo"], "", f"{c.get('via') or ''} {c['frase']}"), nota(c)) for c in prensa]
+                          + [(str(s.get("ubigeo") or ""), por_via(z, s.get("ubigeo") or "", s.get("via") or ""), linea(s)) for s in xs]):
+        if etq and etq.startswith("en su vía"):
+            abasto.append(f"{texto} · {etq.removeprefix('en su vía de abastecimiento ')}")
+        elif etq or toca(u):
+            etq = etq or next(z[k] for k in z if k not in vec and k.startswith(u))
+            suyas.append(f"{texto} · {etq[3:] if etq.startswith('en su ') else 'zona de su unidad ' + etq}")
+        elif u not in ("", "00"):
+            otras.append(lugar(u[:2]))
+    otras = list(dict.fromkeys(otras))
+    return ("\n\n🛣 *En su ruta o su área:* " + ("\n" + "\n".join(suyas) if suyas else "ni la prensa ni la SUTRAN reportan por ahora cortes." if todas
+                                                  else "ninguno de los cortes que nombra la prensa.")
+            + ("\n\n🚚 *En sus vías de abastecimiento:*\n" + "\n".join(abasto) if abasto else "")
+            + (f"\n\n📍 *Fuera de su ruta* hay cortes en {', '.join(otras[:-1]) + ' y ' + otras[-1] if len(otras) > 1 else otras[0]}. "
+               f"[Ver el mapa]({APP})" if otras else ""))
 
 
 def suyo(gremio, z):
@@ -249,17 +315,18 @@ def sutran(con, z, desde):
     """Alertas de la SUTRAN en la zona o la ruta: toda protesta, y en la ruta toda vía interrumpida (huaico, accidente,
     El Niño): al de logística le sirve igual, pero el aviso dice la causa."""
     from tremor.tiempos import MOTIVO
-    for codigo, motivo, sub, estado, titulo, desc, ub, fecha, lat, lng in con.execute(
-            "SELECT codigo, motivo, submotivo, estado_via, titulo, descripcion, ubigeo, fecha_evento, lat, lng FROM sutran_alerta "
+    for codigo, motivo, sub, estado, titulo, desc, ub, fecha, lat, lng, via in con.execute(
+            "SELECT codigo, motivo, submotivo, estado_via, titulo, descripcion, ubigeo, fecha_evento, lat, lng, via FROM sutran_alerta "
             "WHERE visto_ultimo >= ?", ((datetime.now() - timedelta(hours=6)).isoformat(timespec="seconds"),)):  # solo los cortes vigentes
-        if (ub or "") not in z:
+        etq = por_via(z, ub or "", via or "") or z.get(ub or "")
+        if not etq:
             continue
-        protesta, ruta = motivo == "humano", z[ub].startswith("en su ruta")
+        protesta, ruta = motivo == "humano", etq.startswith(("en su ruta", "en su vía"))
         if not protesta and not (ruta and (estado or "").startswith("interrump")):
             continue
         causa = "El Niño" if "nino" in (sub or "") else MOTIVO.get(motivo, motivo or "causa sin precisar")
         yield {"clave": f"sutran:{codigo}", "estado": "ocurrida", "fecha": fecha or desde, "ubigeo": ub,
-               "accion": "Bloqueo de vías" if protesta else f"Vía interrumpida por {causa}", "unidad": z[ub],
+               "accion": "Bloqueo de vías" if protesta else f"Vía interrumpida por {causa}", "unidad": etq,
                "medio": "SUTRAN", "enlace": "https://alertasviales.sutran.gob.pe", "titular": (titulo or "").capitalize(),
                "transporte": False, "punto": (desc or "")[:200], "segun": "SUTRAN", "coord": (lat, lng) if lat and lng else None}
 
@@ -368,7 +435,7 @@ def riesgo(web, z):
     """Zonas de la empresa cuyo riesgo está claramente sobre lo habitual en esta corrida del modelo."""
     for a in web["alerta"]:
         c = a.get("cambio_zona_ext")
-        if a["ubigeo"] in z and a.get("operacion_extractiva") and c is not None and c >= SUBE:
+        if a["ubigeo"] in z and z[a["ubigeo"]] != IMPACTO and a.get("operacion_extractiva") and c is not None and c >= SUBE:
             sube = "; ".join(empujan(a.get("razones_cambio_ext") or "")[:3])
             dep, prov, dis = (a["lugar"].title().split(" / ") + ["", ""])[:3]
             base = (a.get("razones_zona_extractivo") or "").split(" · ")[0].removeprefix("en la zona (distrito y vecinos): ")
@@ -440,7 +507,7 @@ def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
                       cortes=cortados({r["ubigeo"]}), empresa=empresa)
         out.append((r["clave"], texto, png))
     for e in sorted(evs, key=lambda e: e["estado"] != "anunciada"):
-        cuando = {"anunciada": f"Anunciada para el {dia(e['fecha'])}", "plazo": f"Plazo que vence el {dia(e['fecha'])}",
+        cuando = {"anunciada": f"Anunciada para el {dia(e['fecha'])}" + (f", {e['hora']}" if e.get("hora") else ""), "plazo": f"Plazo que vence el {dia(e['fecha'])}",
                   "sin_fecha": f"Anunciada el {dia(e['fecha'])}, todavía sin fecha"}.get(e["estado"], f"Ocurrió el {dia(e['fecha'])}")
         ruta = (e["unidad"] or "").startswith("en su ruta")
         prov = [x for x in unidad if len(e["ubigeo"]) == 4 and x.startswith(e["ubigeo"])]  # protesta ubicada solo en la provincia
@@ -449,11 +516,14 @@ def piezas(nombre, evs, rad, rie, unidad, vecinos, tramos):
         fuerza = bool(re.search(r"paro|huelga|bloque|toma|invasi|enfrent", (e["accion"] or "").lower()))
         donde = ("Todo el país" if e["ubigeo"] == "00" else mayus(lugar(e["ubigeo"]))
                  + (f", {e['unidad'].replace('en su ruta, tramo', 'en su ruta de salida, tramo')}" if ruta
-                    else f", zona de su unidad {e['unidad']}" if e["unidad"] else ""))
+                    else f", {e['unidad']}" if (e["unidad"] or "").startswith("en su ") else f", zona de su unidad {e['unidad']}" if e["unidad"] else ""))
+        abasto = (e["unidad"] or "").startswith("en su vía")
         efecto = ("Puede frenar sus despachos de concentrado y la llegada de insumos." if e["transporte"]
+                  else "Puede demorar la llegada de insumos y de personal." if abasto
                   else "Puede cortar el paso de sus camiones por ese tramo." if ruta else "Puede afectar el acceso y la operación de su unidad." if fuerza
                   else "Es un reclamo hacia la operación que puede escalar a un paro o bloqueo.")
-        hacer = ("Adelantar o reprogramar despachos y coordinar con sus transportistas rutas y horarios." if e["transporte"] or ruta
+        hacer = ("Avisar a sus proveedores y revisar el stock de insumos críticos." if abasto
+                 else "Adelantar o reprogramar despachos y coordinar con sus transportistas rutas y horarios." if e["transporte"] or ruta
                  else "Confirmar con relaciones comunitarias y seguridad, y seguir la convocatoria." if fuerza
                  else "Revisar el pedido con relaciones comunitarias y preparar una respuesta antes de que escale.")
         oido = e.get("dicho")  # solo la radio: sin nota escrita, se cita lo que se dijo al aire
@@ -540,12 +610,9 @@ def main(dias=7, reenviar=False, muestra=False):  # 7: GitHub a veces corre el w
     for nombre, (empresa, alias) in EMPRESAS.items():
         if nombre != CLIENTE and not muestra:
             continue
-        z = zona(con, empresa, web["vecinos"])
+        z = cliente(con, nombre, web["vecinos"])
         unidad = dict(con.execute("SELECT ubigeo, unidad FROM operacion WHERE lower(empresa) LIKE ?", (f"%{empresa}%",)).fetchall())
         tramos = [u for t in CADENA.get(nombre, {}).get("tramos", []) for u in t["ubigeos"]]
-        for t in CADENA.get(nombre, {}).get("tramos", []):  # su ruta de salida (docs/cadena.json)
-            for u in t["ubigeos"]:
-                z.setdefault(u, "en su ruta, tramo " + re.sub(r", (\w+)$", r" (\1)", t["nombre"]))  # "Puerto de Matarani (zinc)"
         nuevo = lambda xs: [x for x in xs if f"{x['clave']}|{nombre}" not in ya]
         evs, rad, rie = nuevo([*eventos(web, z, alias, desde), *sutran(con, z, desde)]), nuevo(radio(con, alias, desde)), nuevo(riesgo(web, z))
         for e in evs:

@@ -147,6 +147,8 @@ def datos(con):
                  AND coalesce(n.consulta, '') <> 'radio' AND n.medio NOT IN ('Facebook', 'Instagram', 'YouTube', 'TikTok', 'X') AND n.enlace NOT LIKE '%facebook.com%'
                ORDER BY n.publicado DESC""", (VERSION,))}
         ev["hecho"] = [hecho.get(i) for i in ev.id]
+        texto_de = dict(con.execute("SELECT enlace, titular || '. ' || coalesce(resumen, '') FROM nota"))
+        ev["desde_hora"] = [hora_dicha(texto_de.get(l)) for l in ev.enlace]  # "desde las 05:00 horas", si la nota del anuncio lo dice
         # dónde se cortó el paso según las notas que dicen que ocurrió: la frase tal cual, con su medio y su hora
         cortes = {}
         for i, m, l, t, r, p in con.execute(
@@ -155,7 +157,7 @@ def datos(con):
                    WHERE k.estado = 'ocurrida' AND length(trim(coalesce(n.resumen, ''))) > 0 AND coalesce(n.consulta, '') <> 'radio'
                      AND n.medio NOT IN ('Facebook', 'Instagram', 'YouTube', 'TikTok', 'X') AND n.enlace NOT LIKE '%facebook.com%'
                    ORDER BY n.publicado DESC""", (VERSION,)):
-            cortes.setdefault(i, []).extend({"frase": re.sub(r" +([.,])", r"\1", f), "medio": m, "enlace": l, "hora": p, "texto": f"{t}. {r}"}
+            cortes.setdefault(i, []).extend({"frase": re.sub(r" +([.,])", r"\1", f), "via": via(f), "medio": m, "enlace": l, "hora": p, "texto": f"{t}. {r}"}
                                             for f in puntos(f"{t}. {r}", 1))
         # el lugar lo puso el LLM: vale hasta el nivel que la nota nombra; si no nombra ninguno, el corte no se muestra
         ev["cortes"] = [[{**{k: v for k, v in c.items() if k != "texto"}, "ubigeo": d} for c in cortes.get(i, []) if (d := donde_dice(c["texto"], str(u)))]
@@ -259,7 +261,33 @@ def donde_dice(texto, ubigeo):
     return next((ubigeo[:k] for k in (6, 4, 2) if len(ubigeo) >= k and re.search(rf"\b{re.escape(_llano(_nombres().get(ubigeo[:k], '~')))}\b", t)), None)
 
 
-def cortes_unicos(cortes, n=6):
+_N = r"[A-ZÁÉÍÓÚÑ][\wáéíóúñ]+"
+_NOMBRE = rf"{_N}(?:(?:\s+(?:de la|de los|del|de|y))?[\s–-]+{_N})*"  # "Central", "Fernando Belaúnde Terry", "Jauja–Tarma"
+VIA = re.compile(rf"\b(?i:carretera|panamericana|v[ií]a|longitudinal|interoce[aá]nica|corredor|avenida|av\.)\s+(?i:(?:al?|de la|del|de)\s+)?{_NOMBRE}|\bPE-\d\w*")
+KM = re.compile(r"\b(?:km|kil[oó]metro)\.?\s*(\d+(?:\+\d+)?)", re.I)
+SECTOR = re.compile(rf"\b(?i:sector|puente|[oó]valo|peaje|tramo|salida (?:norte|sur) de|altura del?|ingreso a|desv[ií]o(?: a)?)\s+{_NOMBRE}")
+HORA = re.compile(r"desde las? \d{1,2}(?::\d{2})?\s*(?:horas|a\.\s?m\.|p\.\s?m\.|de la (?:mañana|madrugada|tarde|noche))", re.I)
+
+
+def via(frase):
+    """La vía, el kilómetro y el sector que la frase nombra, con sus palabras ("Panamericana Norte, km 365, salida norte
+    de Casma"); "" si no nombra ninguno. Sale de la frase que se cita: no hay nada que el lector no pueda comprobar."""
+    ps = ([m.group(0) for m in VIA.finditer(frase)][:1] + [f"km {m.group(1)}" for m in KM.finditer(frase)][:1]
+          + [m.group(0) for m in SECTOR.finditer(frase)][:2])
+    s = ", ".join(dict.fromkeys(ps))
+    return s[:1].upper() + s[1:]
+
+
+def hora_dicha(texto):
+    """Desde qué hora empieza la medida, con las palabras de la nota; solo si lo dice la misma frase que nombra la medida
+    (la misa del papa "desde las 10:30 a.m." no es la hora del paro)."""
+    for f in re.split(r"(?<=[.;!?])\s+|\n", texto or ""):
+        if (m := HORA.search(f)) and re.search(r"\bparo\b|huelga|bloque|paraliz|moviliz|medida de fuerza|protest|plant[oó]n|marcha", f, re.I):
+            return " ".join(m.group(0).lower().split())
+    return None
+
+
+def cortes_unicos(cortes, n=20):  # el aviso filtra después por la ruta del cliente: con 6 se perdía el que le toca
     """Un corte por provincia, el más preciso; el que solo dice el departamento cede al que precisa dentro de él."""
     out = []
     for c in sorted((c for c in cortes or [] if c.get("ubigeo")), key=lambda c: -len(c["ubigeo"])):

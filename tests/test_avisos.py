@@ -166,8 +166,8 @@ def test_sutran_en_zona_o_ruta():
     from tremor.db import ahora
     con = sqlite3.connect(":memory:")
     con.execute("CREATE TABLE sutran_alerta (codigo, motivo, submotivo, estado_via, titulo, descripcion, ubigeo, fecha_evento, "
-                "visto_ultimo, lat, lng)")
-    con.executemany("INSERT INTO sutran_alerta VALUES (?, ?, ?, ?, ?, '', ?, '2026-11-10', ?, NULL, NULL)", [
+                "visto_ultimo, lat, lng, via)")
+    con.executemany("INSERT INTO sutran_alerta VALUES (?, ?, ?, ?, ?, '', ?, '2026-11-10', ?, NULL, NULL, NULL)", [
         ("A", "humano", "humano.protestas", "interrumpido", "PROTESTA KM 20", "040108", ahora()),          # protesta en la ruta
         ("B", "fenomenos_naturales", "fenomenos_naturales.climatologico", "interrumpido", "HUAICO", "040108", ahora()),
         ("C", "accidentes", "accidentes.siniestro_vial", "restringido", "CHOQUE", "040108", ahora()),       # solo restringida: no
@@ -212,6 +212,28 @@ def test_seguimiento_de_lo_avisado():
     assert "POSTERGADA" in xs["cae"] and "La Joya" in xs["retira"] and "transportistas de carga de Islay" in xs["retira"] and "Lima" not in xs["retira"]
 
 
+def test_corte_en_su_carretera_o_su_via_de_abastecimiento():
+    """Un corte le toca por la carretera, no solo por el distrito: en su ruta (código de la SUTRAN o nombre en la nota),
+    en una vía de abastecimiento (aparte), y colindar con la unidad no basta."""
+    from tremor.avisos import Zona, cambios, hoy, por_via
+    z = Zona({"080801": "en su ruta, tramo Espinar", "030506": "Las Bambas", "030501": "Las Bambas"})
+    z.vecinos = frozenset({"030501"})
+    z.vias = [("en su ruta, tramo Espinar", "PE-3SG", {"08", "03"}), ("en su vía de abastecimiento Panamericana Sur", "PE-1S", {"04", "11"})]
+    assert por_via(z, "080705", "PE-3SG") and por_via(z, "080705", "", "Bloquean el Corredor Minero del Sur") and not por_via(z, "150101", "PE-3SG")
+    assert not por_via(z, "080705", "PE-3S") and not por_via(z, "080705", "", "la PE-3S está bloqueada")
+    e = {"ubigeo": "00", "accion": "Paro", "fecha_evento": hoy(), "fecha_anuncio": "2026-01-01", "estado": "ocurrida",
+         "titular": "Ratifican paro de 72 horas", "hecho": {"medio": "Diario X", "enlace": "https://x.pe/inicia", "titular": "Inicia el paro"}}
+    c = lambda u, f: {"frase": f, "medio": "Radio Y", "enlace": "https://y.pe/n", "hora": "2026-11-16T11:34-05:00", "ubigeo": u}
+    e["cortes"] = [c("080705", "Comuneros bloquean el Corredor Minero del Sur en Chamaca."), c("030501", "Bloquean una trocha en Tambobamba."),
+                   c("1101", "Transportistas bloquean la Panamericana Sur en Ica.")]
+    s = {"motivo": "humano", "fecha_evento": hoy(), "titulo": "PROTESTA", "estado_via": "interrumpido", "ubigeo": "040129", "via": "PE-1S", "km": "KM 970", "distrito": "Yura"}
+    texto = next(cambios({"eventos": [e], "sutran": [s]}, z, {f"evento:00:Paro:{hoy()}"}))[1]
+    suya, resto = texto.split("🚚")
+    assert "Chamaca" in suya and "su ruta, tramo Espinar" in suya and "Ica" not in suya and "Tambobamba" not in suya
+    abasto, fuera = resto.split("📍")
+    assert "Panamericana Sur en Ica" in abasto and "KM 970" in abasto and "· Panamericana Sur" in abasto and "cortes en Apurimac." in fuera
+
+
 def test_retiro_con_su_fuente_y_solo_si_le_toca():
     from tremor.avisos import cambios
     e = {"ubigeo": "00", "accion": "Paro", "fecha_evento": "2026-12-01", "estado": "anunciada", "enlace": "https://x.pe/anuncio", "medio": "X",
@@ -235,18 +257,18 @@ def test_protesta_en_curso_con_vias_de_sutran():
     (clave, texto, _), = cambios(web, {"040520": "en su ruta, tramo Estación Pillones"}, {f"evento:00:Paro:{hoy()}"})
     assert clave == f"curso:evento:00:Paro:{hoy()}:{hoy()}" and "EN CURSO · día 1 de 3" in texto and "SE REALIZÓ" not in texto
     ruta, pais = texto.split("📍")
-    assert "PE-34E" in ruta and "PE-3SA" not in ruta and "PE-3SA KM 2: tránsito interrumpido" in pais and "159" not in texto
+    assert "PE-34E" in ruta and "PE-3SA" not in texto and "Fuera de su ruta* hay cortes en Junin." in pais and "159" not in texto
     assert "https://x.pe/inicia" in texto
     web["sutran"] = []                                   # la SUTRAN no respondió: no se afirma que no hay cortes
     assert "SUTRAN" not in next(cambios(web, {}, {f"evento:00:Paro:{hoy()}"}))[1]
     # los cortes que nombran las notas: frase literal con medio y hora, un lugar una vez, y aparte los de la zona del cliente
     c = lambda u, f: {"frase": f, "medio": "Radio Y", "enlace": "https://y.pe/n", "hora": "2026-11-16T11:34-05:00", "ubigeo": u}
-    e["cortes"] = [c("020801", "Los transportistas bloquearon la Panamericana Norte en Casma."), c("0208", "Cerraron el pase en Casma."),
+    e["cortes"] = [dict(c("020801", "Los transportistas bloquearon la Panamericana Norte en Casma."), via="Panamericana Norte"), c("0208", "Cerraron el pase en Casma."),
                    c("0405", "Bloquean la vía en Caylloma."), c("02", "Bloqueo en Áncash.")]
     texto = next(cambios(web, {"040520": "en su ruta"}, {f"evento:00:Paro:{hoy()}"}))[1]
-    ruta, prensa = texto.split("🗞")
-    assert "Caylloma" in ruta and "Casma" not in ruta and "«Los transportistas bloquearon la Panamericana Norte en Casma.»" in prensa
-    assert "Cerraron el pase" not in texto and "Bloqueo en Áncash" not in texto and "Radio Y" in prensa and "16 nov 11:34" in prensa and "SUTRAN" not in texto
+    ruta, prensa = texto.split("📍")
+    assert "*La provincia de Caylloma*: «Bloquean la vía en Caylloma.»" in ruta and "Panamericana" not in texto and "cortes en Ancash." in prensa
+    assert "Caylloma" in ruta and "Casma" not in texto and "Radio Y" in ruta and "16 nov 11:34" in ruta and "SUTRAN" not in texto
 
 
 def test_seguimiento_solo_con_noticia():
