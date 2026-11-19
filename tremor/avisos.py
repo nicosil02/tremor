@@ -106,7 +106,7 @@ def vias(web, z, desde, cortes=()):
     prensa = cortes_unicos(cortes)
     if not (todas or prensa):
         return ""
-    nota = lambda c: (f"• {mayus(lugar(c['ubigeo']))}: «{LIMPIA.sub('', c['frase'])}» "
+    nota = lambda c: (f"• {'Varias zonas' if c['ubigeo'] == '00' else mayus(lugar(c['ubigeo']))}: «{LIMPIA.sub('', c['frase'])}» "
                       f"([{c.get('medio') or 'nota'}]({c['enlace']}), {dia(c.get('hora'))} {(c.get('hora') or '')[11:16]})")
     xs = sorted((s for s in todas if s.get("motivo") == "humano" and (s.get("fecha_evento") or "") >= desde
                  and re.search(r"protest|manifest|bloque|\bparo\b|huelga", s.get("titulo") or "", re.I)),  # "humano" también es un bus varado
@@ -122,6 +122,13 @@ def vias(web, z, desde, cortes=()):
                + "\n[alertasviales.sutran.gob.pe](https://alertasviales.sutran.gob.pe)" if xs else ""))
 
 
+def suyo(gremio, z):
+    """Un gremio le toca al cliente si no nombra ningún lugar (es nacional) o nombra uno de su zona o su ruta."""
+    from tremor.web import _lugares, _norm
+    us = [u for k, v in _lugares().items() if re.search(rf"\b{re.escape(k)}\b", _norm(gremio)) for u in v]
+    return not us or any(k.startswith(u) for u in us for k in z)
+
+
 def cambios(web, z, enviados):
     """Seguimiento de lo ya avisado: la protesta se suspendió o postergó, algunos lugares o gremios se retiran, o pasó la
     fecha sin noticia de que se hiciera. Solo de protestas que el cliente ya recibió (enviados: sus claves), un aviso
@@ -134,7 +141,8 @@ def cambios(web, z, enviados):
         que = f"{acc or 'Protesta'} {'en todo el país' if ub == '00' else 'en ' + lugar(ub)} del {dia(f)}"
         fuente = f"\n\n📰 *Fuente:* [{e.get('medio') or 'nota'}]({e['enlace']})" if e.get("enlace") else ""
         ret = [u for u in e.get("retiran") or [] if u in z]
-        gre = e.get("gremios_retiran") or []
+        todos = e.get("gremios_retiran") or []
+        gre = [g for g in todos if suyo(g, z)]  # "transportistas del puerto de Paita" no le dice nada a quien opera en el sur
         if e.get("suspendido") or e.get("estado") == "suspendida":
             pos = e.get("postergado")
             yield ("cae:" + orig, f"{'⏸' if pos else '✅'} *PROTESTA {'POSTERGADA' if pos else 'SUSPENDIDA'}*\n_{e.get('titular') or que}_\n\n"
@@ -146,14 +154,16 @@ def cambios(web, z, enviados):
                    f"{que}: corrige el aviso anterior de suspensión. Según la prensa, la medida se mantiene.{fuente}", None)
         # Se avisó que un gremio o lugar se retiraba y la prensa ya no lo dice (el 16 nov se leyó "se retiraron de la
         # carretera" como retiro del paro): se rectifica una vez
-        elif not (ret or gre) and (falsos := sorted(c for c in enviados if c.startswith(f"retira:{orig}:") and "corrige:" + c not in enviados)):
+        elif not (ret or todos) and (falsos := sorted(c for c in enviados if c.startswith(f"retira:{orig}:") and "corrige:" + c not in enviados)):
             yield ("corrige:" + falsos[0], f"⚠️ *CORRECCIÓN: NADIE SE RETIRÓ DE LA PROTESTA*\n_{e.get('titular') or que}_\n\n"
                    f"{que}: corrige el aviso anterior de retiro, que leyó mal una nota. Según la prensa, la medida sigue con sus convocantes.{fuente}", None)
         # lo ya avisado no tapa lo siguiente: el 16 nov el retiro enviado dejó sin salir el "se realizó" del paro
         elif (ret or gre) and f"retira:{orig}:{'-'.join(ret + gre)}" not in enviados:
             quienes = ", ".join([*gre, *(mayus(lugar(u)) for u in ret)])
-            yield (f"retira:{orig}:{'-'.join(ret + gre)}", f"↩️ *SE RETIRAN DE LA PROTESTA*\n_{e.get('titular') or que}_\n\n"
-                   f"{que}: anuncian que no se suman: {quienes}. El resto de la convocatoria sigue.{fuente}", None)
+            r = e.get("retiro_nota") or {}  # la nota que lo dice, no la del anuncio
+            yield (f"retira:{orig}:{'-'.join(ret + gre)}", f"↩️ *NO PARTICIPAN EN LA PROTESTA*\n_{e.get('titular') or que}_\n\n"
+                   f"{que}: según {r.get('medio') or 'la prensa'}, no participan: {quienes}. El resto de la convocatoria sigue."
+                   + (f"\n\n📰 *Fuente:* [{r.get('medio') or 'nota'}]({r['enlace']})" if r.get("enlace") else fuente), None)
         # Si la prensa informa que la protesta avisada se hizo, se dice con su fuente. Si no hay noticia, no se manda
         # nada: un aviso con signo de interrogación y sin fuente resta credibilidad
         # solo de lo que se avisó como anunciado (tiene fecha de anuncio anterior) y pasó en los últimos 3 días: lo que ya
@@ -165,6 +175,8 @@ def cambios(web, z, enviados):
             # decir dónde había cortes). Un aviso por día, con las vías que corrobora la SUTRAN
             n, d = dias_de(f"{e.get('titular') or ''} {h.get('titular') or ''}"), (date.fromisoformat(hoy()) - date.fromisoformat(f)).days + 1
             if d <= n:
+                if d > 1 and (datetime.now(timezone.utc) - timedelta(hours=5)).hour < 7:  # el día 2 salió a medianoche con los cortes de ayer
+                    continue
                 hasta = " y es indefinida" if n == 4 else f" y está anunciada hasta el {dia((date.fromisoformat(f) + timedelta(days=n - 1)).isoformat())}" if n > 1 else ""
                 yield (f"curso:{orig}:{hoy()}", f"🚧 *PROTESTA EN CURSO{f' · día {d} de {n}' if 1 < n < 4 else ''}*\n_{(h.get('titular') or que).rstrip(' -')}_\n\n"
                        f"{que}: según {h.get('medio') or 'la prensa'}, la medida empezó{hasta}.{vias(web, z, f, e.get("cortes") or [])}\n\n"
