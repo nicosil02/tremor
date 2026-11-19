@@ -235,7 +235,7 @@ def test_protesta_en_curso_con_vias_de_sutran():
     (clave, texto, _), = cambios(web, {"040520": "en su ruta, tramo Estación Pillones"}, {f"evento:00:Paro:{hoy()}"})
     assert clave == f"curso:evento:00:Paro:{hoy()}:{hoy()}" and "EN CURSO · día 1 de 3" in texto and "SE REALIZÓ" not in texto
     ruta, pais = texto.split("📍")
-    assert "PE-34E" in ruta and "PE-3SA" not in ruta and "*JUNIN*\n• *Jauja · PE-3SA KM 2*: tránsito interrumpido (SUTRAN)" in pais and "159" not in texto
+    assert "PE-34E" in ruta and "PE-3SA" not in texto and "Fuera de su ruta* hay cortes en Junin." in pais and "159" not in texto
     assert "https://x.pe/inicia" in texto
     web["sutran"] = []                                   # la SUTRAN no respondió: no se afirma que no hay cortes
     assert "SUTRAN" not in next(cambios(web, {}, {f"evento:00:Paro:{hoy()}"}))[1]
@@ -245,9 +245,8 @@ def test_protesta_en_curso_con_vias_de_sutran():
                    c("0405", "Bloquean la vía en Caylloma."), c("02", "Bloqueo en Áncash.")]
     texto = next(cambios(web, {"040520": "en su ruta"}, {f"evento:00:Paro:{hoy()}"}))[1]
     ruta, prensa = texto.split("📍")
-    assert "*ANCASH*\n• *Casma · Panamericana Norte*: «Los transportistas" in prensa and "*AREQUIPA*" in prensa
-    assert "Caylloma" in ruta and "Casma" not in ruta and "«Los transportistas bloquearon la Panamericana Norte en Casma.»" in prensa
-    assert "Cerraron el pase" not in texto and "Bloqueo en Áncash" not in texto and "Radio Y" in prensa and "16 nov 11:34" in prensa and "SUTRAN" not in texto
+    assert "*La provincia de Caylloma*: «Bloquean la vía en Caylloma.»" in ruta and "Panamericana" not in texto and "cortes en Ancash." in prensa
+    assert "Caylloma" in ruta and "Casma" not in texto and "Radio Y" in ruta and "16 nov 11:34" in ruta and "SUTRAN" not in texto
 
 
 def test_seguimiento_solo_con_noticia():

@@ -99,38 +99,32 @@ LIMPIA = re.compile(r"[_*`\[\]]")  # signos que rompen el Markdown de Telegram
 
 
 def vias(web, z, desde, cortes=()):
-    """Dónde hay cortes: lo que dicen las notas (frase literal, con medio y hora; un lugar una vez) y lo que reporta la
-    SUTRAN (lista vigente de web.json). Primero lo que cae en la zona o la ruta del cliente. Sin notas con cortes y sin
-    lista de la SUTRAN no se dice nada: no se afirma que no hay cortes."""
+    """Dónde hay cortes en la zona o la ruta del cliente: lo que dicen las notas (frase literal, con medio y hora; un
+    lugar una vez) y lo que reporta la SUTRAN (lista vigente de web.json). Del resto del país solo se nombran las
+    regiones: las vías por donde no pasa su carga no le sirven. Sin notas con cortes y sin lista de la SUTRAN no se
+    dice nada: no se afirma que no hay cortes."""
     todas, prensa = web.get("sutran") or [], []
     from tremor.web import cortes_unicos
     prensa = cortes_unicos(cortes)
     if not (todas or prensa):
         return ""
     # el lugar como lo diría un centro de monitoreo: distrito y, si la frase los nombra, vía, km y sector
-    sitio = lambda c: " · ".join(x for x in (mayus(lugar(c["ubigeo"])) if len(c["ubigeo"]) > 2 else "", LIMPIA.sub("", c.get("via") or "")) if x)
-    nota = lambda c: ((f"• *{sitio(c)}*: " if sitio(c) else "• ") + f"«{LIMPIA.sub('', c['frase'])}» "
+    sitio = lambda c: " · ".join(x for x in (mayus(lugar(c["ubigeo"])), LIMPIA.sub("", c.get("via") or "")) if x)
+    nota = lambda c: (f"• *{sitio(c)}*: «{LIMPIA.sub('', c['frase'])}» "
                       f"([{c.get('medio') or 'nota'}]({c['enlace']}), {dia(c.get('hora'))} {(c.get('hora') or '')[11:16]})")
     xs = sorted((s for s in todas if s.get("motivo") == "humano" and (s.get("fecha_evento") or "") >= desde
                  and re.search(r"protest|manifest|bloque|\bparo\b|huelga", s.get("titulo") or "", re.I)),  # "humano" también es un bus varado
                 key=lambda s: s.get("estado_via") == "normal")
     linea = lambda s: (f"• *{(s.get('distrito') or s.get('provincia') or '').title()} · {s.get('via') or ''} "
-                       f"{s.get('km') or ''}*: tránsito {s.get('estado_via') or 'sin dato'} (SUTRAN)")
-    region = lambda u, s=None: ("VARIAS REGIONES" if u == "00" else lugar(u[:2]).upper() if u else (s.get("region") or "").upper())
-    bloque = {}  # un solo reporte por región: lo que dice la prensa y, debajo, lo que reporta la SUTRAN
-    for c in prensa:
-        bloque.setdefault(region(c["ubigeo"]), []).append(nota(c))
-    for s in xs[:8]:
-        bloque.setdefault(region(str(s.get("ubigeo") or ""), s), []).append(linea(s))
-    suyas = ([nota(c) for c in prensa if len(c["ubigeo"]) >= 4 and any(k.startswith(c["ubigeo"]) for k in z)]
-             + [linea(s) for s in xs if str(s.get("ubigeo") or "") in z])
+                       f"{s.get('km') or ''}*: tránsito {s.get('estado_via') or 'sin dato'} (SUTRAN, no dice si es de esta medida)")
+    toca = lambda u: u != "00" and len(u) >= 2 and any(k.startswith(u) for k in z)  # el corte cae en un distrito, provincia o región de su ruta
+    suyas = [nota(c) for c in prensa if toca(c["ubigeo"])] + [linea(s) for s in xs if str(s.get("ubigeo") or "") in z]
+    otras = list(dict.fromkeys([lugar(c["ubigeo"][:2]) for c in prensa if c["ubigeo"] != "00" and not toca(c["ubigeo"])]
+                               + [lugar(str(s["ubigeo"])[:2]) for s in xs if s.get("ubigeo") and str(s["ubigeo"]) not in z]))
     return ("\n\n🛣 *En su zona o ruta:* " + ("\n" + "\n".join(suyas) if suyas else "ni la prensa ni la SUTRAN reportan por ahora cortes." if todas
                                                else "ninguno de los cortes que nombra la prensa.")
-            + ("\n\n📍 *Dónde hay cortes, por región*\n" + " ".join(
-                (["Prensa: lo que dice cada nota, a su hora."] if prensa else [])
-                + ([f"SUTRAN: vías con protesta desde el {dia(desde)}; no dice si son de esta medida."] if xs else []))
-               + "".join(f"\n\n*{r}*\n" + "\n".join(ls) for r, ls in bloque.items())
-               + ("\n\n[alertasviales.sutran.gob.pe](https://alertasviales.sutran.gob.pe)" if xs else "") if bloque else ""))
+            + (f"\n\n📍 *Fuera de su ruta* hay cortes en {', '.join(otras[:-1]) + ' y ' + otras[-1] if len(otras) > 1 else otras[0]}. "
+               f"[Ver el mapa]({APP})" if otras else ""))
 
 
 def suyo(gremio, z):

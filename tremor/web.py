@@ -287,7 +287,7 @@ def hora_dicha(texto):
     return None
 
 
-def cortes_unicos(cortes, n=6):
+def cortes_unicos(cortes, n=20):  # el aviso filtra después por la ruta del cliente: con 6 se perdía el que le toca
     """Un corte por provincia, el más preciso; el que solo dice el departamento cede al que precisa dentro de él."""
     out = []
     for c in sorted((c for c in cortes or [] if c.get("ubigeo")), key=lambda c: -len(c["ubigeo"])):
