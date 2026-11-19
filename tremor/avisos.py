@@ -208,7 +208,8 @@ def cambios(web, z, enviados):
         fuente = f"\n\n📰 *Fuente:* [{e.get('medio') or 'nota'}]({e['enlace']})" if e.get("enlace") else ""
         ret = [u for u in e.get("retiran") or [] if u in z]
         todos = e.get("gremios_retiran") or []
-        gre = [g for g in todos if suyo(g, z)]  # "transportistas del puerto de Paita" no le dice nada a quien opera en el sur
+        # "empresas de transporte" no es nadie: solo gremios con nombre propio o sigla (19 nov)
+        gre = [g for g in todos if suyo(g, z) and re.search(r"[A-ZÁÉÍÓÚÑ]", g[1:])]  # "transportistas del puerto de Paita" no le dice nada a quien opera en el sur
         if e.get("suspendido") or e.get("estado") == "suspendida":
             pos = e.get("postergado")
             yield ("cae:" + orig, f"{'⏸' if pos else '✅'} *PROTESTA {'POSTERGADA' if pos else 'SUSPENDIDA'}*\n_{e.get('titular') or que}_\n\n"
@@ -224,7 +225,8 @@ def cambios(web, z, enviados):
             yield ("corrige:" + falsos[0], f"⚠️ *CORRECCIÓN: NADIE SE RETIRÓ DE LA PROTESTA*\n_{e.get('titular') or que}_\n\n"
                    f"{que}: corrige el aviso anterior de retiro, que leyó mal una nota. Según la prensa, la medida sigue con sus convocantes.{fuente}", None)
         # lo ya avisado no tapa lo siguiente: el 16 nov el retiro enviado dejó sin salir el "se realizó" del paro
-        elif (ret or gre) and f"retira:{orig}:{'-'.join(ret + gre)}" not in enviados:
+        # solo mientras la protesta no ha terminado: el 19 nov salió "no participan" de un paro que acabó el 18
+        elif (ret or gre) and (e.get("hasta") or f) >= hoy() and f"retira:{orig}:{'-'.join(ret + gre)}" not in enviados:
             quienes = ", ".join([*gre, *(mayus(lugar(u)) for u in ret)])
             r = e.get("retiro_nota") or {}  # la nota que lo dice, no la del anuncio
             yield (f"retira:{orig}:{'-'.join(ret + gre)}", f"↩️ *NO PARTICIPAN EN LA PROTESTA*\n_{e.get('titular') or que}_\n\n"

@@ -242,6 +242,10 @@ def test_retiro_con_su_fuente_y_solo_si_le_toca():
     assert list(cambios({"eventos": [e]}, {"040520": "en su ruta"}, env)) == []          # Paita no está en su ruta, y tampoco se "corrige" nada
     assert list(cambios({"eventos": [e]}, {"040520": "en su ruta"}, env | {"retira:evento:00:Paro:2026-12-01:transportistas del puerto de Paita"})) == []
     (_, t, _), = cambios({"eventos": [e]}, {"200501": "en su ruta"}, env)
+    # un gremio sin nombre propio no se avisa, y de una protesta que ya terminó tampoco
+    assert list(cambios({"eventos": [dict(e, gremios_retiran=["empresas de transporte"])]}, {"200501": "en su ruta"}, env)) == []
+    pasada = dict(e, fecha_evento="2026-11-16", hasta="2026-11-18", gremios_retiran=["Gremio de Transportistas ABC"])
+    assert list(cambios({"eventos": [pasada]}, {"200501": "en su ruta"}, {"evento:00:Paro:2026-11-16"})) == []
     assert "NO PARTICIPAN" in t and "SE RETIRAN" not in t and "https://t.pe/paita" in t and "anuncio" not in t
 
 
