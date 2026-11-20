@@ -17,12 +17,33 @@ permissions:
   contents: write   # la rama `vivo`
   actions: write    # lanzar al relevo
 
-concurrency:        # uno solo a la vez: el relevo espera a que este termine
-  group: vigia
-  cancel-in-progress: false
-
 jobs:
+  # El cron solo hace falta si la cadena se cortó. Si hay un turno activo o un relevo en cola, sale sin hacer nada:
+  # antes se quedaba en cola, el relevo lo cancelaba y cada cancelación era un correo de GitHub (39 de 70 corridas).
+  guardia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      libre: ${{ steps.ver.outputs.libre }}
+    steps:
+      - id: ver
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          otras=0
+          if [ "${{ github.event_name }}" = "schedule" ]; then   # si la consulta falla, entra como antes
+            otras=$(gh run list --repo ${{ github.repository }} --workflow vigia.yml --limit 20 --json databaseId,status \
+              -q '[.[] | select(.status != "completed" and .databaseId != ${{ github.run_id }})] | length' || echo 0)
+          fi
+          echo "otras corridas del vigilante sin terminar: $otras"
+          echo "libre=$([ "$otras" = 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
   vigilar:
+    needs: guardia
+    if: needs.guardia.outputs.libre == 'true'
+    concurrency:        # uno solo a la vez: el relevo espera a que este termine
+      group: vigia
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 345
     steps:

@@ -165,6 +165,8 @@ def mms(audio, lang):
         _MMS["m"], _MMS["lang"] = m, None
     p, m = _MMS["p"], _MMS["m"]
     if _MMS["lang"] != lang:  # el adaptador se carga en float y después se cuantiza todo
+        import gc
+        _MMS.pop("q", None); _MMS["lang"] = None; gc.collect()  # suelta la copia anterior antes de hacer la nueva (~1 GB cada una)
         p.tokenizer.set_target_lang(lang); m.load_adapter(lang)
         _MMS["q"] = torch.quantization.quantize_dynamic(m, {torch.nn.Linear}, dtype=torch.qint8)
         _MMS["lang"] = lang
@@ -290,7 +292,11 @@ def escuchar(minutos, grupo=None, grupos=1, salida=None, indigena=False):
     from faster_whisper import WhisperModel
     import time
     from collections import Counter
-    lista, inicio, filas, seg = radios(grupo, grupos), datetime.now(LIMA), [], 0.0
+    # Juntas las de la misma lengua: cada cambio de adaptador de MMS cuantiza el modelo otra vez y la memoria no
+    # vuelve; al cuarto cambio (quy, quz, quy, quz) GitHub mataba la máquina y se perdía el grupo entero (17-20 nov).
+    # ponytail: ordena por la lengua de la provincia; si `identificar` empieza a elegir otra, transcribir MMS al final
+    lista = sorted(radios(grupo, grupos), key=lengua) if indigena else radios(grupo, grupos)
+    inicio, filas, seg = datetime.now(LIMA), [], 0.0
     print(f"Escuchando {len(lista)} radios {minutos} min", flush=True)
     with tempfile.TemporaryDirectory() as d:
         rutas = [os.path.join(d, f"{i}.wav") for i in range(len(lista))]
