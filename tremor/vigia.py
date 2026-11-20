@@ -172,7 +172,7 @@ def latido(con, enviar, ahora_=None):
     notas = uno("SELECT count(*) FROM nota WHERE descargado >= ?", ayer)
     cola = uno("""SELECT count(*) FROM nota n WHERE n.filtro IS NULL AND n.descargado >= ?
         AND NOT EXISTS (SELECT 1 FROM codificacion c WHERE c.nota_id = n.id AND c.version = ?)""", ayer, VERSION)
-    avisos = uno("SELECT count(*) FROM aviso_enviado WHERE enviado >= ? AND clave NOT LIKE 'latido:%'", ayer)
+    avisos = uno("SELECT count(*) FROM aviso_enviado WHERE enviado >= ? AND clave NOT LIKE 'latido:%' AND clave NOT LIKE 'nota:%'", ayer)
     texto = (f"🟢 *Tremor sigue vigilando* · {CLIENTE}\n\nÚltimas 24 horas: {notas} notas recogidas, {cola} en cola de lectura, "
              f"{avisos} avisos enviados.\n\n{salud(con)}")
     if enviar(texto):

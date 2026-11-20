@@ -110,7 +110,7 @@ def datos(con):
                                       "pct": mejor.pct.round(3).tolist(), "ingenuo": ing.round(3).tolist()}
     desde = (date.today() - timedelta(days=45)).isoformat()
     fuera = ",".join(descartados()) or "0"  # eventos falsos revisados a mano (tremor/descartados.csv): no salen ni avisan
-    ev = tabla(con, "SELECT * FROM (SELECT e.*, n.enlace, n.medio, n.titular, ROW_NUMBER() OVER (PARTITION BY e.id ORDER BY "
+    ev = tabla(con, "SELECT * FROM (SELECT e.*, n.id AS nota, n.enlace, n.medio, n.titular, ROW_NUMBER() OVER (PARTITION BY e.id ORDER BY "
                     "(n.enlace LIKE '%news.google%') + (n.medio IN ('Facebook', 'Instagram', 'YouTube', 'TikTok', 'X')), "
                     "-length(COALESCE(n.resumen, '')), n.publicado) AS k "
                     "FROM evento_prensa e JOIN evento_nota en ON en.evento_id = e.id JOIN nota n ON n.id = en.nota_id "
@@ -147,6 +147,11 @@ def datos(con):
                  AND coalesce(n.consulta, '') <> 'radio' AND n.medio NOT IN ('Facebook', 'Instagram', 'YouTube', 'TikTok', 'X') AND n.enlace NOT LIKE '%facebook.com%'
                ORDER BY n.publicado DESC""", (VERSION,))}
         ev["hecho"] = [hecho.get(i) for i in ev.id]
+        # las notas de cada protesta: su identidad para los avisos, que no cambia aunque cambie de nombre o de día (avisos.enviada)
+        suyas = {}
+        for i, n in con.execute("SELECT evento_id, nota_id FROM evento_nota"):
+            suyas.setdefault(i, []).append(n)
+        ev["notas"] = [suyas.get(i, []) for i in ev.id]
         texto_de = dict(con.execute("SELECT enlace, titular || '. ' || coalesce(resumen, '') FROM nota"))
         ev["desde_hora"] = [hora_dicha(texto_de.get(l)) for l in ev.enlace]  # "desde las 05:00 horas", si la nota del anuncio lo dice
         # dónde se cortó el paso según las notas que dicen que ocurrió: la frase tal cual, con su medio y su hora
@@ -421,6 +426,7 @@ def juntar(evs):
             par["fecha_evento"], par["estado"] = fe, "ocurrida"
         par["fecha_anuncio"] = min([x for x in (par.get("fecha_anuncio"), e.get("fecha_anuncio")) if isinstance(x, str)], default=None)
         par["cortes"] = (par.get("cortes") or []) + (e.get("cortes") or [])
+        par["notas"] = list(dict.fromkeys((par.get("notas") or []) + (e.get("notas") or [])))
         if not txt(par.get("reclamo")):
             par["reclamo"] = e.get("reclamo")
     visto = set()  # el mismo plazo citado por varias protestas del departamento: un solo aviso, en la de más notas

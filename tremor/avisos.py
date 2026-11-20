@@ -128,6 +128,7 @@ def eventos(web, z, alias, desde):
             yield {"clave": f"evento:{ub}:{acc}:{f}" + (f":plazo{pl}" if pl else ""), "actor": actor, "reclamo": e.get("reclamo") or "", "estado": "plazo" if pl else "sin_fecha" if e.get("sin_fecha") else e["estado"], "fecha": pl or f,
                    "ubigeo": ub, "accion": acc or "Protesta", "unidad": z.get(ub), "medio": e.get("medio") or "", "enlace": e.get("enlace") or "",
                    "titular": e.get("titular") or "", "transporte": transporte, "punto": (e.get("puntos") or [""])[0],
+                   "nota": e.get("nota"), "notas": e.get("notas") or [],
                    "hora": e.get("desde_hora") if e["estado"] == "anunciada" and not pl else None}
 
 
@@ -195,20 +196,43 @@ def suyo(gremio, z):
     return not us or any(k.startswith(u) for u in us for k in z)
 
 
+def enviada(clave, enviados, notas=()):
+    """La clave ya enviada que es este mismo aviso, o None. La clave de una protesta lleva su nombre y su día, y los dos
+    cambian cuando llegan más notas (el 17 nov el paro del 16 pasó a "Bloqueo de vías" del 17 y salió como protesta
+    nueva). Por eso al avisar se anota también la nota que originó el aviso ("nota:id>clave"): la protesta que hoy
+    contiene esa nota (notas: sus ids) es la misma, se llame como se llame. Dos protestas distintas no comparten notas;
+    comparar lugar y fecha confundía el paro de transportistas con el de municipales del mismo día."""
+    if clave in enviados:
+        return clave
+    if clave.count(":") != 3 or not clave.startswith("evento:"):  # el plazo que vence es otro aviso de la misma protesta
+        return None
+    return next((c.split(">", 1)[1] for c in sorted(enviados) if c.startswith("nota:") and c[5:].split(">", 1)[0] in notas), None)
+
+
 def cambios(web, z, enviados):
     """Seguimiento de lo ya avisado: la protesta se suspendió o postergó, algunos lugares o gremios se retiran, o pasó la
     fecha sin noticia de que se hiciera. Solo de protestas que el cliente ya recibió (enviados: sus claves), un aviso
     por cambio."""
     for e in web["eventos"]:
         f, ub, acc = e.get("fecha_evento") or e.get("fecha_anuncio") or "", str(e["ubigeo"]), e.get("accion") or ""
-        orig = f"evento:{ub}:{acc}:{f}"
-        if orig not in enviados:
+        orig = enviada(f"evento:{ub}:{acc}:{f}", enviados, e.get("notas") or [])  # el seguimiento se cuelga del aviso que el cliente recibió
+        if not orig:
             continue
+        # De lo que ya terminó solo se dice cómo acabó (se realizó o se suspendió), y hasta 3 días después; lo que
+        # cambia en el camino (quién se retira, correcciones) ya no le sirve a nadie
+        vigente = (e.get("hasta") or f) >= hoy()
+        reciente = f >= (date.fromisoformat(hoy()) - timedelta(days=3)).isoformat()
         que = f"{acc or 'Protesta'} {'en todo el país' if ub == '00' else 'en ' + lugar(ub)} del {dia(f)}"
         fuente = f"\n\n📰 *Fuente:* [{e.get('medio') or 'nota'}]({e['enlace']})" if e.get("enlace") else ""
         ret = [u for u in e.get("retiran") or [] if u in z]
         todos = e.get("gremios_retiran") or []
-        gre = [g for g in todos if suyo(g, z)]  # "transportistas del puerto de Paita" no le dice nada a quien opera en el sur
+        # "empresas de transporte" no es nadie: solo gremios con nombre propio o sigla (19 nov)
+        gre = [g for g in todos if suyo(g, z) and re.search(r"[A-ZÁÉÍÓÚÑ]", g[1:])]  # "transportistas del puerto de Paita" no le dice nada a quien opera en el sur
+        # los gremios y lugares que ya se avisaron no vuelven a salir aunque cambie la lista o el filtro (19 nov)
+        previos = [c for c in enviados if c.startswith(f"retira:{orig}:")]
+        nuevos = [x for x in ret + gre if not any(x in c for c in previos)]
+        if (e.get("suspendido") or e.get("estado") == "suspendida") and not (vigente or reciente):
+            continue
         if e.get("suspendido") or e.get("estado") == "suspendida":
             pos = e.get("postergado")
             yield ("cae:" + orig, f"{'⏸' if pos else '✅'} *PROTESTA {'POSTERGADA' if pos else 'SUSPENDIDA'}*\n_{e.get('titular') or que}_\n\n"
@@ -220,14 +244,15 @@ def cambios(web, z, enviados):
                    f"{que}: corrige el aviso anterior de suspensión. Según la prensa, la medida se mantiene.{fuente}", None)
         # Se avisó que un gremio o lugar se retiraba y la prensa ya no lo dice (el 16 nov se leyó "se retiraron de la
         # carretera" como retiro del paro): se rectifica una vez
-        elif not (ret or todos) and (falsos := sorted(c for c in enviados if c.startswith(f"retira:{orig}:") and "corrige:" + c not in enviados)):
+        elif vigente and not (ret or todos) and (falsos := sorted(c for c in enviados if c.startswith(f"retira:{orig}:") and "corrige:" + c not in enviados)):
             yield ("corrige:" + falsos[0], f"⚠️ *CORRECCIÓN: NADIE SE RETIRÓ DE LA PROTESTA*\n_{e.get('titular') or que}_\n\n"
                    f"{que}: corrige el aviso anterior de retiro, que leyó mal una nota. Según la prensa, la medida sigue con sus convocantes.{fuente}", None)
         # lo ya avisado no tapa lo siguiente: el 16 nov el retiro enviado dejó sin salir el "se realizó" del paro
-        elif (ret or gre) and f"retira:{orig}:{'-'.join(ret + gre)}" not in enviados:
-            quienes = ", ".join([*gre, *(mayus(lugar(u)) for u in ret)])
+        # solo mientras la protesta no ha terminado: el 19 nov salió "no participan" de un paro que acabó el 18
+        elif nuevos and vigente:
+            quienes = ", ".join(x if x in gre else mayus(lugar(x)) for x in nuevos)
             r = e.get("retiro_nota") or {}  # la nota que lo dice, no la del anuncio
-            yield (f"retira:{orig}:{'-'.join(ret + gre)}", f"↩️ *NO PARTICIPAN EN LA PROTESTA*\n_{e.get('titular') or que}_\n\n"
+            yield (f"retira:{orig}:{'-'.join(nuevos)}", f"↩️ *NO PARTICIPAN EN LA PROTESTA*\n_{e.get('titular') or que}_\n\n"
                    f"{que}: según {r.get('medio') or 'la prensa'}, no participan: {quienes}. El resto de la convocatoria sigue."
                    + (f"\n\n📰 *Fuente:* [{r.get('medio') or 'nota'}]({r['enlace']})" if r.get("enlace") else fuente), None)
         # Si la prensa informa que la protesta avisada se hizo, se dice con su fuente. Si no hay noticia, no se manda
@@ -599,28 +624,31 @@ def ya_enviados(con):
     return {f"{c}|{e}" for c, e in con.execute("SELECT clave, empresa FROM aviso_enviado")}
 
 
-def main(dias=7, reenviar=False, muestra=False):  # 7: GitHub a veces corre el workflow pocas veces al día
+def main(dias=7, reenviar=False, muestra=False, simulacro=False):  # 7: GitHub a veces corre el workflow pocas veces al día
     """muestra: las piezas de las 7 empresas en datos/exportes/muestra/ (imagen y texto), sin enviar nada; para revisarlas
-    a ojo antes de cambiar el formato."""
+    a ojo antes de cambiar el formato. simulacro: imprime lo que saldría ahora ("SALDRIA clave" y el texto) sin enviar
+    ni anotar nada; .github/workflows/simulacro.yml lo corre en cada PR con la base del vigilante."""
     con = conectar()
     con.execute("CREATE TABLE IF NOT EXISTS aviso_enviado (clave TEXT, empresa TEXT, enviado TEXT, PRIMARY KEY (clave, empresa))")
     web = json.load(open(DATOS / "exportes" / "web.json", encoding="utf-8"))
     desde = (date.today() - timedelta(days=dias)).isoformat()
-    ya = set() if reenviar or muestra else ya_enviados(con)  # --reenviar: prueba
     for nombre, (empresa, alias) in EMPRESAS.items():
         if nombre != CLIENTE and not muestra:
             continue
         z = cliente(con, nombre, web["vecinos"])
         unidad = dict(con.execute("SELECT ubigeo, unidad FROM operacion WHERE lower(empresa) LIKE ?", (f"%{empresa}%",)).fetchall())
         tramos = [u for t in CADENA.get(nombre, {}).get("tramos", []) for u in t["ubigeos"]]
-        nuevo = lambda xs: [x for x in xs if f"{x['clave']}|{nombre}" not in ya]
+        enviados = {c for (c,) in con.execute("SELECT clave FROM aviso_enviado WHERE empresa = ?", (nombre,))}
+        vistos = set() if reenviar or muestra else enviados  # --reenviar: prueba
+        nuevo = lambda xs: [x for x in xs if not enviada(x["clave"], vistos, x.get("notas") or [])]
         evs, rad, rie = nuevo([*eventos(web, z, alias, desde), *sutran(con, z, desde)]), nuevo(radio(con, alias, desde)), nuevo(riesgo(web, z))
+        nota_de = {e["clave"]: e.get("nota") for e in evs if e["clave"].count(":") == 3}
         for e in evs:
             if r := de_radio(con, e):
                 e["emitido"], e["dicho"], extra = r
                 e.update({k: v for k, v in extra.items() if v})
-        enviados = {c for (c,) in con.execute("SELECT clave FROM aviso_enviado WHERE empresa = ?", (nombre,))}
-        ruta = [x for x in [*lentas(con, nombre), *decretos(con, z), *cambios(web, z, enviados), *reputacion(con, alias)] if f"{x[0]}|{nombre}" not in ya]
+        ruta = [x for x in [*lentas(con, nombre), *decretos(con, z), *cambios(web, z, enviados), *([] if simulacro else reputacion(con, alias))]  # reputación gasta LLM
+                if not enviada(x[0], vistos)]
         for clave, texto, png in [*piezas(nombre, evs, rad, rie, unidad, web["vecinos"], tramos), *ruta]:
             if muestra:
                 d = DATOS / "exportes" / "muestra"; d.mkdir(parents=True, exist_ok=True)
@@ -629,14 +657,21 @@ def main(dias=7, reenviar=False, muestra=False):  # 7: GitHub a veces corre el w
                 if png:
                     (d / f"{base}.png").write_bytes(png)
                 continue
+            if simulacro:
+                print(f"SALDRIA {clave}\n{texto}\n", flush=True)
+                continue
             if enviar(texto, png):
                 print(f"  aviso enviado a {nombre}: {clave}")  # la clave, no el texto: para auditar repetidos en el log
                 con.execute("INSERT OR IGNORE INTO aviso_enviado VALUES (?, ?, ?)", (clave, nombre, ahora()))
+                if nota_de.get(clave):  # la nota que originó el aviso: su identidad si el evento cambia de nombre o de día (enviada)
+                    con.execute("INSERT OR IGNORE INTO aviso_enviado VALUES (?, ?, ?)", (f"nota:{nota_de[clave]}>{clave}", nombre, ahora()))
                 con.commit()
     # en CSV para que la corrida siempre publique la base cuando se avisó algo (si no, la siguiente reenvía lo mismo)
+    if simulacro:
+        return
     with open(DATOS / "exportes" / "aviso_enviado.csv", "w", newline="", encoding="utf-8") as f:
         csv.writer(f).writerows([("clave", "empresa", "enviado"), *con.execute("SELECT * FROM aviso_enviado ORDER BY enviado")])
 
 
 if __name__ == "__main__":
-    main(int(sys.argv[sys.argv.index("--dias") + 1]) if "--dias" in sys.argv else 7, "--reenviar" in sys.argv, "--muestra" in sys.argv)
+    main(int(sys.argv[sys.argv.index("--dias") + 1]) if "--dias" in sys.argv else 7, "--reenviar" in sys.argv, "--muestra" in sys.argv, "--simulacro" in sys.argv)
