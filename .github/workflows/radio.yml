@@ -32,6 +32,7 @@ concurrency:            # una corrida de radio a la vez: dos juntas (36 máquina
 jobs:
   escuchar:
     runs-on: ubuntu-latest
+    continue-on-error: true   # un grupo caído (GitHub retira la máquina) no pinta de rojo la corrida: publicar avisa cuántos faltan
     timeout-minutes: 330   # tope de GitHub: 360. Peor caso: 45 grabando + ~120 Whisper + ~110 MMS (15 min por radio)
     strategy:
       fail-fast: false
@@ -94,6 +95,11 @@ jobs:
           pattern: notas-*
           merge-multiple: true
           path: radio
+
+      - name: Grupos que llegaron
+        run: |
+          n=$(ls radio/*.jsonl 2>/dev/null | wc -l)
+          [ "$n" = 15 ] || echo "::warning::llegaron $n de 15 grupos de radio"
 
       - name: Traer la base anterior
         run: |
