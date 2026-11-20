@@ -1,0 +1,61 @@
+# Simulacro de avisos: en cada PR que toca el código arma la misma base que el vigilante (rama `datos` más su memoria de
+# la rama `vivo`), reagrupa y calcula los avisos con el código del PR y con el de main, sin enviar nada. Si el PR haría
+# salir avisos que main no manda, falla y los lista: así se ve antes de fusionar lo que el 19 nov se vio en Telegram
+# (un filtro nuevo cambió una clave y se reenvió un aviso de un paro ya terminado). No usa claves ni secretos.
+name: simulacro
+
+on:
+  pull_request:
+    paths: ["tremor/**", "docs/cadena.json", ".github/workflows/simulacro.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  simulacro:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TREMOR_CLIENTE: ${{ vars.TREMOR_CLIENTE || 'Las Bambas' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: La base del vigilante
+        run: |
+          mkdir -p datos
+          python -c "from tremor.vigia import base; base()"
+
+      - name: Avisos con el código de main
+        run: |
+          git fetch -q --depth 1 origin main
+          git worktree add -q ../main FETCH_HEAD
+          cp -r datos ../main/datos
+          cd ../main
+          if grep -q -- "--simulacro" tremor/avisos.py; then
+            python -m tremor.prensa agrupar && python -m tremor.web && python -m tremor.avisos --simulacro > ../main.txt
+          else
+            echo "main todavía no tiene --simulacro: no hay con qué comparar" && touch ../sin_main
+          fi
+
+      - name: Avisos con el código del PR
+        run: python -m tremor.prensa agrupar && python -m tremor.web && python -m tremor.avisos --simulacro > ../pr.txt
+
+      - name: Qué cambia
+        run: |
+          grep '^SALDRIA ' ../pr.txt | sort > ../pr.claves || true
+          echo "Con este PR saldrían $(wc -l < ../pr.claves) avisos:"; cat ../pr.claves
+          [ -f ../sin_main ] && exit 0
+          grep '^SALDRIA ' ../main.txt | sort > ../main.claves || true
+          comm -23 ../pr.claves ../main.claves > ../nuevos
+          if [ -s ../nuevos ]; then
+            echo "::error::Este PR haría salir avisos que main no manda. Si es lo que se busca, decirlo en el PR antes de fusionar."
+            cat ../nuevos; echo; cat ../pr.txt; exit 1
+          fi
+          echo "El PR no hace salir ningún aviso que main no mande."

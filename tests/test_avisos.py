@@ -234,6 +234,35 @@ def test_corte_en_su_carretera_o_su_via_de_abastecimiento():
     assert "Panamericana Sur en Ica" in abasto and "KM 970" in abasto and "· Panamericana Sur" in abasto and "cortes en Apurimac." in fuera
 
 
+def test_lo_ya_avisado_no_vuelve_a_salir():
+    """Auditoría del 19 nov. Lo que el cliente ya recibió no vuelve a salir aunque el evento cambie de nombre o de día,
+    aunque cambie la lista de gremios o el filtro, y de lo que ya terminó no sale nada (salvo que se realizó)."""
+    from datetime import date, timedelta
+    from tremor.avisos import cambios, enviada, hoy
+    d = lambda n: (date.fromisoformat(hoy()) + timedelta(days=n)).isoformat()
+    paro = f"evento:00:Paro:{d(2)}"
+    env = {paro, f"nota:n1>{paro}"}  # al avisar se anota la nota que originó el aviso
+    # la protesta que contiene esa nota es la misma aunque cambie de nombre y de día; la que no la contiene es otra, aunque coincidan lugar y fecha
+    assert enviada(f"evento:00:Bloqueo de vías:{d(3)}", env, ["n7", "n1"]) == paro and enviada(paro, env) == paro
+    assert not enviada(f"evento:00:Paro:{d(3)}", env, ["n8"]) and not enviada(f"evento:00:Bloqueo de vías:{d(2)}", env)
+    assert not enviada(f"evento:00:Paro:{d(2)}:plazo{d(2)}", env, ["n1"]) and not enviada("sutran:123", env, ["n1"])
+    # el seguimiento se cuelga del aviso original aunque el evento ahora se llame de otro modo y sea de otro día
+    e = {"ubigeo": "00", "accion": "Bloqueo de vías", "fecha_evento": d(3), "estado": "anunciada", "suspendido": True, "enlace": "https://x.pe/n", "medio": "X", "notas": ["n1", "n2"]}
+    assert list(cambios({"eventos": [dict(e, notas=["n9"])]}, {}, env)) == []  # otra protesta del mismo lugar y día: no es la avisada
+    (c, _, _), = cambios({"eventos": [e]}, {}, env)
+    assert c == "cae:" + paro
+    # un gremio ya avisado no se repite: solo sale el nuevo, y nada si ya salieron todos
+    g = dict(e, suspendido=False, gremios_retiran=["Gremio Alfa", "Gremio Beta"], retiro_nota={"medio": "M", "enlace": "https://m.pe/r"})
+    (c, t, _), = cambios({"eventos": [g]}, {}, env | {f"retira:{paro}:Gremio Alfa"})
+    assert c == f"retira:{paro}:Gremio Beta" and "Gremio Alfa" not in t
+    assert list(cambios({"eventos": [g]}, {}, env | {f"retira:{paro}:Gremio Alfa-Gremio Beta-otro"})) == []
+    # de una protesta que ya terminó no sale ni retiro ni corrección, y la suspensión solo hasta 3 días después
+    ayer, vieja = f"evento:00:Bloqueo de vías:{d(-2)}", f"evento:00:Bloqueo de vías:{d(-5)}"
+    for viejo in (dict(g, fecha_evento=d(-2)), dict(g, fecha_evento=d(-2), gremios_retiran=[])):
+        assert list(cambios({"eventos": [viejo]}, {}, {ayer, f"retira:{ayer}:Gremio Zeta"})) == []
+    assert list(cambios({"eventos": [dict(e, fecha_evento=d(-5))]}, {}, {vieja})) == []
+
+
 def test_retiro_con_su_fuente_y_solo_si_le_toca():
     from tremor.avisos import cambios
     e = {"ubigeo": "00", "accion": "Paro", "fecha_evento": "2026-12-01", "estado": "anunciada", "enlace": "https://x.pe/anuncio", "medio": "X",
@@ -376,8 +405,8 @@ def test_salud_de_fuentes():
 def test_retiro_falso_se_corrige_una_vez():
     """Se avisó que un gremio se retiraba y la prensa ya no lo dice: una corrección, y no se repite."""
     from tremor import avisos
-    e = {"ubigeo": "00", "accion": "Paro", "fecha_evento": "2026-11-16", "estado": "ocurrida", "titular": "Paro", "gremios_retiran": []}
-    orig = "evento:00:Paro:2026-11-16"
+    e = {"ubigeo": "00", "accion": "Paro", "fecha_evento": avisos.hoy(), "estado": "ocurrida", "titular": "Paro", "gremios_retiran": []}
+    orig = f"evento:00:Paro:{avisos.hoy()}"
     enviados = {orig, f"retira:{orig}:Coordinadora"}
     r = [x[0] for x in avisos.cambios({"eventos": [e]}, {}, enviados)]
     assert r == [f"corrige:retira:{orig}:Coordinadora"]
