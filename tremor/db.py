@@ -114,6 +114,11 @@ CREATE TABLE IF NOT EXISTS sutran_alerta (     -- alertas viales de la SUTRAN; l
     via TEXT, km TEXT, fecha_evento TEXT, vigente_desde TEXT, vigente_hasta TEXT, fuente TEXT,
     visto_primero TEXT NOT NULL, visto_ultimo TEXT NOT NULL, interrumpido_alguna_vez INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS mtc_via (     -- emergencias viales del COE-MTC (reporte diario); solo da las vigentes: se acumulan
+    id TEXT PRIMARY KEY, fecha_evento TEXT, region TEXT, provincia TEXT, distrito TEXT, ubigeo TEXT, precision TEXT,
+    via TEXT, km TEXT, estado TEXT, motivo TEXT, submotivo TEXT, metraje TEXT, descripcion TEXT, lat REAL, lng REAL,
+    visto_primero TEXT NOT NULL, visto_ultimo TEXT NOT NULL, interrumpido_alguna_vez INTEGER NOT NULL DEFAULT 0
+);
 CREATE TABLE IF NOT EXISTS llm_cache (clave TEXT PRIMARY KEY, respuesta TEXT NOT NULL, modelo TEXT, creado TEXT);
 """
 

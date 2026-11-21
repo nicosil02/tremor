@@ -602,12 +602,13 @@ def calibracion(con):
 
 
 def sutran(con):
-    """Bloqueos vigentes por protesta, con lo que dicen los medios de cada uno (tremor.sutran.contexto)."""
-    con.execute("CREATE TABLE IF NOT EXISTS sutran_contexto (id TEXT PRIMARY KEY, contexto TEXT, fuentes TEXT, actualizado TEXT NOT NULL)")
-    s = registros(tabla(con, """SELECT s.titulo, s.motivo, s.estado_via, s.region, s.provincia, s.distrito, s.ubigeo, s.via, s.km,
-                                       s.fecha_evento, s.lat, s.lng, c.contexto, c.fuentes
-                                FROM sutran_alerta s LEFT JOIN sutran_contexto c USING (id)
-                                WHERE s.motivo = 'humano' AND (s.vigente_hasta IS NULL OR s.vigente_hasta >= date('now'))
+    """Bloqueos vigentes por manifestación, con lo que dicen los medios de cada uno (tremor.mtc.contexto).
+    La fuente es el reporte diario del COE-MTC (la API de SUTRAN se cerró); vigente = visto en los últimos 2 días."""
+    con.execute("CREATE TABLE IF NOT EXISTS mtc_contexto (id TEXT PRIMARY KEY, contexto TEXT, fuentes TEXT, actualizado TEXT NOT NULL)")
+    s = registros(tabla(con, """SELECT substr(s.descripcion, 1, 80) AS titulo, s.motivo, s.estado AS estado_via, s.region,
+                                       s.provincia, s.distrito, s.ubigeo, s.via, s.km, s.fecha_evento, s.lat, s.lng, c.contexto, c.fuentes
+                                FROM mtc_via s LEFT JOIN mtc_contexto c USING (id)
+                                WHERE s.motivo = 'humano' AND s.submotivo = 'Manifestación' AND s.visto_ultimo >= date('now', '-2 day')
                                 ORDER BY s.fecha_evento DESC"""))
     for x in s:
         x["fuentes"] = json.loads(x["fuentes"] or "[]")
