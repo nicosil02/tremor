@@ -1,0 +1,104 @@
+reporte_num,anio,mes,lugar_caso,fallecidos,heridos,pagina
+126,2014,8,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),4,0,
+130,2014,12,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),0,7,
+132,2015,2,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),1,178,
+133,2015,3,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),2,2,
+138,2015,8,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),2,2,
+139,2015,9,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),2,1,
+148,2016,6,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),2,3,
+152,2016,10,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),4,8,
+155,2017,1,ÁNCASH – Caso Huaripampa - Nyrstar,0,6,130
+155,2017,1,LA LIBERTAD – Caso Quiruvilca,1,0,130
+155,2017,1,LAMBAYEQUE – Caso Pucalá,0,1,130
+155,2017,1,LIMA METROPOLITANA – Caso Peaje Puente Piedra,0,13,130
+156,2017,2,LAMBAYEQUE – Caso Tumán,0,2,127
+158,2017,4,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),0,2,
+159,2017,5,LAMBAYEQUE – Tumán,0,20,110
+160,2017,6,Lambayeque - Tumán,0,6,108
+160,2017,6,Áncash – Contaminación en Huarupampa 1/,0,1,108
+161,2017,7,AMAZONAS – Wampis – mineros ilegales,0,7,106
+161,2017,7,PUNO – Docentes de SUTE regionales,0,1,106
+161,2017,7,CUSCO – Docentes de SUTE regionales,0,3,106
+162,2017,8,Piura – Cura Mori,1,10,106
+163,2017,9,Reconstrucción de Huarmey,0,9,101
+163,2017,9,Torata – SPCC,0,1,101
+164,2017,10,Áncash - Atupa - Barrick,0,8,103
+164,2017,10,Áncash - Minicentrales hidroeléctricas en Pampas,0,2,103
+164,2017,10,La Libertad - Disputa entre grupos mineros ilegales – de Parcoy,3,0,103
+165,2017,11,Áncash - Minicentrales hidroeléctricas en Pampas,0,7,106
+165,2017,11,Huánuco - Desacuerdo con el alcalde de Llata,0,4,106
+166,2017,12,Piura – Mototaxistas en desacuerdo con Ordenanza,0,1,91
+166,2017,12,Loreto - CN Chapis – derrame de petróleo,1,0,91
+167,2018,1,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),3,7,
+168,2018,2,ÁNCASH – Pampas - Hydrika,0,2,106
+168,2018,2,PIURA – La Tortuga - Olympic,0,4,106
+169,2018,3,LAMBAYEQUE – Nueva ciudad de Olmos,0,1,102
+170,2018,4,ÁNCASH – Pampas -Hydrika,0,1,111
+170,2018,4,HUANCAVELICA – Estudiantes de la Universidad – Nacional de Huancavelica,0,2,111
+175,2018,9,LA LIBERTAD – Guadalupe – ERM 2018,1,2,103
+175,2018,9,PUNO – Alto Inambari – ERM 2018,0,5,103
+175,2018,9,LORETO – Requena – ERM 2018,0,12,103
+177,2018,11,ÁNCASH – Reconstrucción de Huarmey,0,25,105
+177,2018,11,APURÍMAC – CC Ucchucarco – Quehuincha,0,5,105
+182,2019,4,LORETO – Villa Trompeteros – Pluspetrol Norte,0,14,113
+182,2019,4,AMAZONAS – Tocuya – Residuos sólidos,0,11,113
+183,2019,5,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),0,3,
+191,2020,1,AMAZONAS – Caso Condorcanqui – GORE Amazonas,0,1,122
+195,2020,5,CUSCO – Caso Ccacho Limamayo y Sawa Sawa,0,37,118
+196,2020,6,APURÍMAC – Caso C.C. Chaccaro y C.C. Occaccahua,3,0,128
+197,2020,7,APURÍMAC – Caso C.C. Pumamarca - C.C. Asacasi,0,5,116
+197,2020,7,CUSCO – Caso Espinar - Antapaccay,0,11,116
+197,2020,7,LORETO – Caso Bretaña - Petro Tal,3,15,116
+200,2020,10,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),0,4,
+201,2020,11,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),5,0,
+202,2020,12,MULTIRREGIONAL (ICA Y LA LIBERTAD) – Trabajadores temporales de la agroexportación,3,53,122
+203,2021,1,JUNÍN – Comunidades de Uchubamba y Curimarca,3,24,117
+203,2021,1,PUNO – Demarcación Limbani y Phara,0,33,117
+209,2021,7,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),0,10,
+210,2021,8,PASCO – Caso Trabajadores de empresa Cerro S.A.C.,0,2,132
+211,2021,9,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),0,3,
+212,2021,10,AYACUCHO – Caso Frente de Defensa del Sur - Rechazo a la – minería,0,10,146
+213,2021,11,"APURÍMAC – Caso Comunidades de Huaquirca, Sabaino y – Virundo",2,36,141
+213,2021,11,APURÍMAC – Caso Comunidades de Huancabamba u Ceñuaran,0,5,141
+214,2021,12,MULTIRREGIONAL – Caso Honoria y Campoverde – Bosques Silvestres – S.A.C.,0,2,133
+215,2022,1,MULTIRREGIONAL – Caso Honoria y Campoverde – Bosques Silvestres – S.A.C.,0,2,148
+215,2022,1,AMAZONAS – Caso Asentamiento Humano Pedro Castro,0,12,148
+217,2022,3,LIMA METROPOLITANA – Caso Protestas por la renuncia del Presidente de la – República,0,59,169
+217,2022,3,NACIONAL – Casos: Transportistas de carga pesada – – Agricultores y ganaderos lecheros,4,87,169
+218,2022,4,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),0,66,
+219,2022,5,AREQUIPA – Caso Mineros informales – Intigold,7,0,136
+219,2022,5,APURÍMAC – Casos: CC. Huancuire - Las Bambas,0,12,136
+219,2022,5,APURÍMAC – Caso Huancabamba – Cceuñahuran,0,13,136
+220,2022,6,AREQUIPA – Caso Mineros informales – Intigold,7,5,149
+220,2022,6,HUANCAVELICA – Caso San Pedro de Coris – Doe Run,0,16,149
+220,2022,6,SAN MARTÍN – Caso Comunidad Nativa Huascayacu,1,5,149
+222,2022,8,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),0,13,
+223,2022,9,LORETO – Caso: CN Cuninico - Petroperú,0,3,147
+225,2022,11,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),0,340,
+227,2023,1,NACIONAL – Caso: Crisis política – Diciembre 2022,31,856,216
+228,2023,2,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),6,23,
+229,2023,3,AREQUIPA – Caso: I.E. Juan Espinoza Medrano – UGEL – Andahuaylas,0,7,160
+229,2023,3,NACIONAL – Caso: Crisis política – Diciembre 20221,1,6,160
+230,2023,4,NACIONAL – Caso: Estudiantes de la Universidad Nacional de – Huancavelica (UNH),0,11,145
+231,2023,5,CUSCO – Caso: CC Viacha - CC Coya Qosqo,0,53,142
+233,2023,7,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),0,67,
+235,2023,9,HUÁNUCO – Caso: Llata – Antamina,0,3,162
+235,2023,9,LORETO – Caso: Cinco cuencas,0,1,162
+235,2023,9,MULTIRREGIONAL – Caso: Contaminación – Refinería La Pampilla – (Repsol),0,1,162
+236,2023,10,MULTIRREGIONAL – Caso: Contaminación – Refinería La Pampilla – (Repsol),0,4,187
+238,2023,12,ICA Caso: Trabajadores sector agroexportador,0,19,145
+242,2024,4,HUANCAVELICA – CC San Cristóbal – Asociaciones de vivienda,0,2,148
+244,2024,6,CUSCO – Caso: Campo ferial de Huancaro,0,5,147
+244,2024,6,JUNÍN – Caso: Comunidades campesinas del Canipaco,0,16,147
+245,2024,7,NACIONAL – Caso: Crisis política – Diciembre 2022,0,5,150
+250,2024,12,ÁNCASH – Caso: Conflicto comunal Ecash - Huacrán,0,6,87
+251,2025,1,HUANCAVELICA – Caso: Huancavelica – Santa Inés y Santa Inés – – Rumichaca,0,6,107
+254,2025,4,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),0,21,
+256,2025,6,Caso: Atupa y Antahurán – Barrick (Áncash),0,14,115
+257,2025,7,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),0,23,
+258,2025,8,Caso: Huaripampa – Antamina (ÁNCASH).,0,3,107
+260,2025,10,CASO: Coasa – Limbani (Puno),1,2,115
+261,2025,11,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),0,1,
+266,2026,4,TOTAL del mes (sin detalle por caso: la tabla no cuadra con el texto),0,4,
+271,2026,9,Lima Metropolitana · Pobladores de Jicamarca – Empresa Total Inmuebles SRL (1530-0926),0,3,
+271,2026,9,Piura · Comunidad San Martín de Sechura (1193-1020),0,2,

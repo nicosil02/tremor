@@ -1,0 +1,1844 @@
+id,codigo,nombre,tipo,departamento,ubigeo
+1,,,,Ayacucho,050302
+2,,,,Ayacucho,0502
+3,,,,Amazonas,01
+4,,,,Amazonas,01
+5,,,,Ancash,02
+6,,,,Ancash,02
+7,,,,Ancash,02
+8,,,,Ancash,02
+9,,,,Ancash,0220
+10,,,,Arequipa,04
+11,,,,Arequipa,04
+12,,,,Cajamarca,06
+13,,,,Cusco,081002
+14,,,,Cusco,081006
+15,,,,Cusco,0809
+16,,,,Huancavelica,09
+17,,,,Huancavelica,09
+18,,,,Huanuco,10
+19,,,,Huanuco,10
+20,,,,Ica,11
+21,,,,Ica,11
+22,,,,Ica,11
+23,,,,Ica,11
+24,,,,Lambayeque,14
+25,,,,Lambayeque,140101
+26,,,,La Libertad,13
+27,,,,La Libertad,13
+28,,,,La Libertad,13
+29,,,,La Libertad,130605
+30,,,,La Libertad,13
+31,,,,La Libertad,13
+32,,"Público, Fiscalía Especializada en Materia Ambiental",Socioambiental,Piura,200303
+33,,,,Piura,200607
+34,,,,Puno,2113
+35,,,,Puno,210101
+36,,,,Puno,2111
+37,,,,Puno,21
+38,,,,Puno,21
+39,,,,Puno,210110
+40,,,,Puno,21
+41,,,,San Martin,220603
+42,,,,San Martin,22
+43,,,,San Martin,22
+44,,,,San Martin,22
+45,,,,Tacna,2302
+46,,,,Ucayali,25
+47,,,,Ucayali,25
+48,,,,Amazonas,010108
+49,,,,Amazonas,0107
+50,,,,Ancash,021204
+51,,,,Ancash,0212
+52,,,,Ancash,022005
+53,,,,Ancash,021807
+54,,,,Arequipa,040110
+55,,,,Arequipa,040520
+56,,,,Ayacucho,05
+57,,,,Cajamarca,060601
+58,,,,Huancavelica,090117
+59,,,,Ica,11
+60,,,,Huanuco,101101
+61,,,,Huanuco,100504
+62,,,,La Libertad,131202
+63,,,,La Libertad,130503
+64,,,,La Libertad,130504
+65,,,,La Libertad,131001
+66,,,,La Libertad,13
+67,,,Laboral,Lambayeque,140116
+68,,,,Lambayeque,140119
+69,,,,Loreto,160801
+70,,,,Loreto,160510
+71,,,,Loreto,160304
+72,,,,Loreto,1602
+73,,,,Loreto,160702
+74,,,,Loreto,160206
+75,,,,Puno,2102
+76,,,,Puno,210204
+77,,,,Puno,210501
+78,,,,Puno,2108
+79,,,,Puno,210904
+80,,,,Ucayali,2501
+81,,,,Ucayali,2502
+82,,,,Huancavelica,090407
+83,,,,Huanuco,100803
+84,,,,La Libertad,131006
+85,,,,Piura,200210
+86,,,,Loreto,160505
+87,,,,San Martin,220709
+88,,,,Amazonas,0107
+89,,,,Loreto,160206
+90,,,,Puno,2113
+91,,,,Huancavelica,090103
+92,,,,La Libertad,13
+93,,,,Lambayeque,140119
+94,,,,Ancash,0212
+95,,,,,
+96,,,,Cajamarca,060507
+97,,,,Ica,110304
+98,,,,Ica,1105
+99,,,,Arequipa,040608
+100,,,,Junin,120601
+101,,,,Pasco,190306
+102,,,,Puno,21
+103,,,,San Martin,220907
+104,,,,Huancavelica,090407
+105,,,,Ancash,021208
+106,,,,Apurimac,03
+107,,,,Cajamarca,060101
+108,,,,Cusco,080604
+109,,,,Cusco,080706
+110,,,,Lima,150602
+111,,,,Piura,20
+112,,,,Puno,210206
+113,,,,San Martin,220904
+114,,,,Ancash,021204
+115,,,,La Libertad,13
+116,,,,Lima,150101
+117,,,,Ancash,0212
+118,,,,Arequipa,040110
+119,,,,Ayacucho,0502
+120,,,,Ayacucho,05
+121,,,,Cusco,081002
+122,,,,Huanuco,100504
+123,,,,La Libertad,130205
+124,,,,La Libertad,130504
+125,,,,La Libertad,131006
+126,,,,Lambayeque,140119
+127,,,,Loreto,1602
+128,,,,Puno,2113
+129,,,,Apurimac,030204
+130,,,Socioambiental,Cajamarca,060202
+131,,,,Junin,120133
+132,,,,Lambayeque,140114
+133,,Agricutores de hoja de coca de Puno,Cultivo ilegal de hoja de coca,Puno,210309
+134,,,,Loreto,160401
+135,,,,Loreto,1602
+136,,,,Tumbes,2402
+137,,,,Ancash,0212
+138,,,,Cajamarca,0606
+139,,,,Cajamarca,060507
+140,,,,La Libertad,131202
+141,,,,Lima,150602
+142,,,,Puno,210501
+143,,,,Cajamarca,061307
+144,,,,Cajamarca,060702
+145,,,,Huanuco,100605
+146,,,,La Libertad,130906
+147,,,,Loreto,1602
+148,,,,Ancash,02
+149,,,,Loreto,1602
+150,,,,Puno,211307
+151,,,,Ica Y Lima,1505
+152,,,,Junin,120503
+153,,,,Junin,120608
+154,,,,Lambayeque,140101
+155,,,,Lima,150137
+156,,,,Loreto,160402
+157,,,,Ancash,020101
+158,,,,Cajamarca,0607
+159,,,,Huanuco,100401
+160,,,,Lima,150103
+161,,,,Loreto,160507
+162,,,,Piura,200301
+163,,,,Puno,210404
+164,,,,Apurimac,030201
+165,,,,Huancavelica,090104
+166,,,,La Libertad,131005
+167,,,,Ayacucho,050609
+168,,,,Cajamarca,060101
+169,,,,Lambayeque,140102
+170,,,,Lambayeque,140301
+171,,,,Lambayeque,140118
+172,,,,Loreto,160703
+173,,,,Puno,21
+174,,,,Cusco,080801
+175,,,,Huancavelica,090113
+176,,,,Pasco,190109
+177,,,,Puno,210101
+178,,,,San Martin,221003
+179,,,,San Martin,220303
+180,,,,San Martin,22
+181,,,,Arequipa,040101
+182,,,,Cajamarca,060101
+183,,,,Ayacucho,050407
+184,,,,Cusco,080903
+185,,,,Junin,120606
+186,,,,Loreto,1606
+187,,,,Apurimac,030501
+188,,,,Ayacucho,05
+189,,,,Huancavelica,090101
+190,,,,La Libertad,131201
+191,,,,Piura,200304
+192,,,,Nacional,
+193,,,,Huanuco,100802
+194,,,,Huanuco,10
+195,,,,Apurimac,030213
+196,,,,Ayacucho,050201
+197,,,,Huancavelica,090103
+198,,,,Ucayali,25
+199,,,,Ayacucho,050601
+200,,,Comunal,Huancavelica,090101
+201,,,,Pasco,19
+202,,,,Puno,211301
+203,,,,Cajamarca,060703
+204,,,,Cusco,080902
+205,,,,Cusco,080702
+206,,,,Cusco,081301
+207,,,,Huancavelica,090101
+208,,,,Lima,150504
+209,,,,Pasco,190301
+210,,,,Puno,210708
+211,,,,La Libertad,130401
+212,,,,Moquegua,180101
+213,,,Asuntos de gobierno local,Puno,210203
+214,,,,Loreto,160701
+215,,,,Amazonas,010205
+216,,,,Arequipa,040124
+217,,,,San Martin,220503
+218,,,,Cusco,080101
+219,,,,San Martin,220802
+220,,,,Cajamarca,060101
+221,,,,Cusco,080908
+222,,Pasco,Socioambiental,Pasco,190101
+223,,,,Pasco,190102
+224,,,,Loreto,1606
+225,,,,Ancash,021603
+226,,,,Arequipa,040112
+227,,,,Cusco,08
+228,,,,Cusco,08
+229,,,,Cusco,08
+230,,,,Pasco,190104
+231,,,Socioambiental,La Libertad,130605
+232,,,,Lambayeque,140101
+233,,,,Loreto,160304
+234,,Ambiente de Moquegua,Socioambiental,Moquegua,180301
+235,,,,Puno,210306
+236,,,,San Martin,220602
+237,,,,Ancash,021014
+238,,,Socioambiental,Tacna,230101
+239,,,,Ayacucho,050201
+240,,,Comunal,Ayacucho,050702
+241,,,,Cajamarca,060703
+242,,,Socioambiental,Tacna,230101
+243,,,,San Martin,220601
+244,,,,Huanuco,100601
+245,,,,Arequipa,040702
+246,,,,Ancash,020509
+247,,,,Amazonas,010518
+248,,,,Ancash,021305
+249,,,,Ancash,0213
+250,,,Comunal,Ayacucho,051012
+251,,,Electoral,Cajamarca,060809
+252,,,,Cajamarca,060101
+253,,,,Huancavelica,090103
+254,,,Socioambiental,La Libertad,130901
+255,,,,Loreto,1604
+256,,,,Pasco,1902
+257,,,Electoral,Puno,210310
+258,,,,Pasco,190206
+259,,,Electoral,Lima,151013
+260,,,,Puno,210309
+261,,,Electoral,San Martin,220602
+262,,,,Pasco,190108
+263,,,Socioambiental,Ancash,021014
+264,,,,Cajamarca,060101
+265,,,Cultivo ilegal de hoja de coca,Huanuco,1006
+266,,,,Lima,150137
+267,,,,Moquegua,1801
+268,,,,Piura,200101
+269,,,,Ancash,020106
+270,,,,Ancash,020507
+271,,,,Ancash,02
+272,,,,Arequipa,040124
+273,,,,Ayacucho,050407
+274,,,,Cajamarca,060101
+275,,,Socioambiental,Cajamarca,061307
+276,,,,Cajamarca,060703
+277,,,Socioambiental,Cajamarca,060101
+278,,,,Cusco,080908
+279,,,Socioambiental,Cusco,080902
+280,,,Comunal,Huancavelica,090407
+281,,,,Huanuco,100605
+282,,,,Huanuco,100601
+283,,,Demarcación territorial,Ica Y Lima,1505
+284,,,,La Libertad,131201
+285,,,,Loreto,1602
+286,,,,Loreto,160705
+287,,,,Moquegua,180102
+288,,,,Nacional,
+289,,,,Piura,200111
+290,,,,Ucayali,2501
+291,,,,Ancash,020508
+292,,,Socioambiental,Ancash,020606
+293,,,Asuntos de gobierno regional,Ayacucho,050601
+294,,,Socioambiental,Ayacucho,050403
+295,,Moquegua: Siete,Socioambiental,Moquegua,180106
+296,,,,San Martin,220804
+297,0119-0505,Espinar - Antapaccay (ex Glencore Xstrata),Socioambiental,Cusco,080801
+298,,,,Huanuco,100702
+299,,,,Ica,110304
+300,,,Socioambiental,Puno,211002
+301,,,,Lima,150705
+302,,,Socioambiental,Lima,150901
+303,,,,Pasco,190108
+304,,,,Puno,2101
+305,,,Socioambiental,Puno,210804
+306,,,,Ucayali,2501
+307,,,Socioambiental,Cajamarca,060702
+308,,,Socioambiental,Apurimac,030501
+309,,,Asuntos de gobierno nacional,Ayacucho,050101
+310,,,Laboral,Lima,151002
+311,,,Asuntos de gobierno nacional,Nacional,04
+312,,,Socioambiental,San Martin,220904
+313,,,Socioambiental,Ancash,021014
+314,0245-0807,Laguna Parón - ORAZUL Energy S.A.,Socioambiental,Ancash,021201
+315,,,Socioambiental,Cajamarca,060106
+316,,,Socioambiental,Huancavelica,090312
+317,,,,San Martin,221001
+318,,,,Ayacucho,050619
+319,,,Socioambiental,Ayacucho,051005
+320,,,Socioambiental,Huancavelica,090603
+321,,,Asuntos de gobierno local,Puno,211201
+322,,,Asuntos de gobierno local,San Martin,220302
+323,,,Socioambiental,Ayacucho,050619
+324,,,,Cajamarca,060202
+325,,,,Lima,150705
+326,,,,Arequipa,040112
+327,,,,Cajamarca,060101
+328,,,Socioambiental,Apurimac,030406
+329,,,Asuntos de gobierno nacional,Nacional,
+330,,,Socioambiental,Puno,2105
+331,,,Demarcación territorial,Puno / Moquegua / Arequipa / Tacna,180101
+332,,,,Junin / Ucayali,1206
+333,,,Socioambiental,Ancash,020513
+334,,,Asuntos de gobierno nacional,Ancash,02
+335,,,Comunal,Ayacucho / Huancavelica,050114
+336,,,Socioambiental,Lambayeque,140201
+337,,,Asuntos de gobierno local,Puno,211101
+338,,,,Moquegua / Arequipa,180101
+339,,,Asuntos de gobierno nacional,Cusco,080101
+340,,Morococha - Chinalco,Socioambiental,Junin,120805
+341,,Uno,Asuntos de gobierno nacional,Nacional,01
+342,,,Socioambiental,San Martin,220405
+343,,,Socioambiental,Tacna,230201
+344,,,Socioambiental,Ancash,022003
+345,,,Asuntos de gobierno local,Huancavelica,090103
+346,,Coordinadora Regional de Pueblos Indígenas,Laboral,Loreto,160706
+347,,,Asuntos de gobierno local,Loreto,1601
+348,,,Laboral,Moquegua,180101
+349,,Martín / Ucayali: Uno,Asuntos de gobierno nacional,Nacional,1606
+350,,,Socioambiental,Tacna,230401
+351,,,Socioambiental,Arequipa,040302
+352,,Ayacucho,Socioambiental,Ayacucho,050801
+353,,,Comunal,Ayacucho,050201
+354,,,Asuntos de gobierno local,Cajamarca,060907
+355,,,Asuntos de gobierno local,Cajamarca,060106
+356,,,Socioambiental,Cajamarca,060101
+357,,,Socioambiental,Callao,070104
+358,,,Asuntos de gobierno local,Huancavelica,090413
+359,,,Socioambiental,Junín,120901
+360,,,Asuntos de gobierno local,Junín,120302
+361,,,Electoral,Lima,151013
+362,,Ancash / Callao / Ica / La Libertad / Loreto / Moquegua / Piura / San Martín: Uno,Laboral,Nacional,020107
+363,,,Socioambiental,Pasco,190110
+364,,,Socioambiental,Ayacucho,050703
+365,,,Asuntos de gobierno local,Cajamarca,060419
+366,,,Asuntos de gobierno local,Cajamarca,060410
+367,,,Socioambiental,Cajamarca,060703
+368,,,Comunal,Cusco,08
+369,,de Chilca; Graña y Montero S.A,Laboral,Lima,150101
+370,,,Asuntos de gobierno local,Madre de Dios,170101
+371,,,Socioambiental,Pasco,190109
+372,,,Asuntos de gobierno local,Puno,210601
+373,,,Comunal,Puno,210303
+374,,,Socioambiental,Puno,211206
+375,,,Socioambiental,Puno,210305
+376,,,Socioambiental,Apurímac,030209
+377,,,Socioambiental,Ayacucho,05
+378,,,Socioambiental,Cajamarca,060101
+379,,Botadero Haquira (II),Socioambiental,Cusco,080106
+380,,,Socioambiental,Cusco,080706
+381,,de la Coca,Socioambiental,Cusco,080801
+382,,,Asuntos de gobierno local,Huánuco,100902
+383,,,Laboral,La Libertad,131002
+384,,Diógenes Geldres Velásquez,Asuntos de gobierno local,La Libertad,130801
+385,,,Socioambiental,Lambayeque,140113
+386,,,Asuntos de gobierno local,Lima,150101
+387,,Loreto: Nueve,Socioambiental,Loreto,160511
+388,,,Laboral,Loreto,160101
+389,,Puno: Dieciséis,Asuntos de gobierno nacional,Nacional,20
+390,,,Laboral,Nacional,
+391,,,Socioambiental,Piura,200603
+392,,,Socioambiental,Piura,200801
+393,,Áreas Naturales Protegidas,Socioambiental,Arequipa,040603
+394,,,Socioambiental,Ayacucho,050110
+395,,,Asuntos de gobierno local,Ayacucho,05
+396,,,Socioambiental,Cusco,080207
+397,,,Socioambiental,Junín,120901
+398,,Huancayo - Residuos sólidos (Lastay),Socioambiental,Junín,120107
+399,,,Socioambiental,Junín,120105
+400,,,Asuntos de gobierno local,Junín,120603
+401,,,Laboral,La Libertad,130809
+402,,,Socioambiental,Lima,150812
+403,,,Socioambiental,Lima,150125
+404,,Lima Provincias,Socioambiental,Lima,150705
+405,,,Asuntos de gobierno local,Loreto,160304
+406,,,Asuntos de gobierno nacional,Madre de Dios,170101
+407,,,Asuntos de gobierno nacional,Nacional,
+408,,,Socioambiental,Pasco,190109
+409,,,Socioambiental,Amazonas,010312
+410,,"noviembre, se amplió por cuarenta y cinco",Socioambiental,Apurímac,030410
+411,,,Asuntos de gobierno nacional,Arequipa,040101
+412,,,Demarcación territorial,Arequipa,04
+413,,,Socioambiental,Ayacucho,050601
+414,,,Otros asuntos,Cusco,080101
+415,,,Socioambiental,Huancavelica,090119
+416,,,Asuntos de gobierno local,La Libertad,130906
+417,,,Demarcación territorial,Lima,150709
+418,,,Asuntos de gobierno nacional,Moquegua,180101
+419,,Ucayali: Dos,Laboral,Nacional,020107
+420,,Perú,Asuntos de gobierno nacional,Nacional,020107
+421,,,Laboral,Nacional,
+422,,Lima / Piura / Tumbes: Uno,Laboral,Nacional,15
+423,,,Laboral,Nacional,
+424,,,Laboral,Nacional,
+425,,,Laboral,Nacional,
+426,,,Laboral,Nacional,
+427,,,Asuntos de gobierno local,Piura,200101
+428,,Piura,Socioambiental,Piura,200111
+429,,,Socioambiental,Ancash,021710
+430,,,Otros asuntos,Apurímac,030201
+431,,,Asuntos de gobierno nacional,Arequipa,040207
+432,,,Socioambiental,Ayacucho,050102
+433,,,Asuntos de gobierno regional,Cajamarca,060901
+434,,,Socioambiental,Cajamarca,060101
+435,,,Comunal,Huancavelica,090118
+436,,Junín – Pasco,Socioambiental,Junín,120503
+437,,,Socioambiental,La Libertad,13
+438,,,Demarcación territorial,Lambayeque,140201
+439,,,Asuntos de gobierno local,Lima,150901
+440,,,Comunal,Lima,150808
+441,,,Demarcación territorial,Lima,150131
+442,,,Otros asuntos,Moquegua,180301
+443,,,Otros asuntos,Moquegua,18
+444,,,Otros asuntos,Nacional,
+445,,concesión del puerto de Paita,Socioambiental,Piura,200801
+446,,,Asuntos de gobierno nacional,Piura,200101
+447,,,Asuntos de gobierno local,Ayacucho,050104
+448,,,Asuntos de gobierno nacional,Cajamarca,060201
+449,,,Socioambiental,Cusco,080606
+450,,,Demarcación territorial,Junín,120601
+451,,,Laboral,Lambayeque,140101
+452,,,Asuntos de gobierno nacional,Lima,150901
+453,,,Demarcación territorial,Lima,150112
+454,,,Socioambiental,Lima,150906
+455,,,Socioambiental,Loreto,160201
+456,,Loreto,Socioambiental,Loreto,160704
+457,,,Asuntos de gobierno nacional,Nacional,1606
+458,,,Socioambiental,Pasco,190104
+459,,,Socioambiental,Piura,200702
+460,,,Comunal,Piura,200602
+461,,,Asuntos de gobierno local,Puno,211301
+462,,,Asuntos de gobierno regional,San Martín,220303
+463,,,Asuntos de gobierno nacional,Tacna,230101
+464,,,Laboral,Arequipa,040201
+465,,,Asuntos de gobierno nacional,Cajamarca,060502
+466,,,Socioambiental,Cusco,081210
+467,1106-0618,Economía y Finanzas,Cultivo ilegal de hoja de coca,Cusco,080408
+468,,,Laboral,Huancavelica,090101
+469,,,Socioambiental,Lima,151032
+470,1516-0826,Río Curacay - minería ilegal,Socioambiental,Loreto,160107
+471,,,Demarcación territorial,Pasco,190303
+472,,,Demarcación territorial,Piura,200606
+473,,,Socioambiental,Puno,210403
+474,,,Asuntos de gobierno nacional,Puno,2103
+475,,,Asuntos de gobierno local,San Martín,220601
+476,0397-1208,Cenepa - Minería informal e ilegal (antes Afrodita),Socioambiental,Amazonas,010402
+477,,Huancavelica: Tres,Socioambiental,Huancavelica,090106
+478,,Moquegua / Puno: Uno,Demarcación territorial,Moquegua,18
+479,,,Asuntos de gobierno nacional,Puno,2103
+480,,,Asuntos de gobierno nacional,Ancash,020804
+481,,,Asuntos de gobierno local,Arequipa,040101
+482,,,Socioambiental,Ayacucho,050202
+483,,,Laboral,Ayacucho,050502
+484,,,Socioambiental,Cajamarca,060701
+485,,,Asuntos de gobierno local,Cajamarca,060603
+486,,,Socioambiental,Cusco,080101
+487,,,Socioambiental,Cusco,080406
+488,,Quellouno - Yanatile,Demarcación territorial,Cusco,080906
+489,,,Electoral,Huancavelica,090717
+490,,,Asuntos de gobierno local,La Libertad,131002
+491,,,Socioambiental,Lambayeque,140205
+492,,,Socioambiental,Loreto,1603
+493,,,Socioambiental,Loreto,160101
+494,,,Socioambiental,Madre de Dios,170102
+495,,,Asuntos de gobierno local,Moquegua,180301
+496,,Áncash / La Libertad / Lima / Moquegua: Uno,Laboral,Nacional,020107
+497,,Barco de Investigación Científica,Laboral,Piura,200101
+498,,,Electoral,San Martín,220402
+499,,,Socioambiental,Tacna,230201
+500,,,Laboral,Ancash,021801
+501,,,Socioambiental,Apurímac,030410
+502,,de la Coca,Socioambiental,Cusco,080902
+503,,,Asuntos de gobierno local,Huancavelica,090705
+504,,,Laboral,Huánuco,101007
+505,,Ica,Socioambiental,Ica,110211
+506,,,Asuntos de gobierno local,Junín,120114
+507,,,,Junín,120608
+508,,,Socioambiental,Lambayeque,140117
+509,,,Laboral,Lima,1501
+510,,,Demarcación territorial,Tacna,230203
+511,,Áncash: Treinta,Socioambiental,Ancash,021509
+512,,3. El Organismo de Evaluación y Fiscalización Ambiental,Socioambiental,Ancash,021803
+513,,,Comunal,Arequipa,040603
+514,,Ayacucho / Huancavelica: Uno,Comunal,Ayacucho,050205
+515,,,Asuntos de gobierno local,Cusco,080702
+516,,,Socioambiental,Junín,120210
+517,,,Laboral,Junín,120810
+518,,,Demarcación territorial,Lima,150131
+519,,,Socioambiental,Lima,150102
+520,,,Socioambiental,Lima,150716
+521,,,Socioambiental,Lima,150901
+522,,Ambiente para la salud,Socioambiental,Lima,150303
+523,,,Laboral,Lima,150141
+524,,,Laboral,Lima,150505
+525,,,Asuntos de gobierno local,Loreto,160301
+526,,Loreto: Diez,Socioambiental,Loreto,1601
+527,,,Asuntos de gobierno local,Moquegua,180101
+528,,,Socioambiental,Moquegua,180301
+529,,Arequipa / Cusco / Lambayeque / Lima / Puno / San Martín: Uno,Laboral,Nacional,04
+530,,,Asuntos de gobierno nacional,Piura,200501
+531,,,Asuntos de gobierno regional,Puno,2108
+532,,,Asuntos de gobierno regional,Puno,211301
+533,,,Asuntos de gobierno nacional,Puno,210309
+534,,,Socioambiental,San Martín,220510
+535,,,Asuntos de gobierno local,Ancash,021101
+536,,,Asuntos de gobierno local,Ancash,020101
+537,,Choquemarca,Socioambiental,Apurímac,030406
+538,,,Asuntos de gobierno local,Apurímac,030201
+539,,,Socioambiental,Arequipa,040124
+540,,,Socioambiental,Ayacucho,050602
+541,,,Socioambiental,Cajamarca,060101
+542,,,Socioambiental,Callao,07
+543,,Huánuco,Socioambiental,Huánuco,101007
+544,,Junín: Ocho,Laboral,Junín,120801
+545,,,Socioambiental,Junín,120607
+546,,,Socioambiental,La Libertad,13
+547,,,Asuntos de gobierno local,Loreto,1603
+548,,,Laboral,Nacional,
+549,,,Asuntos de gobierno local,Piura,20
+550,1293-0822,Cuenca Suches - Minería informal e ilegal (II),Socioambiental,Puno,210602
+551,,,Socioambiental,Puno,211004
+552,,,Comunal,Ayacucho,050106
+553,,,Socioambiental,Cajamarca,060112
+554,,,Socioambiental,Cusco,080301
+555,,,Comunal,Cusco,081002
+556,,Huancavelica: Tres,Socioambiental,Huancavelica,090304
+557,,,Socioambiental,Junín,120601
+558,,,Asuntos de gobierno local,Junín,120121
+559,,,Socioambiental,Junín,120801
+560,,Junín: Once,Socioambiental,Junín,120202
+561,,,Asuntos de gobierno local,Junín,120101
+562,,,Demarcación territorial,Junín,120606
+563,,,Laboral,La Libertad,130808
+564,,,Asuntos de gobierno regional,La Libertad,130901
+565,,Actores secundarios: Autoridad Nacional del Agua,Socioambiental,Moquegua,180301
+566,,,Laboral,Nacional,
+567,,,Asuntos de gobierno nacional,Nacional,
+568,,,Laboral,Piura,200703
+569,,,Socioambiental,Piura,200801
+570,,,Demarcación territorial,Tacna,23
+571,,,Asuntos de gobierno local,Ancash,020101
+572,,,Laboral,Ancash,021801
+573,,MInisterio de Energía y Minas,Asuntos de gobierno nacional,Apurímac,030201
+574,,,Asuntos de gobierno local,Apurímac,030101
+575,,,Asuntos de gobierno local,Ayacucho,050101
+576,,,Asuntos de gobierno nacional,Cusco,0806
+577,,Chincha,Laboral,Ica,110304
+578,,,Laboral,Ica,1102
+579,,,Socioambiental,La Libertad,130809
+580,,,Laboral,Lambayeque,140120
+581,,,Laboral,Lima,150811
+582,,,Asuntos de gobierno nacional,Nacional,
+583,,,Asuntos de gobierno regional,Puno,211002
+584,,,Demarcación territorial,Puno,210307
+585,,,,Moquegua,18
+586,,,Socioambiental,Cajamarca,060101
+587,,,Socioambiental,Cusco,080106
+588,,,Asuntos de gobierno regional,Cusco,0805
+589,,,Asuntos de gobierno nacional,Cusco,080701
+590,,,Socioambiental,Puno,210901
+591,,Comerciantes del Mercado Progreso,Asuntos de gobierno local,Ancash,021801
+592,,,Asuntos de gobierno local,Ancash,020804
+593,,,Socioambiental,Ancash,021014
+594,,,Socioambiental,Apurímac,030417
+595,,,Socioambiental,Apurímac,03
+596,,,Socioambiental,Arequipa,040702
+597,,,Socioambiental,Arequipa,040804
+598,,,Socioambiental,Ayacucho,050502
+599,,,Socioambiental,Ayacucho,050703
+600,,,Asuntos de gobierno local,Cusco,080301
+601,,Empresa Nacional de la Coca,Socioambiental,Cusco,081101
+602,,Cusco / Puno / Madre de Dios: Uno,Socioambiental,Cusco,081203
+603,,,Asuntos de gobierno local,Huancavelica,090101
+604,,,Socioambiental,Junín,120128
+605,,,Comunal,Lima,150611
+606,,,Asuntos de gobierno local,Moquegua,180101
+607,,,Asuntos de gobierno nacional,Pasco,190107
+608,,,Socioambiental,Piura,200601
+609,,,Asuntos de gobierno local,Puno,211001
+610,,,Socioambiental,Cajamarca,060703
+611,,,Asuntos de gobierno local,Junín,120504
+612,,,Asuntos de gobierno local,Lima,150104
+613,,,,Pasco,190113
+614,,,Laboral,Piura,200101
+615,,,Asuntos de gobierno local,Puno,211101
+616,,San Martín: Nueve,Asuntos de gobierno regional,San Martín,220503
+617,,,Asuntos de gobierno nacional,Region Cusco,08
+618,,,Asuntos de gobierno local,Ancash,021302
+619,,,Asuntos de gobierno local,Cajamarca,060804
+620,,,Socioambiental,Huancavelica,090509
+621,,,Comunal,Huancavelica,090301
+622,,,Laboral,Lambayeque,140101
+623,,,Asuntos de gobierno local,Lima,150142
+624,,,Asuntos de gobierno nacional,Madre de Dios,170104
+625,,Puno: Dieciséis,Asuntos de gobierno local,Puno,211101
+626,,,Socioambiental,Tumbes,2401
+627,,Ancash: Dieciocho,Asuntos de gobierno regional,Ancash,020505
+628,,Apurímac: Diez,Asuntos de gobierno regional,Apurímac,030101
+629,,,Socioambiental,Ayacucho,05
+630,,Modesto Barzola,Comunal,Ayacucho,051107
+631,,,Socioambiental,Cusco,0810
+632,,Ica: Seis,Socioambiental,Ica,110505
+633,,,Asuntos de gobierno nacional,Puno,2103
+634,,,Socioambiental,Arequipa,040302
+635,,,Socioambiental,La Libertad,130611
+636,,Actores Secundarios: Comité de Seguimiento a la Salud Humana,Socioambiental,Ancash,020504
+637,,,Socioambiental,Madre de Dios,170203
+638,,,Socioambiental,Pasco,190204
+639,,,Socioambiental,Arequipa,040409
+640,,,Asuntos de gobierno regional,Cusco,080207
+641,,,Laboral,La Libertad,130201
+642,,Piura: Siete,Asuntos de gobierno local,Piura,200101
+643,,,Otros asuntos,Piura,200701
+644,,,Socioambiental,Puno,210406
+645,,,Socioambiental,Puno,2109
+646,,,Comunal,Ucayali,250302
+647,,Amazonas,Socioambiental,Amazonas,0104
+648,,"Local, (ii) Proyectos de Desarrollo,",Comunal,Ancash,020801
+649,,,Socioambiental,Cajamarca,060703
+650,,,,Piura,200501
+651,,,Socioambiental,Puno,210502
+652,,,Asuntos de gobierno local,Ancash,021502
+653,,,Socioambiental,Ancash,020106
+654,,Campamento Minero de Luicho,Socioambiental,Ayacucho,05
+655,,,Laboral,Ayacucho,0501
+656,,,Socioambiental,Cusco,080104
+657,,Brigada del Ejército Peruano,Socioambiental,Cusco,080706
+658,,,Socioambiental,Ica,110102
+659,,,Socioambiental,La Libertad,131002
+660,,,Asuntos de gobierno local,Piura,200301
+661,,,Socioambiental,Puno,210705
+662,,,Asuntos de gobierno local,San Martín,220901
+663,,,Comunal,Ayacucho,051012
+664,,,Laboral,Ancash,020606
+665,,,Socioambiental,Cajamarca,060101
+666,,,Laboral,Cajamarca,060703
+667,,,Socioambiental,Cusco,080204
+668,,La Libertad: Cinco,Socioambiental,La Libertad,131104
+669,,"Rodas Morales (presidente), César Zapata Naquiche",Laboral,Lambayeque,140119
+670,,,Laboral,Lambayeque,140101
+671,,,Comunal,Lima,150102
+672,,Pasco: Ocho,Socioambiental,Pasco,190108
+673,,,Laboral,Piura,200701
+674,,,Socioambiental,Puno,210102
+675,,,Laboral,Piura,200702
+676,,,Electoral,Puno,210309
+677,,,Asuntos de gobierno local,Ancash,021801
+678,,,Socioambiental,Ancash,020801
+679,,,Comunal,Apurímac,030502
+680,,,Socioambiental,Cajamarca,0601
+681,,,Demarcación territorial,Cajamarca,060304
+682,,,Laboral,La Libertad,130106
+683,,,Asuntos de gobierno nacional,Nacional,0809
+684,,,Demarcación territorial,Puno,210701
+685,,,Asuntos de gobierno regional,Pasco,190102
+686,,,Socioambiental,Cajamarca,060112
+687,,,Asuntos de gobierno local,Huancavelica,090101
+688,,,Socioambiental,Junin,120210
+689,,Oyón – Minera Buenaventura,Socioambiental,Lima,150901
+690,,,Socioambiental,Lima,150906
+691,,,Comunal,Piura,200602
+692,,,Socioambiental,Puno,211004
+693,,,Socioambiental,Arequipa,040505
+694,,Loreto: Once,Asuntos de gobierno nacional,Loreto,160304
+695,,,Asuntos de gobierno regional,Puno,211209
+696,,,Otros asuntos,Puno,211101
+697,,,Socioambiental,Ayacucho,050801
+698,,,Socioambiental,Huancavelica,090301
+699,,,Laboral,Piura,200703
+700,,,Socioambiental,Tumbes,2401
+701,,,Asuntos de gobierno local,Junín,120122
+702,,Lima Metropolitana: Ocho,Laboral,Lima,150131
+703,,,Asuntos de gobierno regional,Loreto,1603
+704,,,Socioambiental,Loreto,160305
+705,,Ucayali: Tres,Cultivo ilegal de hoja de coca,Ucayali,250301
+706,,,Socioambiental,Puno,210403
+707,,,Laboral,Ancash,021801
+708,,Apurímac) / Dirección Regional de Energía y Minas,Comunal,Apurímac,030708
+709,,,Asuntos de gobierno local,Ayacucho,050101
+710,,central,Socioambiental,Cajamarca,060703
+711,,,Socioambiental,Piura,200805
+712,,Tumbes: Cuatro,Asuntos de gobierno nacional,Tumbes,240203
+713,,,Socioambiental,Callao,07
+714,,,Demarcación territorial,Lima,150135
+715,,,Electoral,Ancash,020402
+716,,“total de electores hábiles” de once,Electoral,Ancash,021005
+717,,,Electoral,Ancash,021013
+718,,,Electoral,Ancash,020506
+719,,,Electoral,Ancash,021103
+720,,,Electoral,Ancash,021208
+721,,,Electoral,Lambayeque,140117
+722,,,Electoral,Lambayeque,140312
+723,,,Electoral,Lima,150204
+724,,,Electoral,Lima,150705
+725,,,Electoral,Lima,150706
+726,,,Electoral,Lima,150904
+727,,,Socioambiental,Madre de Dios,170102
+728,,,Electoral,Piura,200601
+729,,,Asuntos de gobierno local,Puno,211001
+730,,,Electoral,Puno,210310
+731,,,Socioambiental,Tacna,230408
+732,,,Electoral,Ucayali,2502
+733,,,Electoral,Ucayali,250202
+734,,,Demarcación territorial,Puno,210307
+735,,,Socioambiental,Tacna.,230408
+736,,,Socioambiental,Cusco,080906
+737,,,Electoral,Puno,210310
+738,,,Asuntos de gobierno local,Ancash,021014
+739,,,Electoral,Ancash,021203
+740,,,Electoral,Ancash,020111
+741,,,Electoral,Ancash,020512
+742,,Arequipa / Moquegua / Puno: Uno,Socioambiental,Arequipa,040702
+743,,Perú,Laboral,Nacional,03
+744,,,Laboral,Nacional,
+745,,,Socioambiental,Cusco,080902
+746,,,Laboral,Nacional,11
+747,,,Asuntos de gobierno regional,Apurimac,030101
+748,,Amazonas / San Martín: Uno,Socioambiental,Amazonas,0106
+749,,,Socioambiental,Ancash,021707
+750,,Cusco: Veintiuno,Asuntos de gobierno nacional,Cusco,081302
+751,,,Electoral,La Libertad,130809
+752,,Lambayeque: Dos,Otros asuntos,Lambayeque,140205
+753,,Pasco: Cinco,Socioambiental,Pasco,190109
+754,,,Asuntos de gobierno local,Puno,211005
+755,,,Otros asuntos,San Martín,220901
+756,,,Asuntos de gobierno nacional,Apurimac,030201
+757,,,Electoral,Arequipa,040115
+758,,,Asuntos de gobierno nacional,Lambayeque,140101
+759,,,Socioambiental,Loreto,160304
+760,,,Asuntos de gobierno nacional,Madre de Dios,170101
+761,,,Asuntos de gobierno regional,Puno,211209
+762,,,Socioambiental,Ancash,020201
+763,,Cajamarca: Dieciocho,Asuntos de gobierno local,Cajamarca,060902
+764,,,Socioambiental,Lima,150505
+765,,,Otros asuntos,Lima,150109
+766,,,Laboral,Ancash,021801
+767,,,Socioambiental,Junín,1203
+768,,Madre de Dios,Socioambiental,Madre de Dios,170101
+769,,,Asuntos de gobierno local,Piura,200701
+770,,,Asuntos de gobierno local,Piura,200201
+771,,Tacna: Nueve,Asuntos de gobierno nacional,Tacna,230101
+772,,Áncash – Huánuco,Demarcación territorial,Ancash,020508
+773,,Arequipa – Cusco,Asuntos de gobierno nacional,Arequipa,040505
+774,,,Socioambiental,Ayacucho,051005
+775,,,Socioambiental,Ayacucho,051005
+776,,Ayacucho: Catorce,Demarcación territorial,Ayacucho,050502
+777,,,Socioambiental,Cajamarca,060703
+778,,Huancavelica: Tres,Socioambiental,Huancavelica,090411
+779,,,Socioambiental,Lima,150202
+780,,Mar Peruano,Asuntos de gobierno local,Tumbes,240101
+781,,,Socioambiental,Ayacucho,051005
+782,,,Laboral,Lima,150131
+783,,,Laboral,Ancash,020606
+784,,,Asuntos de gobierno local,Cajamarca,06
+785,,,Socioambiental,Cajamarca,060702
+786,,,Comunal,Lima,151017
+787,,,Laboral,San Martín,220303
+788,,,Socioambiental,Ancash,021014
+789,,Cotabambas - Minera Las Bambas (Antes Xstrata),Socioambiental,Apurímac,030506
+790,,Arequipa: Nueve,Demarcación territorial,Arequipa,040124
+791,,Ayacucho / Ica: Uno,Socioambiental,Ayacucho,050613
+792,,,Otros asuntos,Madre de Dios,170101
+793,,Puno,Socioambiental,Puno,210807
+794,,Federación Universitaria de la UNSCH,Otros asuntos,Ayacucho,050101
+795,,,Socioambiental,Cajamarca,060415
+796,,,Otros asuntos,Huancavelica,090101
+797,,,Otros asuntos,Junín,120114
+798,,Moquegua / Tacna: Dos,Demarcación territorial,Moquegua,18
+799,,Urbanizaciones y Pueblos Jóvenes,Socioambiental,Puno,210701
+800,,Amazonas: Seis,Asuntos de gobierno local,Amazonas,010403
+801,,,Socioambiental,Cajamarca,060906
+802,,Loreto / San Martín: Uno,Socioambiental,Loreto,1603
+803,,,Asuntos de gobierno local,Cajamarca,06
+804,,,Asuntos de gobierno local,Piura,200701
+805,,La Oficina Nacional de Diálogo y Sostenibilidad,Socioambiental,Ancash,021101
+806,,,Socioambiental,Apurímac,030201
+807,,,Socioambiental,Cajamarca,060508
+808,,BP Alto Mayo,Socioambiental,San Martín,220805
+809,,Tumbes: Cinco,Socioambiental,Tumbes,240203
+810,,Junín / Pasco: Dos,Socioambiental,Junín,120303
+811,,Moquegua - Tacna,Demarcación territorial,Moquegua,180102
+812,,,Socioambiental,Puno,2105
+813,,,Socioambiental,Cajamarca,060101
+814,,Arequipa: Siete,Laboral,Arequipa,04
+815,,Arequipa: Siete,Laboral,Arequipa,04
+816,,,Socioambiental,Ayacucho,050114
+817,,,Socioambiental,Ayacucho,051005
+818,,,Otros asuntos,Cajamarca,060101
+819,,Cusco: Diecisiete,Socioambiental,Cusco,080408
+820,,Cusco: Dieseis,Socioambiental,Cusco,080703
+821,,"(CENSOPAS), Ministerio de Salud",Socioambiental,Cusco,081203
+822,,Lambayeque: Cuatro,Otros asuntos,Lambayeque,140301
+823,,,Otros asuntos,Lima Provincias,150201
+824,,Tacna,Socioambiental,Tacna,230302
+825,,,Laboral,AYACUCHO,05
+826,,,Demarcación territorial,Junin,120606
+827,,,Asuntos de gobierno local,Moquegua,180101
+828,,,Socioambiental,Ancash,022005
+829,,Ayacucho: Once,Socioambiental,Ayacucho,050504
+830,,Cajamarca,Socioambiental,Cajamarca,060101
+831,,Lima Metropolitana: Seis,Laboral,Lima Metropolitana,150117
+832,,Lima Provincias: Nueve,Socioambiental,Lima Provincias,1510
+833,,Lima Provincias: Seis,Socioambiental,Lima Provincias,150902
+834,,,Asuntos de gobierno regional,Piura,200801
+835,,Tacna: Seis,Socioambiental,Tacna,230109
+836,,,Asuntos de gobierno local,Loreto,1603
+837,,Ejecutiva de Salud Ambiental,Asuntos de gobierno regional,Ancash,021808
+838,,AMUCEPS - Antamina,Socioambiental,Ancash,021001
+839,,Tantahuatay,Socioambiental,Cajamarca,060304
+840,,,Laboral,Lima Metropolitana,1501
+841,,Lima Provincias: Doce,Asuntos de gobierno nacional,Lima Provincias,150510
+842,,,Socioambiental,Puno,210802
+843,,Pasto Grande - Puno/Moquegua,Demarcación territorial,Moquegua,18
+844,,,Socioambiental,Cusco / Madre De Dios / Puno,08
+845,,,Demarcación territorial,Moquegua / Tacna,18
+846,,,Socioambiental,Ancash,021710
+847,,Educación  Universitaria,Comunal,Ayacucho,050911
+848,,La Libertad: Cinco,Socioambiental,La Libertad,131006
+849,,Lima Metropolitana: Seis,Laboral,Lima Metropolitana,1501
+850,,Lima Provincias: Ocho,Socioambiental,Lima Provincias,150505
+851,,,Demarcación territorial,Moquegua / Tacna,2302
+852,,,Asuntos de gobierno local,Ancash,021207
+853,,Apurímac: Diez,Socioambiental,Apurímac,0302
+854,,,Socioambiental,Ayacucho,050621
+855,,Huancavelica: Cinco,Socioambiental,Huancavelica,090713
+856,,Huánuco: Tres,Socioambiental,Huánuco,1006
+857,,,Socioambiental,Lima Provincias,150807
+858,,Torata - SPCC,Socioambiental,Moquegua,180106
+859,,Piura: Ocho,Asuntos de gobierno local,Piura,200101
+860,,Áncash / Ayacucho / Cusco / Ica / Lima: Uno,Laboral,Ancash,02
+861,,Ayacucho / Arequipa: Uno,Socioambiental,Ayacucho,050617
+862,,,Socioambiental,"Tambopata, Santa Rita",170101
+863,,,,"Distrito De Cieneguilla,",150109
+864,,,Socioambiental,Ancash,021014
+865,,,Asuntos de gobierno nacional,Cusco,080101
+866,,de Ministros,Asuntos de gobierno nacional,Ica,110101
+867,,,Socioambiental,Lima Provincias,151029
+868,,,Asuntos de gobierno nacional,Madre de Dios,170203
+869,,Junín - Cusco,Socioambiental,Junín,12
+870,,,Asuntos de gobierno local,Piura,20
+871,,,Socioambiental,Ancash,020201
+872,,Atupa y Antahurán - Barrick,Socioambiental,Ancash,020106
+873,,Fiscalización Ambiental,Socioambiental,Ancash,020106
+874,,,Socioambiental,Junín,120214
+875,,,Socioambiental,La Libertad,130901
+876,,Gobierno Regional de La Libertad,Socioambiental,Lambayeque,140202
+877,,,Socioambiental,Loreto,160304
+878,,,Socioambiental,Pasco,190204
+879,,,Asuntos de gobierno local,Puno,211301
+880,,,Laboral,Lima,15
+881,,,Laboral,Arequipa,04
+882,,,Socioambiental,Puno,210601
+883,,,Socioambiental,Ancash,020804
+884,,,Laboral,ANCASH,021801
+885,,,Socioambiental,Apurímac,030504
+886,,,Socioambiental,Apurímac,030502
+887,,Asociación de mineros artesanales,Asuntos de gobierno regional,Apurímac,030501
+888,,Arequipa,Socioambiental,Arequipa,040307
+889,,,Socioambiental,Loreto,160102
+890,,,Asuntos de gobierno nacional,Madre de Dios,170203
+891,,,Socioambiental,Moquegua,180204
+892,,,Socioambiental,Piura,200504
+893,,,Laboral,Piura,200501
+894,,,Asuntos de gobierno nacional,Tacna,23
+895,,Fiscalización Ambiental,Socioambiental,Ancash,021014
+896,,de Gestión Social,Socioambiental,Ayacucho,050202
+897,,Cuatro cuencas - Lote 192,Socioambiental,Loreto,160304
+898,,,Socioambiental,Loreto,160304
+899,,,Laboral,Pasco,1901
+900,,,Socioambiental,Ancash,021804
+901,,,Socioambiental,Apurímac,030503
+902,,,Socioambiental,Ayacucho,051005
+903,,,Asuntos de gobierno regional,Ancash,02
+904,,"Apurímac, Ayacucho, Cusco, Lima, Puno, Tacna: Uno",Asuntos de gobierno nacional,Ancash,02
+905,,,Socioambiental,Puno / Madre De Dios / Cusco,21
+906,,,Cultivo ilegal de hoja de coca,Ucayali,250301
+907,,,Socioambiental,Ancash,020505
+908,,,Socioambiental,Ancash,021710
+909,,Lima Metropolitana: Siete,Laboral,Lima Metropolitana,1501
+910,,,Socioambiental,Cusco,080408
+911,,,Asuntos de gobierno local,Áncash,020105
+912,,,Socioambiental,Ayacucho,050114
+913,,,Asuntos de gobierno local,Junín,120130
+914,,Lima Metropolitana: Cuatro,Asuntos de gobierno local,Lima Metropolitana,150115
+915,,,Socioambiental,Nacional,150808
+916,,,Demarcación territorial,Nacional,150716
+917,,,Socioambiental,Loreto,160601
+918,,,Asuntos de gobierno local,San Martín,220201
+919,,,Demarcación territorial,Áncash – Huánuco,020508
+920,,,Laboral,Áncash,021801
+921,,Asociación de mineros artesanales,Socioambiental,Apurímac,030502
+922,,de Ministros,Socioambiental,Apurímac,030104
+923,,Tantahuatay,Socioambiental,Cajamarca,060108
+924,,,Demarcación territorial,Nacional,120901
+925,,,Electoral,Nacional,160304
+926,,,Socioambiental,Piura,200505
+927,,,Socioambiental,Piura,200801
+928,,,Socioambiental,Puno,21
+929,,Cusco - Madre de Dios,Socioambiental,Cusco,081101
+930,,Lima Metropolitana/ Arequipa: Uno,Laboral,Lima Metropolitana,1501
+931,,,Laboral,Áncash / La Libertad / Lima /,18
+932,,,Socioambiental,Apurímac,030209
+933,,Compañía de Minas Buenaventura S.A.A.,Laboral,Arequipa,0401
+934,,,Comunal,Ayacucho,050808
+935,,Huancavelica: Dos,Socioambiental,Huancavelica,090606
+936,,,Socioambiental,Junín,120403
+937,,,Asuntos de gobierno nacional,Moquegua,180301
+938,,,Otros asuntos,Lambayeque,14
+939,,,Socioambiental,Áncash,021701
+940,,,Socioambiental,Cajamarca,060901
+941,,Pesquero,Socioambiental,Ica,110203
+942,,,Socioambiental,Pasco,190108
+943,,,,Cajamarca,06
+944,,,Otros asuntos,Áncash,020105
+945,,,Socioambiental,Pasco,190104
+946,,,Socioambiental,Puno,21
+947,,,Socioambiental,La Libertad,13
+948,,,Demarcación territorial,Junín,120134
+949,,,Socioambiental,Nacional,020513
+950,,de Ccochua de la zona,Socioambiental,Apurímac,030304
+951,,,Socioambiental,Nacional,210707
+952,,,Asuntos de gobierno nacional,Amazonas / Cajamarca / Cusco /,12
+953,,,Asuntos de gobierno local,Nacional,021014
+954,,,Socioambiental,Nacional,030411
+955,,La Libertad,Asuntos de gobierno nacional,La Libertad,130809
+956,,,Socioambiental,Lima Provincias,150906
+957,,Puno: Catorce,Socioambiental,Puno,21
+958,,Hospital materno infantil de Juliaca,Asuntos de gobierno regional,Nacional,211101
+959,,Mar Peruano,Asuntos de gobierno local,Tumbes,240203
+960,,Ayacucho – Huancavelica,Demarcación territorial,Ayacucho,050205
+961,,,Socioambiental,Ayacucho – Arequipa,050617
+962,,,Socioambiental,Áncash,020804
+963,,,Socioambiental,Nacional,020105
+964,,,Socioambiental,Nacional,030301
+965,,,Socioambiental,Nacional,030506
+966,,Dirección Nacional Técnica de Demarcación Territorial,Asuntos de gobierno nacional,Arequipa,040101
+967,,,Socioambiental,Ayacucho,050114
+968,,,Comunal,Junín,120135
+969,,La Libertad: Siete,Socioambiental,La Libertad,130808
+970,,Amazonas – Cajamarca,Socioambiental,Ayacucho,05
+971,,,Socioambiental,Áncash,020508
+972,,,Socioambiental,Áncash,020804
+973,,,Comunal,Lima,15
+974,,,Laboral,Piura,20
+975,,,,Puno,21
+976,,,Socioambiental,Arequipa /,04
+977,,,Demarcación territorial,Arequipa /,04
+978,,,Socioambiental,"Amazonas,",01
+979,,,Socioambiental,Nacional,021803
+980,,Actores secundarios: Ministerio de Energía y Minas,Socioambiental,Cusco,08
+981,,,Laboral,Ayacucho,051005
+982,,,Socioambiental,Nacional,060807
+983,,,Socioambiental,Cusco,081106
+984,,,Socioambiental,Nacional,131003
+985,,,Asuntos de gobierno local,Loreto,160301
+986,,,Socioambiental,Nacional,200501
+987,,,Socioambiental,Puno,21
+988,,,Socioambiental,Tacna,230101
+989,,,Socioambiental,Tacna,230401
+990,,,,Junín,120504
+991,,,Socioambiental,Arequipa /,04
+992,,,Socioambiental,Nivel Nacional,
+993,,,Asuntos de gobierno local,Apurímac,030415
+994,,,Otros asuntos,Apurímac,030101
+995,,,Socioambiental,Pasco,1901
+996,,,Socioambiental,Huánuco,10
+997,,,Socioambiental,La Libertad,131104
+998,,,,Piura,20
+999,,,Socioambiental,Arequipa /,04
+1000,,Pampachiri,Socioambiental,Nacional,030104
+1001,,,Socioambiental,Arequipa,040301
+1002,,,Otros asuntos,La Libertad,1309
+1003,,,Asuntos de gobierno local,Nacional,1502
+1004,,Libertad - Loreto - Piura - Pasco – Tumbes,Laboral,Loreto,16
+1005,,Áncash - Ayacucho - Cusco - Junín - Lima - Piura - Puno,Otros asuntos,Áncash,02
+1006,,,Socioambiental,Áncash,021707
+1007,,,Socioambiental,Loreto,160305
+1008,,,Socioambiental,Puno,210406
+1009,,,Socioambiental,Amazonas /,01
+1010,,,Socioambiental,Nacional,020606
+1011,,,Socioambiental,Nacional,050808
+1012,,,Demarcación territorial,Junín,120107
+1013,,,Socioambiental,La Libertad,130602
+1014,,,Socioambiental,Callao,07
+1015,,,Socioambiental,Moquegua,180204
+1016,0847-0713,Ocuviri - Aruntani (Arasi),Socioambiental,Nacional,210705
+1017,,RTKNN - Consorcio Camisea (lote 88),Socioambiental,Cusco,080902
+1018,,Lima / Puno: Uno,Laboral,Lima,15
+1019,,,Socioambiental,Huánuco,1006
+1020,,,Socioambiental,Amazonas /,01
+1021,,,Socioambiental,Nivel Nacional,
+1022,,,Socioambiental,Cusco,080908
+1023,,,Asuntos de gobierno nacional,Huánuco,1002
+1024,,Pesquero,Socioambiental,Ica,110301
+1025,,,Socioambiental,La Libertad,130905
+1026,,,Socioambiental,Pasco,190106
+1027,,,Asuntos de gobierno nacional,Nacional,
+1028,,,Socioambiental,Áncash,020804
+1029,,,,Conflicto,
+1030,,,Socioambiental,Nivel Nacional,
+1031,,,Comunal,Apurímac,030307
+1032,,,Comunal,Apurímac,030411
+1033,,Actores secundarios: Ministerio de Energía y Minas,Socioambiental,La Libertad,130601
+1034,,,Asuntos de gobierno local,Lambayeque,140101
+1035,,San Pedro de Ocobamba - Sierra Antapite,Socioambiental,Nacional,090603
+1036,,,Socioambiental,Puno,21
+1037,,,Socioambiental,Nacional,2110
+1038,,,Asuntos de gobierno local,Puno,210601
+1039,,,Asuntos de gobierno local,Piura,200701
+1040,,,Laboral,Nivel Nacional,
+1041,,Tía María - Islay,Socioambiental,Arequipa,040703
+1042,,,Socioambiental,Ayacucho,050705
+1043,,,Socioambiental,Ayacucho,050619
+1044,,,Socioambiental,Cusco,080803
+1045,,Oficina Nacional de Diálogo y Sostenibilidad,Comunal,Huancavelica,090615
+1046,,,Asuntos de gobierno nacional,Loreto,160201
+1047,,,Asuntos de gobierno local,Nacional,211101
+1048,,,Laboral,Nivel Nacional,
+1049,,Ambiental,Socioambiental,Áncash,020509
+1050,,,Laboral,Nacional,150901
+1051,,Sondorillo - Gore Piura,Asuntos de gobierno regional,Nacional,200308
+1052,,,Asuntos de gobierno local,Nacional,210503
+1053,,,Asuntos de gobierno local,Nacional,211303
+1054,,,,Conflicto,
+1055,,,,Conflicto,
+1056,,,Socioambiental,Nivel Nacional,
+1057,,,Asuntos de gobierno local,Nacional,
+1058,,,Socioambiental,Áncash,021509
+1059,,,Socioambiental,Loreto,160304
+1060,,,Demarcación territorial,Moquegua /,18
+1061,,,Demarcación territorial,Nivel Nacional,
+1062,,,Asuntos de gobierno local,Nacional,030204
+1063,,Tumbes,Socioambiental,Tumbes,240103
+1064,,,Socioambiental,Cajamarca,06
+1065,,,Asuntos de gobierno local,Piura,200701
+1066,,,Socioambiental,Ayacucho /,05
+1067,,,Socioambiental,Nivel Nacional,
+1068,,Dirección Nacional Técnica de Demarcación Territorial,Otros asuntos,Lima,15
+1069,,,Socioambiental,Cajamarca,060415
+1070,,,Socioambiental,Nacional,150304
+1071,,,Asuntos de gobierno regional,Nacional,
+1072,,,Socioambiental,Moquegua,180204
+1073,,,Socioambiental,Junín / Pasco,120301
+1074,,,Socioambiental,Nivel Nacional,
+1075,,,Socioambiental,nacional,030506
+1076,,,Asuntos de gobierno local,nacional,030101
+1077,,Huancavelica,Socioambiental,Huancavelica,090705
+1078,,,Laboral,Nacional,120805
+1079,,,Socioambiental,Nacional,160305
+1080,,Ucayali,Asuntos de gobierno nacional,Ucayali,250301
+1081,,,Socioambiental,La Libertad,130808
+1082,,,Laboral,"Arequipa,",04
+1083,,,Comunal,Nacional,030106
+1084,,,Socioambiental,Ayacucho,050906
+1085,,,Socioambiental,Cusco,080708
+1086,,,Socioambiental,Cusco,080407
+1087,,,Socioambiental,Huancavelica,090509
+1088,,,Asuntos de gobierno local,Nacional,
+1089,,,Laboral,Áncash,02
+1090,,,Socioambiental,Amazonas / San,01
+1091,,,,Moquegua /,18
+1092,,,Asuntos de gobierno local,Nacional,2107
+1093,,La Libertad,Laboral,Áncash,020107
+1094,,,Socioambiental,Arequipa,040603
+1095,,,Socioambiental,Cusco,080706
+1096,,,,Moquegua /,18
+1097,,"Equidad, Instituto de Defensa Legal",Socioambiental,Áncash,021210
+1098,,Agraria Departamental de Áncash,Socioambiental,Áncash,021208
+1099,,,Comunal,Apurímac,030709
+1100,,,Otros asuntos,Apurímac,030101
+1101,,,Demarcación territorial,Cusco,080408
+1102,,,Asuntos de gobierno local,Nacional,210605
+1103,,Arequipa / Cajamarca / Cusco / Ica / Junín / Lima / Lambayeque / Piura: Uno,Laboral,Arequipa,04
+1104,,,Comunal,Apurímac,030502
+1105,,,,La Libertad,1309
+1106,,,Laboral,Piura,200702
+1107,,,,Moquegua /,18
+1108,,,Socioambiental,Lima Provincias,150906
+1109,,,Demarcación territorial,Arequipa / Cusco,080701
+1110,,Pesquera Artesanal en la Caleta de Coishco,Socioambiental,Áncash,020111
+1111,,,Socioambiental,Nacional,021710
+1112,,,Socioambiental,Nacional,040124
+1113,,,Socioambiental,Cusco,0809
+1114,,Economía y Ffinanzas,Asuntos de gobierno local,Nacional,080105
+1115,,,Socioambiental,Nacional,120810
+1116,,,Socioambiental,Áncash,021701
+1117,,,Otros asuntos,Arequipa,040520
+1118,,,Comunal,Lima Provincias,151017
+1119,,,Asuntos de gobierno local,Piura,200701
+1120,,,Asuntos de gobierno local,Piura,200101
+1121,,,Laboral,Piura,200702
+1122,,,Asuntos de gobierno regional,Puno,211002
+1123,,,Laboral,San Martín,22
+1124,,,Socioambiental,Nacional,120303
+1125,,,Laboral,Piura,200702
+1126,,,Laboral,San Martín,22
+1127,,,Electoral,Nacional,020104
+1128,,,Electoral,Nacional,021902
+1129,,,Asuntos de gobierno local,Nacional,060401
+1130,,,Electoral,Nacional,100106
+1131,,,Electoral,Nacional,100505
+1132,,,Electoral,Lima Metropolitana,150124
+1133,,,Electoral,Nacional,151015
+1134,,,Electoral,Nacional,151001
+1135,,"S.A., de la noruega Statkraft",Socioambiental,Nacional,151016
+1136,,,Socioambiental,Nacional,160706
+1137,,,Electoral,Nacional,200804
+1138,,,Electoral,Nacional,200410
+1139,,Energía y Minas,Socioambiental,Nacional,210107
+1140,,,Electoral,Nacional,210808
+1141,,,Electoral,San Martín,220710
+1142,,,Socioambiental,Áncash,021014
+1143,,,,Piura,200101
+1144,,,Laboral,Piura,200702
+1145,,,Laboral,San Martín,22
+1146,,,Socioambiental,Nacional,050605
+1147,,,Socioambiental,Nacional,060703
+1148,,,Socioambiental,Nacional,080708
+1149,,Trabajadores del Perú,Asuntos de gobierno local,Lima Metropolitana,150140
+1150,,,Socioambiental,Junín,120303
+1151,,,Demarcación territorial,Puno,210303
+1152,,Físico Legal de Propiedad Rural de Apurímac,Comunal,Nacional,030708
+1153,,,Socioambiental,Arequipa,040206
+1154,,,Socioambiental,Nacional,081304
+1155,,,Laboral,Nacional,020107
+1156,,,Otros asuntos,Áncash,021702
+1157,,Central Hidroeléctrica Santa Teresa”,Socioambiental,Cusco,080705
+1158,,,Socioambiental,Lima Provincias,150722
+1159,,,Socioambiental,Nacional,1603
+1160,,,Socioambiental,Nacional,160304
+1161,,,Comunal,Nacional,1607
+1162,,,Socioambiental,Puno,210705
+1163,,,Socioambiental,Nacional,010402
+1164,,,Socioambiental,Nacional,160304
+1165,,,Socioambiental,Nacional,200507
+1166,,,Socioambiental,Nacional,200210
+1167,,,Comunal,Ayacucho,05
+1168,,,Asuntos de gobierno nacional,Nacional,0301
+1169,,,Socioambiental,Huánuco,100103
+1170,,,Socioambiental,Pasco,190109
+1171,,,Demarcación territorial,Multiregional,
+1172,,,Socioambiental,Multiregional,
+1173,,,Demarcación territorial,Multiregional,
+1174,,,Asuntos de gobierno local,Multiregional,
+1175,,,Demarcación territorial,Multiregional,
+1176,,,Socioambiental,Multiregional,
+1177,,,Laboral,Lambayeque,140118
+1178,,,Asuntos de gobierno nacional,Piura,2007
+1179,,,Socioambiental,Áncash,021014
+1180,,"Ambiental (OEFA), Dirección Regional de Energía y Minas",Socioambiental,Cajamarca,060703
+1181,,,Laboral,Lambayeque,140120
+1182,,,Socioambiental,Lima Provincias,150505
+1183,,,Socioambiental,Puno,210406
+1184,,Ministros,Socioambiental,Puno,210701
+1185,,,Socioambiental,Puno,210901
+1186,,,Socioambiental,Nacional,250303
+1187,,,Socioambiental,Ica,110505
+1188,,Drenaje pluvial Juliaca,Asuntos de gobierno local,Puno,211101
+1189,,de Gestión Social,Asuntos de gobierno regional,Nacional,040101
+1190,,,Otros asuntos,Nacional,060401
+1191,,,Asuntos de gobierno nacional,Pasco,190308
+1192,,,Socioambiental,Nacional,080803
+1193,,,Asuntos de gobierno nacional,Junín,1208
+1194,,,Asuntos de gobierno nacional,Loreto,1607
+1195,,,Socioambiental,Moquegua,180105
+1196,,Contaminación en Simón Bolívar,Socioambiental,Pasco,190109
+1197,,Universidad Nacional Daniel Alcides Carrión (UNDAC),Socioambiental,nacional,190102
+1198,,,Laboral,Piura,200404
+1199,0975-0915,"(MININTER), Programa Nacional de Saneamiento Rural",Socioambiental,Loreto,1607
+1200,,,Socioambiental,Madre de Dios,170202
+1201,,,Socioambiental,Ucayali,25
+1202,,,Socioambiental,Ayacucho,050601
+1203,,,Socioambiental,Ayacucho,050808
+1204,,,Socioambiental,Madre de Dios,1701
+1205,,Actores secundarios: Autoridad local del agua,Socioambiental,Nacional,020106
+1206,,y Secretaría de Demarcación y Organización Territorial,Comunal,Apurímac,030412
+1207,,,Socioambiental,Ica,110506
+1208,,,Asuntos de gobierno nacional,Nacional,200705
+1209,,,Socioambiental,Ucayali,2501
+1210,,Gestión Social,Socioambiental,Arequipa,040516
+1211,,,Asuntos de gobierno local,Áncash,021601
+1212,1351-0324,Velille - Las Bambas,Socioambiental,Nacional,080708
+1213,,,Socioambiental,Nacional,081210
+1214,,,Asuntos de gobierno local,Lima Metropolitana,1501
+1215,,FREDEDAM - Datem del Marañón,Socioambiental,Loreto,1607
+1216,,,Socioambiental,Ica,110104
+1217,,Actores secundarios: Ministerio de Energía y Minas,Asuntos de gobierno local,Moquegua,180301
+1218,,,Socioambiental,Ayacucho,050113
+1219,,Universidad Nacional Autónoma de Tayacaja,Asuntos de gobierno nacional,Huancavelica,090701
+1220,,,Socioambiental,Junín,120810
+1221,,,Socioambiental,La Libertad,131006
+1222,1519-0826,Comunidad del C.P. Barro Negro – Empresa Minera Princesa,Socioambiental,La Libertad,130614
+1223,,,Laboral,La Libertad,130208
+1224,,"Hualgayoc, Ministerio del Ambiente",Asuntos de gobierno nacional,Nacional,060801
+1225,,,Asuntos de gobierno nacional,Loreto,1603
+1226,,La Huaca - Agroaurora,Socioambiental,Nacional,200505
+1227,,,Socioambiental,APURÍMAC,030706
+1228,,Hualgayoc - Pasivos ambientales,Socioambiental,Nacional,060703
+1229,1333-0923,Llata - Antamina,Socioambiental,Huánuco,100501
+1230,,,Socioambiental,Loreto,160304
+1231,,,Asuntos de gobierno nacional,Puno,210101
+1232,,,Asuntos de gobierno local,Nacional,250303
+1233,,Morona - Derrame de petróleo en Mayuriaga,Socioambiental,Loreto,160704
+1234,,,Asuntos de gobierno nacional,Nacional,2008
+1235,,Totora Pisquicocha - Hurayhuma,Comunal,Nacional,030406
+1236,,,Otros asuntos,Nacional,081301
+1237,,,Otros asuntos,Lima Metropolitana,1501
+1238,1010-0716,Ilo - Petroperú,Socioambiental,nacional,180301
+1239,,Cinco cuencas - Lote 8 y 192,Socioambiental,Nacional,1603
+1240,,,Socioambiental,Nacional,160305
+1241,,Supervisor de la Inversión en Energía y Minería,Socioambiental,Nacional,160801
+1242,,,Socioambiental,Multiregional,
+1243,1142-0319,Chumbivilcas - Minera Las Bambas (II),Socioambiental,Nacional,0807
+1244,,,Socioambiental,Nacional,080914
+1245,,,Socioambiental,Nacional,080703
+1246,,,Socioambiental,La Libertad,130808
+1247,,Fondo Metropolitano de Inversiones,Socioambiental,Nacional,150601
+1248,,,Asuntos de gobierno nacional,Nacional,030201
+1249,,,Asuntos de gobierno local,Nacional,160206
+1250,,,Asuntos de gobierno local,Lima Metropolitana,150125
+1251,,,Demarcación territorial,Nacional,020508
+1252,,,Socioambiental,Áncash,021014
+1253,,,Asuntos de gobierno nacional,Áncash,021803
+1254,,,Demarcación territorial,APURÍMAC,0304
+1255,,,Socioambiental,Ayacucho,050611
+1256,,,Socioambiental,Huancavelica,090509
+1257,,,Socioambiental,Nacional,100201
+1258,,,Laboral,La Libertad,131006
+1259,,,Socioambiental,Áncash,020509
+1260,,Actores secundarios: Ministerio de Energía y Minas,Socioambiental,Junín,120601
+1261,,,Socioambiental,Junín,120305
+1262,,,Socioambiental,Nacional,200801
+1263,,,Socioambiental,Nacional,211101
+1264,,,Socioambiental,Multiregional,
+1265,,,Socioambiental,Junín,120704
+1266,,Tecnológica de Villa El Salvador,Otros asuntos,Lima Metropolitana,150101
+1267,,,Otros asuntos,Nacional,030201
+1268,,,Asuntos de gobierno nacional,Nacional,160201
+1269,1043-0417,Damnificados Cura Mori,Asuntos de gobierno regional,Nacional,200107
+1270,,Respaldo a Majes - Siguas II,Asuntos de gobierno nacional,Arequipa,040505
+1271,,,Asuntos de gobierno nacional,Cusco,081302
+1272,,,Asuntos de gobierno local,San Martín,220909
+1273,,Huarupampa - Consorcio Minero Conexas,Socioambiental,Áncash,021802
+1274,,,Asuntos de gobierno nacional,Cusco,080101
+1275,1048-0617,Contaminación del río Coralaque,Socioambiental,Moquegua,180101
+1276,,,Asuntos de gobierno nacional,Piura,200101
+1277,1053-0717,Wampis - Minería ilegal,Socioambiental,Amazonas,010403
+1278,,,Socioambiental,Áncash,021509
+1279,,,Asuntos de gobierno nacional,Nacional,08
+1280,,,Asuntos de gobierno nacional,Áncash,021101
+1281,,Colegio de Alto Rendimiento (COAR) Áncash,Asuntos de gobierno regional,Áncash,021702
+1282,,Chiquintirca - TGP,Socioambiental,Ayacucho,050502
+1283,,Empresa Consettur,Otros asuntos,Cusco,081304
+1284,,,Socioambiental,La Libertad,130810
+1285,,,Socioambiental,La Libertad,130808
+1286,,,Socioambiental,Moquegua,180106
+1287,,,Socioambiental,Nacional,2105
+1288,,,Asuntos de gobierno local,Huánuco,100501
+1289,,Trabajadores de la Empresa Innova Ambiental S.A.,Socioambiental,Lima Provincias,151029
+1290,,Chapis - Derrame petroleo,Socioambiental,Loreto,160703
+1291,,,Asuntos de gobierno local,Moquegua,180101
+1292,,,Asuntos de gobierno local,San Martín,220801
+1293,,,Asuntos de gobierno nacional,Nacional,
+1294,,Economía y Ffinanzas,Asuntos de gobierno nacional,Cusco,080801
+1295,,,Asuntos de gobierno local,Piura,200101
+1296,,,Socioambiental,Áncash,021509
+1297,,,Socioambiental,Arequipa,040403
+1298,,,Asuntos de gobierno local,Cajamarca,060904
+1299,,,Asuntos de gobierno local,Cajamarca,060802
+1300,,,Laboral,La Libertad,131006
+1301,,,Socioambiental,La Libertad,130805
+1302,,Chaparrí,Comunal,Lambayeque,140101
+1303,,Chaparrí,Asuntos de gobierno nacional,Nacional,03
+1304,,,Socioambiental,Áncash,020101
+1305,,,Socioambiental,Cusco,080914
+1306,,,Asuntos de gobierno nacional,Junín,1208
+1307,,,Asuntos de gobierno local,Loreto,1602
+1308,,San Juan de Milpo - Minera Nexa Resources,Socioambiental,Pasco,190108
+1309,,La Tortuga - Olympic,Asuntos de gobierno regional,Piura,200501
+1310,,,Asuntos de gobierno nacional,San Martín,220901
+1311,,Shimpiyacu,Comunal,San Martín,220101
+1312,,,Socioambiental,Áncash,021801
+1313,,,Comunal,Apurímac,030209
+1314,,,Asuntos de gobierno regional,Arequipa,040108
+1315,,,Socioambiental,Huánuco,100201
+1316,,,Asuntos de gobierno nacional,Lambayeque,1401
+1317,,,Asuntos de gobierno local,Lima Metropolitana,150101
+1318,,Colegio Huáscar,Otros asuntos,Puno,210101
+1319,,Oficina de Gestión Social y Diálogo,Socioambiental,Áncash,021014
+1320,,,Asuntos de gobierno nacional,Arequipa,0403
+1321,,Estudiantes de la Universidad Nacional de Huancavelica (UNH),Otros asuntos,Huancavelica,090101
+1322,,,Otros asuntos,Huánuco,100601
+1323,,,Otros asuntos,Lima Metropolitana,150142
+1324,,,Socioambiental,Pasco,190104
+1325,,,Asuntos de gobierno regional,Puno,211201
+1326,,,Asuntos de gobierno regional,Puno,210303
+1327,,,Socioambiental,Pasco,19
+1328,,,Socioambiental,Arequipa,040505
+1329,,Anexo Antacallanca - Minera Raura,Socioambiental,Huánuco,101007
+1330,,,Socioambiental,Piura,200504
+1331,,CC Tumilaca - Southern Perú Copper Corporation,Asuntos de gobierno nacional,Nacional,08
+1332,,,Asuntos de gobierno nacional,Nacional,03
+1333,,,Socioambiental,Cusco,080908
+1334,,,Comunal,Loreto,160304
+1335,,,Otros asuntos,Áncash,021901
+1336,,,Socioambiental,Cusco,080708
+1337,,,Socioambiental,La Libertad,130906
+1338,,,Socioambiental,Lima Provincias,150901
+1339,,,Socioambiental,Áncash,020801
+1340,,,Socioambiental,La Libertad,130901
+1341,1112-0818,Organizaciones y comunidades nativas de Atalaya,Socioambiental,Ucayali,2502
+1342,,,Electoral,Áncash,020305
+1343,,,Electoral,Áncash,021015
+1344,,,Asuntos de gobierno local,Huánuco,100801
+1345,,,Asuntos de gobierno nacional,Junín,120501
+1346,,,Electoral,La Libertad,131203
+1347,,,Electoral,La Libertad,131005
+1348,,,Electoral,La Libertad,130605
+1349,,,Electoral,Loreto,160501
+1350,,,Electoral,Loreto,160304
+1351,,,Electoral,Puno,211209
+1352,,,Socioambiental,Áncash,022005
+1353,,,Socioambiental,Arequipa,040704
+1354,,,Socioambiental,Puno,2105
+1355,,,Socioambiental,Región,
+1356,,,Comunal,Cusco,080703
+1357,,,Asuntos de gobierno nacional,Piura,200101
+1358,,,Asuntos de gobierno regional,Áncash,020101
+1359,,CASO NUEVO,Socioambiental,Cusco,080704
+1360,,CASO NUEVO,Comunal,Apurímac,030501
+1361,,Feconamach - Lote 8,Socioambiental,Loreto,160305
+1362,,Santa Rosa - Derrame de petróleo ONP,Socioambiental,Loreto,160703
+1363,,,Socioambiental,Loreto,160704
+1364,,,Socioambiental,Pasco,190206
+1365,1137-0119,Santa Rosillo de Yanayacu,Comunal,San Martín,220907
+1366,,,Asuntos de gobierno nacional,Nacional,
+1367,,Chumbivilcas - Minera Las Bambas (II),Socioambiental,Cusco,081001
+1368,,,Socioambiental,Pasco,190110
+1369,,,Asuntos de gobierno nacional,Tumbes,240301
+1370,,,Socioambiental,Amazonas,010609
+1371,,,Socioambiental,Cusco,080803
+1372,,,Socioambiental,La Libertad,130601
+1373,,Villa Trompeteros - Pluspetrol Norte Lote 8,Socioambiental,Loreto,160304
+1374,,,Asuntos de gobierno nacional,Nacional,
+1375,,,Otros asuntos,Apurímac,030101
+1376,,Sinchi Roca - Derrame de petróleo ONP,Socioambiental,Loreto,160703
+1377,,,Socioambiental,Loreto,160304
+1378,,,Socioambiental,Pasco,190109
+1379,,,Socioambiental,Huancavelica,090509
+1380,,,Socioambiental,Huánuco,101007
+1381,,Río Cunas - Proyecto Yanacocha,Asuntos de gobierno regional,Junín,120201
+1382,1160-0719,Tumilaca - Anglo American Quellaveco,Socioambiental,Moquegua,180106
+1383,,Champamarca - Activos Mineros,Socioambiental,Pasco,190109
+1384,,,Socioambiental,Tacna,230201
+1385,,Tumilaca - Anglo American Quellaveco,Laboral,Nacional,
+1386,1162-0819,Mara - corredor minero,Socioambiental,Apurímac,030505
+1387,,,Asuntos de gobierno local,Lima Metropolitana,1501
+1388,,,Socioambiental,Apurímac,030706
+1389,,,Socioambiental,Junín,120128
+1390,,,Socioambiental,Áncash,020106
+1391,,,Socioambiental,Cajamarca,060703
+1392,,,Socioambiental,Ayacucho,0506
+1393,,San Carlos - Pluspetrol,Socioambiental,Loreto,160304
+1394,,San José de Saramuro - Pluspetrol,Socioambiental,Loreto,160305
+1395,,,Socioambiental,Puno,211103
+1396,,,Socioambiental,Cajamarca,060701
+1397,,13 CC Espinar - Antapaccay,Socioambiental,Cusco,080801
+1398,,10 CC Pallpata - Antapaccay,Socioambiental,Cusco,080805
+1399,,,Socioambiental,Ica,110203
+1400,,,Asuntos de gobierno regional,Amazonas,010401
+1401,,,Asuntos de gobierno regional,Apurímac,030601
+1402,,Nuevo Progreso - Pluspetrol,Socioambiental,Loreto,160305
+1403,,,Asuntos de gobierno regional,Loreto,160201
+1404,,,Socioambiental,Tumbes,240203
+1405,,,Otros asuntos,Nacional,090101
+1406,,,Asuntos de gobierno local,Puno,211101
+1407,,,Asuntos de gobierno nacional,Tumbes,240301
+1408,,,Asuntos de gobierno nacional,Ucayali,250301
+1409,,,Socioambiental,Apurímac,030410
+1410,,,Socioambiental,Cajamarca,060703
+1411,,,Socioambiental,La Libertad,130601
+1412,,Tumán,Laboral,Lambayeque,140120
+1413,,,Asuntos de gobierno local,Lima Metropolitana,1501
+1414,,Demarcación Independencia -San Martín de Porres,Demarcación territorial,Lima Metropolitana,150135
+1415,,,Socioambiental,Loreto,160304
+1416,,Río Blanco (ex Majaz),Socioambiental,Piura,200303
+1417,1169-1019,Cabanillas/Juliaca - Celdas Transitorias,Socioambiental,Puno,211103
+1418,0238-0607,Cuenca Llallimayo - Aruntani,Socioambiental,Nacional,210804
+1419,0188-0906,Ramis - Minería informal,Socioambiental,Nacional,210209
+1420,,Ecash-Huacrán,Laboral,Nacional,
+1421,,,Socioambiental,Tumbes,240203
+1422,,Ccacho Limamayo - Sawa Sawa,Comunal,Cusco,080703
+1423,,Chaccaro - Occaccahua,Comunal,Apurímac,030501
+1424,,Trabajadores de limpieza pública - MML,Asuntos de gobierno local,Lima Metropolitana,1501
+1425,,Pumamarca - Asacasi,Comunal,Apurímac,030501
+1426,,,Socioambiental,Loreto,160506
+1427,,,Socioambiental,Huancavelica,090607
+1428,1188-0920,CORMI - UGEL,Asuntos de gobierno regional,Loreto,1607
+1429,,Estación 5 - Datem del Marañón,Asuntos de gobierno nacional,Loreto,1607
+1430,,ACONAKKU - Urarinas,Asuntos de gobierno nacional,Loreto,160305
+1431,,Huaylacucho - Pueblo Libre,Comunal,Huancavelica,090101
+1432,,,Socioambiental,Lambayeque,140117
+1433,,Comunidades Urituyacu,Asuntos de gobierno nacional,Loreto,160305
+1434,1193-1020,Comunidad San Martín de Sechura,Comunal,Piura,200801
+1435,,,Asuntos de gobierno nacional,Nacional,020107
+1436,,Oficina de Gestión Social y Diálogo,Socioambiental,Áncash,020508
+1437,,Mineros Informales - Intigold,Socioambiental,Arequipa,040303
+1438,,Santa Rosa de Huancapuquio - Pomacocha,Comunal,Ayacucho,051101
+1439,,Tarifas trenes en Machupicchu,Asuntos de gobierno nacional,Cusco,081304
+1440,,Cancahuani - Yanque Lacca-Lacca,Comunal,Cusco,080702
+1441,,Agricultores de Huánuco,Asuntos de gobierno regional,Huánuco,100101
+1442,,,Socioambiental,La Libertad,130901
+1443,,,Socioambiental,La Libertad,131007
+1444,,,Socioambiental,Pasco,190111
+1445,,Kichwa Anak Kurutuyacu - Caseríos Huimbayoc,Comunal,San Martín,220907
+1446,,,Laboral,Multirregional,
+1447,,,Socioambiental,Huancavelica,090118
+1448,,,Socioambiental,Cusco,0807
+1449,,,Comunal,Huancavelica,090101
+1450,,Uchubamba - Curimarca,Comunal,Junín,120416
+1451,,Demarcación territorial entre Limbani y Phara,Demarcación territorial,Puno,211203
+1452,,,Socioambiental,Apurímac,030501
+1453,,,Socioambiental,Cusco,080705
+1454,1214-0221,Las Lomas,Asuntos de gobierno regional,Piura,200111
+1455,,Usuarios de electricidad en Nauta,Asuntos de gobierno nacional,Loreto,160301
+1456,,Fernando Rosas - Petroperú,Socioambiental,Loreto,160704
+1457,,Usuarios de electricidad en Nauta,Asuntos de gobierno nacional,Nacional,
+1458,,Cultivadores de hoja de coca,Asuntos de gobierno nacional,Cusco,0809
+1459,,,Socioambiental,Huánuco,100109
+1460,,San José de Nueva Esperanza - Pluspetrol Norte,Socioambiental,Loreto,160304
+1461,,,Asuntos de gobierno local,Loreto,1607
+1462,,,Socioambiental,Pasco,1901
+1463,,,Socioambiental,Pasco,190206
+1464,,Ccapacmarca (Ccapacmarca) y Huascabamba,Socioambiental,Cusco,080708
+1465,,FREDESAAA - FEDEAGRAA / Electro Oriente S.A.,Asuntos de gobierno nacional,Loreto,160201
+1466,,,Asuntos de gobierno local,Loreto,160505
+1467,,,Socioambiental,Loreto,160304
+1468,1229-0621,CC Huancuire - Minera Las Bambas,Socioambiental,Apurímac,030503
+1469,,,Otros asuntos,Huancavelica,090101
+1470,1227-0621,Frente de Defensa de los Intereses de Macuya,Asuntos de gobierno local,Huánuco,100904
+1471,,,Comunal,Loreto,160304
+1472,,"San Juan Nativo, San Juan Campesino y Nueva Libertad – Pluspetrol Norte",Socioambiental,Loreto,160304
+1473,,Santa Elena - Pluspetrol Norte,Socioambiental,Loreto,160304
+1474,,,Socioambiental,Áncash,021014
+1475,,,Socioambiental,Apurímac,030506
+1476,,14 CC.CC. Chumbivilcas - Minera Las Bambas,Socioambiental,Cusco,080704
+1477,1232-0721,Saramurillo - Estación 1,Socioambiental,Loreto,160305
+1478,,,Socioambiental,Ayacucho,050703
+1479,,,Otros asuntos,Huancavelica,090721
+1480,,,Laboral,Pasco,190109
+1481,1236-0821,San Jacinto - Presa Laminadora de Higuerón,Socioambiental,Tumbes,240105
+1482,,,Otros asuntos,Ayacucho,050401
+1483,,,Socioambiental,Huancavelica,090106
+1484,,,Asuntos de gobierno regional,Huánuco,100101
+1485,,,Socioambiental,Junín,120214
+1486,,,Asuntos de gobierno regional,Junín,120608
+1487,1240-0921,Organizaciones sociales de Ayabaca,Asuntos de gobierno regional,Piura,200201
+1488,1251-1021,Comunidad de Aquia - Antamina,Socioambiental,Áncash,020504
+1489,,,Socioambiental,Huancavelica,090603
+1490,1250-1021,,Socioambiental,Huánuco,100605
+1491,,Comunidades de la cuenca del río Curaray,Socioambiental,Loreto,160107
+1492,,,Socioambiental,Moquegua,180208
+1493,,,Socioambiental,Piura,200505
+1494,,"Comunidades de Huaquirca, Sabaino y Virundo",Comunal,Apurímac,030303
+1495,,Huancabamba - Cceuñahuran,Comunal,Apurímac,030201
+1496,1256-1121,Rondas Campesinas de La Libertad - Río Moche y Carboneras,Socioambiental,La Libertad,1310
+1497,,,Socioambiental,Pasco,190109
+1498,,,Asuntos de gobierno regional,Amazonas,010401
+1499,,Ayamarca - Sierra Antapite S.A.C.,Socioambiental,Huancavelica,090606
+1500,,,Socioambiental,Ica,110203
+1501,,Honoria y Campoverde - Bosques Silvestres S.A.C.,Asuntos de gobierno regional,Multirregional,100903
+1502,,,Comunal,Amazonas,010101
+1503,,Pasto Grande - Puno/Moquegua,Socioambiental,Cajamarca,060702
+1504,,CC Camaná - TGP,Socioambiental,Cusco,080914
+1505,,"CC Pumallaqta, CC Quiñota, CC Ccollana, CC Hatta Pallpa Pallpa - Minera Anabi",Socioambiental,Cusco,080707
+1506,,Contaminación – Refinería La Pampilla (Repsol),Socioambiental,Multirregional,070106
+1507,,Corral Quemado - La Calzada (Eje Vial 1),Asuntos de gobierno nacional,Amazonas,010703
+1508,,,Socioambiental,Cusco,080803
+1509,,,Socioambiental,Moquegua,180106
+1510,,,Socioambiental,Piura,200505
+1511,,,Socioambiental,Piura,200801
+1512,,Supayaku - Municipalidad Distrital de Huarango,Asuntos de gobierno local,Cajamarca,060903
+1513,,,Socioambiental,Junín,120805
+1514,,,Asuntos de gobierno nacional,Lima Metropolitana,1501
+1515,,Junta de Usuarios del Sector Hidráulico del Valle Alto Piura,Asuntos de gobierno regional,Piura,200401
+1516,,FRECIDES - Demandas nacionales,Asuntos de gobierno nacional,San Martín,220901
+1517,,- Carlos Huamán Cabrera,Asuntos de gobierno nacional,Nacional,
+1518,,Agricultores y ganaderos lecheros,Asuntos de gobierno nacional,Multirregional,
+1519,,,Asuntos de gobierno nacional,Cusco,081302
+1520,,Kuélap,Asuntos de gobierno nacional,Amazonas,0104
+1521,,Cochas - San Francisco de Macon,Comunal,Junín,120205
+1522,,,Socioambiental,Pasco,190103
+1523,,Agua y alcantarillado - Tocache,Asuntos de gobierno local,San Martín,221001
+1524,,,Socioambiental,La Libertad,130901
+1525,,,Asuntos de gobierno nacional,Nacional,
+1526,,,Asuntos de gobierno regional,Amazonas,0104
+1527,1285-0622,CC Chuicuni - Las Bambas,Socioambiental,Apurímac,030506
+1528,,CC Chila - Las Bambas,Socioambiental,Apurímac,030506
+1529,,Contaminación – Refinería La Pampilla (Repsol),Socioambiental,Lima Provincias,150404
+1530,1283-0622,Comunidades de Ichuña y Yunga - Cia Minera Buenaventura,Socioambiental,Moquegua,180204
+1531,,,Comunal,San Martín,220101
+1532,,CC Carmen Alto - Minera Las Bambas,Socioambiental,Apurímac,030506
+1533,,,Asuntos de gobierno local,Huánuco,100804
+1534,1291-0722,,Socioambiental,Puno,210501
+1535,,,Asuntos de gobierno local,Cajamarca,060803
+1536,,Minería ilegal – La Pampa,Socioambiental,Madre de Dios,170102
+1537,,,Socioambiental,Arequipa,040704
+1538,,,Socioambiental,Lima Provincias,151002
+1539,,CN Cuninico - Petroperú,Socioambiental,Loreto,160305
+1540,,CC de Yauyos y Junín - Minera IRL Limited,Socioambiental,Multirregional,120108
+1541,,Kuélap,Asuntos de gobierno nacional,Amazonas,010522
+1542,,CC  Huallhua - Cía minera Ares,Socioambiental,Ayacucho,050808
+1543,,Centro poblado Huancute - Cía minera Ares,Socioambiental,Ayacucho,0507
+1544,,,Socioambiental,Cusco,080708
+1545,,Comunidades Coporaque - Las Bambas,Socioambiental,Cusco,080803
+1546,,Terminal Portuario Multipropósito de Chancay,Socioambiental,Lima Provincias,150605
+1547,,Comunidades nativas de la Cuenca del río Chambira,Socioambiental,Loreto,160305
+1548,,,Otros asuntos,Ayacucho,050401
+1549,,Asfaltado de carretera Huancavelica – Yauli – Pucapampa (tramo I),Asuntos de gobierno regional,Huancavelica,090117
+1550,,,Otros asuntos,Piura,2008
+1551,,Crisis política - Diciembre 2022,Asuntos de gobierno nacional,Nacional,020107
+1552,,,Asuntos de gobierno local,Piura,200210
+1553,,I.E. Juan Espinoza Medrano – UGEL Andahuaylas,Otros asuntos,Apurímac,030201
+1554,,,Socioambiental,Arequipa,040606
+1555,,,Socioambiental,Pasco,190108
+1556,,,Asuntos de gobierno local,Piura,200210
+1557,,Comunidad Nativa Huascayacu,Comunal,San Martín,220101
+1558,,,Asuntos de gobierno nacional,Junín,120608
+1559,,,Asuntos de gobierno nacional,Piura,200101
+1560,,,Asuntos de gobierno nacional,San Martín,220601
+1561,,,Asuntos de gobierno nacional,Tumbes,240101
+1562,,CC Viacha - CC Coya Qosqo,Comunal,Cusco,080405
+1563,,,Laboral,Nacional,
+1564,,Empresas ECOSAMIN y CHOCO QORIWAYRA - mineros informales,Socioambiental,Arequipa,040406
+1565,,Tres Tingos – Quinua Totora - Yanacocha,Socioambiental,Cajamarca,060108
+1566,,,Socioambiental,Huancavelica,090116
+1567,,Ronda Los Alisos - Compañía Minera La Poderosa,Socioambiental,La Libertad,130809
+1568,,,Asuntos de gobierno local,Lima Metropolitana,150137
+1569,,,Socioambiental,Lima Provincias,150901
+1570,,Pobladores del distrito de Alto Nanay,Asuntos de gobierno local,Loreto,160102
+1571,,,Asuntos de gobierno local,Puno,210110
+1572,,Huanta – pequeña minería,Comunal,Ayacucho,050412
+1573,,,Asuntos de gobierno regional,Piura,200101
+1574,,Sindicato de trabajadores técnicos asistenciales de salud (SITPASS),Asuntos de gobierno regional,San Martín,220601
+1575,1332-0823,CC Anchihuay - CC Chiquintirca,Comunal,Ayacucho,050502
+1576,,CC Chilca - San Fernando,Comunal,Lima Provincias,150505
+1577,,Caseríos de Pomamayo y Cashaucro y barrio de Bellavista - Cía Minera Raura,Socioambiental,Lima Provincias,150901
+1578,,,Demarcación territorial,Puno,211205
+1579,,,Laboral,Nacional,
+1580,1339-1223,Chinchao - Pillao,Comunal,Huánuco,100113
+1581,,Trabajadores sector agroexportador,Asuntos de gobierno nacional,Ica,110108
+1582,,Huelga nacional de docentes universitarios,Laboral,Nacional,
+1583,,,Socioambiental,Huancavelica,090118
+1584,,,Asuntos de gobierno local,Áncash,021505
+1585,,,Otros asuntos,Apurímac,030109
+1586,,,Asuntos de gobierno nacional,Cusco,081304
+1587,,,Socioambiental,Huánuco,101007
+1588,,,Asuntos de gobierno nacional,Lima Metropolitana,150108
+1589,,Nueva Carretera Central,Asuntos de gobierno nacional,Lima Metropolitana,150103
+1590,,Peaje Rutas de Lima,Asuntos de gobierno nacional,Lima Metropolitana,150125
+1591,1344-0124,Minería informal ley de formalización,Asuntos de gobierno nacional,Multirregional,04
+1592,,,Comunal,Multirregional,
+1593,,Ley Forestal,Asuntos de gobierno nacional,Multirregional,02
+1594,1352-0324,Chetilla - Colpayoc,Socioambiental,Cajamarca,060103
+1595,,Aeropuerto Chinchero,Asuntos de gobierno nacional,Cusco,081302
+1596,,Mercado de Paucarbamba,Asuntos de gobierno regional,Huánuco,100102
+1597,,Derrame canal Puinahua,Socioambiental,Loreto,160506
+1598,1353-0324,Coasa – Limbani,Demarcación territorial,Puno,210304
+1599,,Patambuco - Alto Inambari,Demarcación territorial,Puno,211209
+1600,,Asociación de Pueblos Originarios Conservacionistas (APOC) - Urus Chulluni,Comunal,Puno,210101
+1601,,Vilcas Huamán – Rechazo a minería,Socioambiental,Ayacucho,051101
+1602,,CC San Cristobal – Asociaciones de vivienda,Comunal,Huancavelica,090101
+1603,1357-0424,Mariscal Nieto - Huatipuka,Socioambiental,Moquegua,180199
+1604,,Bloque Lote 8 - Consulta Previa,Socioambiental,Loreto,160304
+1605,,Pebas,Asuntos de gobierno local,Loreto,160402
+1606,,Bloque Lote 8 - Consulta Previa,Asuntos de gobierno local,Loreto,160206
+1607,,CC de Huaraucaca - Sociedad Minera El Brocal S.A.,Socioambiental,Pasco,190111
+1608,,Cuenca Llallimayo -Ciemsa,Socioambiental,Puno,210804
+1609,1364-0524,Palca-Ciemsa,Socioambiental,Puno,210706
+1610,,Casma-Hidrandina,Asuntos de gobierno nacional,Áncash,020804
+1611,,Comunidad de Quispillacta,Asuntos de gobierno regional,Ayacucho,050202
+1612,,CC Vinchos – CC Paccha,Comunal,Ayacucho,050114
+1613,,Campo Ferial de Huancaro,Asuntos de gobierno regional,Cusco,080106
+1614,,Comunidades campesinas del Canipaco,Asuntos de gobierno regional,Junín,1209
+1615,,Parque Nacional de Pui Pui,Comunal,Junín,120135
+1616,,Carretera Yanayacu-Borja,Asuntos de gobierno nacional,Loreto,160703
+1617,,,Socioambiental,Apurímac,030501
+1618,,Proyecto de agua potable y alcantarillado “Esquema integral Carabayllo”,Asuntos de gobierno nacional,Lima Metropolitana,150106
+1619,,Vaso de Leche Ate,Asuntos de gobierno local,Lima Metropolitana,150103
+1620,,FECONABAT - Lote 8,Socioambiental,Loreto,160303
+1621,,Mercado la Perlita,Asuntos de gobierno local,Áncash,021809
+1622,1377-0824,Vía Los Libertadores,Asuntos de gobierno nacional,Ayacucho,050101
+1623,1376-0824,Vinicunca – Montaña de siete colores,Comunal,Cusco,081206
+1624,,Contaminación ríos La Plata y Tablachaca,Socioambiental,Áncash,02
+1625,,Huarmey - contaminación metales pesados,Socioambiental,Áncash,021101
+1626,,Tambogrande - Proyecto El Algarrobo,Socioambiental,Piura,200101
+1627,,La Brea Negritos - Pasivos hidrocarburos,Socioambiental,Piura,200703
+1628,1382-0924,Veintiséis de octubre - oposición a Ordenanza,Asuntos de gobierno local,Piura,200115
+1629,1379-0924,Transportistas seguridad,Asuntos de gobierno nacional,Multirregional,150102
+1630,,,Socioambiental,Huancavelica,090116
+1631,,Mercado Lomas del Sur,Asuntos de gobierno local,Áncash,021809
+1632,,Universidad Nacional de Jaén – Institucionalización,Otros asuntos,Cajamarca,060801
+1633,,Cafetaleros FENCAAP - Agricultura,Asuntos de gobierno regional,Cusco,080901
+1634,1345-0124,Independencia - Raura,Socioambiental,Huánuco,101007
+1635,,Pachacamac-Lurín demarcación territorial,Demarcación territorial,Lima Metropolitana,150123
+1636,,Pachacamac-Lurín demarcación territorial,Asuntos de gobierno nacional,Lima Metropolitana,150140
+1637,,Chucuito contaminación,Asuntos de gobierno local,Puno,210106
+1638,,Municipalidad Humboldt,Asuntos de gobierno local,Ucayali,250305
+1639,,CC Tumilaca - Southern Perú Copper Corporation,Socioambiental,Moquegua,18
+1640,,Paro por Puente Tarata,Asuntos de gobierno nacional,San Martín,22
+1641,,Honoria y Campoverde - Bosques Silvestres S.A.C.,Socioambiental,Cusco,08
+1642,,Mercado Modelo de Chiclayo,Asuntos de gobierno local,Lambayeque,14
+1643,,Mercado Modelo de Piura,Asuntos de gobierno local,Piura,20
+1644,,Carretera Imperial – Pampas Churcampa – puente Allcomachay,Asuntos de gobierno nacional,Huancavelica,090501
+1645,1132-1218,CC Fuerabamba - Minera Las Bambas,Socioambiental,Apurímac,030506
+1646,,Sector de Shapajilla - Celdas transitorias,Socioambiental,Huánuco,10
+1647,,Minería ilegal – La Pampa,Socioambiental,Madre de Dios,17
+1648,,Conflicto comunal Ecash - Huacrán,Comunal,Áncash,022002
+1649,,Rechazo a mineria ilegal en anexo Nauquipa – Cahuacho,Asuntos de gobierno regional,Arequipa,040306
+1650,,SUTRAMUN - Chaclacayo,Laboral,Lima Metropolitana,150107
+1651,,Parcialidad Apacheta - Residuos sólidos,Socioambiental,Puno,21
+1652,,Agricultores Valle Santa Lacramarca - MTC,Asuntos de gobierno nacional,Áncash,021801
+1653,,,Asuntos de gobierno nacional,Apurímac,030101
+1654,,Huancavelica – Santa Inés y Santa Inés – Rumichaca,Asuntos de gobierno nacional,Huancavelica,090601
+1655,,,Laboral,Loreto,160706
+1656,,CN 12 de Octubre - Nuevo Progreso,Comunal,Loreto,160303
+1657,,Cuenca Coata,Socioambiental,Puno,21
+1658,,Feria sabatina “de la chacra a la olla”,Asuntos de gobierno regional,Huánuco,100102
+1659,,Programa Agua de Emergencia,Asuntos de gobierno local,Lima Metropolitana,150125
+1660,,de la Dirección General de Orden Público,Socioambiental,Apurímac,030414
+1661,1405-0325,CC de Quichas - Cía minera Raura,Socioambiental,Lima Provincias,150901
+1662,,,Socioambiental,Loreto,160703
+1663,,CC Santa Cruz de Pichiu - Antamina,Socioambiental,Áncash,021014
+1664,1407-0425,Conflicto Multisectorial Región Cajamarca ( Ex Cutervo - MTC),Asuntos de gobierno nacional,Cajamarca,060612
+1665,,Univesidad Agraria,Otros asuntos,Lima Metropolitana,150114
+1666,1403-0325,Sinchi Roca - Derrame de petroleo ONP II,Socioambiental,Loreto,160703
+1667,1409-0425,Rechazo a Monorelleno de PTAR - Bajo Madre de Dios,Socioambiental,Madre de Dios,170103
+1668,,Tapayrihua y Aymaraes - Southern,Socioambiental,Apurímac,03
+1669,,Hospital Guillermo Días - Abancay,Asuntos de gobierno nacional,Apurímac,03
+1670,,CC de Huaraucaca - Sociedad Minera El Brocal S.A.,Socioambiental,Pasco,19
+1671,1413-0525,Pataz - Minería Ilegal,Asuntos de gobierno nacional,La Libertad,130809
+1672,,FEPIBACOR - Demandas sociales y ambientales,Socioambiental,Loreto,160304
+1673,1411-0525,AIDECOS y FECIFOMAS - Demandas sociales y ambientales,Socioambiental,Loreto,160302
+1674,,Unión Mantaro-Pampa Aurora,Comunal,Ayacucho,050409
+1675,,Universidad Villarreal,Otros asuntos,Lima Metropolitana,1501
+1676,1416-0625,Universidad Nacional del Altiplano,Otros asuntos,Puno,210101
+1677,1417-0625,Anillo Vial Periférico,Asuntos de gobierno nacional,Multirregional,150135
+1678,,Mineros informales / empresa Intigol Mining Atico,Asuntos de gobierno nacional,Arequipa,04
+1679,,Pajchani - Alto Inambari y Patambuco,Demarcación territorial,Puno,21
+1680,,Sindicato de Trabajadores de SIDERPERÚ,Laboral,Áncash,021801
+1681,,Hospital especializado de Nuevo Chimbote,Asuntos de gobierno nacional,Áncash,021809
+1682,,Pobladores y SEDA- Huanta,Asuntos de gobierno local,Ayacucho,050401
+1683,,Reserva Paisajística Nor Yauyos Cochas,Socioambiental,Junín,120401
+1684,,Hospital José Augurto Tello de Chosica,Asuntos de gobierno nacional,Lima Metropolitana,150118
+1685,,Mototaxistas- San Juan de Lurigancho-Chosica,Asuntos de gobierno local,Lima Metropolitana,150132
+1686,,Contaminación del río Tumbes por relaves mineros,Socioambiental,Tumbes,240101
+1687,,Hospital Regional II-2 JAMO - Destitución Director,Laboral,Tumbes,240101
+1688,,Cuenca Llallimayo - Aruntani (Arasi),Socioambiental,Puno,21
+1689,,CC Huaripampa - Antamina,Socioambiental,Áncash,021014
+1690,,Mejoramiento de la vía Izucacha - Huanta,Asuntos de gobierno nacional,Huancavelica,090201
+1691,,Laguna Tragadero,Asuntos de gobierno regional,Junín,120402
+1692,,Antenas-San Juan de Lurigancho,Asuntos de gobierno local,Lima Metropolitana,150132
+1693,,Pachangara - Servicio eléctrico,Asuntos de gobierno regional,Lima Provincias,150906
+1694,1426-0825,Rechazo minería ilegal - Tigre,Socioambiental,Loreto,160303
+1695,,,Socioambiental,Lambayeque,140312
+1696,,Universidad Nacional Mayor de San Marcos,Otros asuntos,Lima Metropolitana,1501
+1697,,Los Sauces-Ate,Asuntos de gobierno local,Lima Metropolitana,150103
+1698,,Ñaña-Calidda,Otros asuntos,Lima Metropolitana,150118
+1699,1432-0925,CN Naranjal - infraestructura educativa,Asuntos de gobierno regional,Loreto,160705
+1700,,FECONARIMSA – Demandas sociales,Asuntos de gobierno nacional,Loreto,160305
+1701,,Universidad Nacional Daniel Alcides Carrión (UNDAC),Otros asuntos,Pasco,190113
+1702,,Laguna Patarcocha - I.E. Daniel Alcides Carrión,Socioambiental,Pasco,190101
+1703,1437-0925,Organizaciones sociales de Talara – Centro de Salud,Asuntos de gobierno regional,Piura,200701
+1704,1438-0925,UPIS OLLANTA HUMALA TASSO,Asuntos de gobierno local,Piura,200101
+1705,1443-0925,Antauta-Minsur,Socioambiental,Puno,210802
+1706,,FECONARIMSA – Demandas sociales,Asuntos de gobierno nacional,Multirregional,140312
+1707,,Punta Hermosa-San Juan de los Olleros,Demarcación territorial,Multirregional,150126
+1708,,Rechazo minería ilegal - Tigre,Socioambiental,Loreto,16
+1709,,Omia - Infraestructura vial,Asuntos de gobierno local,Amazonas,010609
+1710,,,Otros asuntos,Áncash,021802
+1711,,Sindicato Único de Docentes y Comisión,Otros asuntos,Cajamarca,060801
+1712,1447-1025,Comunidades campesinas de San Rafael – Río y Cochacalla – Recurso hídrico,Socioambiental,Huánuco,100207
+1713,,Mejoramiento del tramo de la carretera Taruca – Marcaypuyaro y vías vecinales,Asuntos de gobierno local,Huánuco,100104
+1714,,Cerro Candela,Asuntos de gobierno local,Lima Metropolitana,150103
+1715,,Obreros municipales Ate,Asuntos de gobierno local,Lima,150103
+1716,,Intercambio vial Canta Callao,Laboral,Lima,150107
+1717,1450-1025,CONACCUNAY – minería ilegal,Socioambiental,Loreto,160102
+1718,1457-1025,Docentes Universitarios,Asuntos de gobierno nacional,Nacional,
+1719,,Proyecto de defensas rivereñas en el río la Leche – Lambayeque,Asuntos de gobierno nacional,Lambayeque,14
+1720,,Crisis política - Diciembre 2022,Asuntos de gobierno local,Lambayeque,14
+1721,1434-0925,Pescadores de pota artesanal - PRODUCE,Asuntos de gobierno nacional,Multirregional,2001
+1722,,Carretera Achamaqui – Leymebamba – Balsas Asuntos de gobierno,Asuntos de gobierno nacional,Amazonas,010701
+1723,1462-1125,Carretera Huancavelica - Santa Inés - Castrovirreyna – Pámpano,Asuntos de gobierno nacional,Huancavelica,090411
+1724,,Feria sabatina “de la chacra a la olla”,Asuntos de gobierno regional,Huánuco,100101
+1725,1464-1125,Comunidad campesina de Llicua – Botadero DME n° 02,Socioambiental,Huánuco,100102
+1726,1465-1125,Parque Nacional de Pui Pui,Socioambiental,Junín,120605
+1727,1461-1125,Valle de Yacus – Carretera JU 103 Jauja Tarma,Asuntos de gobierno regional,Junín,120433
+1728,,Delimitación de linderos,Comunal,Junín,1209
+1729,1459-1125,Empresas comunales - Altamesa II,Laboral,Loreto,160706
+1730,1466-1125,CC Ajoyani-MINSUR,Socioambiental,Puno,210302
+1731,1467-1125,La Rinconada,Asuntos de gobierno regional,Puno,211002
+1732,,Chumbivilcas - Minera Hudbay,Socioambiental,Cusco,0807
+1733,,CC Ajoyani-MINSUR,Socioambiental,Puno,21
+1734,,La Rinconada,Socioambiental,Puno,21
+1735,,Carretera Achamaqui – Leymebamba – Balsas,Asuntos de gobierno nacional,Amazonas,010101
+1736,,Demarcacion limítrofe Yanatile y Quellouno,Demarcación territorial,Cusco,080908
+1737,1470-1225,Universidad Nacional Autónoma Altoandina de Tarma (UNAT),Otros asuntos,Junín,12
+1738,,CP Huamanmarca - Phoenix Tower (antenas),Socioambiental,Junín,12
+1739,1472-1225,CC Pariahuanca – Minera Oro Negro,Socioambiental,Junín,12
+1740,,Baños Termales de Pachangara,Asuntos de gobierno local,Lima Provincias,150906
+1741,,CC Andajes – CC Huacho,Comunal,Lima Provincias,150902
+1742,,Caserío de Pomamayo – Cía minera Raura,Socioambiental,Lima Provincias,15
+1743,,CC Oyón - OCIMIN S.A.C.,Socioambiental,Lima Provincias,150901
+1744,,Distrito Ajoyani-MINSUR,Socioambiental,Puno,210302
+1745,,Huanta – pequeña minería,Socioambiental,Ayacucho,05
+1746,1482-0126,Samanco-Contaminación de agua,Socioambiental,Áncash,021807
+1747,1481-0126,Jimbe-Contaminación,Socioambiental,Áncash,021802
+1748,,Ecash-Huacrán,Comunal,Áncash,0206
+1749,,CC Mariscal Castilla - Minera Chaska II,Socioambiental,Junín,12
+1750,,Caserío de Tambillo – Minera Olga Victoria,Socioambiental,La Libertad,131003
+1751,1479-0126,Intercambio vial Canta Callao,Asuntos de gobierno nacional,Lima Metropolitana,150135
+1752,,Petroperú – DU.010-2025-PCM,Asuntos de gobierno nacional,Multirregional,2007
+1753,,CC Mariscal Castilla - Minera Chaska II,Demarcación territorial,Multirregional,18
+1754,1489-0226,Comité de Gestión de Carreteras y Desasarrollo- servicio de energía eléctrica,Asuntos de gobierno nacional,Amazonas,010101
+1755,1486-0226,Comunidad Campesina de Acsunche – Empresa Minera Korimallco Minerals S.A.C.,Socioambiental,Apurímac,030711
+1756,1485-0226,Comunidad Campesina de Carhuapata,Asuntos de gobierno nacional,Huancavelica,090301
+1757,,Municipalidad de Balsapuerto - Comunidad de Shawi,Asuntos de gobierno local,Loreto,160202
+1758,,Punchana - Fideicomiso del Plan de Cierre de Brechas,Otros asuntos,Loreto,160108
+1759,1492-0226,Comunidad Campesina Anexo de Joraoniyoc - Nexa Resources,Laboral,Pasco,190108
+1760,1491-0226,Purus - Desarrollo Integral,Asuntos de gobierno nacional,Ucayali,250401
+1761,1490-0226,Comunidades Nativas y Caseríos del Lago Imiría y Chauya – ACR Imiría,Socioambiental,Ucayali,250104
+1762,,Corral Quemado - La Calzada (Eje Vial 1) Asuntos de gobierno,Asuntos de gobierno nacional,Amazonas,01
+1763,,Comité de Gestión de Carreteras y Desasarrollo- servicio de energía eléctrica Asuntos de gobierno,Asuntos de gobierno nacional,Amazonas,01
+1764,,Atupa y Antahurán - Barrick,Socioambiental,Áncash,02
+1765,,Hospital especializado de Nuevo Chimbote Asuntos de gobierno,Asuntos de gobierno nacional,Áncash,02
+1766,,Casma-Hidrandina Asuntos de gobierno,Asuntos de gobierno nacional,Áncash,02
+1767,,Mercado Lomas del Sur Asuntos de gobierno,Asuntos de gobierno local,Áncash,02
+1768,,CC Chila - Las Bambas,Socioambiental,Apurímac,03
+1769,,CC Chuicuni - Las Bambas,Socioambiental,Apurímac,03
+1770,,Mara - corredor minero,Socioambiental,Apurímac,03
+1771,,Pumamarca - Asacasi,Comunal,Apurímac,03
+1772,,Hospital Guillermo Días - Abancay,Asuntos de gobierno nacional,Apurímac,03
+1773,,Rechazo a mineria ilegal en anexo Nauquipa – Cahuacho,Asuntos de gobierno nacional,Arequipa,04
+1774,,Huanta – pequeña minería,Socioambiental,Ayacucho,05
+1775,,Chiquintirca - TGP,Socioambiental,Ayacucho,05
+1776,,Vinicunca – Montaña de siete colores,Comunal,Cusco,08
+1777,,Aeropuerto Chinchero,Asuntos de gobierno nacional,Cusco,08
+1778,,Cultivadores de hoja de coca,Asuntos de gobierno nacional,Cusco,08
+1779,,Carretera Huancavelica - Santa Inés - Castrovirreyna – Pámpano,Asuntos de gobierno nacional,Huancavelica,09
+1780,,Mejoramiento de la vía Izucacha - Huanta,Asuntos de gobierno nacional,Huancavelica,09
+1781,,Carretera Imperial – Pampas Churcampa – puente Allcomachay,Asuntos de gobierno nacional,Huancavelica,09
+1782,,Independencia - Raura,Socioambiental,Huánuco,10
+1783,,Reserva Paisajística Nor Yauyos Cochas,Socioambiental,Junín,12
+1784,,Universidad Nacional Autónoma Altoandina de Tarma (UNAT),Otros asuntos,Junín,12
+1785,,Pataz - Minería Ilegal,Asuntos de gobierno nacional,La Libertad,13
+1786,,Vaso de Leche Ate,Asuntos de gobierno local,Lima Metropolitana,1501
+1787,,CN Naranjal - infraestructura educativa,Asuntos de gobierno regional,Loreto,16
+1788,,CC de Huaraucaca - Sociedad Minera El Brocal S.A.,Socioambiental,Pasco,19
+1789,,Tambogrande - Proyecto El Algarrobo,Socioambiental,Piura,20
+1790,,Veintiséis de octubre - oposición a Ordenanza,Asuntos de gobierno local,Piura,20
+1791,,Cuenca Llallimayo -Ciemsa,Socioambiental,Puno,21
+1792,,Parcialidad Apacheta - Residuos sólidos,Socioambiental,Puno,21
+1793,,Universidad Nacional del Altiplano,Otros asuntos,Puno,21
+1794,,Pajchani - Alto Inambari y Patambuco,Demarcación territorial,Puno,21
+1795,,Contaminación del río Tumbes por relaves mineros,Socioambiental,Tumbes,24
+1796,,San Jacinto - Presa Laminadora de Higuerón,Socioambiental,Tumbes,24
+1797,,CC Andajes – CC Huacho,Comunal,Lima Provincias,15
+1798,,Estación 5 - Datem del Marañón,Asuntos de gobierno nacional,Loreto,16
+1799,1494-0326,,Otros asuntos,Ica,110304
+1800,1493-0326,Población de Catacaos exige culminación de obra de saneamiento,Asuntos de gobierno nacional,Piura,200105
+1801,,CC Chila - Las Bambas,Socioambiental,Apurímac,03
+1802,,Providencia - Transporte hidrocarburos,Socioambiental,Loreto,160304
+1803,1495-0426,Agricultores de arroz,Asuntos de gobierno nacional,Piura,200104
+1804,1504-0526,Huarmey - contaminación arsenico,Asuntos de gobierno nacional,Áncash,021101
+1805,1499-0526,Universidad Nacional de San Cristóbal de Huamanga - demandas estudiantiles,Otros asuntos,Ayacucho,050101
+1806,,Empresa Minera Operadores Concentrados Peruanos (OCP) – Pobladores del distrito de Daniel Hernández,Asuntos de gobierno nacional,Huancavelica,090706
+1807,1501-0526,Población de Chugay y Cochorco - Provías Nacional,Asuntos de gobierno nacional,La Libertad,130902
+1808,1502-0526,San Marcos 2026,Otros asuntos,Lima Metropolitana,1501
+1809,,Vía Pasamayito,Asuntos de gobierno local,Lima Metropolitana,1501
+1810,1500-0526,Comunidades de Alto Curacay y Arabela rechazan creación de la la Reserva Indígena PIACI,Socioambiental,Loreto,160107
+1811,1498-0526,Universidad Nacional de Ucayali - demandas estudiantiles,Otros asuntos,Ucayali,250101
+1812,,CC Huaripampa - Antamina,Socioambiental,Áncash,02
+1813,1508-0626,Universidad del Santa,Otros asuntos,Áncash,021808
+1814,1509-0626,Sitramun Santa,Laboral,Áncash,02
+1815,1507-0626,Comunidades de Maynas - derrame de Petróleo,Socioambiental,Loreto,1601
+1816,1510-0626,I.E. Carlos Augusto Salaverry – Paralización de obra educativa,Asuntos de gobierno nacional,Piura,200601
+1817,1505-0626,Frente de Defensa del Valle Pintuyacu,Asuntos de gobierno regional,San Martín,220504
+1818,1506-0626,Comerciantes Del Distrito De Aguas Verdes - MVCS,Asuntos de gobierno nacional,Tumbes,240302
+1819,,FEPIBACOR - Demandas sociales y ambientales,Socioambiental,Loreto,16
+1820,,ACONAKKU - Urarinas,Asuntos de gobierno nacional,Loreto,16
+1821,1512-0726,Bernarpuquio-Huarmey,Asuntos de gobierno regional,Áncash,021101
+1822,1511-0726,UGEL Santa-CTS,Laboral,Áncash,021808
+1823,1513-0726,Comunidades campesinas de la cuenca de Paccaypata - Mariscal Gamarra - Curahuasi,Socioambiental,Apurímac,0307
+1824,1514-0726,Sector quebrada honda,Demarcación territorial,Moquegua,180106
+1825,,Poseción de terrenos - King Group y la Empresa Shougang Hierro Perú,Otros asuntos,Ica,11
+1826,1515-0826,Casma-Fenómeno El Niño,Asuntos de gobierno local,Áncash,020801
+1827,1520-0826,Empresas Concesionarias de Transporte Urbano del SIT – Municipalidad Provincial de Arequipa,Asuntos de gobierno local,Arequipa,040101
+1828,1522-0826,Santo Domingo de Nauyán - Vía de acceso y relleno sanitario de Chilepampa,Socioambiental,Huánuco,100102
+1829,1523-0826,,Demarcación territorial,Huánuco,100901
+1830,1521-0826,Pajchani y Llinquipata – Comunidad Campesina Phara Toldoqueri,Socioambiental,Puno,211209
+1831,1524-0826,Cumplimiento de la Ordenanza Regional N° 014-2020-GRSM/CR del Sindicato de Trabajadores de Construcción Civil de Soritor,Laboral,San Martín,220105
+1832,1518-0826,Padres de familia de la I.E N° 100 Manuel Catalino Moran,Asuntos de gobierno regional,Tumbes,240303
+1833,,Sector quebrada honda,Demarcación territorial,Multirregional,
+1834,1528-0926,Junta de Usuarios IRCHIN,Asuntos de gobierno regional,Apurímac,03
+1835,1531-0926,Jaén - Electro Oriente,Otros asuntos,Cajamarca,060901
+1836,1532-0926,Rial Minera - San Ignacio,Socioambiental,Cusco,08
+1837,1529-0926,Universidad Nacional de Ingeniería 2026,Conflictos en universidades,Lima Metropolitana,150128
+1838,1530-0926,Pobladores de Jicamarca- Empresa Total Inmuebles SRL,Asuntos de administración de justicia,Lima Provincias,150106
+1839,1526-0926,Reconocimiento territorial de la Comunidad Nativa Kichwa Anak Kurutuyacu – Huimbayoc,Demarcación territorial,Tacna,23
+1840,1525-0926,Comunidad Campesina de Maure – Penal de Challapalca / INPE,Asuntos de gobierno nacional,Tacna,230408
+1841,1517-0826,Alza costo combustible - transportistas,Asuntos de gobierno nacional,Multirregional,25
+1842,1527-0926,Ampliación del PEM - Metales Pesados,Asuntos de gobierno nacional,Nacional,01
+1843,,Disputa territorial entre la Comunidad Nativa Sinchi Roca y posesionarios agrícolas y ganaderos,Demarcación territorial,Huánuco,10
