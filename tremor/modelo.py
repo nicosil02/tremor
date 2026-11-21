@@ -87,9 +87,9 @@ def eventos(con) -> pd.DataFrame:
           "tipo_conflicto <> 'otro' AS extractivo FROM egpp_evento WHERE duplicado_de IS NULL AND capital_por_defecto = 0 AND length(ubigeo) = 6")
     p = q("SELECT ubigeo, COALESCE(fecha_evento, fecha_anuncio) AS fecha, accion, estado, 0 AS victimas, "
           "COALESCE(tipo_conflicto, 'otro') <> 'otro' AS extractivo FROM evento_prensa WHERE length(ubigeo) = 6")
-    # Lo que la Defensoría no ve: vías cortadas por protesta (SUTRAN) y paralizaciones que las empresas reportan a la bolsa
+    # Lo que la Defensoría no ve: vías cortadas por protesta (reporte COE-MTC) y paralizaciones que las empresas reportan a la bolsa
     s = q("SELECT ubigeo, COALESCE(fecha_evento, visto_primero) AS fecha, 'bloqueo' AS accion, 0 AS victimas, "
-          "0 AS extractivo FROM sutran_alerta WHERE length(ubigeo) = 6")
+          "0 AS extractivo FROM mtc_via WHERE length(ubigeo) = 6 AND motivo = 'humano' AND submotivo = 'Manifestación'")
     try:
         from tremor.bolsa import ubigeos_incidentes
         b = ubigeos_incidentes(con).assign(accion="bloqueo", victimas=0, extractivo=1)

@@ -11,6 +11,9 @@ from tremor.db import ahora, conectar
 from tremor.lugares import resolver
 
 URL = "https://api.sigea.sutran.gob.pe/public/alerts"
+# Bot identificado: nos presentamos ante el WAF de SUTRAN en vez de fingir un navegador.
+UA = ("TremorBot/1.0 (+https://github.com/nicosil02/tremor; "
+      "investigacion de conflictos sociales; contacto: nicolas.silva@pucp.edu.pe)")
 COLS = ["codigo", "motivo", "submotivo", "estado_via", "titulo", "descripcion", "situacion", "lat", "lng", "region",
         "provincia", "distrito", "ubigeo", "precision", "via", "km", "fecha_evento", "vigente_desde", "vigente_hasta",
         "fuente"]
@@ -33,8 +36,20 @@ def fila(a: dict) -> dict:
             "fuente": a.get("fuente")}
 
 
+def pedir(url: str):
+    """GET identificado y de bajo perfil. Si el WAF responde 403/429/503, espera y reintenta una vez."""
+    import time
+    cab = {"User-Agent": UA, "Accept": "application/json"}
+    r = requests.get(url, timeout=60, headers=cab)
+    if r.status_code in (429, 503):  # transitorios; un 403 aquí es cierre deliberado, no se reintenta
+        time.sleep(float(r.headers.get("Retry-After", 30)))  # respeta la espera que pida el servidor
+        r = requests.get(url, timeout=60, headers=cab)
+    r.raise_for_status()
+    return r
+
+
 def recolectar(con) -> tuple[int, int]:
-    r = requests.get(URL, timeout=60, headers={"User-Agent": "Mozilla/5.0 (tremor)"}); r.raise_for_status()
+    r = pedir(URL)
     alertas, t, nuevas = r.json()["data"], ahora(), 0
     for a in alertas:
         f = fila(a)
