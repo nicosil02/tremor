@@ -1,0 +1,11 @@
+clave,empresa,enviado
+riesgo:2026-09:080803,Bateas,2026-11-10T00:31:50
+evento:1149,Bateas,2026-11-10T03:19:02
+evento:1221,Bateas,2026-11-10T05:23:01
+evento:00:Paro:2026-11-16,Bateas,2026-11-10T15:57:57
+evento:040701:Marcha:2026-11-09,Bateas,2026-11-10T15:57:59
+evento:040704:Bloqueo de vías:2026-11-04,Bateas,2026-11-10T15:58:01
+nohubo:evento:040701:Marcha:2026-11-09,Bateas,2026-11-10T19:07:38
+hubo:evento:040704:Bloqueo de vías:2026-11-04,Bateas,2026-11-11T17:04:47
+cae:evento:00:Paro:2026-11-16,Bateas,2026-11-12T01:00:48
+sigue:evento:00:Paro:2026-11-16,Bateas,2026-11-12T20:30:13
